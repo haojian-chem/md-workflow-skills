@@ -1,0 +1,69 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: submission_record.schema.yaml
+title: MD External Submission Record
+type: object
+required:
+  - schema_version
+  - submission_id
+  - workstream_id
+  - task_id
+  - backend
+  - working_directory
+  - command_record
+  - submitted_at
+  - last_checked_at
+  - status
+  - check_policy
+  - expected_outputs
+  - completion_validator
+  - completion_evidence
+  - failure_evidence
+properties:
+  schema_version: {type: integer, const: 1}
+  submission_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  task_id: {type: string, minLength: 1}
+  backend:
+    type: object
+    required: [type, host, session_name, job_id]
+    properties:
+      type:
+        type: string
+        enum: [TMUX, LSF, SLURM, PBS, LOCAL, OTHER]
+      host: {type: [string, 'null']}
+      session_name: {type: [string, 'null']}
+      job_id: {type: [string, 'null']}
+    additionalProperties: false
+  working_directory: {type: string, minLength: 1}
+  command_record: {type: string, minLength: 1}
+  submitted_at: {type: [string, 'null'], format: date-time}
+  last_checked_at: {type: [string, 'null'], format: date-time}
+  status: {$ref: common_types.schema.yaml#/$defs/submission_status}
+  check_policy:
+    type: object
+    required: [mode, status_check_command]
+    properties:
+      mode:
+        type: string
+        enum: [ON_DEMAND]
+      status_check_command: {type: [string, 'null']}
+    additionalProperties: false
+  expected_outputs:
+    type: array
+    items: {type: string}
+  completion_validator: {type: [string, 'null']}
+  completion_evidence:
+    type: array
+    items: {type: string}
+  failure_evidence:
+    type: array
+    items: {type: string}
+allOf:
+  - if:
+      properties:
+        status:
+          enum: [SUBMITTED, RUNNING, FINISHED_UNVERIFIED, COMPLETED, FAILED, CANCELLED, UNKNOWN]
+    then:
+      properties:
+        submitted_at: {type: string, format: date-time}
+additionalProperties: false
