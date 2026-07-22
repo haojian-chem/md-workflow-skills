@@ -11,7 +11,9 @@ owned_content:
     owner: 00_manager/md_workflow_manager/SKILL.md
   workstream_creation_selection_and_lifecycle:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  workflow_decision_and_route_consumption:
+  cross_workflow_route_scope_and_fragment_composition:
+    owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
+  workflow_planning_and_execution_interface_consumption:
     owner: 00_manager/md_workflow_manager/SKILL.md
   user_interaction_and_decision_aggregation:
     owner: 00_manager/md_workflow_manager/SKILL.md
@@ -37,6 +39,9 @@ external_references:
   access: reference_only
 - purpose: shared_runtime_types
   owner: 03_contracts/common_types.schema.yaml
+  access: reference_only
+- purpose: workflow_route_fragment_contract
+  owner: 03_contracts/workflow_route_fragment.schema.yaml
   access: reference_only
 - purpose: workflow_decision_contract
   owner: 03_contracts/workflow_decision.schema.yaml
@@ -88,4 +93,4 @@ external_references:
   access: reference_only
   status: present
 notes:
-- Manager draft exists and static checks pass. Contract remains draft until executable fixtures and end-to-end integration tests pass.
+- Manager draft now defines separate Workflow planning and execution loops. Contract remains draft until executable fixtures and end-to-end integration tests pass.
