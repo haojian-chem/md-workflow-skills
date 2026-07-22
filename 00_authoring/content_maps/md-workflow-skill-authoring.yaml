@@ -24,10 +24,13 @@ owned_content:
   static_validation_tools:
     owner: 00_authoring/md-workflow-skill-authoring/scripts/
 external_references:
+- purpose: shared_contract_index
+  owner: 03_contracts/README.md
+  access: reference_only
 - purpose: shared_runtime_types
   owner: 03_contracts/common_types.schema.yaml
   access: reference_only
-- purpose: confirmation_item_contract
+- purpose: decision_request_contract
   owner: 03_contracts/confirmation_item.schema.yaml
   access: reference_only
 - purpose: workflow_decision_contract
@@ -41,6 +44,30 @@ external_references:
   access: reference_only
 - purpose: project_state_contract
   owner: 03_contracts/project_state.schema.yaml
+  access: reference_only
+- purpose: workstream_state_contract
+  owner: 03_contracts/workstream_state.schema.yaml
+  access: reference_only
+- purpose: project_event_contract
+  owner: 03_contracts/project_event.schema.yaml
+  access: reference_only
+- purpose: manager_session_contract
+  owner: 03_contracts/manager_session.schema.yaml
+  access: reference_only
+- purpose: route_record_contract
+  owner: 03_contracts/route_record.schema.yaml
+  access: reference_only
+- purpose: decision_record_contract
+  owner: 03_contracts/decision_record.schema.yaml
+  access: reference_only
+- purpose: submission_record_contract
+  owner: 03_contracts/submission_record.schema.yaml
+  access: reference_only
+- purpose: artifact_set_contract
+  owner: 03_contracts/artifact_set.schema.yaml
+  access: reference_only
+- purpose: state_snapshot_contract
+  owner: 03_contracts/state_snapshot.schema.yaml
   access: reference_only
 - purpose: examples_and_test_fixtures
   owner: 04_evals/md-workflow-skill-authoring/fixtures/
