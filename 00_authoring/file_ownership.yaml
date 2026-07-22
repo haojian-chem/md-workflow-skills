@@ -10,26 +10,26 @@ shared_files:
     - 00_authoring/skill_inventory.yaml
     - 00_authoring/file_ownership.yaml
     - 00_authoring/content_maps/
+    - 00_manager/md_workflow_manager/references/
     - 03_contracts/
     - design_records/
-  notes: 共享规则、接口、content map 和权威设计记录仅由主窗口修改。
+  notes: 共享规则、跨 Workflow 路线协议、接口、content map 和权威设计记录仅由主窗口修改。
 
 assignments: []
 
 review_queue:
   - skill_name: md_workflow_manager
-    required_action: executable_fixtures_and_end_to_end_integration
+    required_action: executable_route_and_execution_fixtures_plus_end_to_end_integration
   - skill_name: structure_preparation_workflow
-    required_action: executable_decision_fixtures_and_manager_integration
+    required_action: executable_fragment_and_decision_fixtures_plus_manager_integration
+  - skill_name: source_recognition
+    required_action: real_file_copy_hash_conflict_and_manager_integration_tests
 
 alignment_queue:
-  - skill_name: source_recognition
-    required_action: align_with_subagent_task_and_result_v2
   - skill_name: component_and_residue_classification_validator
     required_action: align_with_subagent_task_and_result_v2
 
 unassigned_skills:
-  - source_recognition
   - component_and_residue_classification_validator
   - chain_and_component_selection
   - chain_and_component_selection_validator
