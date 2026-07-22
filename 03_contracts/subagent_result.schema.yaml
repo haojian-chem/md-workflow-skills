@@ -5,47 +5,47 @@ type: object
 required:
   - schema_version
   - task_id
-  - task_kind
-  - skill_name
+  - workstream_id
+  - task_unit_mode
   - status
   - execution_summary
-  - key_findings
-  - outcome
-  - created_files
-  - modified_files
-  - validated_files
-  - requires_user_confirmation
+  - operation_result
+  - validation_result
+  - artifact_candidates
   - confirmation_items
   - warnings
+  - failure
   - next_step_recommendation
 properties:
-  schema_version: {type: integer, const: 1}
+  schema_version: {type: integer, const: 2}
   task_id: {type: string, minLength: 1}
-  task_kind: {$ref: common_types.schema.yaml#/$defs/task_kind}
-  skill_name: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  task_unit_mode: {$ref: common_types.schema.yaml#/$defs/task_unit_mode}
   status: {$ref: common_types.schema.yaml#/$defs/execution_status}
   execution_summary: {type: string, minLength: 1}
-  key_findings:
+  operation_result:
+    oneOf:
+      - type: 'null'
+      - $ref: '#/$defs/component_result'
+  validation_result:
+    oneOf:
+      - type: 'null'
+      - $ref: '#/$defs/component_result'
+  artifact_candidates:
     type: array
-    items: {type: string}
-  outcome:
-    type: object
-    required: [code, execution_required, hard_block_next_step]
-    properties:
-      code: {type: string, minLength: 1}
-      execution_required: {type: boolean}
-      hard_block_next_step: {type: boolean}
-    additionalProperties: false
-  created_files:
-    type: array
-    items: {$ref: common_types.schema.yaml#/$defs/file_record}
-  modified_files:
-    type: array
-    items: {$ref: common_types.schema.yaml#/$defs/file_record}
-  validated_files:
-    type: array
-    items: {$ref: common_types.schema.yaml#/$defs/file_record}
-  requires_user_confirmation: {type: boolean}
+    items:
+      type: object
+      required: [artifact_type, files, derived_from_artifact_set_ids]
+      properties:
+        artifact_type: {$ref: common_types.schema.yaml#/$defs/artifact_type}
+        files:
+          type: array
+          minItems: 1
+          items: {$ref: common_types.schema.yaml#/$defs/file_record}
+        derived_from_artifact_set_ids:
+          type: array
+          items: {type: string}
+      additionalProperties: false
   confirmation_items:
     type: array
     items: {$ref: confirmation_item.schema.yaml}
@@ -56,21 +56,81 @@ properties:
     oneOf:
       - type: 'null'
       - $ref: common_types.schema.yaml#/$defs/failure
-  detail_files:
-    type: object
-    properties:
-      log_file: {type: [string, 'null']}
-      report_file: {type: [string, 'null']}
-      result_data_file: {type: [string, 'null']}
-    additionalProperties: false
   next_step_recommendation: {type: string}
 allOf:
+  - if:
+      properties: {task_unit_mode: {const: OPERATION}}
+    then:
+      properties:
+        operation_result: {$ref: '#/$defs/component_result'}
+        validation_result: {type: 'null'}
+  - if:
+      properties: {task_unit_mode: {const: VALIDATOR}}
+    then:
+      properties:
+        operation_result: {type: 'null'}
+        validation_result: {$ref: '#/$defs/component_result'}
+  - if:
+      properties: {task_unit_mode: {const: OPERATION_WITH_VALIDATOR}}
+    then:
+      properties:
+        operation_result: {$ref: '#/$defs/component_result'}
+        validation_result: {$ref: '#/$defs/component_result'}
   - if:
       properties: {status: {const: DONE}}
     then:
       properties: {failure: {type: 'null'}}
-  - if:
-      properties: {requires_user_confirmation: {const: false}}
-    then:
-      properties: {confirmation_items: {maxItems: 0}}
 additionalProperties: false
+$defs:
+  component_result:
+    type: object
+    required:
+      - skill_name
+      - status
+      - summary
+      - outcome_code
+      - key_findings
+      - created_files
+      - modified_files
+      - validated_files
+      - warnings
+      - failure
+      - detail_files
+    properties:
+      skill_name: {type: string, minLength: 1}
+      status: {$ref: common_types.schema.yaml#/$defs/execution_status}
+      summary: {type: string, minLength: 1}
+      outcome_code: {type: string, minLength: 1}
+      key_findings:
+        type: array
+        items: {type: string}
+      created_files:
+        type: array
+        items: {$ref: common_types.schema.yaml#/$defs/file_record}
+      modified_files:
+        type: array
+        items: {$ref: common_types.schema.yaml#/$defs/file_record}
+      validated_files:
+        type: array
+        items: {$ref: common_types.schema.yaml#/$defs/file_record}
+      warnings:
+        type: array
+        items: {$ref: common_types.schema.yaml#/$defs/warning}
+      failure:
+        oneOf:
+          - type: 'null'
+          - $ref: common_types.schema.yaml#/$defs/failure
+      detail_files:
+        type: object
+        required: [log_file, report_file, result_data_file]
+        properties:
+          log_file: {type: [string, 'null']}
+          report_file: {type: [string, 'null']}
+          result_data_file: {type: [string, 'null']}
+        additionalProperties: false
+    allOf:
+      - if:
+          properties: {status: {const: DONE}}
+        then:
+          properties: {failure: {type: 'null'}}
+    additionalProperties: false
