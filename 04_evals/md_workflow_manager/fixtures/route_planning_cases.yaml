@@ -1,0 +1,88 @@
+schema_version: 1
+suite: md_workflow_manager_route_planning
+cases:
+  - case_id: single_connected_workflow_complete_route
+    request: 从 structure_preparation 入口规划到该阶段完成
+    fragments:
+      - workflow: structure_preparation_workflow
+        status: COMPLETE
+    expected:
+      planning_status: COMPLETE
+      source_fragment_count: 1
+      action: create_route_record
+
+  - case_id: route_stops_at_unconnected_topology_boundary
+    request: 从原始结构规划到 topology_preparation 完成
+    registry:
+      structure_preparation: connected
+      topology_preparation: planned
+    expected:
+      planning_status: PARTIAL
+      blocker_scope: WORKFLOW_BOUNDARY
+      forbidden: invent_topology_internal_steps
+
+  - case_id: conditional_steps_are_preserved
+    request: 规划完整结构准备路线
+    evidence:
+      altloc_status: unknown
+      missing_region_status: unknown
+    expected:
+      retained_conditional_steps:
+        - altloc_occupancy_resolution
+        - missing_region_completion
+      forbidden: preemptive_skip
+
+  - case_id: fragment_artifact_interface_mismatch
+    fragments:
+      - workflow: structure_preparation_workflow
+        exit_artifact: UNVALIDATED_STRUCTURE
+      - workflow: topology_preparation_workflow
+        entry_requirement: VALIDATED_STRUCTURE
+    expected:
+      planning_status: BLOCKED
+      action: do_not_insert_undefined_conversion
+
+  - case_id: execution_decision_requires_route_revision
+    active_route_next_step: missing_region_completion
+    new_workflow_decision: SKIP
+    evidence: completeness_report_no_completion_needed
+    expected:
+      action_order:
+        - create_route_revision
+        - persist_new_active_route
+        - consume_skip_decision
+      forbidden: execute_before_revision
+
+  - case_id: user_endpoint_inside_workflow
+    request: 只执行到 component_and_residue_classification
+    expected:
+      route_end:
+        workflow: structure_preparation_workflow
+        substep: component_and_residue_classification
+      no_later_steps: true
+
+  - case_id: downstream_running_requires_new_upstream_branch
+    existing_workstream:
+      position: md_simulation
+      external_submission: RUNNING
+    request: 返回 topology_preparation 生成参数 v2
+    expected:
+      action: create_new_workstream
+      preserve_existing_submission: true
+
+  - case_id: unchanged_projection_does_not_create_revision
+    active_route: route_0004
+    new_fragments_equal_active_route: true
+    expected:
+      action: keep_active_route
+      create_revision: false
+
+  - case_id: ambiguous_route_end_requests_user_decision
+    request: 做一版测试 MD
+    ambiguity:
+      - stop_after_em
+      - stop_after_nvt
+      - stop_after_npt
+    expected:
+      action: request_blocking_decision
+      create_route_before_resolution: false
