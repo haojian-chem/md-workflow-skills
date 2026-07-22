@@ -1,5 +1,5 @@
 schema_version: 3
-status: manager_draft_created_alignment_migrations_pending
+status: manager_and_structure_workflow_drafts_created_operation_migrations_pending
 runtime_architecture:
   project_model: workstream
   foreground_subagent_mode: serial
@@ -32,12 +32,12 @@ skills:
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: draft_created_review_and_evals_required
+    status: draft_static_checks_passed_integration_required
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
   - name: structure_preparation_workflow
     layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: workstream_contract_alignment_required
+    status: draft_static_checks_passed_integration_required
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
   - name: source_recognition
     layer: operation
