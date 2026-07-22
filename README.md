@@ -86,26 +86,25 @@
 
 ## Shared contracts
 
-运行时共享接口统一位于：
-
-`03_contracts/`
-
-入口索引：
-
-`03_contracts/README.md`
+运行时共享接口统一位于 `03_contracts/`，入口索引为 `03_contracts/README.md`。
 
 当前 contracts 已覆盖 Workstream、Focus、task unit、project/workstream state、事件、路线、人工决策、submission、artifact set、snapshot 和 Manager session front matter。
 
 ## 当前实现状态
 
 - Manager、项目状态、Workstream 和日志体系设计已经冻结；
-- 共享 contracts 已完成 Workstream 对齐；
-- `md_workflow_manager` 需要按新 contracts 重写；
-- `structure_preparation_workflow`、`source_recognition` 和现有 Validator 需要执行接口迁移；
+- 14 份共享 contracts 已完成 Workstream 对齐；
+- `md_workflow_manager` draft 已建立并通过静态检查，仍需可执行 fixtures 与端到端集成；
+- `structure_preparation_workflow` draft 已建立并通过静态检查，仍需 Manager 集成；
+- `source_recognition` 与现有分类 Validator 仍需迁移到 subagent task/result v2；
+- 其余 Phase 1 Operations/Validators 尚待编写；
 - content map 的 `load_when` 与 `applicable_to` 扩展仍未冻结。
 
-详细设计见：
+详细设计与验证见：
 
 - `design_records/manager_and_project_structure_decisions.md`
 - `design_records/logging_and_record_system.md`
+- `00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`
+- `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`
+- `04_evals/structure_preparation_workflow/WORKFLOW_DRAFT_VALIDATION.md`
 - `00_authoring/SYNC_STATUS.md`
