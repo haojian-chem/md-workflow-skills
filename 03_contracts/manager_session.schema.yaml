@@ -1,0 +1,34 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: manager_session.schema.yaml
+title: MD Manager Session Front Matter
+description: Validates the YAML front matter of manager/sessions/<manager_session_id>.md.
+type: object
+required:
+  - schema_version
+  - manager_session_id
+  - started_at
+  - ended_at
+  - requested_actions
+  - entry_state
+  - focus
+  - related_workstreams
+  - final_summary
+  - expected_next_task
+properties:
+  schema_version: {type: integer, const: 1}
+  manager_session_id: {type: string, minLength: 1}
+  started_at: {type: string, format: date-time}
+  ended_at: {type: [string, 'null'], format: date-time}
+  requested_actions:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {$ref: common_types.schema.yaml#/$defs/requested_action}
+  entry_state: {$ref: common_types.schema.yaml#/$defs/entry_state}
+  focus: {$ref: common_types.schema.yaml#/$defs/focus}
+  related_workstreams:
+    type: array
+    items: {$ref: common_types.schema.yaml#/$defs/related_workstream}
+  final_summary: {type: string}
+  expected_next_task: {type: [string, 'null']}
+additionalProperties: false
