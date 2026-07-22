@@ -1,0 +1,86 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: decision_record.schema.yaml
+title: MD User Decision Record
+type: object
+required:
+  - schema_version
+  - decision_id
+  - scope
+  - workstream_id
+  - status
+  - requested_at
+  - requested_by
+  - question
+  - reason
+  - options
+  - recommended_option
+  - blocking
+  - affected_records
+  - resolution
+  - supersedes
+  - superseded_by
+properties:
+  schema_version: {type: integer, const: 1}
+  decision_id: {type: string, minLength: 1}
+  scope:
+    type: string
+    enum: [PROJECT, WORKSTREAM]
+  workstream_id: {type: [string, 'null']}
+  status:
+    type: string
+    enum: [OPEN, RESOLVED, WITHDRAWN, SUPERSEDED]
+  requested_at: {type: string, format: date-time}
+  requested_by:
+    type: object
+    required: [source, task_id]
+    properties:
+      source:
+        type: string
+        enum: [USER, MANAGER, WORKFLOW, OPERATION, VALIDATOR, SUBAGENT]
+      task_id: {type: [string, 'null']}
+    additionalProperties: false
+  question: {type: string, minLength: 1}
+  reason: {type: string, minLength: 1}
+  options:
+    type: array
+    items: {type: string}
+  recommended_option: {type: [string, 'null']}
+  blocking: {type: boolean}
+  affected_records:
+    type: array
+    items: {type: string}
+  resolution:
+    oneOf:
+      - type: 'null'
+      - type: object
+        required: [selected_option, user_statement, resolved_at, applied_by_task_id]
+        properties:
+          selected_option: {type: [string, 'null']}
+          user_statement: {type: string, minLength: 1}
+          resolved_at: {type: string, format: date-time}
+          applied_by_task_id: {type: [string, 'null']}
+        additionalProperties: false
+  supersedes: {type: [string, 'null']}
+  superseded_by: {type: [string, 'null']}
+allOf:
+  - if:
+      properties: {scope: {const: WORKSTREAM}}
+    then:
+      properties: {workstream_id: {type: string, minLength: 1}}
+    else:
+      properties: {workstream_id: {type: 'null'}}
+  - if:
+      properties: {status: {const: RESOLVED}}
+    then:
+      properties:
+        resolution:
+          type: object
+    else:
+      properties:
+        resolution: {type: 'null'}
+  - if:
+      properties: {status: {const: SUPERSEDED}}
+    then:
+      properties:
+        superseded_by: {type: string, minLength: 1}
+additionalProperties: false
