@@ -11,7 +11,7 @@ owned_content:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
   conditional_skip_pause_and_gate_logic:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
-  resume_and_next_task_decision_logic:
+  workstream_local_resume_and_next_task_decision_logic:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
 external_references:
 - purpose: layer_boundary
@@ -23,12 +23,12 @@ external_references:
 - purpose: workflow_decision_contract
   owner: 03_contracts/workflow_decision.schema.yaml
   access: reference_only
-- purpose: project_state_contract
-  owner: 03_contracts/project_state.schema.yaml
+- purpose: workstream_state_contract
+  owner: 03_contracts/workstream_state.schema.yaml
   access: reference_only
 - purpose: examples_and_test_fixtures
   owner: 04_evals/structure_preparation_workflow/fixtures/
   access: reference_only
   status: planned
 notes:
-- Workflow does not create subagents and does not directly consume subagent_task.schema.yaml.
+- Workflow does not create subagents, choose project Focus, create Workstreams, or directly consume subagent_task.schema.yaml.
