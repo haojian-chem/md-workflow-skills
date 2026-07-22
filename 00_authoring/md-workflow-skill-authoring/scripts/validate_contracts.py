@@ -9,6 +9,7 @@ import yaml
 REQUIRED = {
     'common_types.schema.yaml',
     'confirmation_item.schema.yaml',
+    'workflow_route_fragment.schema.yaml',
     'workflow_decision.schema.yaml',
     'subagent_task.schema.yaml',
     'subagent_result.schema.yaml',
