@@ -29,6 +29,7 @@ external_references:
 - purpose: examples_and_test_fixtures
   owner: 04_evals/structure_preparation_workflow/fixtures/
   access: reference_only
-  status: planned
+  status: present
 notes:
+- Workstream-local Workflow draft exists. Contract remains draft until executable decision fixtures and Manager integration tests pass.
 - Workflow does not create subagents, choose project Focus, create Workstreams, or directly consume subagent_task.schema.yaml.
