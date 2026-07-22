@@ -1,0 +1,79 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: project_event.schema.yaml
+title: MD Project Event
+type: object
+required:
+  - schema_version
+  - event_id
+  - timestamp
+  - event_type
+  - scope
+  - workstream_id
+  - actor
+  - summary
+  - record_paths
+properties:
+  schema_version: {type: integer, const: 1}
+  event_id: {type: string, minLength: 1}
+  timestamp: {type: string, format: date-time}
+  event_type:
+    type: string
+    enum:
+      - PROJECT_INITIALIZED
+      - ENTRY_STATE_EVALUATED
+      - ROOTS_UPDATED
+      - FOCUS_CHANGED
+      - PROJECT_RECOVERY_STARTED
+      - PROJECT_RECOVERY_COMPLETED
+      - PROJECT_RECOVERY_FAILED
+      - STATE_SNAPSHOT_CREATED
+      - WORKSTREAM_CREATED
+      - WORKSTREAM_FORKED
+      - WORKSTREAM_POSITION_CHANGED
+      - WORKSTREAM_STATUS_CHANGED
+      - WORKSTREAM_COMPLETED
+      - WORKSTREAM_ARCHIVED
+      - WORKSTREAM_ABANDONED
+      - ROUTE_CREATED
+      - ROUTE_REVISED
+      - ROUTE_COMPLETED
+      - ROUTE_CANCELLED
+      - TASK_PREPARED
+      - TASK_STARTED
+      - TASK_DONE
+      - TASK_BLOCKED
+      - TASK_FAILED
+      - TASK_CANCELLED
+      - DECISION_REQUESTED
+      - DECISION_RESOLVED
+      - DECISION_WITHDRAWN
+      - SUBMISSION_PREPARED
+      - SUBMISSION_SUBMITTED
+      - SUBMISSION_STATE_CHANGED
+      - SUBMISSION_COMPLETION_VERIFIED
+      - ARTIFACT_SET_REGISTERED
+      - ARTIFACT_SET_VALIDATED
+      - ARTIFACT_SET_INVALIDATED
+      - ARTIFACT_SET_SUPERSEDED
+  scope: {$ref: common_types.schema.yaml#/$defs/event_scope}
+  workstream_id: {type: [string, 'null']}
+  actor: {$ref: common_types.schema.yaml#/$defs/event_actor}
+  object_type: {type: [string, 'null']}
+  object_id: {type: [string, 'null']}
+  summary: {type: string, minLength: 1}
+  previous_state: {}
+  new_state: {}
+  record_paths:
+    type: array
+    items: {type: string}
+  related_event_ids:
+    type: array
+    items: {type: string}
+allOf:
+  - if:
+      properties: {scope: {const: WORKSTREAM}}
+    then:
+      properties: {workstream_id: {type: string, minLength: 1}}
+    else:
+      properties: {workstream_id: {type: 'null'}}
+additionalProperties: false
