@@ -1,7 +1,10 @@
 schema_version: 3
-status: manager_and_structure_workflow_drafts_created_operation_migrations_pending
+status: route_planning_aligned_source_recognition_draft_created
 runtime_architecture:
   project_model: workstream
+  workflow_interfaces:
+    planning: workflow_route_fragment
+    execution: workflow_decision
   foreground_subagent_mode: serial
   max_foreground_subagents: 1
   external_submissions_may_coexist: true
@@ -11,6 +14,7 @@ shared_contracts:
   files:
     - 03_contracts/common_types.schema.yaml
     - 03_contracts/confirmation_item.schema.yaml
+    - 03_contracts/workflow_route_fragment.schema.yaml
     - 03_contracts/workflow_decision.schema.yaml
     - 03_contracts/subagent_task.schema.yaml
     - 03_contracts/subagent_result.schema.yaml
@@ -32,17 +36,17 @@ skills:
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: draft_static_checks_passed_integration_required
+    status: draft_route_planning_aligned_integration_required
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
   - name: structure_preparation_workflow
     layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: draft_static_checks_passed_integration_required
+    status: draft_dual_interface_integration_required
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
   - name: source_recognition
     layer: operation
     path: 02_operations/source_recognition
-    status: subagent_contract_alignment_required
+    status: draft_safe_copy_semantics_integration_required
     content_map: 00_authoring/content_maps/source_recognition.yaml
   - name: component_and_residue_classification_validator
     layer: validator
