@@ -21,25 +21,41 @@
 - `AGENTS.md`、`03_contracts/`、authoring references、content maps、inventory 和 ownership 表仍由主窗口统一修改。
 - 业务窗口不得依据旧草案自行修改共享 contract。
 
-## 当前已确认但尚未完全回写共享文件的设计变更
+## 已确认并写入设计记录的项目模型
 
-1. 一个临时子 Agent 可以承担一个上下文连续的任务单元：
-   - 纯 Operation；
-   - 纯 Validator；
-   - Operation 与其专属配套 Validator 的连续执行。
-   当前 `subagent_task.schema.yaml` 和 `runtime_subagent_protocol.md` 仍主要按单个 Skill 描述，后续需要统一修改。
-
-2. 长耗时 MD 任务通过 tmux 或调度系统提交后可进入 `RUNNING` 状态；主 Agent 不高频轮询。相关公共状态与恢复字段仍需专门设计。
-
-3. 当前项目阶段为：
+1. 当前 Workflow 顺序为：
 
    `structure_preparation → topology_preparation → md_preparation → md_simulation → analysis`
 
-   - `topology_preparation`：标准残基、相连非标准残基和独立非标准组分的拓扑生成与参数准备；
-   - `md_preparation`：力场与拓扑整合、建盒、加水、加离子，生成完整体系；
-   - `md_simulation`：MDP 与运行输入准备，以及 EM、NVT、NPT、生产 MD、续跑和运行核验。
+2. Workflow 是可复用阶段流程；Workstream 是真实项目中的具体工作分支。一个 Workstream 可以经过多个 Workflow，一个项目可以同时存在多个 Workstream。
 
-4. 真实 MD 项目的当前顶层目录为：
+3. 一个前台临时子 Agent 可以承担：
+
+   - 纯 Operation；
+   - 纯 Validator；
+   - Operation 与其专属配套 Validator 的连续执行。
+
+4. 任意时刻最多一个前台临时子 Agent，但允许多个 Workstream 和多个 tmux/调度系统外部任务并存。Manager 不高频轮询长耗时任务。
+
+5. 用户请求动作采用可组合形式：
+
+   `INSPECT + PLAN + EXECUTE`
+
+6. 项目入口状态采用：
+
+   `NEW | RESUMABLE | NEEDS_RECOVERY`
+
+   外部任务运行状态不再作为项目级独占入口状态，而归属于具体 Workstream 和 submission。
+
+7. Workstream 状态拆分为：
+
+   - 生命周期：`OPEN | COMPLETED | ARCHIVED | ABANDONED`；
+   - 活动状态：`IDLE | READY | EXECUTING | RUNNING_EXTERNAL | WAITING | FAILED | NEEDS_RECOVERY`；
+   - 暂停原因：`NONE | USER_DECISION | MISSING_INPUT | DEPENDENCY | USER_PAUSED | EXTERNAL_RESOURCE`。
+
+8. Focus 表示当前一轮 Manager 交互的主要项目或 Workstream 目标，不表示项目唯一活动分支。一个运行周期只有一个主要 Focus，但可以读取多个 related Workstreams。
+
+9. 真实 MD 项目的当前顶层目录为：
 
 ```text
 <project_root>/
@@ -52,11 +68,54 @@
 └── 05_analysis/
 ```
 
-5. content map 的 `load_when` 与 `applicable_to` 仍是计划中的 schema 扩展，尚未正式加入当前 schema 和所有 map。
+10. 状态目录采用项目索引加独立 Workstream 状态：
+
+```text
+00_project_state/
+├── project_state.yaml
+├── project_state.yaml.bak
+└── workstreams/
+    └── <workstream_id>.yaml
+```
+
+11. 历史记录按 Workstream 分组：
+
+```text
+00_project_records/
+├── manager/
+├── events/
+├── workstreams/
+│   └── <workstream_id>/
+│       ├── routes/
+│       ├── tasks/
+│       ├── decisions/
+│       └── submissions/
+└── state_snapshots/
+```
+
+## 已确认但尚未回写共享 contracts 的变更
+
+以下设计已经确认，但当前 `03_contracts/`、runtime protocol、Manager content map 和 inventory 仍需统一更新：
+
+- `subagent_task.schema.yaml` 支持 Operation 与配套 Validator 组成的任务单元；
+- 公共状态支持 `RUNNING_EXTERNAL`、Workstream 生命周期、活动状态和暂停原因；
+- `project_state.schema.yaml` 改为项目索引加 Workstream 状态文件；
+- route、task、decision 和 submission 与 `workstream_id` 关联；
+- Focus、related Workstreams 和可组合 requested actions；
+- 项目级与 Workstream 级恢复范围。
+
+业务窗口在共享 contracts 更新前不得自行发明这些字段的最终 schema。
+
+## 仍未冻结的事项
+
+- 日志文件的精确字段、事件类型、轮转和保留策略；
+- state snapshot 的触发条件和命名规范；
+- submission 状态检查与任务完成判定的精确 contract；
+- content map 的 `load_when` 与 `applicable_to` 扩展。
 
 ## 当前权威设计记录
 
-在共享 contracts 完成更新前，最新的已确认项目阶段、目录和职责边界以以下文件为准：
+在共享 contracts 完成更新前，最新已确认设计以以下文件为准：
 
 - 根目录 `README.md`；
 - `design_records/manager_and_project_structure_decisions.md`；
