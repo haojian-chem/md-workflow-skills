@@ -45,7 +45,7 @@
 
    `NEW | RESUMABLE | NEEDS_RECOVERY`
 
-   外部任务运行状态不再作为项目级独占入口状态，而归属于具体 Workstream 和 submission。
+   外部任务运行状态不作为项目级独占入口状态，而归属于具体 Workstream 和 submission。
 
 7. Workstream 状态拆分为：
 
@@ -78,20 +78,37 @@
     └── <workstream_id>.yaml
 ```
 
-11. 历史记录按 Workstream 分组：
+11. 历史记录按 Workstream 分组，并采用以下结构：
 
 ```text
 00_project_records/
 ├── manager/
+│   └── sessions/
 ├── events/
+│   └── project_events.jsonl
 ├── workstreams/
 │   └── <workstream_id>/
 │       ├── routes/
 │       ├── tasks/
 │       ├── decisions/
-│       └── submissions/
+│       ├── submissions/
+│       └── artifacts/
 └── state_snapshots/
 ```
+
+12. 日志和记录体系已确认：
+
+- Manager 日志按会话分文件，不使用单一持续增长日志；
+- 全项目只维护一个 `project_events.jsonl`；
+- 每个临时子 Agent 使用独立任务目录，固定包含 `task.yaml` 和 `result.yaml`，`notes.md` 按需生成；
+- 路线文件创建后保持不可变，通过 `supersedes` 和当前 `active_route_id` 表示修订；
+- 外部任务采用 `PREPARED | SUBMITTED | RUNNING | FINISHED_UNVERIFIED | COMPLETED | FAILED | CANCELLED | UNKNOWN`；
+- tmux 会话或调度任务消失不能直接判为完成，必须核验输出；
+- 产物通过 `artifacts/<artifact_set_id>.yaml` 维护版本谱系；
+- 关键小文件记录 SHA-256，大型轨迹默认只记录路径、大小和修改时间；
+- 状态快照只在关键节点创建；
+- 子 Agent 不直接修改 `00_project_state/` 或 `00_project_records/`，全部由 Manager 提交；
+- 结构化管理记录全部保留，大型科研日志和轨迹不复制到管理目录。
 
 ## 已确认但尚未回写共享 contracts 的变更
 
@@ -100,17 +117,17 @@
 - `subagent_task.schema.yaml` 支持 Operation 与配套 Validator 组成的任务单元；
 - 公共状态支持 `RUNNING_EXTERNAL`、Workstream 生命周期、活动状态和暂停原因；
 - `project_state.schema.yaml` 改为项目索引加 Workstream 状态文件；
-- route、task、decision 和 submission 与 `workstream_id` 关联；
+- route、task、decision、submission 和 artifact set 与 `workstream_id` 关联；
 - Focus、related Workstreams 和可组合 requested actions；
-- 项目级与 Workstream 级恢复范围。
+- 项目级与 Workstream 级恢复范围；
+- Manager session、项目事件、路线、任务、人工决策、submission、artifact set 和状态快照的结构化 contract；
+- 外部任务的 `FINISHED_UNVERIFIED` 与按需检查语义；
+- Manager 对状态与记录目录的唯一提交权。
 
 业务窗口在共享 contracts 更新前不得自行发明这些字段的最终 schema。
 
 ## 仍未冻结的事项
 
-- 日志文件的精确字段、事件类型、轮转和保留策略；
-- state snapshot 的触发条件和命名规范；
-- submission 状态检查与任务完成判定的精确 contract；
 - content map 的 `load_when` 与 `applicable_to` 扩展。
 
 ## 当前权威设计记录
@@ -119,4 +136,5 @@
 
 - 根目录 `README.md`；
 - `design_records/manager_and_project_structure_decisions.md`；
+- `design_records/logging_and_record_system.md`；
 - 本文件。
