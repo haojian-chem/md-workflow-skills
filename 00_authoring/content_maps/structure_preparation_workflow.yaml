@@ -9,6 +9,8 @@ owned_content:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
   ordered_substeps_and_skill_mapping:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
+  workstream_local_route_fragment_generation:
+    owner: 01_workflows/structure_preparation_workflow/SKILL.md
   conditional_skip_pause_and_gate_logic:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
   workstream_local_resume_and_next_task_decision_logic:
@@ -20,16 +22,22 @@ external_references:
 - purpose: shared_runtime_types
   owner: 03_contracts/common_types.schema.yaml
   access: reference_only
+- purpose: workflow_route_fragment_contract
+  owner: 03_contracts/workflow_route_fragment.schema.yaml
+  access: reference_only
 - purpose: workflow_decision_contract
   owner: 03_contracts/workflow_decision.schema.yaml
   access: reference_only
 - purpose: workstream_state_contract
   owner: 03_contracts/workstream_state.schema.yaml
   access: reference_only
+- purpose: route_planning_protocol
+  owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
+  access: reference_only
 - purpose: examples_and_test_fixtures
   owner: 04_evals/structure_preparation_workflow/fixtures/
   access: reference_only
   status: present
 notes:
-- Workstream-local Workflow draft exists. Contract remains draft until executable decision fixtures and Manager integration tests pass.
+- Workflow draft now supports route fragment planning and one-decision execution. Contract remains draft until executable fixtures and Manager integration tests pass.
 - Workflow does not create subagents, choose project Focus, create Workstreams, or directly consume subagent_task.schema.yaml.
