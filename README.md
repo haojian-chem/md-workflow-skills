@@ -50,7 +50,7 @@
 └── 05_analysis/
 ```
 
-状态目录建议结构：
+状态目录：
 
 ```text
 00_project_state/
@@ -60,24 +60,33 @@
     └── <workstream_id>.yaml
 ```
 
-记录目录建议结构：
+记录目录：
 
 ```text
 00_project_records/
 ├── manager/
+│   └── sessions/
 ├── events/
+│   └── project_events.jsonl
 ├── workstreams/
 │   └── <workstream_id>/
 │       ├── routes/
 │       ├── tasks/
 │       ├── decisions/
-│       └── submissions/
+│       ├── submissions/
+│       └── artifacts/
 └── state_snapshots/
 ```
 
 - `00_project_state/` 只保存当前有效且可恢复的项目索引与 Workstream 状态。
-- `00_project_records/` 保存 Manager、项目事件、路线、任务、人工决策、作业提交和状态快照等历史记录。
-- Manager 的历史记录放在 `00_project_records/manager/`。
+- `00_project_records/` 保存 Manager 会话、项目事件、路线、任务、人工决策、作业提交、产物谱系和状态快照等历史记录。
+- Manager 日志按会话分文件，不使用持续增长的单一日志。
+- 全项目只维护一个 `project_events.jsonl`。
+- 科研业务日志、轨迹和大型中间文件保留在对应业务目录，管理目录只保存引用和摘要。
 - `04_md_simulation/` 的内部目录不在项目级预先排序或固定，由对应 Workflow 和 Skill 根据实际任务定义。
 
-详细已确认决策见 `design_records/manager_and_project_structure_decisions.md`。
+## 权威设计记录
+
+- `design_records/manager_and_project_structure_decisions.md`
+- `design_records/logging_and_record_system.md`
+- `00_authoring/SYNC_STATUS.md`
