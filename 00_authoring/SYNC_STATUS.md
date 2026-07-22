@@ -13,11 +13,15 @@
 - Workstream 项目模型；
 - 日志和记录体系；
 - 14 份共享运行 contract；
-- 串行 task-unit 临时子 Agent 协议。
+- 串行 task-unit 临时子 Agent 协议；
+- `md_workflow_manager` draft；
+- `structure_preparation_workflow` draft。
 
-本轮验证结果见：
+验证结果：
 
-`00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`
+- `00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`
+- `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`
+- `04_evals/structure_preparation_workflow/WORKFLOW_DRAFT_VALIDATION.md`
 
 ## 使用原则
 
@@ -40,20 +44,9 @@
 
 ## 已对齐的共享 contracts
 
-权威索引：
+权威索引：`03_contracts/README.md`
 
-`03_contracts/README.md`
-
-当前包括：
-
-- 公共状态、Focus、文件和错误类型；
-- 用户决策请求；
-- Workflow decision；
-- subagent task/result；
-- project/workstream state；
-- project event；
-- Manager session front matter；
-- route、decision、submission、artifact set 和 snapshot record。
+包括公共类型、decision request、Workflow decision、subagent task/result、project/workstream state、project event、Manager session、route、decision、submission、artifact set 和 snapshot。
 
 外部任务必须经过：
 
@@ -68,20 +61,22 @@ tmux 会话或调度任务消失不能直接判为成功。
 
 ## 当前实现状态
 
-- `md_workflow_manager`：设计已冻结，必须按新 contracts 重写；
-- `structure_preparation_workflow`：需要改为只消费 Focus Workstream 状态；
-- `source_recognition` 与 `component_and_residue_classification_validator`：需要对齐 subagent task/result v2；
+- `md_workflow_manager`：draft 与 15 个行为 fixtures 已建立；静态检查通过，待可执行 fixtures 和端到端集成；
+- `structure_preparation_workflow`：Workstream-local draft 与 15 个 decision fixtures 已建立；静态检查通过，待 Manager 集成；
+- `source_recognition`：需要迁移到 subagent task/result v2，文件归位的移动/复制策略尚未在新架构下确认；
+- `component_and_residue_classification_validator`：需要迁移到 subagent task/result v2；
 - 其他 Phase 1 Skills：尚待编写。
 
 ## 尚未冻结
 
-- content map 的 `load_when` 与 `applicable_to` 扩展。
+- content map 的 `load_when` 与 `applicable_to` 扩展；
+- `source_recognition` 对源结构采用复制、移动或受控归位的最终规则。
 
-## 当前权威设计记录
+## 当前权威文件
 
 - 根目录 `README.md`；
 - `design_records/manager_and_project_structure_decisions.md`；
 - `design_records/logging_and_record_system.md`；
 - `03_contracts/README.md`；
-- `00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`；
+- 上述三份 validation report；
 - 本文件。
