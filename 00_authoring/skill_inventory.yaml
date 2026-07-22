@@ -1,5 +1,5 @@
 schema_version: 3
-status: shared_contracts_aligned_manager_rewrite_pending
+status: manager_draft_created_alignment_migrations_pending
 runtime_architecture:
   project_model: workstream
   foreground_subagent_mode: serial
@@ -32,7 +32,7 @@ skills:
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: design_frozen_rewrite_required
+    status: draft_created_review_and_evals_required
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
   - name: structure_preparation_workflow
     layer: workflow
