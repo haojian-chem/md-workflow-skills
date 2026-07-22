@@ -1,0 +1,65 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: route_record.schema.yaml
+title: MD Workstream Route Record
+type: object
+required:
+  - schema_version
+  - route_id
+  - workstream_id
+  - created_at
+  - created_by
+  - supersedes
+  - scope
+  - steps
+  - change_reason
+  - assumptions
+  - conditional_steps
+  - stop_conditions
+properties:
+  schema_version: {type: integer, const: 1}
+  route_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  created_at: {type: string, format: date-time}
+  created_by: {$ref: common_types.schema.yaml#/$defs/event_actor}
+  supersedes: {type: [string, 'null']}
+  scope:
+    type: object
+    required: [start, end]
+    properties:
+      start: {$ref: '#/$defs/route_point'}
+      end: {$ref: '#/$defs/route_point'}
+    additionalProperties: false
+  steps:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [sequence, workflow_name, task_name, task_unit_mode, condition]
+      properties:
+        sequence: {type: integer, minimum: 1}
+        workflow_name: {type: string, minLength: 1}
+        task_name: {type: string, minLength: 1}
+        task_unit_mode: {$ref: common_types.schema.yaml#/$defs/task_unit_mode}
+        condition: {type: [string, 'null']}
+      additionalProperties: false
+  change_reason:
+    type: array
+    items: {type: string}
+  assumptions:
+    type: array
+    items: {type: string}
+  conditional_steps:
+    type: array
+    items: {type: string}
+  stop_conditions:
+    type: array
+    items: {type: string}
+additionalProperties: false
+$defs:
+  route_point:
+    type: object
+    required: [workflow_name, task_name]
+    properties:
+      workflow_name: {type: [string, 'null']}
+      task_name: {type: [string, 'null']}
+    additionalProperties: false
