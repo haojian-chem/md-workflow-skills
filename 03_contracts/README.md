@@ -7,9 +7,17 @@
 - `common_types.schema.yaml`：状态、Workstream、Focus、文件、warning 和 failure 等公共类型。
 - `confirmation_item.schema.yaml`：尚未持久化为完整记录的用户决策请求。
 
-## Workflow 与临时子 Agent
+## Workflow 接口
 
-- `workflow_decision.schema.yaml`：Workflow 对某一 Workstream 返回的局部下一步决定。
+Workflow 有两个独立用途：
+
+- `workflow_route_fragment.schema.yaml`：规划时，Workflow 为一个 Workstream 返回本阶段的预计路线片段；
+- `workflow_decision.schema.yaml`：执行时，Workflow 基于最新状态返回一个当前决定。
+
+Manager 负责拼接多个 Workflow fragment；Workflow 不得跨阶段拼接完整路线。执行阶段每次只消费一个 `workflow_decision`。
+
+## 临时子 Agent
+
 - `subagent_task.schema.yaml`：Manager 下发给单个临时子 Agent 的任务单元。
 - `subagent_result.schema.yaml`：临时子 Agent 的精简结构化返回。
 
@@ -29,7 +37,7 @@
 ## 历史和审计记录
 
 - `project_event.schema.yaml`：全项目唯一 JSONL 事件流水中的单条事件。
-- `route_record.schema.yaml`：不可变的 Workstream 路线版本。
+- `route_record.schema.yaml`：由一个或多个 Workflow fragment 拼接而成的不可变 Workstream 路线版本。
 - `decision_record.schema.yaml`：持久化人工决策记录。
 - `submission_record.schema.yaml`：tmux 或调度系统外部任务记录。
 - `artifact_set.schema.yaml`：结构、拓扑、完整体系、MD 输入输出和分析结果的版本谱系。
@@ -38,7 +46,7 @@
 
 ## 读取建议
 
-- Manager：读取全部状态与记录 contracts。
-- Workflow：读取 `common_types`、`workflow_decision` 和 `workstream_state`。
+- Manager：读取全部状态与记录 contracts，并在规划时读取 `workflow_route_fragment`，执行时读取 `workflow_decision`。
+- Workflow：读取 `common_types`、`workstream_state`、`workflow_route_fragment` 和 `workflow_decision`。
 - Operation/Validator 子 Agent：读取 `common_types`、`subagent_task`、`subagent_result` 和 `confirmation_item`。
 - 业务 Skill 不得直接修改 `00_project_state/` 或 `00_project_records/`；这些目录由 Manager 唯一提交。
