@@ -1,11 +1,11 @@
 ---
 name: md_workflow_manager
-description: 管理真实 MD 项目的 Workstream、Focus、阶段 Workflow、串行临时子 Agent、项目状态、历史记录、用户决策和外部模拟任务。用于检查、规划、执行、续跑或恢复 MD 工作流；不执行具体结构、拓扑、模拟或分析业务操作。
+description: 管理真实 MD 项目的 Workstream、Focus、跨 Workflow 路线、串行临时子 Agent、项目状态、历史记录、用户决策和外部模拟任务。用于检查、规划、执行、续跑或恢复 MD 工作流；不执行具体结构、拓扑、模拟或分析业务操作。
 ---
 
 # 目标
 
-统一管理真实 MD 项目的项目入口状态、可组合请求、Workstream、Focus、预计路线、Workflow 决策、最多一个前台临时子 Agent、外部任务、用户决策、产物谱系及项目记录。
+统一管理真实 MD 项目的入口状态、可组合请求、Workstream、Focus、预计路线、Workflow 接口、最多一个前台临时子 Agent、外部任务、用户决策、产物谱系及项目记录。
 
 Manager 不承担 Operation 或 Validator 的业务工作。
 
@@ -18,9 +18,10 @@ Manager 不承担 Operation 或 Validator 的业务工作。
 3. `00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md`；
 4. `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`；
 5. `references/stage_registry.yaml`；
-6. `references/manager_display_rules.md`；
-7. 项目索引、目标 Workstream state 及其当前 route、decision、submission、artifact records；
-8. 当前 Workflow Skill。
+6. 发生 PLAN、创建路线或路线修订时读取 `references/route_planning_protocol.md`；
+7. `references/manager_display_rules.md`；
+8. 项目索引、目标 Workstream state 及其当前 route、decision、submission、artifact records；
+9. 规划时读取涉及范围内的 Workflow，执行时只读取当前 Workflow。
 
 不得一次性载入全部项目历史、科学日志、轨迹或无关 Skill。
 
@@ -38,7 +39,9 @@ Manager 负责：
 - 判断 `NEW | RESUMABLE | NEEDS_RECOVERY`；
 - 选择 `PROJECT | WORKSTREAM` Focus 和 related Workstreams；
 - 创建、分支、选择、完成、归档或放弃 Workstream；
-- 调用当前 Workflow 获取局部决定并维护路线；
+- 确定路线起点、终点和停止条件；
+- 请求各 Workflow 返回 route fragment 并拼接 Workstream route；
+- 请求当前 Workflow 返回一个实时 execution decision；
 - 构建一个 task unit 并串行调用临时子 Agent；
 - 核验返回，持久化 decision、submission、artifact 和事件；
 - 唯一提交 `00_project_state/**` 与 `00_project_records/**`；
@@ -46,7 +49,8 @@ Manager 负责：
 
 Manager 不得：
 
-- 脱离 Workflow 自行选择 Operation/Validator；
+- 根据阶段名称自行编造 Workflow 内部步骤；
+- 脱离 Workflow decision 自行选择 Operation/Validator；
 - 在主上下文解析大型业务文件或复制局部业务规则；
 - 同时创建多个前台子 Agent或嵌套委派；
 - 直接修改结构、拓扑、MDP、轨迹或分析结果；
@@ -91,9 +95,9 @@ Manager 可创建管理目录和顶层阶段目录，但不创建阶段业务文
 
 ### NEW
 
-仅当没有可读状态、目录为空或只有初始输入，且没有明显旧结构/拓扑/完整体系/模拟产物。
+仅当没有可读状态、目录为空或只有初始输入，且没有明显旧结构、拓扑、完整体系或模拟产物。
 
-处理：创建管理与阶段目录、项目 ID、首个 Workstream、初始状态/事件/快照和首条路线。
+创建管理与阶段目录、项目 ID、首个 Workstream、初始状态、事件、快照和首条路线。
 
 已有明显业务产物但无状态时，不得判为 NEW。
 
@@ -124,7 +128,7 @@ Manager 可创建管理目录和顶层阶段目录，但不创建阶段业务文
 
 Workstream 必须有稳定 ID、用户可读 title 和明确 purpose。
 
-选择优先级：用户指定 → 指定 task/artifact/submission 所属分支 → 本轮写入/执行目标 → 未完成前台 task → 最近 Focus → 仍不唯一则确认。
+选择优先级：用户指定 → 指定 task/artifact/submission 所属分支 → 本轮写入或执行目标 → 未完成前台 task → 最近 Focus → 仍不唯一则确认。
 
 后台 MD 运行不自动改变 Focus。related Workstreams 只作为本轮上下文，不得并行启动前台 task。
 
@@ -140,53 +144,51 @@ ID 创建后不随 title 修改。
 
 仅当当前步骤未闭合、无有效下游依赖、未开始 EM/NVT/NPT/MD、不需保留旧版本且修改不会影响其他结果时，允许在原 Workstream 内修正。
 
-满足任一条件时必须创建新 Workstream：
-
-- 已生成依赖旧结果的有效下游产物；
-- 已开始 EM、NVT、NPT 或生产 MD；
-- 需要保留旧参数、结构或体系；
-- 需要比较方案、重复、对照或测试；
-- 上游修改可能使已有结果失效；
-- 用户明确要求新版本。
+已生成下游产物、已开始模拟、需要保留旧版本、需要比较方案/重复/对照/测试、上游修改可能使已有结果失效或用户明确要求新版本时，必须创建新 Workstream。
 
 分支必须记录 parent、fork reason、forked-from artifact、独立 state 和独立 records。
 
-# Workflow 与阶段
+# Workflow 的两种使用方式
 
-按 `references/stage_registry.yaml` 选择 Focus Workstream 的当前 Workflow。
+## 1. 规划接口
 
-- Workflow 只消费该 Workstream 的状态；
-- 阶段完成后自动进入下一个已连接 Workflow；
-- 阶段边界默认不请求确认；
-- 缺少目标 Workflow 时阻塞，不得虚构实现；
-- 不设置独立 `system_preparation` 阶段。
+发生 PLAN、创建 Workstream 或路线修订时，严格执行 `references/route_planning_protocol.md`。
 
-# 路线
+Manager：
 
-路线属于 Workstream，并按 `route_record.schema.yaml` 创建不可变版本。
+1. 解析规划起点、终点和停止条件；
+2. 按 `stage_registry.yaml` 确定涉及的 Workflow；
+3. 串行请求每个已连接 Workflow 返回 `workflow_route_fragment.schema.yaml`；
+4. 核验相邻 fragment 的出口 artifact 与入口要求；
+5. 拼接并写入 `route_record.schema.yaml`；
+6. 未连接 Workflow 在边界形成 PARTIAL/BLOCKED，不得虚构内部步骤。
 
-首次规划或用户调整范围时创建；Validator 结果、用户决定、文件状态、失败、分支、终点或 Workflow 条件变化时创建 revision，并通过 `supersedes` 关联旧路线。Workstream state 只引用当前 `active_route_id`。
+路线属于 Workstream，是基于当前证据的动态投影，不是硬执行队列。
 
-完整路线只在首次创建或实际变化时展示；其他时候只显示当前位置和预计下一任务。
+## 2. 执行接口
 
-# Workflow 决策循环
+实际推进时只加载当前 Workflow，并请求一个 `workflow_decision.schema.yaml`。
 
-对 Focus Workstream：
+每次只处理：
 
-1. 读取当前 state、active route、已解决 decision 和有效 artifacts；
-2. 加载当前 Workflow；
-3. 获取并校验 `workflow_decision.schema.yaml`；
-4. 确认返回的 `workstream_id` 与 Focus 一致；
-5. 处理 `EXECUTE | SKIP | PAUSE | COMPLETE | BLOCKED`；
-6. 写必要状态、路线和记录；
-7. 若仍可继续，再次请求 Workflow。
+```text
+EXECUTE | SKIP | PAUSE | COMPLETE | BLOCKED
+```
 
-规则：
-
-- `EXECUTE`：task unit、输入、权限、目录和 gate 均已解析，且无其他前台子 Agent；
-- `SKIP`：仅接受 Workflow 基于有效结果或不适用条件的明确决定；
+- `EXECUTE`：创建一个 task unit；
+- `SKIP`：必须有有效证据；
 - `PAUSE/BLOCKED`：持久化 decision、hold reason 或 failure，不创建子 Agent；
-- `COMPLETE`：核验阶段完成条件，更新位置并自动切换；达到用户终点或 Workstream 目标时结束。
+- `COMPLETE`：核验阶段完成条件，达到用户终点则结束，否则自动进入下一已连接 Workflow。
+
+Workflow decision 与 active route 因新证据不一致时，先创建 route revision，再执行新 decision。差异无法解释时暂停或恢复，不得先执行后补路线。
+
+# 路线规划与修订
+
+路线创建和修订的详细规则仅由 `references/route_planning_protocol.md` 定义。
+
+必须修订的常见触发：Validator 改变条件步骤、用户决定改变路径、artifact 失效或被替代、task 失败采用替代方案、分支创建、终点改变、Workflow 可用性变化。
+
+完整路线只在首次创建或实际变化时展示；其他时候只显示当前位置、planning status 和预计下一任务。
 
 # 临时子 Agent
 
@@ -210,14 +212,14 @@ OPERATION_WITH_VALIDATOR
 4. 子 Agent 写业务日志并返回结构化结果；
 5. 校验 ID、mode、分离结果、终态、路径权限、detail files、decision 和 failure；
 6. 写 `result.yaml`，注册 artifact/decision/submission，追加终态事件；
-7. 原子更新 Workstream 和必要的 project state；
+7. 原子更新 Workstream 和必要 project state；
 8. 释放子 Agent 上下文。
 
-任务内容改变时创建新 task ID。子 Agent 必须禁止写 `00_project_state/**` 和 `00_project_records/**`，不得直接向用户提问或宣布全局路线完成。
+任务内容改变时创建新 task ID。子 Agent禁止写 `00_project_state/**` 和 `00_project_records/**`，不得直接向用户提问或宣布全局路线完成。
 
 # 用户决策
 
-Workflow、Operation 或 Validator 返回 decision request 后，Manager：创建 record → 写入 pending ID 与 hold reason → 向用户汇总 → 保存用户原始决定 → 更新终态并追加事件 → 再次请求 Workflow。
+Workflow、Operation 或 Validator 返回 decision request 后，Manager：创建 record → 写入 pending ID 与 hold reason → 向用户汇总 → 保存用户原始决定 → 更新终态并追加事件 → 重规划或再次请求 Workflow。
 
 不维护与 `confirmation_items` 重复的布尔字段。
 
@@ -255,7 +257,7 @@ PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
 
 # 恢复
 
-项目级恢复：暂停全部新写入，读取状态/备份/事件/记录，只做清单与元数据扫描，对业务对象安排 Validator，生成候选状态和差异，用户确认后提交并创建恢复快照/事件。
+项目级恢复：暂停全部新写入，读取状态、备份、事件和记录，只做清单与元数据扫描，对业务对象安排 Validator，生成候选状态和差异，用户确认后提交并创建恢复快照与事件。
 
 Workstream 级恢复：项目可保持 RESUMABLE，问题分支标记 NEEDS_RECOVERY；其他不依赖该分支的 Workstream 可继续。当前 Focus、共享依赖或目录冲突受影响时升级为项目级恢复。
 
@@ -263,9 +265,9 @@ Workstream 级恢复：项目可保持 RESUMABLE，问题分支标记 NEEDS_RECO
 
 失败不自动重试、不降低 gate、不跳过 verifier。用户批准后创建新 task ID，并记录与失败 task 的关系；替代方案创建 route revision。
 
-暂停条件：blocking decision、缺少输入、恢复要求、task 失败、高风险/不可逆操作、用户终点、Workflow 未连接，或外部任务运行且无其他安全步骤。
+暂停条件：blocking decision、缺少输入、恢复要求、task 失败、高风险或不可逆操作、用户终点、Workflow 未连接，或外部任务运行且无其他安全步骤。
 
-本轮完成前必须确保：状态和记录已落盘、无活动前台子 Agent、Manager session 已完成，并按显示规则向用户展示 Focus、位置、下一任务、决定、后台任务和其他活动 Workstreams。
+本轮完成前必须确保：状态和记录已落盘、无活动前台子 Agent、Manager session 已完成，并按显示规则展示 Focus、位置、路线状态、下一任务、决定、后台任务和其他活动 Workstreams。
 
 # 用户展示
 
@@ -274,9 +276,13 @@ Workstream 级恢复：项目可保持 RESUMABLE，问题分支标记 NEEDS_RECO
 # 自检
 
 - [ ] 入口状态有证据，Focus 唯一且理由明确；
+- [ ] 规划范围已解析，route fragments 来自对应 Workflow；
+- [ ] 未自行编造 Workflow 内部步骤；
+- [ ] 相邻 fragment 的 artifact 接口已核验；
+- [ ] 未连接 Workflow 已在边界阻断；
+- [ ] execution decision 与 active route 一致，或已先修订路线；
 - [ ] 未因后台运行自动切换 Focus；
 - [ ] 未覆盖已有下游结果，必要时已创建新 Workstream；
-- [ ] 当前 Workflow 与 registry 一致，未脱离 Workflow 选择局部 Skill；
 - [ ] 同时最多一个前台子 Agent，组合结果保持分离；
 - [ ] 子 Agent 未写管理目录；
 - [ ] decision、artifact、submission 和事件已由 Manager 落盘；
