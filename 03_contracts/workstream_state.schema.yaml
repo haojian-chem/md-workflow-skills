@@ -1,0 +1,104 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: workstream_state.schema.yaml
+title: MD Workstream State
+type: object
+required:
+  - schema_version
+  - workstream_id
+  - title
+  - purpose
+  - origin
+  - current_position
+  - lifecycle_status
+  - activity_status
+  - hold_reason
+  - active_route_id
+  - active_task_id
+  - current_artifact_set_ids
+  - pending_decision_ids
+  - active_submission_ids
+  - last_event_id
+  - last_updated_by
+  - last_updated_at
+properties:
+  schema_version: {type: integer, const: 1}
+  workstream_id: {type: string, minLength: 1}
+  title: {type: string, minLength: 1}
+  purpose: {type: string, minLength: 1}
+  origin:
+    type: object
+    required: [parent_workstream_id, fork_reason, forked_from_artifact_set_ids]
+    properties:
+      parent_workstream_id: {type: [string, 'null']}
+      fork_reason: {type: [string, 'null']}
+      forked_from_artifact_set_ids:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+  current_position: {$ref: common_types.schema.yaml#/$defs/workflow_position}
+  lifecycle_status: {$ref: common_types.schema.yaml#/$defs/workstream_lifecycle_status}
+  activity_status: {$ref: common_types.schema.yaml#/$defs/workstream_activity_status}
+  hold_reason:
+    type: object
+    required:
+      - type
+      - details
+      - decision_id
+      - dependency_workstream_id
+      - required_artifact_set_id
+    properties:
+      type: {$ref: common_types.schema.yaml#/$defs/hold_reason_type}
+      details: {type: [string, 'null']}
+      decision_id: {type: [string, 'null']}
+      dependency_workstream_id: {type: [string, 'null']}
+      required_artifact_set_id: {type: [string, 'null']}
+    additionalProperties: false
+  active_route_id: {type: [string, 'null']}
+  active_task_id: {type: [string, 'null']}
+  current_artifact_set_ids:
+    type: object
+    required: [structure, topology, system, md_input, md_output, analysis_result]
+    properties:
+      structure: {type: array, items: {type: string}}
+      topology: {type: array, items: {type: string}}
+      system: {type: array, items: {type: string}}
+      md_input: {type: array, items: {type: string}}
+      md_output: {type: array, items: {type: string}}
+      analysis_result: {type: array, items: {type: string}}
+    additionalProperties: false
+  pending_decision_ids:
+    type: array
+    items: {type: string}
+  active_submission_ids:
+    type: array
+    items: {type: string}
+  last_event_id: {type: [string, 'null']}
+  last_updated_by: {type: string, minLength: 1}
+  last_updated_at: {type: string, format: date-time}
+allOf:
+  - if:
+      properties: {activity_status: {const: WAITING}}
+    then:
+      properties:
+        hold_reason:
+          properties:
+            type:
+              not: {const: NONE}
+    else:
+      properties:
+        hold_reason:
+          properties:
+            type: {const: NONE}
+  - if:
+      properties: {activity_status: {const: EXECUTING}}
+    then:
+      properties: {active_task_id: {type: string, minLength: 1}}
+  - if:
+      properties:
+        lifecycle_status:
+          enum: [COMPLETED, ARCHIVED, ABANDONED]
+    then:
+      properties:
+        activity_status: {const: IDLE}
+        active_task_id: {type: 'null'}
+additionalProperties: false
