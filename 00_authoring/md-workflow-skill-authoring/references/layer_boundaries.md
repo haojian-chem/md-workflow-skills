@@ -13,18 +13,21 @@
 - 解析可组合的 `INSPECT | PLAN | EXECUTE` 请求；
 - 选择项目级或 Workstream 级 Focus；
 - 创建、切换和恢复 Workstream；
-- 请求当前 Workflow 对 Focus Workstream 返回局部决定；
-- 消费 Workflow 决定并维护 Workstream 路线；
+- 确定路线起点、终点和涉及的 Workflow；
+- 请求各 Workflow 返回本阶段 route fragment；
+- 核验相邻 fragment 的 artifact 接口并拼接 Workstream route；
+- 请求当前 Workflow 对 Focus Workstream 返回一个实时 decision；
 - 构建单个临时子 Agent 的 task unit；
 - 接收 `subagent_result`；
 - 汇总并持久化用户决策；
 - 记录外部 submission 和 artifact set；
 - 唯一提交 `00_project_state/` 与 `00_project_records/`；
-- 决定暂停、恢复、重试或再次请求 Workflow 判断。
+- 决定暂停、恢复、重试、重规划或再次请求 Workflow 判断。
 
 不得：
 
-- 脱离 Workflow 决策自行选择局部 Operation/Validator；
+- 自行编造 Workflow 内部步骤或业务条件；
+- 脱离 Workflow decision 自行选择局部 Operation/Validator；
 - 在主上下文执行大量局部文件解析、日志分析或科学判定；
 - 复制 Operation/Validator 的业务规则；
 - 同时运行多个前台 MD 临时子 Agent；
@@ -33,19 +36,32 @@
 
 ## Workflow
 
-唯一主工作：根据一个 Workstream 的局部状态返回当前阶段下一任务决定。
+唯一主工作：定义一个阶段的局部流程，并为一个 Workstream 提供规划片段与实时下一步决定。
+
+### 规划接口
 
 负责：
 
 - 定义阶段内有序 substep；
+- 基于 Workstream 局部状态和规划范围生成本阶段 route fragment；
+- 标记 `REQUIRED | CONDITIONAL` 步骤；
+- 声明入口要求、出口 artifact、前置条件、gate、假设和 blocker；
+- 返回 `workflow_route_fragment.schema.yaml`。
+
+### 执行接口
+
+负责：
+
 - 读取 Focus Workstream 的当前位置、有效产物和已解决决定；
 - 判断执行、跳过、暂停、阻塞或阶段完成；
 - 指定一个 Operation、一个 Validator，或一个 Operation 与其专属 Validator 组成的 task unit；
-- 声明输入来源、预期输出和 gate；
-- 规定阶段完成条件。
+- 声明当前 task 的输入来源、预期输出和 gate；
+- 返回 `workflow_decision.schema.yaml`。
 
-不得：
+Workflow 不得：
 
+- 拼接其他 Workflow 的 route fragment 或写完整 route record；
+- 选择跨 Workflow 起点、终点或整个项目的范围；
 - 执行 Operation 或 Validator；
 - 创建、管理或模拟子 Agent；
 - 直接向用户提问；
@@ -104,6 +120,13 @@ Workflow 是可复用 Skill，不是 Agent。一个 Workstream 可以依次经�
 ## 运行关系
 
 ```text
+路线规划：
+主智能体 + Manager
+→ 逐个读取涉及的 Workflow
+→ workflow route fragments
+→ Manager 拼接 Workstream route
+
+实际执行：
 主智能体
 ├── Manager Skill
 ├── 当前 Workflow Skill
