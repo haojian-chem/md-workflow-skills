@@ -86,6 +86,6 @@ external_references:
 - purpose: examples_and_test_fixtures
   owner: 04_evals/md_workflow_manager/fixtures/
   access: reference_only
-  status: planned
+  status: present
 notes:
-- Manager draft now exists and requires behavior fixtures, contract examples, and integration review before contract_status can be frozen.
+- Manager draft exists and static checks pass. Contract remains draft until executable fixtures and end-to-end integration tests pass.
