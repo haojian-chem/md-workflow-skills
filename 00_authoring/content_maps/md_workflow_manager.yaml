@@ -21,6 +21,10 @@ owned_content:
     owner: 00_manager/md_workflow_manager/SKILL.md
   external_submission_and_artifact_registration:
     owner: 00_manager/md_workflow_manager/SKILL.md
+  stage_registry_and_workflow_connections:
+    owner: 00_manager/md_workflow_manager/references/stage_registry.yaml
+  manager_user_display_rules:
+    owner: 00_manager/md_workflow_manager/references/manager_display_rules.md
 external_references:
 - purpose: layer_boundary
   owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
@@ -84,4 +88,4 @@ external_references:
   access: reference_only
   status: planned
 notes:
-- Manager implementation must be rewritten against the Workstream and record contracts before contract_status can be frozen.
+- Manager draft now exists and requires behavior fixtures, contract examples, and integration review before contract_status can be frozen.
