@@ -1,0 +1,198 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: workflow_route_fragment.schema.yaml
+title: MD Workflow Route Fragment
+type: object
+required:
+  - schema_version
+  - fragment_id
+  - workstream_id
+  - workflow_name
+  - generated_at
+  - fragment_status
+  - scope
+  - steps
+  - entry_requirements
+  - exit_artifacts
+  - assumptions
+  - unresolved_items
+  - blockers
+properties:
+  schema_version: {type: integer, const: 1}
+  fragment_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  workflow_name: {type: string, minLength: 1}
+  workflow_path: {type: string, minLength: 1}
+  workflow_revision: {type: [string, 'null']}
+  generated_at: {type: string, format: date-time}
+  fragment_status:
+    type: string
+    enum: [COMPLETE, PARTIAL, BLOCKED]
+  scope:
+    type: object
+    required: [start, end]
+    properties:
+      start: {$ref: '#/$defs/route_point'}
+      end: {$ref: '#/$defs/route_point'}
+    additionalProperties: false
+  steps:
+    type: array
+    items: {$ref: '#/$defs/fragment_step'}
+  entry_requirements:
+    type: array
+    items: {$ref: '#/$defs/requirement'}
+  exit_artifacts:
+    type: array
+    items: {$ref: '#/$defs/artifact_expectation'}
+  assumptions:
+    type: array
+    items: {type: string}
+  unresolved_items:
+    type: array
+    items: {type: string}
+  blockers:
+    type: array
+    items: {$ref: '#/$defs/blocker'}
+  next_workflow_hint:
+    oneOf:
+      - type: 'null'
+      - type: object
+        required: [workflow_name, required_entry_artifacts]
+        properties:
+          workflow_name: {type: string, minLength: 1}
+          required_entry_artifacts:
+            type: array
+            items: {$ref: '#/$defs/artifact_expectation'}
+        additionalProperties: false
+allOf:
+  - if:
+      properties: {fragment_status: {const: COMPLETE}}
+    then:
+      properties:
+        steps: {minItems: 1}
+        blockers: {maxItems: 0}
+  - if:
+      properties: {fragment_status: {const: PARTIAL}}
+    then:
+      properties:
+        steps: {minItems: 1}
+  - if:
+      properties: {fragment_status: {const: BLOCKED}}
+    then:
+      properties:
+        blockers: {minItems: 1}
+additionalProperties: false
+$defs:
+  route_point:
+    type: object
+    required: [substep, point_kind]
+    properties:
+      substep: {type: [string, 'null']}
+      artifact_set_id: {type: [string, 'null']}
+      point_kind:
+        type: string
+        enum: [CURRENT, WORKFLOW_ENTRY, WORKFLOW_EXIT, SPECIFIC_SUBSTEP, ARTIFACT]
+    additionalProperties: false
+  skill_ref:
+    oneOf:
+      - type: 'null'
+      - type: object
+        required: [skill_name, skill_path]
+        properties:
+          skill_name: {type: string, minLength: 1}
+          skill_path: {type: string, minLength: 1}
+        additionalProperties: false
+  fragment_step:
+    type: object
+    required:
+      - sequence
+      - step_id
+      - task_name
+      - task_unit_mode
+      - operation
+      - validator
+      - necessity
+      - condition
+      - work_directory
+      - prerequisites
+      - expected_outputs
+      - gate_requirements
+    properties:
+      sequence: {type: integer, minimum: 1}
+      step_id: {type: string, minLength: 1}
+      task_name: {type: string, minLength: 1}
+      task_unit_mode: {$ref: common_types.schema.yaml#/$defs/task_unit_mode}
+      operation: {$ref: '#/$defs/skill_ref'}
+      validator: {$ref: '#/$defs/skill_ref'}
+      necessity:
+        type: string
+        enum: [REQUIRED, CONDITIONAL]
+      condition: {type: [string, 'null']}
+      work_directory: {type: string, minLength: 1}
+      prerequisites:
+        type: array
+        items: {$ref: '#/$defs/requirement'}
+      expected_outputs:
+        type: array
+        items: {$ref: '#/$defs/artifact_expectation'}
+      gate_requirements:
+        type: array
+        items: {type: string}
+    allOf:
+      - if:
+          properties: {task_unit_mode: {const: OPERATION}}
+        then:
+          properties:
+            operation: {type: object}
+            validator: {type: 'null'}
+      - if:
+          properties: {task_unit_mode: {const: VALIDATOR}}
+        then:
+          properties:
+            operation: {type: 'null'}
+            validator: {type: object}
+      - if:
+          properties: {task_unit_mode: {const: OPERATION_WITH_VALIDATOR}}
+        then:
+          properties:
+            operation: {type: object}
+            validator: {type: object}
+      - if:
+          properties: {necessity: {const: REQUIRED}}
+        then:
+          properties: {condition: {type: 'null'}}
+    additionalProperties: false
+  requirement:
+    type: object
+    required: [requirement_id, description, blocking]
+    properties:
+      requirement_id: {type: string, minLength: 1}
+      description: {type: string, minLength: 1}
+      blocking: {type: boolean}
+      artifact_type:
+        oneOf:
+          - type: 'null'
+          - $ref: common_types.schema.yaml#/$defs/artifact_type
+      evidence_paths:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+  artifact_expectation:
+    type: object
+    required: [artifact_type, description, validation_required]
+    properties:
+      artifact_type: {$ref: common_types.schema.yaml#/$defs/artifact_type}
+      description: {type: string, minLength: 1}
+      validation_required: {type: boolean}
+    additionalProperties: false
+  blocker:
+    type: object
+    required: [code, reason, blocking_scope]
+    properties:
+      code: {type: string, minLength: 1}
+      reason: {type: string, minLength: 1}
+      blocking_scope:
+        type: string
+        enum: [FRAGMENT, WORKFLOW_BOUNDARY, WORKSTREAM]
+      missing_skill: {type: [string, 'null']}
+      missing_artifact: {type: [string, 'null']}
+    additionalProperties: false
