@@ -1,0 +1,213 @@
+schema_version: 1
+skill_name: md_workflow_manager
+cases:
+  - case_id: new_empty_project
+    intent: 初始化空项目并开始结构准备
+    given:
+      project_state_exists: false
+      business_artifacts_present: false
+      requested_actions: [INSPECT, PLAN, EXECUTE]
+    expect:
+      entry_state: NEW
+      focus_target: WORKSTREAM
+      create_first_workstream: true
+      create_initial_route: true
+      next_workflow: structure_preparation_workflow
+    forbid:
+      - classify_as_recovery
+      - create_business_files
+
+  - case_id: legacy_project_without_state
+    intent: 接入已有结构、拓扑和模拟文件的旧项目
+    given:
+      project_state_exists: false
+      business_artifacts_present: true
+      requested_actions: [INSPECT, EXECUTE]
+    expect:
+      entry_state: NEEDS_RECOVERY
+      recovery_scope: PROJECT
+      create_write_task: false
+      candidate_state_requires_user_confirmation: true
+    forbid:
+      - classify_as_new
+      - overwrite_existing_artifacts
+
+  - case_id: fork_parameter_v2_while_v1_running
+    intent: 参数 v1 生产 MD 运行时返回拓扑阶段生成参数 v2 并测试
+    given:
+      entry_state: RESUMABLE
+      existing_workstream:
+        id: ws_0001_main_v1
+        activity_status: RUNNING_EXTERNAL
+        current_workflow: md_simulation_workflow
+      user_requests_new_parameter_version: true
+    expect:
+      preserve_existing_submission: true
+      create_workstream: ws_0002_parameter_v2_test
+      focus_workstream: ws_0002_parameter_v2_test
+      start_workflow: topology_preparation_workflow
+      related_workstreams:
+        - workstream_id: ws_0001_main_v1
+          relation: BACKGROUND_CONTEXT
+    forbid:
+      - move_ws_0001_back_to_topology
+      - cancel_background_submission
+
+  - case_id: minor_unclosed_correction_without_fork
+    intent: 当前拓扑步骤尚未闭合且无下游依赖时修正参数
+    given:
+      current_step_closed: false
+      valid_downstream_artifacts: false
+      md_started: false
+      preserve_old_version: false
+    expect:
+      create_new_workstream: false
+      revise_current_task_or_route: true
+    forbid:
+      - unnecessary_fork
+
+  - case_id: project_focus_inspection
+    intent: 汇总所有活动 Workstream 和后台任务，不执行写入
+    given:
+      requested_actions: [INSPECT]
+      user_target: PROJECT
+      active_workstreams: 3
+    expect:
+      focus_target: PROJECT
+      create_foreground_subagent: false
+      show_background_runs: true
+      show_other_active_workstreams: true
+    forbid:
+      - modify_business_files
+      - select_one_workstream_without_reason
+
+  - case_id: paired_operation_validator
+    intent: Operation 与专属 Validator 共享即时上下文
+    given:
+      workflow_decision: EXECUTE
+      task_unit_mode: OPERATION_WITH_VALIDATOR
+      dedicated_validator: true
+      foreground_subagent_active: false
+    expect:
+      create_foreground_subagent: true
+      maximum_foreground_subagents: 1
+      operation_result_separate: true
+      validation_result_separate: true
+    forbid:
+      - merge_results
+      - nested_subagent
+
+  - case_id: standalone_final_validator
+    intent: 阶段终检 Validator 独立执行
+    given:
+      workflow_decision: EXECUTE
+      task_unit_mode: VALIDATOR
+      validator_role: stage_final_gate
+    expect:
+      operation_component: null
+      validator_component_present: true
+      create_separate_task: true
+    forbid:
+      - attach_to_previous_operation_without_context_need
+
+  - case_id: blocking_user_decision
+    intent: Validator 返回阻断性用户决定
+    given:
+      subagent_status: BLOCKED
+      blocking_confirmation_items: 1
+    expect:
+      create_decision_record: true
+      workstream_activity_status: WAITING
+      hold_reason: USER_DECISION
+      create_next_task: false
+    forbid:
+      - ask_user_from_subagent
+      - continue_past_blocking_gate
+
+  - case_id: vanished_external_job
+    intent: tmux 会话或调度作业消失
+    given:
+      recorded_submission_status: RUNNING
+      backend_job_present: false
+    expect:
+      submission_status: FINISHED_UNVERIFIED
+      schedule_completion_verification: true
+      completion_requires_evidence: true
+    forbid:
+      - mark_completed_directly
+
+  - case_id: failed_task_no_automatic_retry
+    intent: task 明确失败且可恢复
+    given:
+      task_status: FAILED
+      failure_recoverable: true
+      user_approved_retry: false
+    expect:
+      workstream_activity_status: FAILED
+      create_retry_task: false
+      expose_failure_and_options: true
+    forbid:
+      - automatic_retry
+      - reuse_failed_task_id
+
+  - case_id: approved_retry_uses_new_task_id
+    intent: 用户批准失败任务重试
+    given:
+      previous_task_id: task_0012
+      task_status: FAILED
+      user_approved_retry: true
+    expect:
+      create_new_task_id: true
+      link_to_previous_task: task_0012
+      preserve_failed_result: true
+    forbid:
+      - overwrite_failed_task
+
+  - case_id: next_workflow_not_connected
+    intent: 当前阶段完成但下一 Workflow 尚未实现
+    given:
+      current_stage_complete: true
+      next_registry_status: planned
+    expect:
+      decision: BLOCKED
+      create_foreground_subagent: false
+      explain_missing_workflow: true
+    forbid:
+      - fabricate_workflow
+      - skip_to_later_stage
+
+  - case_id: focus_ambiguous
+    intent: 多个活动 Workstream 均可能是用户目标
+    given:
+      user_specified_workstream: false
+      uniquely_resolved_from_object: false
+      active_candidates: 2
+    expect:
+      request_user_decision: true
+      create_foreground_subagent: false
+    forbid:
+      - choose_arbitrarily
+
+  - case_id: subagent_attempts_management_write
+    intent: 子 Agent 返回其修改了项目状态目录
+    given:
+      subagent_result_paths:
+        - 00_project_state/project_state.yaml
+    expect:
+      accept_result: false
+      mark_permission_violation: true
+      require_recovery_assessment: true
+    forbid:
+      - silently_commit_result
+
+  - case_id: full_route_display_policy
+    intent: 路线未变化的续跑回复
+    given:
+      route_created_this_session: false
+      route_revision_changed: false
+    expect:
+      show_full_route: false
+      show_current_position: true
+      show_expected_next_task: true
+    forbid:
+      - repeat_unchanged_full_route
