@@ -1,54 +1,108 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: subagent_task.schema.yaml
-title: MD Temporary Subagent Task
+title: MD Temporary Subagent Task Unit
 type: object
 required:
   - schema_version
   - task_id
+  - workstream_id
+  - workflow_name
   - sequence
-  - task_kind
-  - skill_name
-  - skill_path
+  - task_unit
   - project_root
   - work_directory
-  - allowed_read_paths
-  - allowed_write_paths
-  - forbidden_paths
+  - permissions
   - current_valid_files
   - upstream_summary
   - user_decisions
   - required_outputs
+  - detail_output_paths
   - result_contract
 properties:
-  schema_version: {type: integer, const: 1}
+  schema_version: {type: integer, const: 2}
   task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  workflow_name: {type: string, minLength: 1}
+  route_id: {type: [string, 'null']}
   sequence: {type: integer, minimum: 1}
-  task_kind: {$ref: common_types.schema.yaml#/$defs/task_kind}
-  skill_name: {type: string, minLength: 1}
-  skill_path: {type: string, minLength: 1}
+  task_unit:
+    $ref: '#/$defs/task_unit'
   project_root: {type: string, minLength: 1}
   work_directory: {type: string, minLength: 1}
-  allowed_read_paths:
-    type: array
-    items: {type: string}
-  allowed_write_paths:
-    type: array
-    minItems: 1
-    items: {type: string}
-  forbidden_paths:
-    type: array
-    items: {type: string}
+  permissions:
+    type: object
+    required: [allowed_read_paths, allowed_write_paths, forbidden_paths]
+    properties:
+      allowed_read_paths:
+        type: array
+        items: {type: string}
+      allowed_write_paths:
+        type: array
+        minItems: 1
+        items: {type: string}
+      forbidden_paths:
+        type: array
+        items: {type: string}
+    additionalProperties: false
   current_valid_files:
     type: array
     items: {$ref: common_types.schema.yaml#/$defs/file_record}
   upstream_summary: {type: string}
   user_decisions:
     type: array
-    items: {type: string}
+    items:
+      type: object
+      required: [decision_id, summary]
+      properties:
+        decision_id: {type: string, minLength: 1}
+        summary: {type: string, minLength: 1}
+      additionalProperties: false
   required_outputs:
     type: array
     items: {type: string}
+  detail_output_paths:
+    type: object
+    required: [log_file, report_file, result_data_file]
+    properties:
+      log_file: {type: [string, 'null']}
+      report_file: {type: [string, 'null']}
+      result_data_file: {type: [string, 'null']}
+    additionalProperties: false
   result_contract:
     type: string
     const: 03_contracts/subagent_result.schema.yaml
 additionalProperties: false
+$defs:
+  task_unit:
+    type: object
+    required: [mode, operation, validator]
+    properties:
+      mode: {$ref: common_types.schema.yaml#/$defs/task_unit_mode}
+      operation:
+        oneOf:
+          - type: 'null'
+          - $ref: common_types.schema.yaml#/$defs/skill_ref
+      validator:
+        oneOf:
+          - type: 'null'
+          - $ref: common_types.schema.yaml#/$defs/skill_ref
+    allOf:
+      - if:
+          properties: {mode: {const: OPERATION}}
+        then:
+          properties:
+            operation: {$ref: common_types.schema.yaml#/$defs/skill_ref}
+            validator: {type: 'null'}
+      - if:
+          properties: {mode: {const: VALIDATOR}}
+        then:
+          properties:
+            operation: {type: 'null'}
+            validator: {$ref: common_types.schema.yaml#/$defs/skill_ref}
+      - if:
+          properties: {mode: {const: OPERATION_WITH_VALIDATOR}}
+        then:
+          properties:
+            operation: {$ref: common_types.schema.yaml#/$defs/skill_ref}
+            validator: {$ref: common_types.schema.yaml#/$defs/skill_ref}
+    additionalProperties: false
