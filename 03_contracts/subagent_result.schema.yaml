@@ -1,0 +1,76 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: subagent_result.schema.yaml
+title: MD Temporary Subagent Result
+type: object
+required:
+  - schema_version
+  - task_id
+  - task_kind
+  - skill_name
+  - status
+  - execution_summary
+  - key_findings
+  - outcome
+  - created_files
+  - modified_files
+  - validated_files
+  - requires_user_confirmation
+  - confirmation_items
+  - warnings
+  - next_step_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  task_kind: {$ref: common_types.schema.yaml#/$defs/task_kind}
+  skill_name: {type: string, minLength: 1}
+  status: {$ref: common_types.schema.yaml#/$defs/execution_status}
+  execution_summary: {type: string, minLength: 1}
+  key_findings:
+    type: array
+    items: {type: string}
+  outcome:
+    type: object
+    required: [code, execution_required, hard_block_next_step]
+    properties:
+      code: {type: string, minLength: 1}
+      execution_required: {type: boolean}
+      hard_block_next_step: {type: boolean}
+    additionalProperties: false
+  created_files:
+    type: array
+    items: {$ref: common_types.schema.yaml#/$defs/file_record}
+  modified_files:
+    type: array
+    items: {$ref: common_types.schema.yaml#/$defs/file_record}
+  validated_files:
+    type: array
+    items: {$ref: common_types.schema.yaml#/$defs/file_record}
+  requires_user_confirmation: {type: boolean}
+  confirmation_items:
+    type: array
+    items: {$ref: confirmation_item.schema.yaml}
+  warnings:
+    type: array
+    items: {$ref: common_types.schema.yaml#/$defs/warning}
+  failure:
+    oneOf:
+      - type: 'null'
+      - $ref: common_types.schema.yaml#/$defs/failure
+  detail_files:
+    type: object
+    properties:
+      log_file: {type: [string, 'null']}
+      report_file: {type: [string, 'null']}
+      result_data_file: {type: [string, 'null']}
+    additionalProperties: false
+  next_step_recommendation: {type: string}
+allOf:
+  - if:
+      properties: {status: {const: DONE}}
+    then:
+      properties: {failure: {type: 'null'}}
+  - if:
+      properties: {requires_user_confirmation: {const: false}}
+    then:
+      properties: {confirmation_items: {maxItems: 0}}
+additionalProperties: false

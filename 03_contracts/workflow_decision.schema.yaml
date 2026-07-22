@@ -1,0 +1,75 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: workflow_decision.schema.yaml
+title: MD Workflow Decision
+type: object
+required:
+  - schema_version
+  - workflow_name
+  - current_substep
+  - stage_status
+  - decision
+  - reason
+  - requires_user_confirmation
+  - confirmation_items
+properties:
+  schema_version: {type: integer, const: 1}
+  workflow_name: {type: string, minLength: 1}
+  current_substep: {type: [string, 'null']}
+  stage_status:
+    type: string
+    enum: [NOT_STARTED, RUNNING, WAITING_CONFIRMATION, DONE, FAILED]
+  decision:
+    type: string
+    enum: [EXECUTE, SKIP, PAUSE, COMPLETE, BLOCKED]
+  reason: {type: string, minLength: 1}
+  next_task:
+    oneOf:
+      - type: 'null'
+      - type: object
+        required:
+          - task_id
+          - skill_type
+          - skill_name
+          - skill_path
+          - work_directory
+          - required_inputs
+          - expected_outputs
+          - gate_requirements
+        properties:
+          task_id: {type: string, minLength: 1}
+          skill_type:
+            $ref: common_types.schema.yaml#/$defs/task_kind
+          skill_name: {type: string, minLength: 1}
+          skill_path: {type: string, minLength: 1}
+          work_directory: {type: string, minLength: 1}
+          required_inputs:
+            type: array
+            items: {type: string}
+          expected_outputs:
+            type: array
+            items: {type: string}
+          gate_requirements:
+            type: array
+            items: {type: string}
+        additionalProperties: false
+  skipped_substep:
+    type: [string, 'null']
+  requires_user_confirmation: {type: boolean}
+  confirmation_items:
+    type: array
+    items: {$ref: confirmation_item.schema.yaml}
+allOf:
+  - if:
+      properties: {decision: {const: EXECUTE}}
+    then:
+      required: [next_task]
+      properties: {next_task: {type: object}}
+  - if:
+      properties: {decision: {enum: [PAUSE, COMPLETE, BLOCKED]}}
+    then:
+      properties: {next_task: {type: 'null'}}
+  - if:
+      properties: {requires_user_confirmation: {const: false}}
+    then:
+      properties: {confirmation_items: {maxItems: 0}}
+additionalProperties: false

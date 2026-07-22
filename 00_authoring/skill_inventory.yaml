@@ -1,0 +1,88 @@
+schema_version: 2
+status: draft_for_review
+skills:
+  - name: md-workflow-skill-authoring
+    layer: authoring
+    path: 00_authoring/md-workflow-skill-authoring
+    status: active
+    content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
+  - name: md_workflow_manager
+    layer: manager
+    path: 00_manager/md_workflow_manager
+    status: existing_review_required
+    content_map: 00_authoring/content_maps/md_workflow_manager.yaml
+  - name: structure_preparation_workflow
+    layer: workflow
+    path: 01_workflows/structure_preparation_workflow
+    status: existing_review_required
+    content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
+  - name: source_recognition
+    layer: operation
+    path: 02_operations/source_recognition
+    status: passed_needs_contract_alignment
+    content_map: 00_authoring/content_maps/source_recognition.yaml
+  - name: component_and_residue_classification_validator
+    layer: validator
+    path: 02_validators/component_and_residue_classification_validator
+    status: active_current_window
+    content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
+  - name: chain_and_component_selection
+    layer: operation
+    path: 02_operations/chain_and_component_selection
+    status: planned
+    content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
+  - name: chain_and_component_selection_validator
+    layer: validator
+    path: 02_validators/chain_and_component_selection_validator
+    status: planned
+    content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
+  - name: altloc_occupancy_resolution
+    layer: operation
+    path: 02_operations/altloc_occupancy_resolution
+    status: planned
+    content_map: 00_authoring/content_maps/altloc_occupancy_resolution.yaml
+  - name: altloc_occupancy_validator
+    layer: validator
+    path: 02_validators/altloc_occupancy_validator
+    status: planned
+    content_map: 00_authoring/content_maps/altloc_occupancy_validator.yaml
+  - name: structure_completeness_validator
+    layer: validator
+    path: 02_validators/structure_completeness_validator
+    status: planned
+    content_map: 00_authoring/content_maps/structure_completeness_validator.yaml
+  - name: missing_region_completion
+    layer: operation
+    path: 02_operations/missing_region_completion
+    status: planned
+    content_map: 00_authoring/content_maps/missing_region_completion.yaml
+  - name: missing_region_completion_validator
+    layer: validator
+    path: 02_validators/missing_region_completion_validator
+    status: planned
+    content_map: 00_authoring/content_maps/missing_region_completion_validator.yaml
+  - name: protein_protonation_assignment
+    layer: operation
+    path: 02_operations/protein_protonation_assignment
+    status: planned
+    content_map: 00_authoring/content_maps/protein_protonation_assignment.yaml
+  - name: protein_protonation_validator
+    layer: validator
+    path: 02_validators/protein_protonation_validator
+    status: planned
+    content_map: 00_authoring/content_maps/protein_protonation_validator.yaml
+  - name: structure_reorder_and_mapping
+    layer: operation
+    path: 02_operations/structure_reorder_and_mapping
+    status: planned
+    content_map: 00_authoring/content_maps/structure_reorder_and_mapping.yaml
+  - name: structure_mapping_validator
+    layer: validator
+    path: 02_validators/structure_mapping_validator
+    status: planned
+    content_map: 00_authoring/content_maps/structure_mapping_validator.yaml
+  - name: structure_preparation_validator
+    layer: validator
+    path: 02_validators/structure_preparation_validator
+    status: planned
+    content_map: 00_authoring/content_maps/structure_preparation_validator.yaml

@@ -1,0 +1,67 @@
+schema_version: 1
+file_pattern: 00_authoring/content_maps/*.yaml
+required_fields:
+  schema_version:
+    type: integer
+    allowed:
+    - 3
+  skill_name:
+    type: string
+  skill_type:
+    type: enum
+    allowed:
+    - authoring_guide
+    - manager
+    - workflow
+    - operation
+    - validator
+  skill_path:
+    type: project_relative_path
+    leading_slash_forbidden: true
+  contract_status:
+    type: enum
+    allowed:
+    - pending
+    - draft
+    - frozen
+  content_ownership_status:
+    type: enum
+    allowed:
+    - pending
+    - draft
+    - frozen
+  owned_content:
+    type: mapping
+  external_references:
+    type: list
+owned_content_item:
+  required_fields:
+    owner:
+      type: project_relative_path
+      leading_slash_forbidden: true
+  rules:
+  - The owner path must be inside skill_path.
+  - A content concept must have one canonical owner.
+external_reference_item:
+  required_fields:
+    purpose:
+      type: string
+    owner:
+      type: project_relative_path
+      leading_slash_forbidden: true
+    access:
+      type: enum
+      allowed:
+      - reference_only
+  optional_fields:
+    status:
+      type: enum
+      allowed:
+      - planned
+      - present
+rules:
+- Pending content ownership must use an empty owned_content mapping.
+- Window activity and file write ownership are not recorded in content maps.
+- Shared deduplication rules are not copied into each map.
+- Local references or schemas are listed only after their content purpose is defined.
+- All paths are relative to the project root.

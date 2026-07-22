@@ -1,0 +1,37 @@
+schema_version: 2
+status: draft_for_review
+
+shared_files:
+  owner_window: main
+  write_paths:
+    - AGENTS.md
+    - 00_authoring/md-workflow-skill-authoring/
+    - 00_authoring/skill_inventory.yaml
+    - 00_authoring/file_ownership.yaml
+    - 00_authoring/content_maps/
+    - 03_contracts/
+  notes: 共享规则和接口仅由主窗口修改。
+
+assignments:
+  - window_id: current-component-classification
+    skill_name: component_and_residue_classification_validator
+    status: active
+    write_paths:
+      - 02_validators/component_and_residue_classification_validator/
+    forbidden_paths:
+      - 03_contracts/
+      - 00_authoring/md-workflow-skill-authoring/references/
+
+unassigned_skills:
+  - chain_and_component_selection
+  - chain_and_component_selection_validator
+  - altloc_occupancy_resolution
+  - altloc_occupancy_validator
+  - structure_completeness_validator
+  - missing_region_completion
+  - missing_region_completion_validator
+  - protein_protonation_assignment
+  - protein_protonation_validator
+  - structure_reorder_and_mapping
+  - structure_mapping_validator
+  - structure_preparation_validator

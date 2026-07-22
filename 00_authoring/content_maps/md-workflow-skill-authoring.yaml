@@ -1,0 +1,48 @@
+schema_version: 3
+skill_name: md-workflow-skill-authoring
+skill_type: authoring_guide
+skill_path: 00_authoring/md-workflow-skill-authoring
+contract_status: draft
+content_ownership_status: draft
+owned_content:
+  authoring_flow:
+    owner: 00_authoring/md-workflow-skill-authoring/SKILL.md
+  layer_boundaries:
+    owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+  runtime_subagent_protocol:
+    owner: 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
+  multi_window_authoring_protocol:
+    owner: 00_authoring/md-workflow-skill-authoring/references/multi_window_authoring_protocol.md
+  content_ownership_and_deduplication:
+    owner: 00_authoring/md-workflow-skill-authoring/references/content_ownership_and_deduplication.md
+  progressive_disclosure:
+    owner: 00_authoring/md-workflow-skill-authoring/references/progressive_disclosure.md
+  official_source_notes:
+    owner: 00_authoring/md-workflow-skill-authoring/references/official_sources.md
+  authoring_templates:
+    owner: 00_authoring/md-workflow-skill-authoring/assets/
+  static_validation_tools:
+    owner: 00_authoring/md-workflow-skill-authoring/scripts/
+external_references:
+- purpose: shared_runtime_types
+  owner: 03_contracts/common_types.schema.yaml
+  access: reference_only
+- purpose: confirmation_item_contract
+  owner: 03_contracts/confirmation_item.schema.yaml
+  access: reference_only
+- purpose: workflow_decision_contract
+  owner: 03_contracts/workflow_decision.schema.yaml
+  access: reference_only
+- purpose: subagent_task_contract
+  owner: 03_contracts/subagent_task.schema.yaml
+  access: reference_only
+- purpose: subagent_result_contract
+  owner: 03_contracts/subagent_result.schema.yaml
+  access: reference_only
+- purpose: project_state_contract
+  owner: 03_contracts/project_state.schema.yaml
+  access: reference_only
+- purpose: examples_and_test_fixtures
+  owner: 04_evals/md-workflow-skill-authoring/fixtures/
+  access: reference_only
+  status: planned

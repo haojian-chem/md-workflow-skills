@@ -1,0 +1,9 @@
+schema_version: 1
+request_id:
+requesting_window:
+affected_contract:
+current_problem:
+proposed_change:
+affected_skills: []
+compatibility_risk:
+status: PENDING

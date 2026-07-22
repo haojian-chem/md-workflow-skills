@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: confirmation_item.schema.yaml
+title: MD Workflow Confirmation Item
+type: object
+required:
+  - confirmation_id
+  - category
+  - question
+  - reason
+  - affected_records
+properties:
+  confirmation_id: {type: string, minLength: 1}
+  category: {type: string, minLength: 1}
+  question: {type: string, minLength: 1}
+  reason: {type: string, minLength: 1}
+  affected_records:
+    type: array
+    items: {type: string}
+  available_options:
+    type: array
+    items: {type: string}
+  recommended_option:
+    type: [string, 'null']
+  blocking:
+    type: boolean
+    default: true
+additionalProperties: false

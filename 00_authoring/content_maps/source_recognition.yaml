@@ -1,0 +1,32 @@
+schema_version: 3
+skill_name: source_recognition
+skill_type: operation
+skill_path: 02_operations/source_recognition
+contract_status: draft
+content_ownership_status: draft
+owned_content:
+  candidate_discovery_selection_and_move_flow:
+    owner: 02_operations/source_recognition/SKILL.md
+  supported_input_formats_and_source_labels:
+    owner: 02_operations/source_recognition/SKILL.md
+  local_preflight_conflict_and_post_move_checks:
+    owner: 02_operations/source_recognition/SKILL.md
+external_references:
+- purpose: layer_boundary
+  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+  access: reference_only
+- purpose: runtime_task_contract
+  owner: 03_contracts/subagent_task.schema.yaml
+  access: reference_only
+- purpose: runtime_result_contract
+  owner: 03_contracts/subagent_result.schema.yaml
+  access: reference_only
+- purpose: confirmation_item_contract
+  owner: 03_contracts/confirmation_item.schema.yaml
+  access: reference_only
+- purpose: examples_and_test_fixtures
+  owner: 04_evals/source_recognition/fixtures/
+  access: reference_only
+  status: planned
+notes:
+- Existing Skill is functionally passed but must align its return fields with shared contracts before freezing.

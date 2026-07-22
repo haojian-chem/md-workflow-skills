@@ -1,0 +1,53 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: common_types.schema.yaml
+title: MD Workflow Common Types
+$defs:
+  execution_status:
+    type: string
+    enum: [DONE, BLOCKED, FAILED]
+
+  skill_layer:
+    type: string
+    enum: [manager, workflow, operation, validator]
+
+  task_kind:
+    type: string
+    enum: [operation, validator]
+
+  file_state:
+    type: string
+    enum: [present_validated, present_unvalidated, missing]
+
+  file_record:
+    type: object
+    required: [path, state]
+    properties:
+      path: {type: string, minLength: 1}
+      state: {$ref: '#/$defs/file_state'}
+      role: {type: string}
+      source_task: {type: string}
+      notes: {type: string}
+    additionalProperties: false
+
+  warning:
+    type: object
+    required: [code, message]
+    properties:
+      code: {type: string, minLength: 1}
+      message: {type: string, minLength: 1}
+      affected_paths:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+
+  failure:
+    type: object
+    required: [failure_type, failure_reason]
+    properties:
+      failure_type: {type: string, minLength: 1}
+      failure_reason: {type: string, minLength: 1}
+      recoverable: {type: boolean}
+      blocked_by:
+        type: array
+        items: {type: string}
+    additionalProperties: false

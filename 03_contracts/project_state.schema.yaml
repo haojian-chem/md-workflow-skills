@@ -1,0 +1,63 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: project_state.schema.yaml
+title: MD Workflow Project State
+type: object
+required:
+  - schema_version
+  - skill_architecture_root
+  - md_project_root
+  - current_stage
+  - current_workflow
+  - current_substep
+  - active_task
+  - latest_valid_structure
+  - pending_confirmations
+  - stage_records
+  - task_history
+properties:
+  schema_version: {type: integer, const: 1}
+  skill_architecture_root: {type: string, minLength: 1}
+  md_project_root: {type: string, minLength: 1}
+  current_stage: {type: [string, 'null']}
+  current_workflow: {type: [string, 'null']}
+  current_substep: {type: [string, 'null']}
+  active_task:
+    oneOf:
+      - type: 'null'
+      - type: object
+        required: [task_id, skill_name, status]
+        properties:
+          task_id: {type: string}
+          skill_name: {type: string}
+          status: {type: string, enum: [PREPARED, RUNNING]}
+        additionalProperties: false
+  latest_valid_structure:
+    oneOf:
+      - type: 'null'
+      - $ref: common_types.schema.yaml#/$defs/file_record
+  pending_confirmations:
+    type: array
+    items: {$ref: confirmation_item.schema.yaml}
+  stage_records:
+    type: object
+    additionalProperties:
+      type: object
+      required: [status]
+      properties:
+        status: {type: string, enum: [NOT_STARTED, RUNNING, WAITING_CONFIRMATION, DONE, FAILED]}
+        last_workflow_decision_path: {type: [string, 'null']}
+        notes: {type: string}
+      additionalProperties: false
+  task_history:
+    type: array
+    items:
+      type: object
+      required: [task_id, skill_name, result_path]
+      properties:
+        task_id: {type: string}
+        skill_name: {type: string}
+        result_path: {type: string}
+      additionalProperties: false
+  last_updated_by: {type: string}
+  last_updated_at: {type: string}
+additionalProperties: false

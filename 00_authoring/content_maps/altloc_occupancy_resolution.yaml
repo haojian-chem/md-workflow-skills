@@ -1,0 +1,26 @@
+schema_version: 3
+skill_name: altloc_occupancy_resolution
+skill_type: operation
+skill_path: 02_operations/altloc_occupancy_resolution
+contract_status: pending
+content_ownership_status: pending
+owned_content: {}
+external_references:
+- purpose: layer_boundary
+  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+  access: reference_only
+- purpose: runtime_task_contract
+  owner: 03_contracts/subagent_task.schema.yaml
+  access: reference_only
+- purpose: runtime_result_contract
+  owner: 03_contracts/subagent_result.schema.yaml
+  access: reference_only
+- purpose: confirmation_item_contract
+  owner: 03_contracts/confirmation_item.schema.yaml
+  access: reference_only
+- purpose: examples_and_test_fixtures
+  owner: 04_evals/altloc_occupancy_resolution/fixtures/
+  access: reference_only
+  status: planned
+notes:
+- Define the Skill contract before assigning content ownership or creating local references/schemas.

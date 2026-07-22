@@ -1,0 +1,54 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: subagent_task.schema.yaml
+title: MD Temporary Subagent Task
+type: object
+required:
+  - schema_version
+  - task_id
+  - sequence
+  - task_kind
+  - skill_name
+  - skill_path
+  - project_root
+  - work_directory
+  - allowed_read_paths
+  - allowed_write_paths
+  - forbidden_paths
+  - current_valid_files
+  - upstream_summary
+  - user_decisions
+  - required_outputs
+  - result_contract
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  sequence: {type: integer, minimum: 1}
+  task_kind: {$ref: common_types.schema.yaml#/$defs/task_kind}
+  skill_name: {type: string, minLength: 1}
+  skill_path: {type: string, minLength: 1}
+  project_root: {type: string, minLength: 1}
+  work_directory: {type: string, minLength: 1}
+  allowed_read_paths:
+    type: array
+    items: {type: string}
+  allowed_write_paths:
+    type: array
+    minItems: 1
+    items: {type: string}
+  forbidden_paths:
+    type: array
+    items: {type: string}
+  current_valid_files:
+    type: array
+    items: {$ref: common_types.schema.yaml#/$defs/file_record}
+  upstream_summary: {type: string}
+  user_decisions:
+    type: array
+    items: {type: string}
+  required_outputs:
+    type: array
+    items: {type: string}
+  result_contract:
+    type: string
+    const: 03_contracts/subagent_result.schema.yaml
+additionalProperties: false
