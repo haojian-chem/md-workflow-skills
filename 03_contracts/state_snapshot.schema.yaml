@@ -1,0 +1,55 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: state_snapshot.schema.yaml
+title: MD State Snapshot Manifest
+type: object
+required:
+  - schema_version
+  - snapshot_id
+  - scope
+  - workstream_id
+  - created_at
+  - trigger
+  - copied_state_files
+  - related_event_id
+properties:
+  schema_version: {type: integer, const: 1}
+  snapshot_id: {type: string, minLength: 1}
+  scope: {$ref: common_types.schema.yaml#/$defs/event_scope}
+  workstream_id: {type: [string, 'null']}
+  created_at: {type: string, format: date-time}
+  trigger:
+    type: string
+    enum:
+      - PROJECT_INITIALIZED
+      - ROOTS_CHANGE_BEFORE
+      - PROJECT_RECOVERY_BEFORE
+      - PROJECT_RECOVERY_AFTER
+      - WORKSTREAM_CREATED
+      - ARTIFACT_LINEAGE_CHANGE_BEFORE
+      - FIRST_EXTERNAL_SUBMISSION
+      - WORKSTREAM_COMPLETION_BEFORE
+      - WORKSTREAM_ARCHIVE_BEFORE
+      - WORKSTREAM_ABANDON_BEFORE
+      - PROJECT_NEEDS_RECOVERY
+  copied_state_files:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [source_path, snapshot_path, sha256]
+      properties:
+        source_path: {type: string, minLength: 1}
+        snapshot_path: {type: string, minLength: 1}
+        sha256:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+      additionalProperties: false
+  related_event_id: {type: [string, 'null']}
+allOf:
+  - if:
+      properties: {scope: {const: WORKSTREAM}}
+    then:
+      properties: {workstream_id: {type: string, minLength: 1}}
+    else:
+      properties: {workstream_id: {type: 'null'}}
+additionalProperties: false
