@@ -15,6 +15,10 @@
 - 14 份共享运行 contract；
 - 串行 task-unit 临时子 Agent 协议。
 
+本轮验证结果见：
+
+`00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`
+
 ## 使用原则
 
 - `contract_status: pending|draft` 或 `content_ownership_status: pending|draft` 的 Skill 尚未冻结；
@@ -79,4 +83,5 @@ tmux 会话或调度任务消失不能直接判为成功。
 - `design_records/manager_and_project_structure_decisions.md`；
 - `design_records/logging_and_record_system.md`；
 - `03_contracts/README.md`；
+- `00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`；
 - 本文件。
