@@ -1,0 +1,144 @@
+schema_version: 1
+skill_name: structure_preparation_workflow
+cases:
+  - case_id: start_with_source_recognition
+    given:
+      current_position: null
+      structure_artifact_present: false
+      route_start: source_recognition
+    expect:
+      decision: EXECUTE
+      task_unit_mode: OPERATION
+      operation: source_recognition
+
+  - case_id: classify_selected_structure
+    given:
+      source_recognition_done: true
+      structure_artifact_status: UNVALIDATED
+      classification_report_present: false
+    expect:
+      decision: EXECUTE
+      task_unit_mode: VALIDATOR
+      validator: component_and_residue_classification_validator
+
+  - case_id: wait_for_chain_selection_decision
+    given:
+      classification_report_present: true
+      unresolved_blocking_decisions: 1
+      current_substep: chain_and_component_selection
+    expect:
+      decision: PAUSE
+      next_task_unit: null
+      confirmation_items_present: true
+
+  - case_id: paired_chain_selection
+    given:
+      classification_report_present: true
+      blocking_decisions_resolved: true
+      current_substep: chain_and_component_selection
+    expect:
+      decision: EXECUTE
+      task_unit_mode: OPERATION_WITH_VALIDATOR
+      operation: chain_and_component_selection
+      validator: chain_and_component_selection_validator
+
+  - case_id: skip_altloc_with_evidence
+    given:
+      current_substep: altloc_occupancy_resolution
+      trusted_altloc_check: no_conflict
+      route_allows_conditional_skip: true
+    expect:
+      decision: SKIP
+      skipped_substep: altloc_occupancy_resolution
+    forbid:
+      - execute_altloc_operation
+
+  - case_id: do_not_skip_altloc_without_evidence
+    given:
+      current_substep: altloc_occupancy_resolution
+      trusted_altloc_check: absent
+    expect:
+      decision: EXECUTE
+      task_unit_mode: OPERATION_WITH_VALIDATOR
+
+  - case_id: completeness_validator
+    given:
+      current_substep: completeness_check
+      valid_structure_present: true
+    expect:
+      decision: EXECUTE
+      task_unit_mode: VALIDATOR
+      validator: structure_completeness_validator
+
+  - case_id: skip_missing_completion
+    given:
+      completeness_outcome: no_completion_required
+      current_substep: missing_region_completion
+    expect:
+      decision: SKIP
+      skipped_substep: missing_region_completion
+
+  - case_id: execute_missing_completion
+    given:
+      completeness_outcome: completion_required
+      completion_decisions_resolved: true
+    expect:
+      decision: EXECUTE
+      task_unit_mode: OPERATION_WITH_VALIDATOR
+      operation: missing_region_completion
+      validator: missing_region_completion_validator
+
+  - case_id: skip_protonation_no_protein
+    given:
+      classification: no_protein
+      current_substep: protein_protonation_assignment
+    expect:
+      decision: SKIP
+      skipped_substep: protein_protonation_assignment
+
+  - case_id: final_validation
+    given:
+      reorder_mapping_validated: true
+      current_substep: validation
+    expect:
+      decision: EXECUTE
+      task_unit_mode: VALIDATOR
+      validator: structure_preparation_validator
+
+  - case_id: complete_stage
+    given:
+      final_validation_outcome: pass
+      final_structure_artifact_status: VALIDATED
+      route_end_reached: true
+    expect:
+      decision: COMPLETE
+      next_task_unit: null
+
+  - case_id: missing_skill_blocks
+    given:
+      current_substep: chain_and_component_selection
+      required_skill_available: false
+    expect:
+      decision: BLOCKED
+      next_task_unit: null
+    forbid:
+      - fabricate_task
+
+  - case_id: state_record_conflict
+    given:
+      workstream_position: reorder_and_mapping
+      latest_task_record: completeness_check
+      conflict_resolved: false
+    expect:
+      decision: BLOCKED
+      recovery_required: true
+    forbid:
+      - infer_from_directory
+
+  - case_id: route_ends_mid_stage
+    given:
+      route_end: completeness_check
+      completeness_check_done: true
+    expect:
+      decision: COMPLETE
+      stage_globally_complete: false
