@@ -1,0 +1,95 @@
+schema_version: 1
+suite: source_recognition_safety
+cases:
+  - case_id: explicit_single_source_default_copy
+    input:
+      explicit_source: input/model.cif
+      destination_absent: true
+    expected:
+      action: COPIED
+      source_preserved: true
+      sha256_match_required: true
+
+  - case_id: one_valid_candidate_auto_selected
+    input:
+      candidates:
+        - valid.pdb
+        - empty.cif
+    expected:
+      selected: valid.pdb
+      action: COPIED
+      excluded_candidate_reason_recorded: true
+
+  - case_id: multiple_valid_candidates_require_decision
+    input:
+      candidates:
+        - model_1.cif
+        - model_2.cif
+    expected:
+      status: BLOCKED
+      blocking_confirmation: true
+      copied_files: []
+
+  - case_id: identical_destination_is_reused
+    input:
+      source: input/model.pdb
+      destination: 01_structure_preparation/01_source_recognition/model.pdb
+      same_sha256: true
+    expected:
+      action: REUSED_IDENTICAL_COPY
+      overwrite: false
+
+  - case_id: different_destination_is_not_overwritten
+    input:
+      source: input/model.pdb
+      destination: 01_structure_preparation/01_source_recognition/model.pdb
+      same_sha256: false
+    expected:
+      status: BLOCKED
+      overwrite: false
+      blocking_confirmation: true
+
+  - case_id: explicit_move_fully_authorized
+    input:
+      requested_action: MOVE
+      resolved_user_decision: true
+      source_parent_write_allowed: true
+      source_protected: false
+    expected:
+      action: MOVED
+      sha256_match_required: true
+
+  - case_id: move_without_explicit_decision_is_not_allowed
+    input:
+      requested_action: MOVE
+      resolved_user_decision: false
+    expected:
+      action: COPIED
+      source_preserved: true
+      moved: false
+
+  - case_id: protected_source_is_never_moved
+    input:
+      requested_action: MOVE
+      resolved_user_decision: true
+      source_path: 01_sources/model.cif
+    expected:
+      action: COPIED
+      source_preserved: true
+      moved: false
+
+  - case_id: copy_hash_mismatch_fails_and_cleans_target
+    input:
+      simulated_copy_hash_mismatch: true
+    expected:
+      status: FAILED
+      source_preserved: true
+      incomplete_destination_removed: true
+
+  - case_id: unbounded_discovery_is_blocked
+    input:
+      candidate_paths: []
+      candidate_directories: []
+    expected:
+      status: BLOCKED
+      recursive_project_scan: false
