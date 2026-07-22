@@ -1,15 +1,25 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: confirmation_item.schema.yaml
-title: MD Workflow Confirmation Item
+title: MD Workflow Decision Request
 type: object
 required:
-  - confirmation_id
+  - schema_version
+  - decision_id
+  - scope
+  - workstream_id
   - category
   - question
   - reason
   - affected_records
+  - blocking
 properties:
-  confirmation_id: {type: string, minLength: 1}
+  schema_version: {type: integer, const: 2}
+  decision_id: {type: string, minLength: 1}
+  scope:
+    type: string
+    enum: [PROJECT, WORKSTREAM]
+  workstream_id: {type: [string, 'null']}
+  source_task_id: {type: [string, 'null']}
   category: {type: string, minLength: 1}
   question: {type: string, minLength: 1}
   reason: {type: string, minLength: 1}
@@ -24,4 +34,11 @@ properties:
   blocking:
     type: boolean
     default: true
+allOf:
+  - if:
+      properties: {scope: {const: WORKSTREAM}}
+    then:
+      properties: {workstream_id: {type: string, minLength: 1}}
+    else:
+      properties: {workstream_id: {type: 'null'}}
 additionalProperties: false
