@@ -1,38 +1,57 @@
-schema_version: 1
+schema_version: 2
 registry_status: active_partial
+workflow_interfaces:
+  route_planning:
+    protocol: 00_manager/md_workflow_manager/references/route_planning_protocol.md
+    contract: 03_contracts/workflow_route_fragment.schema.yaml
+    invocation: manager_reads_workflow_and_requests_fragment
+  execution:
+    contract: 03_contracts/workflow_decision.schema.yaml
+    invocation: manager_reads_current_workflow_and_requests_one_decision
 stage_order:
   - stage_id: structure_preparation
     workflow_name: structure_preparation_workflow
     skill_path: 01_workflows/structure_preparation_workflow
     project_directory: 01_structure_preparation
     connection_status: connected
+    planning_interface: connected
+    execution_interface: connected
     responsibility: 初始结构识别、选择、缺失处理、质子化、重排与结构验证。
   - stage_id: topology_preparation
     workflow_name: topology_preparation_workflow
     skill_path: 01_workflows/topology_preparation_workflow
     project_directory: 02_topology_preparation
     connection_status: planned
+    planning_interface: planned
+    execution_interface: planned
     responsibility: 标准残基、相连非标准残基和独立非标准组分的拓扑生成与参数准备。
   - stage_id: md_preparation
     workflow_name: md_preparation_workflow
     skill_path: 01_workflows/md_preparation_workflow
     project_directory: 03_md_preparation
     connection_status: planned
+    planning_interface: planned
+    execution_interface: planned
     responsibility: 力场与拓扑整合、建盒、加水、加离子和完整体系生成。
   - stage_id: md_simulation
     workflow_name: md_simulation_workflow
     skill_path: 01_workflows/md_simulation_workflow
     project_directory: 04_md_simulation
     connection_status: planned
+    planning_interface: planned
+    execution_interface: planned
     responsibility: MDP 与运行输入准备，以及 EM、NVT、NPT、生产 MD、续跑和完成核验。
   - stage_id: analysis
     workflow_name: analysis_workflow
     skill_path: 01_workflows/analysis_workflow
     project_directory: 05_analysis
     connection_status: planned
+    planning_interface: planned
+    execution_interface: planned
     responsibility: 模拟输出分析。
 transition_policy:
   default: automatic
   user_confirmation_at_stage_boundary: false
   block_when_workflow_missing: true
+  allow_partial_route_to_unconnected_boundary: true
   independent_system_preparation_stage: false
