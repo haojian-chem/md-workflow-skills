@@ -1,0 +1,89 @@
+schema_version: 1
+suite: structure_preparation_workflow_route_fragments
+cases:
+  - case_id: full_stage_fragment
+    scope:
+      start: WORKFLOW_ENTRY
+      end: WORKFLOW_EXIT
+    evidence: minimal_initial_structure_only
+    expected:
+      fragment_status: COMPLETE
+      required_steps:
+        - source_recognition
+        - component_and_residue_classification
+        - chain_and_component_selection
+        - completeness_check
+        - reorder_and_mapping
+        - validation
+      conditional_steps:
+        - altloc_occupancy_resolution
+        - missing_region_completion
+        - protein_protonation_assignment
+
+  - case_id: fragment_from_current_classification
+    scope:
+      start: component_and_residue_classification
+      end: validation
+    expected:
+      first_step: component_and_residue_classification
+      excludes:
+        - source_recognition
+
+  - case_id: endpoint_after_chain_selection
+    scope:
+      start: WORKFLOW_ENTRY
+      end: chain_and_component_selection
+    expected:
+      last_step: chain_and_component_selection
+      excludes_later_steps: true
+
+  - case_id: altloc_known_absent_still_described_with_evidence
+    evidence:
+      altloc_report: no_altloc_present
+    expected:
+      step: altloc_occupancy_resolution
+      planning_representation: CONDITIONAL
+      execution_expectation: SKIP_WITH_EVIDENCE
+
+  - case_id: missing_completion_condition_unknown
+    evidence:
+      completeness_report: absent
+    expected:
+      step: missing_region_completion
+      necessity: CONDITIONAL
+      forbidden: omit_step
+
+  - case_id: required_skill_unavailable
+    skill_availability:
+      structure_reorder_and_mapping: unavailable
+    expected:
+      fragment_status: PARTIAL
+      blocker:
+        code: REQUIRED_SKILL_UNAVAILABLE
+        missing_skill: structure_reorder_and_mapping
+
+  - case_id: missing_entry_structure
+    scope:
+      start: component_and_residue_classification
+    artifacts: []
+    expected:
+      fragment_status: BLOCKED
+      blocker:
+        code: MISSING_ENTRY_ARTIFACT
+
+  - case_id: next_workflow_hint
+    scope:
+      start: WORKFLOW_ENTRY
+      end: WORKFLOW_EXIT
+    expected:
+      next_workflow_hint: topology_preparation_workflow
+      required_entry_artifact: VALIDATED_STRUCTURE
+
+  - case_id: workflow_does_not_compose_global_route
+    request: 规划到 md_simulation
+    expected:
+      returned_scope: structure_preparation_only
+      forbidden:
+        - topology_internal_steps
+        - md_preparation_internal_steps
+        - md_simulation_internal_steps
