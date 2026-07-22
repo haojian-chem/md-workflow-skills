@@ -4,7 +4,11 @@ title: MD Workflow Common Types
 $defs:
   execution_status:
     type: string
-    enum: [DONE, BLOCKED, FAILED]
+    enum: [DONE, BLOCKED, FAILED, CANCELLED]
+
+  task_status:
+    type: string
+    enum: [PREPARED, RUNNING, DONE, BLOCKED, FAILED, CANCELLED]
 
   skill_layer:
     type: string
@@ -13,6 +17,115 @@ $defs:
   task_kind:
     type: string
     enum: [operation, validator]
+
+  task_unit_mode:
+    type: string
+    enum: [OPERATION, VALIDATOR, OPERATION_WITH_VALIDATOR]
+
+  requested_action:
+    type: string
+    enum: [INSPECT, PLAN, EXECUTE]
+
+  entry_state:
+    type: string
+    enum: [NEW, RESUMABLE, NEEDS_RECOVERY]
+
+  focus_target_type:
+    type: string
+    enum: [PROJECT, WORKSTREAM]
+
+  focus_reason:
+    type: string
+    enum: [USER_SELECTED, EXECUTION_TARGET, RECOVERY_TARGET, LAST_ACTIVE]
+
+  workstream_lifecycle_status:
+    type: string
+    enum: [OPEN, COMPLETED, ARCHIVED, ABANDONED]
+
+  workstream_activity_status:
+    type: string
+    enum: [IDLE, READY, EXECUTING, RUNNING_EXTERNAL, WAITING, FAILED, NEEDS_RECOVERY]
+
+  hold_reason_type:
+    type: string
+    enum: [NONE, USER_DECISION, MISSING_INPUT, DEPENDENCY, USER_PAUSED, EXTERNAL_RESOURCE]
+
+  submission_status:
+    type: string
+    enum: [PREPARED, SUBMITTED, RUNNING, FINISHED_UNVERIFIED, COMPLETED, FAILED, CANCELLED, UNKNOWN]
+
+  artifact_type:
+    type: string
+    enum: [STRUCTURE, TOPOLOGY, SYSTEM, MD_INPUT, MD_OUTPUT, ANALYSIS_RESULT]
+
+  validation_status:
+    type: string
+    enum: [UNVALIDATED, VALIDATED, INVALIDATED]
+
+  event_scope:
+    type: string
+    enum: [PROJECT, WORKSTREAM]
+
+  event_actor:
+    type: string
+    enum: [USER, MANAGER, SUBAGENT, EXTERNAL_BACKEND, SYSTEM]
+
+  skill_ref:
+    type: object
+    required: [skill_name, skill_path, skill_layer]
+    properties:
+      skill_name: {type: string, minLength: 1}
+      skill_path: {type: string, minLength: 1}
+      skill_layer: {$ref: '#/$defs/skill_layer'}
+    additionalProperties: false
+
+  workflow_position:
+    type: object
+    required: [workflow_name, substep, task_id]
+    properties:
+      workflow_name: {type: [string, 'null']}
+      substep: {type: [string, 'null']}
+      task_id: {type: [string, 'null']}
+    additionalProperties: false
+
+  focus:
+    type: object
+    required: [target_type, workstream_id, reason, selected_at]
+    properties:
+      target_type: {$ref: '#/$defs/focus_target_type'}
+      workstream_id: {type: [string, 'null']}
+      reason: {$ref: '#/$defs/focus_reason'}
+      selected_at: {type: string, format: date-time}
+    allOf:
+      - if:
+          properties: {target_type: {const: WORKSTREAM}}
+        then:
+          properties: {workstream_id: {type: string, minLength: 1}}
+        else:
+          properties: {workstream_id: {type: 'null'}}
+    additionalProperties: false
+
+  related_workstream:
+    type: object
+    required: [workstream_id, relation]
+    properties:
+      workstream_id: {type: string, minLength: 1}
+      relation: {type: string, minLength: 1}
+    additionalProperties: false
+
+  file_identity:
+    type: object
+    required: [path]
+    properties:
+      path: {type: string, minLength: 1}
+      role: {type: string}
+      size_bytes: {type: integer, minimum: 0}
+      modified_at: {type: string, format: date-time}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      notes: {type: string}
+    additionalProperties: false
 
   file_state:
     type: string
@@ -26,6 +139,12 @@ $defs:
       state: {$ref: '#/$defs/file_state'}
       role: {type: string}
       source_task: {type: string}
+      artifact_set_id: {type: string}
+      size_bytes: {type: integer, minimum: 0}
+      modified_at: {type: string, format: date-time}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
       notes: {type: string}
     additionalProperties: false
 
