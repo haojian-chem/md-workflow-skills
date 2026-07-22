@@ -16,9 +16,11 @@ shared_files:
 
 assignments: []
 
-alignment_queue:
+review_queue:
   - skill_name: md_workflow_manager
-    required_action: rewrite_against_workstream_and_record_contracts
+    required_action: behavior_fixtures_and_integration_review
+
+alignment_queue:
   - skill_name: structure_preparation_workflow
     required_action: align_with_workstream_state_and_task_units
   - skill_name: source_recognition
@@ -27,7 +29,6 @@ alignment_queue:
     required_action: align_with_subagent_task_and_result_v2
 
 unassigned_skills:
-  - md_workflow_manager
   - structure_preparation_workflow
   - source_recognition
   - component_and_residue_classification_validator
