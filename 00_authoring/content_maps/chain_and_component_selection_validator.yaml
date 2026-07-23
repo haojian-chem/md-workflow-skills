@@ -2,25 +2,47 @@ schema_version: 3
 skill_name: chain_and_component_selection_validator
 skill_type: validator
 skill_path: 02_validators/chain_and_component_selection_validator
-contract_status: pending
-content_ownership_status: pending
-owned_content: {}
+contract_status: draft
+content_ownership_status: draft
+owned_content:
+  local_validation_flow_and_gate:
+    owner: 02_validators/chain_and_component_selection_validator/SKILL.md
 external_references:
-- purpose: layer_boundary
-  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-  access: reference_only
-- purpose: runtime_task_contract
-  owner: 03_contracts/subagent_task.schema.yaml
-  access: reference_only
-- purpose: runtime_result_contract
-  owner: 03_contracts/subagent_result.schema.yaml
-  access: reference_only
-- purpose: confirmation_item_contract
-  owner: 03_contracts/confirmation_item.schema.yaml
-  access: reference_only
-- purpose: examples_and_test_fixtures
-  owner: 04_evals/chain_and_component_selection_validator/fixtures/
-  access: reference_only
-  status: planned
+  - purpose: layer_boundary
+    owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+    access: reference_only
+  - purpose: runtime_task_contract
+    owner: 03_contracts/subagent_task.schema.yaml
+    access: reference_only
+  - purpose: runtime_result_contract
+    owner: 03_contracts/subagent_result.schema.yaml
+    access: reference_only
+  - purpose: confirmation_item_contract
+    owner: 03_contracts/confirmation_item.schema.yaml
+    access: reference_only
+  - purpose: selection_operation
+    owner: 02_operations/chain_and_component_selection/SKILL.md
+    access: reference_only
+  - purpose: selection_rules
+    owner: 02_operations/chain_and_component_selection/references/selection_rules.md
+    access: reference_only
+  - purpose: selection_spec_contract
+    owner: 02_operations/chain_and_component_selection/schemas/selection_spec.schema.yaml
+    access: reference_only
+  - purpose: selection_manifest_contract
+    owner: 02_operations/chain_and_component_selection/schemas/selection_manifest.schema.yaml
+    access: reference_only
+  - purpose: selection_mapping_contract
+    owner: 02_operations/chain_and_component_selection/schemas/selection_mapping.schema.yaml
+    access: reference_only
+  - purpose: classification_result_contract
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+    access: reference_only
+  - purpose: examples_and_test_fixtures
+    owner: 04_evals/chain_and_component_selection_validator/fixtures/
+    access: reference_only
+    status: present
 notes:
-- Define the Skill contract before assigning content ownership or creating local references/schemas.
+  - Validator independently recomputes the expected selected set from classification result and selection spec.
+  - Manifest self-reports are not accepted as sufficient evidence.
+  - Validation confirms selection fidelity only; it does not claim altLoc, completeness, protonation or final structure-preparation validity.
