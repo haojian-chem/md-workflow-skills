@@ -1,6 +1,6 @@
 # Authoring 文件同步状态
 
-更新日期：2026-07-22
+更新日期：2026-07-23
 
 ## 当前基线
 
@@ -15,6 +15,7 @@
 - 15 份共享运行 contract；
 - Workflow planning/execution 双接口；
 - 跨 Workflow route planning protocol；
+- Manager 入口初始化与路线范围 barrier；
 - 串行 task-unit 临时子 Agent 协议；
 - `md_workflow_manager` draft；
 - `structure_preparation_workflow` 双接口 draft；
@@ -34,6 +35,36 @@
 - 涉及 Workflow 或路线时必须读取 `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
 - `AGENTS.md`、`03_contracts/`、authoring references、content maps、inventory 和 ownership 表仅由主窗口修改；
 - 业务窗口不得本地重定义共享状态、路线和记录字段。
+
+## 已确认的 Manager 入口顺序
+
+```text
+ENTRY_STATE_EVALUATED
+→ PROJECT_INITIALIZED（仅 NEW）
+→ ROUTE_SCOPE_RESOLUTION
+→ ROUTE_SCOPE_RESOLVED
+→ ROUTE_PLANNING
+→ ROUTE_CREATED
+→ EXECUTION
+```
+
+硬规则：
+
+- `NEW` 只表示入口判定；
+- NEW 项目在根目录明确且无冲突时自动初始化；
+- 初始化创建首个 Workstream，但不创建 route；
+- `PROJECT_INITIALIZED` 前不得调用 Workflow；
+- 路线范围解析是初始化后的独立事件；
+- 用户未明确终点时必须请求决定，不得选取默认终点；
+- `ROUTE_SCOPE_RESOLVED` 前不得请求 fragment 或创建 route；
+- 有效 active route 不存在时不得创建业务 task。
+
+项目事件已加入：
+
+```text
+ROUTE_SCOPE_REQUESTED
+ROUTE_SCOPE_RESOLVED
+```
 
 ## 已确认的运行模型
 
@@ -77,7 +108,7 @@ RUNNING
 
 ## 当前实现状态
 
-- `md_workflow_manager`：已明确规划循环与执行循环；待可执行 fixtures 和端到端集成；
+- `md_workflow_manager`：已明确 NEW 自动初始化、独立 route scope resolution、规划循环与执行循环；20 个行为 cases 已建立，待可执行验证；
 - `structure_preparation_workflow`：已支持 route fragment 与 execution decision；待 Manager 集成；
 - `source_recognition`：默认复制、SHA-256 校验、相同副本复用、不同内容不覆盖；待真实结构文件测试；
 - `component_and_residue_classification_validator`：需要迁移到 subagent task/result v2；
@@ -102,8 +133,8 @@ RUNNING
 - 根目录 `README.md`；
 - `design_records/manager_and_project_structure_decisions.md`；
 - `design_records/logging_and_record_system.md`；
+- `00_manager/md_workflow_manager/SKILL.md`；
 - `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
 - `03_contracts/README.md`；
-- `00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`；
-- `00_authoring/ROUTE_PLANNING_ALIGNMENT_VALIDATION.md`；
+- `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`；
 - 本文件。
