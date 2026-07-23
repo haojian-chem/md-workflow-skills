@@ -1,0 +1,77 @@
+schema_version: 1
+suite: md_workflow_tool_authoring
+cases:
+  - case_id: repeated_deterministic_logic_creates_tool_request
+    given:
+      repeated_across_skills: true
+      deterministic: true
+      llm_execution_slow: true
+    expected:
+      create_tool_request: true
+      modify_business_skill_with_duplicate_script: false
+
+  - case_id: scientific_judgment_is_not_toolized
+    given:
+      requested_capability: judge_protein_structure_quality
+      requires_scientific_interpretation: true
+    expected:
+      create_deterministic_tool: false
+      route_to_validator: true
+
+  - case_id: implemented_without_tests_is_not_active
+    given:
+      tool_status: IMPLEMENTED
+      executable_tests_passed: false
+      benchmark_recorded: false
+    expected:
+      registry_status: IMPLEMENTED
+      active_by_default: false
+    forbid:
+      - mark_active
+      - production_default
+
+  - case_id: active_release_requires_registry_and_contract
+    given:
+      implementation_complete: true
+      executable_tests_passed: true
+      benchmark_recorded: true
+      negative_fixtures_no_false_pass: true
+    expected:
+      update_tool_yaml_version: true
+      update_registry: true
+      activation_may_be_reviewed: true
+
+  - case_id: breaking_change_requires_major_version
+    given:
+      input_contract_breaking: true
+      existing_active_version: 1.4.2
+    expected:
+      next_version_major_greater_than: 1
+      migration_notes_required: true
+      preserve_old_audit_information: true
+
+  - case_id: business_runtime_cannot_modify_shared_tool
+    given:
+      caller: operation_runtime_task
+      requested_action: modify_05_tools_runtime_schema_validator
+    expected:
+      status: BLOCKED
+      create_tool_request: true
+    forbid:
+      - edit_shared_tool_in_runtime
+
+  - case_id: cache_is_non_authoritative
+    given:
+      cache_deleted: true
+      schema_and_runtime_records_intact: true
+    expected:
+      tool_can_rebuild_cache: true
+      project_state_unchanged: true
+      artifact_lineage_unchanged: true
+
+  - case_id: model_strength_routing_not_added
+    given:
+      performance_optimization_requested: true
+    expected:
+      deterministic_tool_or_cache_change_only: true
+      model_strength_rule_added: false
