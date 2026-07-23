@@ -7,23 +7,36 @@ shared_files:
     - AGENTS.md
     - 00_authoring/SYNC_STATUS.md
     - 00_authoring/md-workflow-skill-authoring/
+    - 00_authoring/md-workflow-tool-authoring/
     - 00_authoring/skill_inventory.yaml
     - 00_authoring/file_ownership.yaml
     - 00_authoring/content_maps/
     - 00_manager/md_workflow_manager/references/
     - 03_contracts/
+    - 05_tools/tool_registry.yaml
     - design_records/
-  notes: 共享规则、跨 Workflow 路线协议、接口、content map 和权威设计记录仅由主窗口修改。
+  notes: 共享规则、跨 Workflow 路线协议、接口、content map、Tool 协议与 registry 仅由主窗口修改。
+
+tool_directory_policy:
+  registry_owner: main
+  authoring_skill: 00_authoring/md-workflow-tool-authoring/SKILL.md
+  directory_pattern: 05_tools/<tool-name>/
+  assignment_rule: 同一 Tool 目录同一时间只能分配给一个编写窗口；业务运行窗口不得修改共享 Tool。
+  activation_rule: 未完成可执行 tests 与 benchmark 的 Tool 不得标记为 ACTIVE。
 
 assignments: []
 
 review_queue:
   - skill_name: md_workflow_manager
-    required_action: executable_route_and_execution_fixtures_plus_end_to_end_integration
+    required_action: executable_fast_full_validation_and_end_to_end_integration
   - skill_name: structure_preparation_workflow
     required_action: executable_fragment_and_decision_fixtures_plus_manager_integration
   - skill_name: source_recognition
     required_action: real_file_copy_hash_conflict_and_manager_integration_tests
+  - skill_name: md-workflow-tool-authoring
+    required_action: validate_first_tool_lifecycle_and_registry_workflow
+  - tool_name: runtime_schema_validator
+    required_action: run_executable_fast_full_negative_cache_and_benchmark_tests
 
 alignment_queue:
   - skill_name: component_and_residue_classification_validator
@@ -43,3 +56,8 @@ unassigned_skills:
   - structure_reorder_and_mapping
   - structure_mapping_validator
   - structure_preparation_validator
+
+unassigned_tools:
+  - state_transaction
+  - incremental_reference_checker
+  - task_closure_renderer
