@@ -1,5 +1,5 @@
 schema_version: 3
-status: runtime_validator_active_and_classification_parser_tested_draft
+status: runtime_validator_active_and_classification_wrapper_draft
 runtime_architecture:
   project_model: workstream
   workflow_interfaces:
@@ -62,7 +62,7 @@ skills:
   - name: component_and_residue_classification_validator
     layer: validator
     path: 02_validators/component_and_residue_classification_validator
-    status: draft_parser_tested_real_files_and_end_to_end_required
+    status: draft_parser_and_wrapper_tested_actual_fast_and_real_files_required
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
   - name: chain_and_component_selection
     layer: operation
