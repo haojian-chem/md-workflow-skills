@@ -2,29 +2,25 @@
 
 ## 固定原则
 
-Manager 的回复必须让用户不读取状态文件也能知道：
+Manager 的回复必须让用户无需读取状态文件即可知道：
 
-- 当前操作的是哪个项目；
-- 项目是否已完成初始化；
-- 当前主要处理哪个 Workstream；
-- 路线范围是否已明确；
-- 当前位于什么 Workflow/task；
+- 当前操作的项目与 Workstream；
+- 当前位于哪个 Workflow/task；
+- 刚完成的前台 task 结果；
 - 下一步预计做什么；
 - 哪些事项需要人工决定；
 - 哪些外部任务仍在后台运行；
-- 还有哪些活动 Workstream。
+- 还有哪些活动 Workstreams。
 
 不得用大量内部 ID、完整日志或 schema 内容淹没用户。
 
-## 每次必须显示
+## 每次状态摘要必须显示
 
 ```text
 Skill root:
 Project root:
 Project state:
-Initialization:
 Focus:
-Route scope:
 Current position:
 Expected next task:
 Current decisions:
@@ -32,53 +28,108 @@ Background runs:
 Other active workstreams:
 ```
 
-没有内容时明确写 `none`，不要省略字段。
+没有内容时明确写 `none`。
 
-## 初始化展示
+## Task closure 强制输出
 
-NEW 被判定后、初始化未完成时显示：
+每个前台 task unit 进入 `DONE | BLOCKED | FAILED` 后，Manager 必须在启动下一前台 task 前输出一次用户可见的 closure summary。
 
-```text
-Project state: NEW
-Initialization: in progress | blocked | failed
-Route scope: not started
-Current position: none
-Expected next task: none
-```
-
-初始化完成后显示：
+该区块使用：
 
 ```text
-Initialization: completed
+Task result:
+<substep/task> — <DONE | BLOCKED | FAILED>
+
+Checks:
+<Operation/Validator 与 gate 摘要>
+
+Action / Output:
+<关键动作、文件或 artifact>
+
+Artifact status:
+<VALIDATED | UNVALIDATED | INVALIDATED | none>
+
+Warnings:
+<warning 或 none>
+
+Report:
+<result/report 路径或 none>
+
+Next:
+<预计下一 task、等待决定或 none>
 ```
 
-不得在初始化完成前显示 Workflow task 为“即将执行”。
+该输出：
 
-## 路线范围展示
+- 不是新的确认 gate；
+- 不要求用户回复后才能继续既定范围；
+- 不复制完整 `result.yaml` 或业务日志；
+- 必须基于已经校验并持久化的 task 终态；
+- 必须在下一前台子 Agent 启动前出现。
 
-范围未解析时显示：
+宿主支持中间可见消息时，输出后可继续已授权范围；宿主不支持时，本轮以该区块结束，并在 `Expected next task` 中保留下一个 task。
+
+### DONE
+
+至少显示：
+
+- task/substep；
+- Operation/Validator 是否正常执行；
+- gate 或检查结果；
+- 关键产物；
+- artifact validation status；
+- warning；
+- 下一任务。
+
+不得把 Operation 的执行成功表述为科学质量验证通过。
+
+例如 `source_recognition`：
 
 ```text
-Route scope: unresolved
-Current position: none
-Expected next task: none
+Task result:
+1.1 source_recognition — DONE
+
+Checks:
+来源识别、文件复制与 SHA-256 一致性检查通过
+
+Action / Output:
+COPIED → 01_structure_preparation/01_source_recognition/<file>
+
+Artifact status:
+STRUCTURE — UNVALIDATED
+
+Warnings:
+none
+
+Report:
+<source_recognition_report.yaml>
+
+Next:
+1.2 component_and_residue_classification
 ```
 
-并在 `Current decisions` 中展示需要用户明确的终点。
+不得显示“结构验证通过”，因为 1.1 只完成来源识别和安全归位。
 
-范围已解析但路线尚未创建时显示：
+### BLOCKED
 
-```text
-Route scope: <start> → <end>
-Route planning status: not created
-Expected next task: none
-```
+显示：
 
-范围解析和路线创建必须分开展示，不得把 `ROUTE_SCOPE_RESOLVED` 表述为路线已建立。
+- 已安全完成的部分；
+- 阻断原因；
+- 需要用户决定的内容；
+- 尚未启动的后续 task。
+
+### FAILED
+
+显示：
+
+- 失败位置；
+- 直接证据；
+- 已保留或已清理的产物；
+- Workstream 当前状态；
+- 可选后续动作。
 
 ## Workstream Focus
-
-显示格式：
 
 ```text
 Focus workstream:
@@ -91,7 +142,7 @@ Focus workstream:
 <workflow> / <task-or-substep>
 
 本轮范围：
-<unresolved | start → end>
+<start> → <end>
 
 本轮动作：
 <INSPECT + PLAN + EXECUTE 的实际组合>
@@ -100,8 +151,6 @@ Focus workstream:
 用户可读标题在前，稳定 ID 放在方括号中。
 
 ## Project Focus
-
-用于全项目检查或恢复：
 
 ```text
 Focus:
@@ -115,20 +164,12 @@ Workstreams:
 
 ## 预计路线
 
-完整路线只在：
+完整路线只在以下情况显示：
 
 - 首次创建；
-- route revision 实际变化；
+- route revision 实际改变步骤、条件、终点或 blocker。
 
-时展示。
-
-其他回复只显示：
-
-```text
-Route scope:
-Current position:
-Expected next task:
-```
+其他回复只显示当前位置和预计下一 task。
 
 ## 用户决策
 
@@ -148,9 +189,7 @@ Recommended:
 ...
 ```
 
-区分 blocking 与 non-blocking，不暴露内部 decision schema。
-
-路线终点不明确时，问题必须直接要求用户明确本轮终点，不得用推荐项替代用户决定。
+区分 blocking 与 non-blocking，不暴露内部 schema。
 
 ## 后台任务
 
@@ -166,17 +205,15 @@ session/job: <id>
 
 ## 状态中文映射
 
-- `NEW`：新项目，尚未建立可信状态；
-- `PROJECT_INITIALIZED`：新项目基础状态已建立，尚不代表路线已规划；
-- `ROUTE_SCOPE_REQUESTED`：路线终点不明确，等待用户决定；
-- `ROUTE_SCOPE_RESOLVED`：路线范围已明确，尚不代表 route 已创建；
+- `NEW`：本轮判定为新项目，尚未完成初始化；
 - `RESUMABLE`：项目状态可信，可继续；
 - `NEEDS_RECOVERY`：需要先恢复项目状态；
-- `READY`：下一任务已准备；
-- `EXECUTING`：前台任务执行中；
+- `IDLE`：当前没有前台 task；
+- `READY`：下一 task 已准备；
+- `EXECUTING`：需强化预记录的前台 task 执行中；
 - `RUNNING_EXTERNAL`：外部任务运行中；
 - `WAITING`：等待条件或人工决定；
-- `FAILED`：任务失败，尚未确定后续；
+- `FAILED`：task 失败，尚未确定后续；
 - `FINISHED_UNVERIFIED`：外部进程已结束，结果待核验。
 
 ## 精简原则
@@ -185,9 +222,9 @@ session/job: <id>
 
 - 完整 GROMACS 日志；
 - 完整 Validator report；
-- `task.yaml` 或 `result.yaml`；
+- 完整 `task.yaml` 或 `result.yaml`；
 - `project_events.jsonl`；
 - 大型文件清单；
 - route schema。
 
-只给摘要和必要路径引用。
+只给 task closure、状态摘要和必要路径。
