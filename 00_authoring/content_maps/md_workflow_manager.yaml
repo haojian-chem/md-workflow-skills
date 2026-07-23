@@ -7,8 +7,10 @@ content_ownership_status: draft
 owned_content:
   requested_action_and_focus_resolution:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  project_entry_state_initialization_barrier_and_recovery_routing:
+  project_entry_state_and_recovery_routing:
     owner: 00_manager/md_workflow_manager/SKILL.md
+  project_initialization_transaction_and_barrier:
+    owner: 00_manager/md_workflow_manager/references/project_initialization_protocol.md
   post_initialization_route_scope_resolution:
     owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
   workstream_creation_selection_and_lifecycle:
@@ -21,8 +23,6 @@ owned_content:
     owner: 00_manager/md_workflow_manager/SKILL.md
   serial_task_unit_subagent_invocation:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  project_state_and_record_commits:
-    owner: 00_manager/md_workflow_manager/SKILL.md
   runtime_fast_full_validation_selection:
     owner: 00_manager/md_workflow_manager/SKILL.md
   external_submission_and_artifact_registration:
@@ -31,6 +31,8 @@ owned_content:
     owner: 00_manager/md_workflow_manager/references/stage_registry.yaml
   manager_user_display_rules:
     owner: 00_manager/md_workflow_manager/references/manager_display_rules.md
+  manager_runtime_checklist:
+    owner: 00_manager/md_workflow_manager/references/manager_runtime_checklist.md
 external_references:
   - purpose: layer_boundary
     owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
@@ -107,7 +109,8 @@ external_references:
     access: reference_only
     status: present
 notes:
-  - Manager draft separates entry evaluation, automatic initialization, route-scope resolution, planning and execution.
+  - Manager main file retains only top-level responsibilities, barriers and runtime routing.
+  - Initialization transaction details and the full runtime checklist are progressively disclosed through references.
   - Ordinary tasks use FAST validation; FULL is reserved for initialization, recovery, contract changes and critical lifecycle nodes.
   - Model reasoning-strength routing is intentionally not part of this contract.
   - Runtime schema validator remains non-default until executable tests and benchmark pass.
