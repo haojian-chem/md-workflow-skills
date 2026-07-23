@@ -1,0 +1,75 @@
+schema_version: 1
+status: draft
+purpose: Define evidence patterns for classifying nonstandard residues or components as covalently linked without relying on residue name alone.
+confirmed_evidence:
+  - id: explicit_mmcif_covalent_connection
+    source: mmCIF
+    requirements:
+      - struct_conn or equivalent record identifies both atoms
+      - connection type is covalent/disulfide/glycosidic or otherwise explicitly chemical, not generic metal coordination
+    classification: COVALENTLY_LINKED_NONSTANDARD
+    confidence: HIGH
+  - id: explicit_pdb_link_or_ssbond
+    source: PDB
+    requirements:
+      - LINK or SSBOND identifies both atoms/residues
+      - atom identifiers resolve uniquely in the selected model
+      - relation is not interpreted as metal coordination only
+    classification: COVALENTLY_LINKED_NONSTANDARD
+    confidence: HIGH
+  - id: continuous_protein_backbone
+    source: coordinates
+    requirements:
+      - nonstandard residue participates in peptide backbone continuity
+      - required backbone atoms resolve uniquely
+      - C-N connectivity is chemically plausible
+      - sequence/entity context supports polymer membership
+    classification: COVALENTLY_LINKED_NONSTANDARD
+    confidence: MEDIUM
+  - id: continuous_nucleic_acid_backbone
+    source: coordinates
+    requirements:
+      - nonstandard residue participates in sugar-phosphate backbone continuity
+      - required linkage atoms resolve uniquely
+      - entity context supports polymer membership
+    classification: COVALENTLY_LINKED_NONSTANDARD
+    confidence: MEDIUM
+  - id: resolved_user_or_upstream_connection
+    source: resolved_decision
+    requirements:
+      - decision names both components and connection atoms or unambiguous residue identifiers
+      - task includes the resolved decision ID
+    classification: COVALENTLY_LINKED_NONSTANDARD
+    confidence: MEDIUM
+candidate_only_evidence:
+  - id: short_intercomponent_distance
+    classification: COVALENT_BOND_CANDIDATE
+    restrictions:
+      - distance alone never upgrades topology_class
+      - metal-donor contacts are routed to coordination detection
+      - altLoc and occupancy ambiguity lowers confidence
+  - id: adjacency_by_residue_number
+    classification: CONTEXT_HINT_ONLY
+    restrictions:
+      - sequential numbering alone is not bond evidence
+  - id: known_residue_name_without_connection
+    classification: CONTEXT_HINT_ONLY
+    restrictions:
+      - residue name alone is not bond evidence
+exclusions:
+  - relation: metal_coordination
+    topology_effect: none
+    route_to: coordination_detection_registry.yaml
+  - relation: hydrogen_bond
+    topology_effect: none
+  - relation: salt_bridge
+    topology_effect: none
+  - relation: crystal_contact
+    topology_effect: none
+  - relation: close_vdw_contact
+    topology_effect: none
+ambiguity_policy:
+  candidate_changes_linked_vs_independent: blocking_decision
+  explicit_record_conflicts_with_coordinates: blocking_decision
+  explicit_record_missing_atoms: blocking_decision
+  candidate_does_not_change_route: warning
