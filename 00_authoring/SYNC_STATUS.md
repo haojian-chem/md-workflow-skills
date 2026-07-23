@@ -19,7 +19,7 @@
 - current blocker / pending after current barrier 因果分层；
 - 串行 task-unit 临时子 Agent 协议；
 - `structure_preparation_workflow` 与 `source_recognition` drafts；
-- `component_and_residue_classification_validator` 首版规则与 contract draft。
+- `component_and_residue_classification_validator` 规则、contract 与 synthetic-tested deterministic parser draft。
 
 Manager 主文件保持 311 行；初始化事务和完整自检位于 references。
 
@@ -111,11 +111,15 @@ FULL warm median: 4.181 ms
 
 ```text
 02_validators/component_and_residue_classification_validator/SKILL.md
+02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
+02_validators/component_and_residue_classification_validator/scripts/requirements.txt
+02_validators/component_and_residue_classification_validator/scripts/README.md
 02_validators/component_and_residue_classification_validator/references/classification_rules.md
 02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml
 02_validators/component_and_residue_classification_validator/references/covalently_linked_nonstandard_residue_registry.yaml
 02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml
 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+04_evals/component_and_residue_classification_validator/test_classify_structure.py
 04_evals/component_and_residue_classification_validator/fixtures/classification_cases.yaml
 04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md
 ```
@@ -125,12 +129,21 @@ FULL warm median: 4.181 ms
 - 显式共价连接、几何共价候选和金属配位候选必须分开；
 - 距离 alone 不能确认共价键；
 - 金属配位不改变 residue/component 的共价 topology class；
+- canonical residue 与 entity polymer metadata 冲突时返回 `METADATA_CONFLICT`；
 - Validator 执行成功与分类是否存在歧义分开表达；
 - 阻断歧义通过 `confirmation_items` 返回；
 - 输入 STRUCTURE 不修改、不创建新版本，也不提升为 VALIDATED；
 - 返回共享 `subagent_result` v2。
 
-当前仍缺少确定性结构解析器和真实 PDB/mmCIF/AF3 fixtures，因此 1.2 只能视为 contract/语义 draft，不能视为运行通过。
+确定性 parser 0.1.0 已完成 10 个 synthetic executable tests：
+
+```text
+10 passed in 5.59s
+CLI wall median: 2864.686 ms
+parser elapsed median: 124.304 ms
+```
+
+当前仍缺少普通真实 PDB、RCSB-style mmCIF、真实 AF3 CIF 和 Manager 端到端测试，因此 1.2 仍为 draft，不能视为运行验收通过。
 
 ## 阻断因果分层
 
@@ -158,17 +171,18 @@ Pending after current barrier:
 - `state_transaction`：DESIGNED；初始化已有内建提交路径，不构成 blocker；
 - `structure_preparation_workflow`：双接口 draft，待 Manager 集成；
 - `source_recognition`：1.1 功能检查已由用户测试通过；需复测 closure、FAST 和最小记录；
-- `component_and_residue_classification_validator`：subagent v2 与分类语义已对齐；待确定性解析器和真实结构测试；
+- `component_and_residue_classification_validator`：subagent v2、分类语义与 deterministic parser 已对齐并通过 synthetic tests；待真实结构和端到端测试；
 - 其他 Phase 1 Skills：待编写。
 
-Manager 和完整工作流仍为 draft；Tool 激活不等同于 Manager 端到端验收通过。
+Manager 和完整工作流仍为 draft；Tool 激活或单个 parser 测试通过不等同于 Manager 端到端验收通过。
 
 ## 尚未冻结
 
 - content map 的 `load_when` 与 `applicable_to` 扩展；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 实现；
 - 1.2 标准 residue alias、共价候选和配位阈值 registries；
-- 1.2 确定性结构解析器；
+- 1.2 真实 PDB/mmCIF/AF3 文件接受性；
+- 1.2 shared subagent result 包装和 FAST integration；
 - Manager 真实项目端到端集成。
 
 ## 当前权威文件
