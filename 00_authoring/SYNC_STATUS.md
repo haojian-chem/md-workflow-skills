@@ -10,32 +10,16 @@
 - Workstream 项目模型与 15 份共享运行 contract；
 - Workflow planning/execution 双接口；
 - Manager 入口初始化、路线范围和 execution barrier；
-- 跨 Workflow route planning 与 `route_record.schema.yaml` v3；
-- 普通 task 最小同步记录和 task closure 用户展示；
-- FAST/FULL runtime validation 与 schema hash cache；
-- Tool protocol、registry、Tool Authoring Skill；
+- 普通 task 最小记录、task closure 和 FAST/FULL runtime validation；
 - `runtime_schema_validator` 0.1.0：ACTIVE；
-- NEW 初始化 capability 预检与内建确定性状态提交路径；
-- current blocker / pending after current barrier 因果分层；
-- 串行 task-unit 临时子 Agent 协议；
-- `structure_preparation_workflow` 与 `source_recognition` drafts；
-- `component_and_residue_classification_validator` 规则、contract 与 synthetic-tested deterministic parser draft。
+- NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
+- `source_recognition` draft；
+- 1.2 classification parser + shared result wrapper draft；
+- 1.3 chain/component selection Operation/Validator contract draft。
 
-Manager 主文件保持 311 行；初始化事务和完整自检位于 references。
+Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
 
-## 使用原则
-
-- `contract_status: pending|draft` 或 `content_ownership_status: pending|draft` 的对象尚未冻结；
-- 多窗口编写前读取 `AGENTS.md`、本文件、inventory、ownership、目标 content map、work order 和适用 contracts；
-- 涉及 Workflow/route 时读取 route planning protocol；
-- 涉及 Tool 时读取 deterministic tool protocol、Tool Authoring Skill 和 registry；
-- 涉及状态和记录时读取 `design_records/logging_and_record_system.md`；
-- 涉及初始化时读取 `project_initialization_protocol.md`；
-- 未测试 Tool 不得标记为 ACTIVE 或作为默认生产路径；
-- hard gate 在发布前必须有 ACTIVE Tool 或权威内建确定性路径；
-- 后续路线和 Workflow 问题不得冒充当前 barrier 的 blocker。
-
-## Manager 入口顺序
+## 运行硬规则
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
@@ -43,48 +27,21 @@ ENTRY_STATE_EVALUATED: NEW
 → candidate state
 → FULL validation
 → controlled commit
-→ persistent RESUMABLE
-→ PROJECT_INITIALIZED
+→ RESUMABLE / PROJECT_INITIALIZED
 → ROUTE_SCOPE_RESOLUTION
 → ROUTE_SCOPE_RESOLVED
 → ROUTE_PLANNING
-→ ROUTE_CREATED
 → EXECUTION
 ```
 
-硬规则：
-
-- NEW 只是本轮入口判定；
-- 根目录明确且无冲突时自动初始化；
-- `FULL_RUNTIME_VALIDATION` 由 ACTIVE `runtime_schema_validator` 提供；
-- `CONTROLLED_STATE_COMMIT` 可使用初始化协议规定的内建确定性路径；
-- `state_transaction` 为 DESIGNED 不得阻塞 NEW；
-- 初始化创建首个 Workstream，但不创建 route；
-- `PROJECT_INITIALIZED` 前不调用 Workflow；
+- NEW 只负责入口判定和基础初始化；
 - 路线范围解析是初始化后的独立事件；
-- 用户未明确终点时必须确认，不得选择默认终点；
-- `ROUTE_SCOPE_RESOLVED` 前不创建 route；
-- active route 不存在或不适用时不创建业务 task。
-
-## FAST/FULL runtime validation
-
-FAST：
-
-```text
-changed runtime instances
-→ one batch schema validation
-→ direct reference checks
-→ structured PASS/FAIL
-```
-
-FULL 仅用于初始化、contract/root 变化、恢复前后、重要 Workstream、重大 artifact 谱系变化、首个外部长任务提交前、Workstream 终结或用户明确完整审计。
-
-禁止：
-
-- 普通 task 机械执行 FULL；
-- schema hash/cache 命中时重复 meta-validation；
-- 用 LLM 逐字段模拟 FULL；
-- 将模型推理强度分层写入本 contract。
+- 普通 task 只对 changed paths 执行一次 FAST；
+- schema cache 命中时不重复 meta-validation；
+- 不用 LLM 模拟 FULL schema/project reference validation；
+- hard gate 必须有 ACTIVE Tool 或权威内建确定性路径；
+- 后续路线/Workflow 问题不得冒充当前 blocker；
+- 模型推理强度分层未写入 contract。
 
 ## Tool 状态
 
@@ -95,11 +52,11 @@ incremental_reference_checker 0.1.0 — DESIGNED
 task_closure_renderer 0.1.0 — DESIGNED
 ```
 
-`runtime_schema_validator` 激活证据：
+激活证据：
 
 ```text
 04_evals/runtime_schema_validator/VALIDATION.md
-5 executable tests passed
+5 tests passed
 FAST cold median: 5.977 ms
 FAST warm median: 3.311 ms
 FULL warm median: 4.181 ms
@@ -110,79 +67,98 @@ FULL warm median: 4.181 ms
 已建立：
 
 ```text
-02_validators/component_and_residue_classification_validator/SKILL.md
-02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
-02_validators/component_and_residue_classification_validator/scripts/requirements.txt
-02_validators/component_and_residue_classification_validator/scripts/README.md
-02_validators/component_and_residue_classification_validator/references/classification_rules.md
-02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml
-02_validators/component_and_residue_classification_validator/references/covalently_linked_nonstandard_residue_registry.yaml
-02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml
-02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
-04_evals/component_and_residue_classification_validator/test_classify_structure.py
-04_evals/component_and_residue_classification_validator/fixtures/classification_cases.yaml
-04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md
+SKILL.md
+scripts/classify_structure.py
+scripts/build_subagent_result.py
+scripts/requirements.txt
+scripts/README.md
+references/classification_rules.md
+references/standard_residue_alias_registry.yaml
+references/covalently_linked_nonstandard_residue_registry.yaml
+references/coordination_detection_registry.yaml
+schemas/classification_outputs.schema.yaml
+04_evals/.../test_classify_structure.py
+04_evals/.../test_build_subagent_result.py
+04_evals/.../VALIDATOR_DRAFT_VALIDATION.md
 ```
 
-已确认的 draft 底线：
+核心语义：
 
-- 显式共价连接、几何共价候选和金属配位候选必须分开；
-- 距离 alone 不能确认共价键；
-- 金属配位不改变 residue/component 的共价 topology class；
-- canonical residue 与 entity polymer metadata 冲突时返回 `METADATA_CONFLICT`；
-- Validator 执行成功与分类是否存在歧义分开表达；
-- 阻断歧义通过 `confirmation_items` 返回；
-- 输入 STRUCTURE 不修改、不创建新版本，也不提升为 VALIDATED；
-- 返回共享 `subagent_result` v2。
+- 显式共价、geometry-only covalent candidate 和 metal coordination 分离；
+- 距离 alone 不确认共价；
+- coordination 不改变 covalent topology class；
+- metadata/residue chemistry 冲突返回 `METADATA_CONFLICT`；
+- 科学歧义可以是 DONE + blocking confirmation；
+- 输入 STRUCTURE 保持 `present_unvalidated`；
+- 不创建 STRUCTURE artifact candidate；
+- wrapper 生成共享 `subagent_result v2`，Manager 再 FAST-validate candidate result。
 
-确定性 parser 0.1.0 已完成 10 个 synthetic executable tests：
+已执行：
 
 ```text
-10 passed in 5.59s
-CLI wall median: 2864.686 ms
-parser elapsed median: 124.304 ms
+parser synthetic tests: 10 passed in 5.59s
+wrapper synthetic-contract tests: 4 passed in 8.08s
 ```
 
-当前仍缺少普通真实 PDB、RCSB-style mmCIF、真实 AF3 CIF 和 Manager 端到端测试，因此 1.2 仍为 draft，不能视为运行验收通过。
+仓库已编写 actual shared-contract + ACTIVE FAST integration test，但尚未在测试主机运行。真实 PDB、RCSB mmCIF、AF3 CIF 和完整 Manager closure 仍未验收。
 
-## 阻断因果分层
+## 1.3 Chain and component selection
 
-发生停止时使用：
+已建立：
 
 ```text
-Current blocker:
-<当前 barrier 的直接原因或 none>
-
-Pending after current barrier:
-<通过当前 barrier 后才处理的问题或 none>
+02_operations/chain_and_component_selection/SKILL.md
+02_operations/chain_and_component_selection/references/selection_rules.md
+02_operations/chain_and_component_selection/schemas/selection_spec.schema.yaml
+02_operations/chain_and_component_selection/schemas/selection_manifest.schema.yaml
+02_operations/chain_and_component_selection/schemas/selection_mapping.schema.yaml
+02_validators/chain_and_component_selection_validator/SKILL.md
+04_evals/chain_and_component_selection/fixtures/selection_cases.yaml
+04_evals/chain_and_component_selection_validator/fixtures/selection_validation_cases.yaml
+04_evals/chain_and_component_selection/SELECTION_DRAFT_VALIDATION.md
 ```
 
-初始化阶段：
+已冻结的 draft 规则：
 
-- FULL capability 缺失才是 capability blocker；
-- 路线终点歧义在 `PROJECT_INITIALIZED` 后处理；
-- 未连接 Workflow 在 route planning 到达边界后处理；
-- 后两项不得列为初始化失败原因。
+- 必须提供结构化 selection spec；
+- exactly one model + explicit component IDs；
+- 不从自然语言、chain wildcard 或常见 MD 习惯猜测选择；
+- 不默认保留蛋白或删除水/离子；
+- v1 只支持完整 component selection；
+- confirmed `COVALENT | DISULFIDE | GLYCOSIDIC` 跨 boundary 时 BLOCKED；
+- 不自动扩展选择，也不静默切断连接；
+- coordination 和 geometry-only candidate 不强制 inclusion，但写入 boundary report；
+- selected component 的全部 residues/atoms/altLoc 与属性保留；
+- output format 必须显式选择 PDB 或 MMCIF；
+- Operation 只创建 UNVALIDATED STRUCTURE candidate；
+- Validator 独立重算 expected set，核验 mapping、coordinates、attributes、connections 和 hashes；
+- Validator 通过仅表示 selection fidelity，不表示 altLoc、completeness、protonation 或最终结构准备通过。
+
+Behavior fixtures：
+
+```text
+Operation: 18 cases
+Validator: 17 cases
+```
+
+确定性 `select_structure.py`、`validate_selection.py`、combined result builder 和可执行测试尚未实现，因此 1.3 仍只是 contract draft。
 
 ## 当前实现状态
 
-- `md_workflow_manager`：主文件 311 行；启动自锁已修正；待真实项目端到端验证；
-- `runtime_schema_validator`：ACTIVE，可作为 FAST/FULL 默认确定性实现；
-- `state_transaction`：DESIGNED；初始化已有内建提交路径，不构成 blocker；
-- `structure_preparation_workflow`：双接口 draft，待 Manager 集成；
-- `source_recognition`：1.1 功能检查已由用户测试通过；需复测 closure、FAST 和最小记录；
-- `component_and_residue_classification_validator`：subagent v2、分类语义与 deterministic parser 已对齐并通过 synthetic tests；待真实结构和端到端测试；
+- `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
+- `runtime_schema_validator`：ACTIVE；
+- `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
+- `component_and_residue_classification_validator`：parser + result wrapper draft，待 actual FAST、真实结构与 Manager 集成；
+- `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
+- `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
-
-Manager 和完整工作流仍为 draft；Tool 激活或单个 parser 测试通过不等同于 Manager 端到端验收通过。
 
 ## 尚未冻结
 
-- content map 的 `load_when` 与 `applicable_to` 扩展；
-- `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 实现；
-- 1.2 标准 residue alias、共价候选和配位阈值 registries；
-- 1.2 真实 PDB/mmCIF/AF3 文件接受性；
-- 1.2 shared subagent result 包装和 FAST integration；
+- content map 的 `load_when` / `applicable_to` 扩展；
+- 1.2 registries、真实结构接受性和 Manager 集成；
+- 1.3 selection schemas/rules、确定性实现和 combined task；
+- `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
 - Manager 真实项目端到端集成。
 
 ## 当前权威文件
@@ -190,16 +166,13 @@ Manager 和完整工作流仍为 draft；Tool 激活或单个 parser 测试通�
 - `AGENTS.md`；
 - `design_records/logging_and_record_system.md`；
 - `00_manager/md_workflow_manager/SKILL.md`；
-- `00_manager/md_workflow_manager/references/project_initialization_protocol.md`；
-- `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
-- `00_manager/md_workflow_manager/references/manager_display_rules.md`；
-- `00_manager/md_workflow_manager/references/manager_runtime_checklist.md`；
+- `00_manager/md_workflow_manager/references/`；
 - `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`；
 - `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`；
 - `05_tools/tool_registry.yaml`；
 - `04_evals/runtime_schema_validator/VALIDATION.md`；
 - `04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md`；
+- `04_evals/chain_and_component_selection/SELECTION_DRAFT_VALIDATION.md`；
 - `03_contracts/README.md`；
-- `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`；
 - 本文件。
