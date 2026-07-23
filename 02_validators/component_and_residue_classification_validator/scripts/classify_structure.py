@@ -111,6 +111,8 @@ def initial_class(r:dict,canonical:dict,aliases:dict,waters:set,ions:dict)->dict
         pc,tc=canonical[name]
         if r["entity_type"]==gemmi.EntityType.NonPolymer:
             return dict(polymer_class="UNKNOWN",topology_class="UNKNOWN",component_role="UNKNOWN",canonical_parent=name,confidence="LOW",evidence=["canonical residue name conflicts with nonpolymer entity metadata"],decision_required=True)
+        if ep!="UNKNOWN" and ep!=pc:
+            return dict(polymer_class="UNKNOWN",topology_class="UNKNOWN",component_role="UNKNOWN",canonical_parent=name,confidence="LOW",evidence=[f"metadata conflict: canonical registry implies {pc} but entity polymer type is {ep}"],decision_required=True)
         ev=["canonical residue registry"]
         if ep!="UNKNOWN": pc=ep; ev.append(f"entity polymer type: {ep}")
         return dict(polymer_class=pc,topology_class=tc,component_role="POLYMER",canonical_parent=name,confidence="HIGH" if r["entity_type"]==gemmi.EntityType.Polymer else "MEDIUM",evidence=ev,decision_required=False)
@@ -281,7 +283,8 @@ def classify(a)->dict:
     for rr,x in recs.items():
         if x["topology_class"]!="UNKNOWN" or not x["decision_required"] or any(rr in z["affected_object_ids"] for z in amb):continue
         reason="; ".join(x["evidence"])
-        if "ion-like" in reason or "solvent-like" in reason:cat="OBJECT_IDENTITY";opts=["correct residue/element identity","treat as independent nonstandard","exclude"]
+        if "metadata conflict" in reason:cat="METADATA_CONFLICT";opts=["correct entity/polymer metadata","use residue chemistry and backbone context","provide corrected source"]
+        elif "ion-like" in reason or "solvent-like" in reason:cat="OBJECT_IDENTITY";opts=["correct residue/element identity","treat as independent nonstandard","exclude"]
         elif x.get("canonical_parent"):cat="RESIDUE_ALIAS";opts=["use standard alias","covalently linked nonstandard","independent nonstandard"]
         else:cat="POLYMER_MEMBERSHIP";opts=["standard residue","covalently linked nonstandard","independent nonstandard","exclude"]
         amb.append(ambiguity(len(amb)+1,cat,f"How should {rr} be classified?",reason,[rr],opts))
