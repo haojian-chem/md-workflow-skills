@@ -5,26 +5,24 @@
 ## 检查对象
 
 - `00_manager/md_workflow_manager/SKILL.md`
+- `00_manager/md_workflow_manager/references/project_initialization_protocol.md`
 - `00_manager/md_workflow_manager/references/route_planning_protocol.md`
 - `00_manager/md_workflow_manager/references/manager_display_rules.md`
+- `00_manager/md_workflow_manager/references/manager_runtime_checklist.md`
 - `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`
 - `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`
 - `05_tools/tool_registry.yaml`
 - `05_tools/runtime_schema_validator/`
 - `design_records/logging_and_record_system.md`
-- `03_contracts/project_event.schema.yaml`
-- `03_contracts/route_record.schema.yaml` v3
-- `04_evals/md_workflow_manager/fixtures/manager_behavior_cases.yaml`
-- `04_evals/md_workflow_manager/fixtures/initialization_transaction_cases.yaml`
-- `04_evals/md_workflow_manager/fixtures/route_planning_cases.yaml`
-- `04_evals/md_workflow_manager/fixtures/task_recording_and_display_cases.yaml`
-- `04_evals/md_workflow_manager/fixtures/validation_mode_cases.yaml`
+- Manager fixtures 与 shared contracts
 
 ## 当前静态状态
 
 ```text
-md_workflow_manager/SKILL.md lines: 495
+md_workflow_manager/SKILL.md lines: 311
+previous lines: 495
+reduction: 184 lines
 front matter: PASS by GitHub reread
 manager behavior cases: 20
 initialization transaction cases: 4
@@ -35,18 +33,50 @@ route record schema version: 3
 runtime_schema_validator status: IMPLEMENTED, not ACTIVE
 ```
 
-Manager Skill 仍低于 500 行渐进披露警告阈值，但已接近阈值。后续新增细节应优先下沉到 references，避免主文件继续增长。
+主文件已回到渐进披露目标范围。该结果是规则与文件结构静态对齐，不代表测试主机上的运行验收已经通过。
 
-本报告记录规则、content map 和 fixtures 的静态对齐，不代表测试主机上的真实运行验收已经通过。
+## 渐进披露迁移
+
+主 `SKILL.md` 仅保留：
+
+- 顶层职责与禁止事项；
+- 入口状态和三个 execution barrier；
+- Focus/Workstream 路由；
+- Workflow planning/execution 调用规则；
+- task 顶层闭环；
+- FAST/FULL 选择；
+- 恢复、结束和用户展示入口；
+- 八个顶层自检 barrier。
+
+下沉内容：
+
+```text
+初始化事务、候选状态、FULL、原子提交与失败处理
+→ references/project_initialization_protocol.md
+
+完整运行自检
+→ references/manager_runtime_checklist.md
+
+FAST/FULL、cache、Tool 权限与失败
+→ deterministic_tool_protocol.md
+
+记录、session、snapshot 与最小闭环细节
+→ design_records/logging_and_record_system.md
+
+closure 字段与展示格式
+→ references/manager_display_rules.md
+```
+
+本轮只迁移和去重，没有改变已确认入口顺序、路线范围语义、task 闭环或 Tool 规则。
 
 ## 入口控制顺序
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
-→ 候选状态生成
+→ candidate project/workstream state
 → FULL schema/reference validation
-→ 受控提交 project/workstream state
-→ 持久 project state: RESUMABLE
+→ controlled state commit
+→ persistent project state: RESUMABLE
 → PROJECT_INITIALIZED
 → ROUTE_SCOPE_RESOLUTION
 → ROUTE_SCOPE_RESOLVED
@@ -58,8 +88,8 @@ ENTRY_STATE_EVALUATED: NEW
 Barrier：
 
 1. `PROJECT_INITIALIZED` 前不调用 Workflow、不创建 route 或业务 task；
-2. `ROUTE_SCOPE_RESOLVED` 前不请求 fragment、不创建 route；
-3. 有效 active route 不存在时不创建业务 task。
+2. `ROUTE_SCOPE_RESOLVED` 前不创建 route；
+3. 有效 active route 不存在或不适用时不创建业务 task。
 
 ## 普通 task 最小记录闭环
 
@@ -67,102 +97,43 @@ Barrier：
 task.yaml
 → subagent execution
 → candidate result/related records/state
-→ FAST validation
-→ result.yaml
-→ 必要 artifact/decision/submission record
-→ 一条终态 task event
+→ one FAST validation
+→ commit
+→ one terminal task event
 → Workstream state
 → task closure summary
 ```
 
-普通 task 默认不机械写入：
+普通 task 不机械写 `TASK_PREPARED`、`TASK_STARTED`、无变化 project state、session 增量、snapshot、route revision 或 FULL validation。
 
-- `TASK_PREPARED`；
-- `TASK_STARTED`；
-- 执行前 Workstream `EXECUTING` 更新；
-- 无变化的 project state；
-- Manager session 逐 task 增量；
-- snapshot；
-- 无变化 route revision；
-- 空 artifact/decision/submission record；
-- FULL contract validation。
+## FAST/FULL 与 Tool
 
-外部 submission、长耗时、高风险或不可逆 task 仍保留强化预记录和恢复锚点。
-
-## FAST/FULL 校验规则
-
-### FAST
-
-普通 task 只对本次 changed runtime instances 进行一次批量校验，并检查直接引用。
+FAST 仅处理 changed runtime instances 与直接引用；FULL 仅用于初始化、恢复、contract/root 变化和关键生命周期节点。
 
 禁止：
 
-- 扫描全部 Workstream/route/artifact/decision/submission/event；
-- 每步调用 authoring `validate_contracts.py`；
-- schema hash 未变化时重复 meta-validation；
-- 用 LLM 逐字段模拟 FULL。
+- 每步扫描全部项目记录；
+- schema hash/cache 命中时重复 meta-validation；
+- 用 LLM 逐字段模拟 FULL；
+- 将未测试 `IMPLEMENTED` Tool 作为默认生产路径。
 
-### FULL
-
-仅用于：初始化、schema/contract 变化、恢复前后、root 变化、重要 Workstream、重大 artifact 谱系变化、首个外部长任务提交前、Workstream 终结或用户明确完整审计。
-
-模型强度分层未采纳，不属于本轮规则。
-
-## 确定性 Tool 集成
-
-已建立：
-
-- Tool Authoring Skill；
-- deterministic tool protocol；
-- tool registry；
-- `runtime_schema_validator` 0.1.0 初始实现；
-- `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 设计 contract。
-
-`runtime_schema_validator` 支持：
-
-- FAST/FULL；
-- schema bundle hash cache；
-- changed paths 批量校验；
-- direct reference checks；
-- candidate actual path 到 future logical project path overlay。
-
-该 Tool 尚未运行 tests/benchmark，因此 registry 保持 `IMPLEMENTED`、`active_by_default: false`。
+模型强度分层未采纳，不属于本 contract。
 
 ## Task closure 用户展示
 
-每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 启动前显示精简 closure summary。
+每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 前显示精简 closure summary。
 
-`source_recognition` 的 DONE 只能表述来源识别、复制/复用和 SHA-256 检查通过；其 STRUCTURE artifact 仍为 `UNVALIDATED`。
-
-## fixtures 覆盖
-
-`validation_mode_cases.yaml` 覆盖：
-
-- 普通 task 单次 FAST 批量校验；
-- 初始化和恢复使用 FULL；
-- schema cache hit/miss；
-- Tool FAIL 阻止终态提交；
-- IMPLEMENTED 未验证 Tool 不作为默认路径；
-- 模型强度规则不进入本 contract。
-
-`runtime_schema_validator` tests/fixtures 覆盖设计包括：
-
-- FAST 忽略无关无效记录；
-- FULL 发现无关记录错误；
-- schema hash cache；
-- missing direct reference；
-- candidate logical path overlay。
+`source_recognition` 的 DONE 只能表示来源识别、复制/复用和 SHA-256 检查通过；STRUCTURE artifact 仍为 `UNVALIDATED`。
 
 ## 仍需完成
 
 Manager 保持 `draft`，尚不能冻结。后续必须：
 
-1. 在测试主机运行 `04_evals/runtime_schema_validator/test_validate.py`；
-2. 记录 FAST cold-cache、FAST warm-cache 和 FULL benchmark；
-3. 运行全量 authoring contract/content-map validator；
-4. 确认无 false PASS 后，再决定是否把 `runtime_schema_validator` 标为 ACTIVE；
+1. 运行全量 authoring contract/content-map validator；
+2. 检查新 references 与主文件之间无遗漏、冲突和重复定义；
+3. 在测试主机运行 `runtime_schema_validator` tests 与 benchmark；
+4. 实测 NEW 初始化严格调用 initialization protocol；
 5. 实测普通 task 只产生一次 FAST Tool 调用；
-6. 实测 NEW 初始化的 candidate overlay + FULL validation；
-7. 实测 `source_recognition` closure summary；
-8. 完成 Manager → Workflow → task → FAST validation → state/record 的端到端测试；
-9. 使用真实目录验证恢复行为。
+6. 实测 `source_recognition` closure summary；
+7. 完成 Manager → Workflow → task → FAST validation → state/record 的端到端测试；
+8. 使用真实目录验证项目级与 Workstream 级恢复。
