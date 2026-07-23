@@ -1,8 +1,50 @@
 schema_version: 1
 suite: md_workflow_manager_route_planning
 cases:
+  - case_id: new_initialization_does_not_create_route
+    request: 初始化一个新项目
+    given:
+      entry_state: NEW
+      project_initialized: true
+      route_scope_resolved: false
+    expected:
+      active_route_id: null
+      request_route_fragment: false
+      create_route_record: false
+      create_business_task: false
+      forbidden: treat_initialization_as_planning
+
+  - case_id: explicit_scope_event_precedes_route
+    request: 只完成 source_recognition
+    given:
+      project_initialized: true
+      explicit_route_end: source_recognition
+    expected:
+      action_order:
+        - persist_ROUTE_SCOPE_RESOLVED
+        - request_workflow_fragment
+        - create_route_record_v3
+      route_scope_source: USER_REQUEST
+      forbidden: create_route_before_scope_event
+
+  - case_id: route_v3_links_resolved_scope
+    given:
+      resolved_scope_event_id: event_0012
+      route_scope_source: RESOLVED_DECISION
+      decision_id: decision_0003
+    expected:
+      route_schema_version: 3
+      scope_resolution:
+        source: RESOLVED_DECISION
+        resolved_event_id: event_0012
+        decision_id: decision_0003
+      forbidden: omit_scope_resolution
+
   - case_id: single_connected_workflow_complete_route
     request: 从 structure_preparation 入口规划到该阶段完成
+    given:
+      project_initialized: true
+      route_scope_resolved: true
     fragments:
       - workflow: structure_preparation_workflow
         status: COMPLETE
@@ -13,6 +55,9 @@ cases:
 
   - case_id: route_stops_at_unconnected_topology_boundary
     request: 从原始结构规划到 topology_preparation 完成
+    given:
+      project_initialized: true
+      route_scope_resolved: true
     registry:
       structure_preparation: connected
       topology_preparation: planned
@@ -23,6 +68,9 @@ cases:
 
   - case_id: conditional_steps_are_preserved
     request: 规划完整结构准备路线
+    given:
+      project_initialized: true
+      route_scope_resolved: true
     evidence:
       altloc_status: unknown
       missing_region_status: unknown
@@ -33,6 +81,9 @@ cases:
       forbidden: preemptive_skip
 
   - case_id: fragment_artifact_interface_mismatch
+    given:
+      project_initialized: true
+      route_scope_resolved: true
     fragments:
       - workflow: structure_preparation_workflow
         exit_artifact: UNVALIDATED_STRUCTURE
@@ -56,6 +107,7 @@ cases:
   - case_id: user_endpoint_inside_workflow
     request: 只执行到 component_and_residue_classification
     expected:
+      route_scope_event: ROUTE_SCOPE_RESOLVED
       route_end:
         workflow: structure_preparation_workflow
         substep: component_and_residue_classification
@@ -69,6 +121,8 @@ cases:
     expected:
       action: create_new_workstream
       preserve_existing_submission: true
+      resolve_new_workstream_scope_separately: true
+      forbidden: create_route_only_because_workstream_created
 
   - case_id: unchanged_projection_does_not_create_revision
     active_route: route_0004
@@ -85,4 +139,6 @@ cases:
       - stop_after_npt
     expected:
       action: request_blocking_decision
+      route_scope_event: ROUTE_SCOPE_REQUESTED
       create_route_before_resolution: false
+      request_workflow_fragment: false
