@@ -111,6 +111,47 @@ HETATM    2  O1  CA  A   1      11.200  10.000  10.000  1.00 20.00           O
 END
 """
 
+METADATA_CONFLICT_CIF = """\
+data_conflict
+_entry.id conflict
+loop_
+_entity.id
+_entity.type
+1 polymer
+loop_
+_entity_poly.entity_id
+_entity_poly.type
+1 polydeoxyribonucleotide
+loop_
+_struct_asym.id
+_struct_asym.entity_id
+A 1
+loop_
+_atom_site.group_PDB
+_atom_site.id
+_atom_site.type_symbol
+_atom_site.label_atom_id
+_atom_site.label_alt_id
+_atom_site.label_comp_id
+_atom_site.label_asym_id
+_atom_site.label_entity_id
+_atom_site.label_seq_id
+_atom_site.pdbx_PDB_ins_code
+_atom_site.Cartn_x
+_atom_site.Cartn_y
+_atom_site.Cartn_z
+_atom_site.occupancy
+_atom_site.B_iso_or_equiv
+_atom_site.pdbx_formal_charge
+_atom_site.auth_seq_id
+_atom_site.auth_asym_id
+_atom_site.pdbx_PDB_model_num
+ATOM 1 N N . ALA A 1 1 ? 10 10 10 1 20 ? 1 A 1
+ATOM 2 C CA . ALA A 1 1 ? 11.4 10 10 1 20 ? 1 A 1
+ATOM 3 C C . ALA A 1 1 ? 12 11.4 10 1 20 ? 1 A 1
+ATOM 4 O O . ALA A 1 1 ? 11.4 12.4 10 1 20 ? 1 A 1
+"""
+
 
 def write(path: Path, text: str) -> Path:
     path.write_text(text, encoding="utf-8")
@@ -229,6 +270,16 @@ def test_aliases_and_ion_name_conflict(tmp_path: Path) -> None:
     conflict_result = MODULE.classify(args_for(conflict, tmp_path / "conflict"))
     assert residues_by_name(conflict_result)["CA"][0]["topology_class"] == "UNKNOWN"
     assert conflict_result["outcome_code"] == "CLASSIFICATION_DECISION_REQUIRED"
+
+
+def test_metadata_polymer_conflict_requires_decision(tmp_path: Path) -> None:
+    structure = write(tmp_path / "metadata_conflict.cif", METADATA_CONFLICT_CIF)
+    result = MODULE.classify(args_for(structure, tmp_path))
+    residue = residues_by_name(result)["ALA"][0]
+
+    assert residue["topology_class"] == "UNKNOWN"
+    assert result["outcome_code"] == "CLASSIFICATION_DECISION_REQUIRED"
+    assert any(item["category"] == "METADATA_CONFLICT" for item in result["ambiguities"])
 
 
 def test_af3_label_and_cli_outputs(tmp_path: Path) -> None:
