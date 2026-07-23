@@ -56,7 +56,7 @@ MD project root
 - runtime state、records、业务文件和项目 cache 位于 MD project root；
 - 不得默认真实 MD 项目根目录内存在 `03_contracts/`；
 - schema Tool 必须显式接收或解析 `<skill_root>/03_contracts`；
-- Tool 输出必须记录实际使用的 project root、contracts path 和 Tool version。
+- 调用方必须记录实际使用的 Tool 名称、版本、project root 和 contracts path。
 
 示例：
 
@@ -116,7 +116,35 @@ REQUESTED
 5. 说明兼容性、迁移和回退方式；
 6. 不覆盖旧版本的审计信息。
 
-## 6. 运行时 schema 校验模式
+## 6. 强制 gate capability 预检
+
+任何 Skill 在把某项能力设为不可跳过的 hard gate 前，必须确认至少存在一种可运行实现：
+
+```text
+ACTIVE Tool
+或
+权威协议明确规定的内建确定性执行路径
+```
+
+规则：
+
+- `DESIGNED`、`IMPLEMENTED` 或 `TESTED` 但未 `ACTIVE` 的 Tool 不构成默认可运行实现；
+- 只有接口名称、未来计划或未实现目录不构成能力；
+- capability 预检应在产生部分状态写入前完成；
+- 若 hard gate 没有可运行实现，当前 Manager/Skill 版本应标为 `NOT_RUNNABLE`，不得等到真实项目 NEW 初始化时才暴露自锁；
+- 新增 hard gate 时必须增加“能力缺失”负向 fixture；
+- 内建确定性路径必须在权威协议中写明输入、顺序、失败处理和权限，不能由运行时 LLM 临时发明。
+
+阻断因果必须按当前 barrier 分层：
+
+```text
+Current blocker
+Pending after current barrier
+```
+
+只把导致当前 barrier 无法通过的事实列为 `Current blocker`。路线范围歧义、未连接 Workflow 或后续科学输入问题，在其处理阶段到达前只能列为 `Pending after current barrier`，不得冒充当前初始化失败原因。
+
+## 7. 运行时 schema 校验模式
 
 ### FAST
 
@@ -152,7 +180,13 @@ FULL 可以执行：
 - 项目级交叉引用扫描；
 - 索引、路线、task、artifact、decision、submission 与 event 一致性检查。
 
-## 7. schema cache
+当前默认实现：
+
+```text
+runtime_schema_validator 0.1.0 — ACTIVE
+```
+
+## 8. schema cache
 
 cache key 必须基于适用 schema 文件的内容 hash，不以时间戳代替。
 
@@ -168,14 +202,15 @@ cache 是可删除和可重建的非权威数据，不得替代 schema 或项目
 
 cache 默认写在 MD project root 下的已注册 cache 路径，不污染 Skill architecture root。
 
-## 8. 失败与回退
+## 9. 失败与回退
 
 - Tool 返回 `FAIL` 时，Manager/调用 Skill 按结构化错误处理，不得由 LLM 宣称通过；
-- Tool 不可用或版本不兼容时，记录 blocker 或使用已批准的确定性备用工具；
+- Tool 不可用或版本不兼容时，使用已批准的确定性备用路径；没有备用路径时记录当前 capability blocker；
 - 不得用 LLM 逐字段模拟 FULL schema 校验作为默认回退；
-- 工具失败不得自动修改 schema、降低 gate 或忽略引用错误。
+- 工具失败不得自动修改 schema、降低 gate 或忽略引用错误；
+- 后续路线或 Workflow 问题不得与当前 Tool blocker 并列成同一级停止原因。
 
-## 9. 权限
+## 10. 权限
 
 只读工具不得修改项目权威文件。
 
