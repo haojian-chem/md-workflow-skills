@@ -12,6 +12,28 @@
 - Operation 与 Validator 即使由同一子 Agent 连续执行，结果也必须分开；
 - Manager 是项目状态和结构化记录的唯一提交者。
 
+## Manager 入口与执行 barrier
+
+入口判定、项目初始化、路线范围解析、路线规划和执行相互独立：
+
+```text
+ENTRY_STATE_EVALUATED
+→ PROJECT_INITIALIZED（仅 NEW）
+→ ROUTE_SCOPE_RESOLUTION
+→ ROUTE_SCOPE_RESOLVED
+→ ROUTE_PLANNING
+→ ROUTE_CREATED
+→ EXECUTION
+```
+
+- `NEW` 只表示入口状态，不包含路线规划或任务执行；
+- NEW 项目在根目录明确且无冲突时自动初始化，不要求用户额外提示；
+- 初始化创建项目状态和首个 Workstream，但不创建首条 route；
+- 路线终点模糊时必须向用户确认，不得自行选择默认终点；
+- `PROJECT_INITIALIZED` 前不调用 Workflow；
+- `ROUTE_SCOPE_RESOLVED` 前不请求 route fragment；
+- 有效 active route 不存在时不创建业务 task。
+
 ## Workflow 的两种接口
 
 规划与执行分离：
@@ -125,9 +147,17 @@
 
 当前 15 份 contracts 已覆盖 Workflow route fragment/decision、Workstream、Focus、task unit、project/workstream state、事件、路线、人工决策、submission、artifact set、snapshot 和 Manager session front matter。
 
+`project_event.schema.yaml` 已包含：
+
+```text
+ROUTE_SCOPE_REQUESTED
+ROUTE_SCOPE_RESOLVED
+```
+
 ## 当前实现状态
 
 - Manager、项目状态、Workstream 和日志体系设计已经冻结；
+- Manager 入口初始化、路线范围解析和执行 barrier 已对齐；
 - route planning protocol 与 15 份共享 contracts 已对齐；
 - `md_workflow_manager` draft 已建立，仍需可执行 fixtures 与端到端集成；
 - `structure_preparation_workflow` 已支持 route fragment 与 execution decision，仍需 Manager 集成；
