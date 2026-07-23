@@ -1,0 +1,68 @@
+schema_version: 1
+name: runtime_schema_validator
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: validate.py
+purpose:
+  - validate runtime project records with shared contracts
+  - avoid repeated LLM-based field inspection
+  - cache schema meta-validation by content hash
+modes:
+  FAST:
+    scope: explicitly changed runtime instances and direct references
+    requires_changed_paths: true
+  FULL:
+    scope: all recognized runtime instances and project-level references
+    requires_changed_paths: false
+inputs:
+  - project_root
+  - mode
+  - changed_paths
+  - optional schema overrides
+outputs:
+  format: json
+  fields:
+    - status
+    - mode
+    - schema_bundle_hash
+    - schema_cache_hit
+    - validated
+    - errors
+    - warnings
+    - elapsed_ms
+permissions:
+  read:
+    - 03_contracts/**
+    - 00_project_state/**
+    - 00_project_records/**
+  write:
+    - .md_workflow_cache/runtime_schema_validator/**
+    - explicit output path
+side_effects:
+  project_authoritative_files_modified: false
+cache:
+  enabled: true
+  key: SHA-256 over all applicable schema file contents
+  location: .md_workflow_cache/runtime_schema_validator/
+error_model:
+  pass_exit_code: 0
+  validation_failure_exit_code: 1
+  tool_failure_exit_code: 2
+compatibility:
+  minimum_python: '3.10'
+  dependencies:
+    - PyYAML
+    - jsonschema
+security:
+  network_access: false
+  follows_symlinks: false
+  arbitrary_code_execution: false
+tests:
+  path: 04_evals/runtime_schema_validator/
+release:
+  active_by_default: false
+  activation_requirement:
+    - executable fixtures pass
+    - FAST and FULL benchmark recorded
+    - no false PASS in negative fixtures
