@@ -14,24 +14,13 @@
 - 普通 task 最小同步记录和 task closure 用户展示；
 - FAST/FULL runtime validation 与 schema hash cache；
 - Tool protocol、registry、Tool Authoring Skill；
-- `runtime_schema_validator` 0.1.0 初始实现；
+- `runtime_schema_validator` 0.1.0：ACTIVE；
+- NEW 初始化 capability 预检与内建确定性状态提交路径；
+- current blocker / pending after current barrier 因果分层；
 - 串行 task-unit 临时子 Agent 协议；
 - `structure_preparation_workflow` 与 `source_recognition` drafts。
 
-Manager 已完成渐进披露重构：
-
-```text
-00_manager/md_workflow_manager/SKILL.md: 495 → 311 lines
-```
-
-新增：
-
-```text
-references/project_initialization_protocol.md
-references/manager_runtime_checklist.md
-```
-
-该重构只迁移和去重，不改变已确认运行语义。
+Manager 主文件保持 311 行；初始化事务和完整自检位于 references。
 
 ## 使用原则
 
@@ -41,13 +30,15 @@ references/manager_runtime_checklist.md
 - 涉及 Tool 时读取 deterministic tool protocol、Tool Authoring Skill 和 registry；
 - 涉及状态和记录时读取 `design_records/logging_and_record_system.md`；
 - 涉及初始化时读取 `project_initialization_protocol.md`；
-- 业务窗口不得本地重定义共享 contract、状态、路线、记录或 Tool contract；
-- 未测试 Tool 不得标记为 ACTIVE 或作为默认生产路径。
+- 未测试 Tool 不得标记为 ACTIVE 或作为默认生产路径；
+- hard gate 在发布前必须有 ACTIVE Tool 或权威内建确定性路径；
+- 后续路线和 Workflow 问题不得冒充当前 barrier 的 blocker。
 
 ## Manager 入口顺序
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
+→ capability preflight
 → candidate state
 → FULL validation
 → controlled commit
@@ -64,6 +55,9 @@ ENTRY_STATE_EVALUATED: NEW
 
 - NEW 只是本轮入口判定；
 - 根目录明确且无冲突时自动初始化；
+- `FULL_RUNTIME_VALIDATION` 由 ACTIVE `runtime_schema_validator` 提供；
+- `CONTROLLED_STATE_COMMIT` 可使用初始化协议规定的内建确定性路径；
+- `state_transaction` 为 DESIGNED 不得阻塞 NEW；
 - 初始化创建首个 Workstream，但不创建 route；
 - `PROJECT_INITIALIZED` 前不调用 Workflow；
 - 路线范围解析是初始化后的独立事件；
@@ -91,53 +85,61 @@ FULL 仅用于初始化、contract/root 变化、恢复前后、重要 Workstrea
 - 用 LLM 逐字段模拟 FULL；
 - 将模型推理强度分层写入本 contract。
 
-## 普通 task 最小闭环
+## Tool 状态
 
 ```text
-task.yaml
-→ subagent execution
-→ candidate result/records/state
-→ FAST validation
-→ commit
-→ one terminal task event
-→ Workstream state
-→ visible task closure
+runtime_schema_validator 0.1.0 — ACTIVE
+state_transaction 0.1.0 — DESIGNED, optional optimization
+incremental_reference_checker 0.1.0 — DESIGNED
+task_closure_renderer 0.1.0 — DESIGNED
 ```
 
-普通 task 不机械写 `TASK_PREPARED`、`TASK_STARTED`、无变化 project state、session 增量、snapshot、route revision 或空记录。
+`runtime_schema_validator` 激活证据：
 
-外部 submission、长耗时、高风险或不可逆 task 保留强化预记录。
+```text
+04_evals/runtime_schema_validator/VALIDATION.md
+5 executable tests passed
+FAST cold median: 5.977 ms
+FAST warm median: 3.311 ms
+FULL warm median: 4.181 ms
+```
 
-## 确定性 Tool 体系
+## 阻断因果分层
 
-Tool 不是 Agent，也不是第五个决策层。
+发生停止时使用：
 
-当前 registry：
+```text
+Current blocker:
+<当前 barrier 的直接原因或 none>
 
-- `runtime_schema_validator`：IMPLEMENTED，待 executable tests/benchmark；
-- `state_transaction`：DESIGNED；
-- `incremental_reference_checker`：DESIGNED；
-- `task_closure_renderer`：DESIGNED。
+Pending after current barrier:
+<通过当前 barrier 后才处理的问题或 none>
+```
 
-业务 Skill 可以提交 `tool_request`，但不得在运行中的业务 task 内修改共享 Tool。
+初始化阶段：
+
+- FULL capability 缺失才是 capability blocker；
+- “开始 MD”的路线终点歧义在 `PROJECT_INITIALIZED` 后处理；
+- 未连接 Workflow 在 route planning 到达边界后处理；
+- 后两项不得列为初始化失败原因。
 
 ## 当前实现状态
 
-- `md_workflow_manager`：主文件 311 行；初始化与自检已渐进披露；待 validator 和端到端验证；
-- `md-workflow-tool-authoring`：draft；
-- `runtime_schema_validator`：已实现 FAST/FULL、cache、直接引用和 candidate overlay；尚未 ACTIVE；
+- `md_workflow_manager`：主文件 311 行；启动自锁已修正；待真实项目端到端验证；
+- `runtime_schema_validator`：ACTIVE，可作为 FAST/FULL 默认确定性实现；
+- `state_transaction`：DESIGNED；初始化已有内建提交路径，不构成 blocker；
 - `structure_preparation_workflow`：双接口 draft，待 Manager 集成；
 - `source_recognition`：1.1 功能检查已由用户测试通过；需复测 closure、FAST 和最小记录；
 - `component_and_residue_classification_validator`：待迁移到 subagent task/result v2；
 - 其他 Phase 1 Skills：待编写。
 
-本轮尚未在测试主机运行新增 Tool tests、全量 validator 和重构后的端到端测试，不得宣称运行验收通过。
+Manager 和完整工作流仍为 draft；Tool 激活不等同于 Manager 端到端验收通过。
 
 ## 尚未冻结
 
 - content map 的 `load_when` 与 `applicable_to` 扩展；
-- `runtime_schema_validator` ACTIVE 状态；
-- `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 实现。
+- `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 实现；
+- Manager 真实项目端到端集成。
 
 ## 当前权威文件
 
@@ -152,6 +154,7 @@ Tool 不是 Agent，也不是第五个决策层。
 - `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`；
 - `05_tools/tool_registry.yaml`；
+- `04_evals/runtime_schema_validator/VALIDATION.md`；
 - `03_contracts/README.md`；
 - `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`；
 - 本文件。
