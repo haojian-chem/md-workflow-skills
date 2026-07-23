@@ -1,6 +1,6 @@
 schema_version: 3
 skill_name: md-workflow-tool-authoring
-skill_type: authoring
+skill_type: authoring_guide
 skill_path: 00_authoring/md-workflow-tool-authoring
 contract_status: draft
 content_ownership_status: draft
