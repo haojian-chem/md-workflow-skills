@@ -43,7 +43,32 @@ Tool 不得：
 
 业务 Skill 可以提出 `tool_request`，但不得在运行中的业务 task 内临时修改共享工具。
 
-## 3. 生成工具的触发条件
+## 3. 两个根目录
+
+Tool 调用必须区分：
+
+```text
+Skill architecture root
+MD project root
+```
+
+- Tool 实现、registry 和 `03_contracts/` 位于 Skill architecture root；
+- runtime state、records、业务文件和项目 cache 位于 MD project root；
+- 不得默认真实 MD 项目根目录内存在 `03_contracts/`；
+- schema Tool 必须显式接收或解析 `<skill_root>/03_contracts`；
+- Tool 输出必须记录实际使用的 project root、contracts path 和 Tool version。
+
+示例：
+
+```bash
+python <skill_root>/05_tools/runtime_schema_validator/validate.py \
+  --project-root <md_project_root> \
+  --contracts-dir <skill_root>/03_contracts \
+  --mode FAST \
+  --changed <candidate_or_runtime_paths>
+```
+
+## 4. 生成工具的触发条件
 
 满足以下任一条件时，可以提出工具开发请求：
 
@@ -68,7 +93,7 @@ tool_request:
   side_effects: []
 ```
 
-## 4. 工具生命周期
+## 5. 工具生命周期
 
 ```text
 REQUESTED
@@ -91,7 +116,7 @@ REQUESTED
 5. 说明兼容性、迁移和回退方式；
 6. 不覆盖旧版本的审计信息。
 
-## 5. 运行时 schema 校验模式
+## 6. 运行时 schema 校验模式
 
 ### FAST
 
@@ -127,7 +152,7 @@ FULL 可以执行：
 - 项目级交叉引用扫描；
 - 索引、路线、task、artifact、decision、submission 与 event 一致性检查。
 
-## 6. schema cache
+## 7. schema cache
 
 cache key 必须基于适用 schema 文件的内容 hash，不以时间戳代替。
 
@@ -141,14 +166,16 @@ schema 文件变化、cache 缺失或用户明确要求重新验证时，重新�
 
 cache 是可删除和可重建的非权威数据，不得替代 schema 或项目状态。
 
-## 7. 失败与回退
+cache 默认写在 MD project root 下的已注册 cache 路径，不污染 Skill architecture root。
+
+## 8. 失败与回退
 
 - Tool 返回 `FAIL` 时，Manager/调用 Skill 按结构化错误处理，不得由 LLM 宣称通过；
 - Tool 不可用或版本不兼容时，记录 blocker 或使用已批准的确定性备用工具；
 - 不得用 LLM 逐字段模拟 FULL schema 校验作为默认回退；
 - 工具失败不得自动修改 schema、降低 gate 或忽略引用错误。
 
-## 8. 权限
+## 9. 权限
 
 只读工具不得修改项目权威文件。
 
