@@ -26,9 +26,18 @@ from jsonschema import RefResolver, validators
 
 @dataclass(frozen=True)
 class ValidationTarget:
-    path: Path
+    actual_path: Path
+    logical_path: Path
     schema_name: str
     kind: str = "yaml"
+
+
+@dataclass(frozen=True)
+class ValidatedDocument:
+    actual_path: Path
+    logical_path: Path
+    schema_name: str
+    document: Any
 
 
 class ToolError(RuntimeError):
@@ -51,8 +60,7 @@ def load_json_lines(path: Path) -> list[tuple[int, Any]]:
 
 
 def load_markdown_front_matter(path: Path) -> Any:
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
     if not lines or lines[0].strip() != "---":
         raise ToolError(f"missing YAML front matter: {path}")
     try:
@@ -77,19 +85,19 @@ def load_schema_bundle(contracts_dir: Path) -> tuple[dict[str, Any], dict[str, A
     if not schema_files:
         raise ToolError(f"no schema files found in {contracts_dir}")
 
-    by_name: dict[str, Any] = {}
+    schemas: dict[str, Any] = {}
     store: dict[str, Any] = {}
     for path in schema_files:
         document = load_yaml(path)
         if not isinstance(document, dict):
             raise ToolError(f"schema is not a mapping: {path}")
-        by_name[path.name] = document
+        schemas[path.name] = document
         store[path.name] = document
         store[path.resolve().as_uri()] = document
         schema_id = document.get("$id")
         if isinstance(schema_id, str) and schema_id:
             store[schema_id] = document
-    return by_name, store, schema_files
+    return schemas, store, schema_files
 
 
 def ensure_schema_meta_validated(
@@ -112,7 +120,7 @@ def ensure_schema_meta_validated(
         validator_class = validators.validator_for(schema)
         try:
             validator_class.check_schema(schema)
-        except Exception as exc:  # jsonschema exposes several subclasses
+        except Exception as exc:
             raise ToolError(f"schema meta-validation failed for {schema_name}: {exc}") from exc
 
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -128,19 +136,25 @@ def ensure_schema_meta_validated(
     return bundle_hash, False
 
 
-def infer_schema_name(project_root: Path, path: Path) -> str | None:
-    try:
-        relative = path.resolve().relative_to(project_root.resolve())
-    except ValueError:
-        relative = path
+def normalize_project_path(project_root: Path, path: Path) -> Path:
+    if not path.is_absolute():
+        path = project_root / path
+    return path.resolve()
 
-    name = path.name
+
+def infer_schema_name(project_root: Path, logical_path: Path) -> str | None:
+    try:
+        relative = logical_path.resolve().relative_to(project_root.resolve())
+    except ValueError:
+        relative = logical_path
+
+    name = logical_path.name
     parts = relative.parts
     relative_text = relative.as_posix()
 
     if name == "project_state.yaml":
         return "project_state.schema.yaml"
-    if len(parts) >= 3 and parts[:2] == ("00_project_state", "workstreams") and path.suffix in {".yaml", ".yml"}:
+    if len(parts) >= 3 and parts[:2] == ("00_project_state", "workstreams") and logical_path.suffix in {".yaml", ".yml"}:
         return "workstream_state.schema.yaml"
     if name == "task.yaml":
         return "subagent_task.schema.yaml"
@@ -154,20 +168,39 @@ def infer_schema_name(project_root: Path, path: Path) -> str | None:
         return "submission_record.schema.yaml"
     if "/artifacts/" in f"/{relative_text}":
         return "artifact_set.schema.yaml"
-    if relative_text.startswith("00_project_records/state_snapshots/") and path.suffix in {".yaml", ".yml"}:
+    if relative_text.startswith("00_project_records/state_snapshots/") and logical_path.suffix in {".yaml", ".yml"}:
         return "state_snapshot.schema.yaml"
-    if relative_text.startswith("00_project_records/manager/sessions/") and path.suffix == ".md":
+    if relative_text.startswith("00_project_records/manager/sessions/") and logical_path.suffix == ".md":
         return "manager_session.schema.yaml"
     if name == "project_events.jsonl":
         return "project_event.schema.yaml"
     return None
 
 
+def target_kind(path: Path) -> str:
+    if path.suffix == ".jsonl":
+        return "jsonl"
+    if path.suffix == ".md":
+        return "markdown"
+    return "yaml"
+
+
+def parse_path_map(values: list[str], project_root: Path, label: str) -> dict[Path, str]:
+    mapping: dict[Path, str] = {}
+    for value in values:
+        if "=" not in value:
+            raise ToolError(f"invalid {label} value, expected PATH=VALUE: {value}")
+        raw_path, mapped = value.split("=", 1)
+        actual = normalize_project_path(project_root, Path(raw_path))
+        mapping[actual] = mapped.strip()
+    return mapping
+
+
 def discover_full_targets(project_root: Path) -> list[ValidationTarget]:
     candidates: list[Path] = []
-    fixed = project_root / "00_project_state" / "project_state.yaml"
-    if fixed.is_file():
-        candidates.append(fixed)
+    project_state = project_root / "00_project_state/project_state.yaml"
+    if project_state.is_file():
+        candidates.append(project_state)
 
     patterns = [
         "00_project_state/workstreams/*.yaml",
@@ -187,54 +220,58 @@ def discover_full_targets(project_root: Path) -> list[ValidationTarget]:
     targets: list[ValidationTarget] = []
     seen: set[Path] = set()
     for path in candidates:
-        resolved = path.resolve()
-        if resolved in seen or not path.is_file() or path.is_symlink():
+        actual = path.resolve()
+        if actual in seen or not path.is_file() or path.is_symlink():
             continue
-        seen.add(resolved)
-        schema_name = infer_schema_name(project_root, path)
+        seen.add(actual)
+        schema_name = infer_schema_name(project_root, actual)
         if schema_name:
-            kind = "jsonl" if path.suffix == ".jsonl" else "markdown" if path.suffix == ".md" else "yaml"
-            targets.append(ValidationTarget(path=path, schema_name=schema_name, kind=kind))
-    return sorted(targets, key=lambda target: target.path.as_posix())
+            targets.append(
+                ValidationTarget(
+                    actual_path=actual,
+                    logical_path=actual,
+                    schema_name=schema_name,
+                    kind=target_kind(actual),
+                )
+            )
+    return sorted(targets, key=lambda item: item.logical_path.as_posix())
 
 
-def parse_schema_overrides(values: list[str], project_root: Path) -> dict[Path, str]:
-    overrides: dict[Path, str] = {}
-    for value in values:
-        if "=" not in value:
-            raise ToolError(f"invalid --schema-map value, expected PATH=SCHEMA: {value}")
-        raw_path, schema_name = value.split("=", 1)
-        path = Path(raw_path)
-        if not path.is_absolute():
-            path = project_root / path
-        overrides[path.resolve()] = schema_name.strip()
-    return overrides
-
-
-def discover_fast_targets(
+def discover_changed_targets(
     project_root: Path,
     changed: list[str],
-    overrides: dict[Path, str],
-) -> tuple[list[ValidationTarget], list[str]]:
+    schema_overrides: dict[Path, str],
+    logical_overrides: dict[Path, str],
+) -> list[ValidationTarget]:
     targets: list[ValidationTarget] = []
-    warnings: list[str] = []
     for raw in changed:
-        path = Path(raw)
-        if not path.is_absolute():
-            path = project_root / path
-        path = path.resolve()
-        if not path.exists():
-            warnings.append(f"changed path does not exist and was not validated: {path}")
-            continue
-        if path.is_symlink():
-            raise ToolError(f"symlink target is not accepted: {path}")
-        schema_name = overrides.get(path) or infer_schema_name(project_root, path)
+        actual = normalize_project_path(project_root, Path(raw))
+        if not actual.is_file():
+            raise ToolError(f"changed path is not a regular file: {actual}")
+        if actual.is_symlink():
+            raise ToolError(f"symlink target is not accepted: {actual}")
+
+        raw_logical = logical_overrides.get(actual)
+        logical = normalize_project_path(project_root, Path(raw_logical)) if raw_logical else actual
+        schema_name = schema_overrides.get(actual) or infer_schema_name(project_root, logical)
         if not schema_name:
-            warnings.append(f"no runtime schema mapping for changed path: {path}")
-            continue
-        kind = "jsonl" if path.suffix == ".jsonl" else "markdown" if path.suffix == ".md" else "yaml"
-        targets.append(ValidationTarget(path=path, schema_name=schema_name, kind=kind))
-    return targets, warnings
+            raise ToolError(f"no runtime schema mapping for changed path: {actual}; logical path: {logical}")
+        targets.append(
+            ValidationTarget(
+                actual_path=actual,
+                logical_path=logical,
+                schema_name=schema_name,
+                kind=target_kind(logical),
+            )
+        )
+    return targets
+
+
+def merge_targets(primary: list[ValidationTarget], overlay: list[ValidationTarget]) -> list[ValidationTarget]:
+    by_logical: dict[Path, ValidationTarget] = {item.logical_path: item for item in primary}
+    for item in overlay:
+        by_logical[item.logical_path] = item
+    return sorted(by_logical.values(), key=lambda item: item.logical_path.as_posix())
 
 
 def format_error_path(path: Iterable[Any]) -> str:
@@ -254,28 +291,26 @@ def validate_document(
     validator_class = validators.validator_for(schema)
     resolver = RefResolver.from_schema(schema, store=store)
     validator = validator_class(schema, resolver=resolver)
-    errors: list[dict[str, str]] = []
-    for error in sorted(validator.iter_errors(document), key=lambda item: list(item.absolute_path)):
-        errors.append(
-            {
-                "instance_path": format_error_path(error.absolute_path),
-                "schema_path": format_error_path(error.absolute_schema_path),
-                "message": error.message,
-            }
-        )
-    return errors
+    return [
+        {
+            "instance_path": format_error_path(error.absolute_path),
+            "schema_path": format_error_path(error.absolute_schema_path),
+            "message": error.message,
+        }
+        for error in sorted(validator.iter_errors(document), key=lambda item: list(item.absolute_path))
+    ]
 
 
 def read_target_documents(target: ValidationTarget) -> list[tuple[str, Any]]:
     if target.kind == "jsonl":
-        return [(f"line:{line_number}", document) for line_number, document in load_json_lines(target.path)]
+        return [(f"line:{number}", document) for number, document in load_json_lines(target.actual_path)]
     if target.kind == "markdown":
-        return [("front_matter", load_markdown_front_matter(target.path))]
-    return [("document", load_yaml(target.path))]
+        return [("front_matter", load_markdown_front_matter(target.actual_path))]
+    return [("document", load_yaml(target.actual_path))]
 
 
-def collect_record_ids(project_root: Path) -> dict[str, set[str]]:
-    result: dict[str, set[str]] = {
+def collect_existing_record_ids(project_root: Path) -> dict[str, set[str]]:
+    ids: dict[str, set[str]] = {
         "task": set(),
         "route": set(),
         "artifact": set(),
@@ -283,51 +318,65 @@ def collect_record_ids(project_root: Path) -> dict[str, set[str]]:
         "submission": set(),
         "event": set(),
     }
-    file_patterns = {
-        "task": "00_project_records/workstreams/*/tasks/*/task.yaml",
-        "route": "00_project_records/workstreams/*/routes/*.yaml",
-        "artifact": "00_project_records/workstreams/*/artifacts/*.yaml",
-        "decision": "00_project_records/workstreams/*/decisions/*.yaml",
-        "submission": "00_project_records/workstreams/*/submissions/*.yaml",
+    patterns = {
+        "task": ("00_project_records/workstreams/*/tasks/*/task.yaml", "task_id"),
+        "route": ("00_project_records/workstreams/*/routes/*.yaml", "route_id"),
+        "artifact": ("00_project_records/workstreams/*/artifacts/*.yaml", "artifact_set_id"),
+        "decision": ("00_project_records/workstreams/*/decisions/*.yaml", "decision_id"),
+        "submission": ("00_project_records/workstreams/*/submissions/*.yaml", "submission_id"),
     }
-    id_fields = {
-        "task": "task_id",
-        "route": "route_id",
-        "artifact": "artifact_set_id",
-        "decision": "decision_id",
-        "submission": "submission_id",
-    }
-    for kind, pattern in file_patterns.items():
+    for kind, (pattern, field) in patterns.items():
         for path in project_root.glob(pattern):
             try:
                 data = load_yaml(path)
             except Exception:
                 continue
-            value = data.get(id_fields[kind]) if isinstance(data, dict) else None
+            value = data.get(field) if isinstance(data, dict) else None
             if isinstance(value, str):
-                result[kind].add(value)
+                ids[kind].add(value)
 
     events_path = project_root / "00_project_records/events/project_events.jsonl"
     if events_path.is_file():
         try:
             for _, event in load_json_lines(events_path):
-                if isinstance(event, dict) and isinstance(event.get("event_id"), str):
-                    result["event"].add(event["event_id"])
+                value = event.get("event_id") if isinstance(event, dict) else None
+                if isinstance(value, str):
+                    ids["event"].add(value)
         except Exception:
             pass
-    return result
+    return ids
+
+
+def add_candidate_ids(ids: dict[str, set[str]], documents: list[ValidatedDocument]) -> None:
+    schema_to_id = {
+        "subagent_task.schema.yaml": ("task", "task_id"),
+        "route_record.schema.yaml": ("route", "route_id"),
+        "artifact_set.schema.yaml": ("artifact", "artifact_set_id"),
+        "decision_record.schema.yaml": ("decision", "decision_id"),
+        "submission_record.schema.yaml": ("submission", "submission_id"),
+        "project_event.schema.yaml": ("event", "event_id"),
+    }
+    for item in documents:
+        mapping = schema_to_id.get(item.schema_name)
+        if not mapping or not isinstance(item.document, dict):
+            continue
+        kind, field = mapping
+        value = item.document.get(field)
+        if isinstance(value, str):
+            ids[kind].add(value)
 
 
 def add_missing_reference(
     errors: list[dict[str, str]],
-    source: Path,
+    source: ValidatedDocument,
     field: str,
     value: str,
     target_kind: str,
 ) -> None:
     errors.append(
         {
-            "file": str(source),
+            "file": str(source.actual_path),
+            "logical_path": str(source.logical_path),
             "instance_path": field,
             "schema_path": "direct_reference",
             "message": f"missing {target_kind} reference: {value}",
@@ -337,75 +386,78 @@ def add_missing_reference(
 
 def check_direct_references(
     project_root: Path,
-    validated_documents: list[tuple[Path, Any]],
+    documents: list[ValidatedDocument],
 ) -> list[dict[str, str]]:
-    ids = collect_record_ids(project_root)
+    ids = collect_existing_record_ids(project_root)
+    add_candidate_ids(ids, documents)
+    candidate_logical_paths = {item.logical_path.resolve() for item in documents}
     errors: list[dict[str, str]] = []
 
-    for path, data in validated_documents:
+    for item in documents:
+        data = item.document
         if not isinstance(data, dict):
             continue
-        schema_name = infer_schema_name(project_root, path)
 
-        if schema_name == "project_state.schema.yaml":
-            for item in data.get("workstreams", []):
-                if not isinstance(item, dict):
+        if item.schema_name == "project_state.schema.yaml":
+            for workstream in data.get("workstreams", []):
+                if not isinstance(workstream, dict):
                     continue
-                state_path = item.get("state_path")
-                if isinstance(state_path, str) and not (project_root / state_path).is_file():
-                    add_missing_reference(errors, path, "workstreams[].state_path", state_path, "workstream state path")
+                state_path = workstream.get("state_path")
+                if not isinstance(state_path, str):
+                    continue
+                target = normalize_project_path(project_root, Path(state_path))
+                if not target.is_file() and target not in candidate_logical_paths:
+                    add_missing_reference(errors, item, "workstreams[].state_path", state_path, "workstream state path")
 
-        elif schema_name == "workstream_state.schema.yaml":
-            reference_fields = [
+        elif item.schema_name == "workstream_state.schema.yaml":
+            for field, kind in (
                 ("active_route_id", "route"),
                 ("active_task_id", "task"),
                 ("last_event_id", "event"),
-            ]
-            for field, kind in reference_fields:
+            ):
                 value = data.get(field)
                 if isinstance(value, str) and value not in ids[kind]:
-                    add_missing_reference(errors, path, field, value, kind)
+                    add_missing_reference(errors, item, field, value, kind)
             for value in data.get("pending_decision_ids", []):
                 if isinstance(value, str) and value not in ids["decision"]:
-                    add_missing_reference(errors, path, "pending_decision_ids", value, "decision")
+                    add_missing_reference(errors, item, "pending_decision_ids", value, "decision")
             for value in data.get("active_submission_ids", []):
                 if isinstance(value, str) and value not in ids["submission"]:
-                    add_missing_reference(errors, path, "active_submission_ids", value, "submission")
+                    add_missing_reference(errors, item, "active_submission_ids", value, "submission")
             artifact_groups = data.get("current_artifact_set_ids", {})
             if isinstance(artifact_groups, dict):
                 for group, values in artifact_groups.items():
-                    if not isinstance(values, list):
-                        continue
-                    for value in values:
-                        if isinstance(value, str) and value not in ids["artifact"]:
-                            add_missing_reference(errors, path, f"current_artifact_set_ids.{group}", value, "artifact")
+                    if isinstance(values, list):
+                        for value in values:
+                            if isinstance(value, str) and value not in ids["artifact"]:
+                                add_missing_reference(errors, item, f"current_artifact_set_ids.{group}", value, "artifact")
 
-        elif schema_name == "subagent_result.schema.yaml":
+        elif item.schema_name == "subagent_result.schema.yaml":
             task_id = data.get("task_id")
             if isinstance(task_id, str) and task_id not in ids["task"]:
-                add_missing_reference(errors, path, "task_id", task_id, "task")
+                add_missing_reference(errors, item, "task_id", task_id, "task")
 
-        elif schema_name == "artifact_set.schema.yaml":
+        elif item.schema_name == "artifact_set.schema.yaml":
             for field in ("created_by_task_id", "validator_task_id"):
                 value = data.get(field)
                 if isinstance(value, str) and value not in ids["task"]:
-                    add_missing_reference(errors, path, field, value, "task")
+                    add_missing_reference(errors, item, field, value, "task")
             supersedes = data.get("supersedes")
             if isinstance(supersedes, str) and supersedes not in ids["artifact"]:
-                add_missing_reference(errors, path, "supersedes", supersedes, "artifact")
+                add_missing_reference(errors, item, "supersedes", supersedes, "artifact")
             for value in data.get("derived_from", []):
                 if isinstance(value, str) and value not in ids["artifact"]:
-                    add_missing_reference(errors, path, "derived_from", value, "artifact")
+                    add_missing_reference(errors, item, "derived_from", value, "artifact")
 
-        elif schema_name == "route_record.schema.yaml":
+        elif item.schema_name == "route_record.schema.yaml":
             scope_resolution = data.get("scope_resolution", {})
             if isinstance(scope_resolution, dict):
                 event_id = scope_resolution.get("resolved_event_id")
                 if isinstance(event_id, str) and event_id not in ids["event"]:
-                    add_missing_reference(errors, path, "scope_resolution.resolved_event_id", event_id, "event")
+                    add_missing_reference(errors, item, "scope_resolution.resolved_event_id", event_id, "event")
                 decision_id = scope_resolution.get("decision_id")
                 if isinstance(decision_id, str) and decision_id not in ids["decision"]:
-                    add_missing_reference(errors, path, "scope_resolution.decision_id", decision_id, "decision")
+                    add_missing_reference(errors, item, "scope_resolution.decision_id", decision_id, "decision")
 
     return errors
 
@@ -426,6 +478,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mode", required=True, choices=("FAST", "FULL"))
     parser.add_argument("--changed", nargs="*", default=[])
     parser.add_argument("--schema-map", action="append", default=[], metavar="PATH=SCHEMA")
+    parser.add_argument("--logical-map", action="append", default=[], metavar="PATH=PROJECT_PATH")
     parser.add_argument("--contracts-dir", type=Path)
     parser.add_argument("--cache-dir", type=Path)
     parser.add_argument("--output", type=Path)
@@ -449,35 +502,52 @@ def main() -> int:
             schemas, schema_files, cache_dir, args.force_schema_check
         )
 
-        overrides = parse_schema_overrides(args.schema_map, project_root)
-        warnings: list[str] = []
+        schema_overrides = parse_path_map(args.schema_map, project_root, "--schema-map")
+        logical_overrides = parse_path_map(args.logical_map, project_root, "--logical-map")
+        changed_targets = discover_changed_targets(
+            project_root, args.changed, schema_overrides, logical_overrides
+        ) if args.changed else []
+
         if args.mode == "FAST":
-            if not args.changed:
-                raise ToolError("FAST mode requires at least one --changed path")
-            targets, fast_warnings = discover_fast_targets(project_root, args.changed, overrides)
-            warnings.extend(fast_warnings)
+            if not changed_targets:
+                raise ToolError("FAST mode requires at least one valid --changed path")
+            targets = changed_targets
         else:
-            targets = discover_full_targets(project_root)
+            targets = merge_targets(discover_full_targets(project_root), changed_targets)
 
         errors: list[dict[str, str]] = []
         validated: list[dict[str, str]] = []
-        validated_documents: list[tuple[Path, Any]] = []
+        documents: list[ValidatedDocument] = []
 
         for target in targets:
             try:
-                documents = read_target_documents(target)
-                for label, document in documents:
-                    document_errors = validate_document(document, target.schema_name, schemas, store)
-                    for item in document_errors:
-                        item["file"] = str(target.path)
-                        item["document"] = label
-                        errors.append(item)
-                    validated_documents.append((target.path, document))
-                validated.append({"path": str(target.path), "schema": target.schema_name})
+                target_documents = read_target_documents(target)
+                for label, document in target_documents:
+                    for error in validate_document(document, target.schema_name, schemas, store):
+                        error["file"] = str(target.actual_path)
+                        error["logical_path"] = str(target.logical_path)
+                        error["document"] = label
+                        errors.append(error)
+                    documents.append(
+                        ValidatedDocument(
+                            actual_path=target.actual_path,
+                            logical_path=target.logical_path,
+                            schema_name=target.schema_name,
+                            document=document,
+                        )
+                    )
+                validated.append(
+                    {
+                        "path": str(target.actual_path),
+                        "logical_path": str(target.logical_path),
+                        "schema": target.schema_name,
+                    }
+                )
             except Exception as exc:
                 errors.append(
                     {
-                        "file": str(target.path),
+                        "file": str(target.actual_path),
+                        "logical_path": str(target.logical_path),
                         "instance_path": "$",
                         "schema_path": target.schema_name,
                         "message": str(exc),
@@ -485,21 +555,23 @@ def main() -> int:
                 )
 
         if not args.skip_reference_check:
-            errors.extend(check_direct_references(project_root, validated_documents))
+            errors.extend(check_direct_references(project_root, documents))
 
         elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
         status = "PASS" if not errors else "FAIL"
-        payload = {
-            "status": status,
-            "mode": args.mode,
-            "schema_bundle_hash": bundle_hash,
-            "schema_cache_hit": cache_hit,
-            "validated": validated,
-            "errors": errors,
-            "warnings": warnings,
-            "elapsed_ms": elapsed_ms,
-        }
-        emit(payload, args.output)
+        emit(
+            {
+                "status": status,
+                "mode": args.mode,
+                "schema_bundle_hash": bundle_hash,
+                "schema_cache_hit": cache_hit,
+                "validated": validated,
+                "errors": errors,
+                "warnings": [],
+                "elapsed_ms": elapsed_ms,
+            },
+            args.output,
+        )
         return 0 if status == "PASS" else 1
 
     except Exception as exc:
