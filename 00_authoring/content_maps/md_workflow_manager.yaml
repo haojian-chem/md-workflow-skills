@@ -7,11 +7,13 @@ content_ownership_status: draft
 owned_content:
   requested_action_and_focus_resolution:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  project_entry_state_and_recovery_routing:
+  project_entry_state_initialization_barrier_and_recovery_routing:
     owner: 00_manager/md_workflow_manager/SKILL.md
+  post_initialization_route_scope_resolution:
+    owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
   workstream_creation_selection_and_lifecycle:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  cross_workflow_route_scope_and_fragment_composition:
+  cross_workflow_fragment_composition_and_route_revision:
     owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
   workflow_planning_and_execution_interface_consumption:
     owner: 00_manager/md_workflow_manager/SKILL.md
@@ -93,4 +95,4 @@ external_references:
   access: reference_only
   status: present
 notes:
-- Manager draft now defines separate Workflow planning and execution loops. Contract remains draft until executable fixtures and end-to-end integration tests pass.
+- Manager draft separates entry-state evaluation, automatic NEW initialization, route-scope resolution, route planning and execution. Contract remains draft until executable fixtures and end-to-end integration tests pass.
