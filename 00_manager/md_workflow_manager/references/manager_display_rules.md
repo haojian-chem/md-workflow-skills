@@ -5,7 +5,9 @@
 Manager 的回复必须让用户不读取状态文件也能知道：
 
 - 当前操作的是哪个项目；
+- 项目是否已完成初始化；
 - 当前主要处理哪个 Workstream；
+- 路线范围是否已明确；
 - 当前位于什么 Workflow/task；
 - 下一步预计做什么；
 - 哪些事项需要人工决定；
@@ -20,7 +22,9 @@ Manager 的回复必须让用户不读取状态文件也能知道：
 Skill root:
 Project root:
 Project state:
+Initialization:
 Focus:
+Route scope:
 Current position:
 Expected next task:
 Current decisions:
@@ -29,6 +33,48 @@ Other active workstreams:
 ```
 
 没有内容时明确写 `none`，不要省略字段。
+
+## 初始化展示
+
+NEW 被判定后、初始化未完成时显示：
+
+```text
+Project state: NEW
+Initialization: in progress | blocked | failed
+Route scope: not started
+Current position: none
+Expected next task: none
+```
+
+初始化完成后显示：
+
+```text
+Initialization: completed
+```
+
+不得在初始化完成前显示 Workflow task 为“即将执行”。
+
+## 路线范围展示
+
+范围未解析时显示：
+
+```text
+Route scope: unresolved
+Current position: none
+Expected next task: none
+```
+
+并在 `Current decisions` 中展示需要用户明确的终点。
+
+范围已解析但路线尚未创建时显示：
+
+```text
+Route scope: <start> → <end>
+Route planning status: not created
+Expected next task: none
+```
+
+范围解析和路线创建必须分开展示，不得把 `ROUTE_SCOPE_RESOLVED` 表述为路线已建立。
 
 ## Workstream Focus
 
@@ -45,7 +91,7 @@ Focus workstream:
 <workflow> / <task-or-substep>
 
 本轮范围：
-<start> → <end>
+<unresolved | start → end>
 
 本轮动作：
 <INSPECT + PLAN + EXECUTE 的实际组合>
@@ -79,6 +125,7 @@ Workstreams:
 其他回复只显示：
 
 ```text
+Route scope:
 Current position:
 Expected next task:
 ```
@@ -103,6 +150,8 @@ Recommended:
 
 区分 blocking 与 non-blocking，不暴露内部 decision schema。
 
+路线终点不明确时，问题必须直接要求用户明确本轮终点，不得用推荐项替代用户决定。
+
 ## 后台任务
 
 每项显示：
@@ -118,6 +167,9 @@ session/job: <id>
 ## 状态中文映射
 
 - `NEW`：新项目，尚未建立可信状态；
+- `PROJECT_INITIALIZED`：新项目基础状态已建立，尚不代表路线已规划；
+- `ROUTE_SCOPE_REQUESTED`：路线终点不明确，等待用户决定；
+- `ROUTE_SCOPE_RESOLVED`：路线范围已明确，尚不代表 route 已创建；
 - `RESUMABLE`：项目状态可信，可继续；
 - `NEEDS_RECOVERY`：需要先恢复项目状态；
 - `READY`：下一任务已准备；
