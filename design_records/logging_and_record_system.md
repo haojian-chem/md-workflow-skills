@@ -15,6 +15,8 @@
 
 记录必须满足恢复与审计需要，但不得在普通 task 闭环中机械更新所有记录对象。
 
+schema 与引用校验优先由已注册确定性 Tool 完成，不由 LLM 逐字段模拟。
+
 ## 2. 目录结构
 
 ```text
@@ -37,6 +39,8 @@
 ```
 
 不设置项目级 `workflows/` 记录目录。Workflow 是可复用流程定义；项目中的路线、任务和记录均归属于具体 Workstream。
+
+Tool cache 不属于权威状态或记录，必须可删除、可重建，并使用 Tool 注册的 cache 路径。
 
 ## 3. 权威来源
 
@@ -123,6 +127,8 @@ GROMACS 日志、命令输出、详细 Validator 报告、结构、拓扑、轨�
 
 保存符合共享 contract 的结构化终态结果。Operation 与 Validator 即使在同一子 Agent 中连续执行，也必须分开记录。
 
+终态 result 在候选路径通过适用 FAST/FULL 校验后才提交到权威任务目录。
+
 ### 4.3 notes.md
 
 仅在结构化字段不足以表达复杂判断时生成，不作为新的完整日志副本。
@@ -146,13 +152,14 @@ GROMACS 日志、命令输出、详细 Validator 报告、结构、拓扑、轨�
 完成后：
 
 ```text
-1. 校验 subagent_result
-2. 写 result.yaml
-3. 有新产物、决定或 submission 时才写对应记录
-4. 追加一条 TASK_DONE、TASK_BLOCKED 或 TASK_FAILED 终态事件
-5. 原子更新目标 Workstream state
-6. 输出可见 task closure summary
-7. 再请求 Workflow 判断下一步
+1. 核验 subagent_result 的身份、mode、终态和路径权限
+2. 在候选路径准备 result、必要记录和 Workstream state
+3. 对本次 changed runtime instances 执行一次 FAST 校验
+4. FAST PASS 后提交 result 与必要 artifact/decision/submission
+5. 追加一条 TASK_DONE、TASK_BLOCKED 或 TASK_FAILED 终态事件
+6. 原子更新目标 Workstream state
+7. 输出可见 task closure summary
+8. 再请求 Workflow 判断下一步
 ```
 
 普通前台 task 默认不执行：
@@ -164,7 +171,8 @@ GROMACS 日志、命令输出、详细 Validator 报告、结构、拓扑、轨�
 - Manager session 的逐 task 增量写入；
 - state snapshot；
 - 无实际变化的 route revision；
-- 没有新对象时的 artifact/decision/submission 记录。
+- 没有新对象时的 artifact/decision/submission 记录；
+- FULL contract validation。
 
 `task.yaml` 与缺失的 `result.yaml` 足以在异常中断后识别未闭环任务；恢复时由 Manager 判断其实际状态。
 
@@ -186,8 +194,9 @@ GROMACS 日志、命令输出、详细 Validator 报告、结构、拓扑、轨�
 3. 原子更新 Workstream 为 EXECUTING
 4. 必要时追加 TASK_STARTED
 5. 产生副作用
-6. 写 result/相关记录/终态事件
-7. 原子更新 Workstream
+6. 在候选路径准备 result/相关记录/状态
+7. 执行适用 FAST 或 FULL 校验
+8. 提交结果、终态事件与 Workstream state
 ```
 
 `TASK_STARTED` 只用于确有恢复价值的长任务或高风险任务，不作为普通 task 的固定事件。
@@ -262,7 +271,34 @@ FAILED 至少显示：失败位置、直接证据、保留产物、当前状态�
 
 例如 `source_recognition` 完成只能表述为来源识别、复制与 hash 检查通过；其 STRUCTURE artifact 在后续 Validator 前仍是 `UNVALIDATED`。
 
-## 12. 写权限
+## 12. FAST/FULL 校验与 Tool cache
+
+权威规则：
+
+`00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`
+
+FAST：
+
+- 仅校验本次 changed runtime instances；
+- 仅检查这些对象的直接引用；
+- 一次 Tool 调用批量完成；
+- 不扫描完整项目历史。
+
+FULL 仅用于初始化、schema/contract 变化、恢复前后、root 变化、重要 Workstream、重大 artifact 谱系变化、首个外部长任务提交前、Workstream 终结或用户明确完整审计。
+
+schema bundle hash 未变化且 cache 有效时，不重复 schema meta-validation。
+
+Tool cache：
+
+- 非权威；
+- 可删除和重建；
+- 不进入 artifact 谱系；
+- 不替代 schema、状态、事件或任务结果；
+- 仅由注册 Tool 按声明路径写入。
+
+Tool FAIL/ERROR 时不得提交候选终态、宣称通过或降低 gate。
+
+## 13. 写权限
 
 Manager 是以下目录的唯一提交者：
 
@@ -273,7 +309,9 @@ Manager 是以下目录的唯一提交者：
 
 Operation/Validator 只写 task 授权的业务路径。临时子 Agent 不得直接修改管理目录。
 
-## 13. 保留策略
+Tool 只使用 registry 与 `tool.yaml` 声明的读写范围。写入型 Tool 必须使用候选、校验、备份/回滚和受控提交。
+
+## 14. 保留策略
 
 保留：
 
@@ -285,5 +323,7 @@ Operation/Validator 只写 task 授权的业务路径。临时子 Agent 不得�
 - project event；
 - Manager session final summary；
 - 关键状态快照。
+
+Tool cache 不属于保留型结构化记录。
 
 科研大型文件与完整日志不复制到管理目录。
