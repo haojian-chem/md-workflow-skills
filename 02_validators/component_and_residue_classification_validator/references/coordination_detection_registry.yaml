@@ -1,0 +1,70 @@
+schema_version: 1
+status: draft
+purpose: Detect metal coordination candidates as a relation separate from covalent topology classification.
+principles:
+  - Explicit coordination records outrank geometric candidates.
+  - Distance criteria produce candidates, not definitive bonds.
+  - Coordination never changes topology_class to COVALENTLY_LINKED_NONSTANDARD by itself.
+metal_elements:
+  transition_and_post_transition: [SC, TI, V, CR, MN, FE, CO, NI, CU, ZN, Y, ZR, NB, MO, TC, RU, RH, PD, AG, CD, HF, TA, W, RE, OS, IR, PT, AU, HG, AL, GA, IN, SN, PB, BI]
+  alkali: [LI, NA, K, RB, CS]
+  alkaline_earth: [BE, MG, CA, SR, BA]
+  lanthanide_actinide: [LA, CE, PR, ND, PM, SM, EU, GD, TB, DY, HO, ER, TM, YB, LU, AC, TH, PA, U, NP, PU]
+donor_elements: [N, O, S, SE, F, CL, BR, I]
+explicit_records:
+  mmcif_connection_types:
+    include_candidates: [metalc, metal_coordination, coordination]
+    preserve_unknown_types: true
+  pdb_records:
+    - LINK
+    - CONECT
+  interpretation:
+    - CONECT involving a metal is explicit connectivity evidence but may reflect file-writing convention; classify as EXPLICIT_COORDINATION unless a separate covalent annotation is available.
+geometric_thresholds_angstrom:
+  default:
+    transition_and_post_transition: 3.0
+    alkali: 3.5
+    alkaline_earth: 3.3
+    lanthanide_actinide: 3.5
+  common_metal_overrides:
+    AL: 2.8
+    MG: 2.8
+    CA: 3.2
+    MN: 3.0
+    FE: 3.0
+    CO: 3.0
+    NI: 3.0
+    CU: 3.0
+    ZN: 2.8
+  interpretation:
+    - Thresholds are screening cutoffs for candidate generation only.
+    - A shorter distance does not prove bond order or coordination geometry.
+    - Distances near the cutoff must retain the exact threshold and measured value in the report.
+exclusions:
+  - hydrogen_atoms
+  - donor_atoms_with_zero_or_unresolved_occupancy
+  - mutually exclusive_altloc_pairs
+  - same_atom_identity
+candidate_status:
+  explicit_record: EXPLICIT_COORDINATION
+  geometry_only: GEOMETRIC_COORDINATION_CANDIDATE
+  altloc_or_occupancy_affected: AMBIGUOUS_CLOSE_CONTACT
+required_output_fields:
+  - model_id
+  - metal_atom_id
+  - metal_element
+  - donor_atom_id
+  - donor_element
+  - metal_component_id
+  - donor_component_id
+  - distance_angstrom
+  - evidence_source
+  - threshold_angstrom
+  - status
+  - confidence
+  - notes
+ambiguity_policy:
+  explicit_record_atom_missing: blocking_decision
+  geometry_only_changes_covalent_classification: prohibited
+  geometry_only_affects_component_selection: nonblocking_warning_unless_user_requires_coordination_based_selection
+  altloc_affected: report_for_altloc_stage
