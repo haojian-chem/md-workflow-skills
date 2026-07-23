@@ -7,7 +7,7 @@
 - 主智能体加载 Manager Skill，维护项目级状态并统一与用户交互；
 - Workflow Skill 定义可复用阶段流程，不作为独立 Agent 运行；
 - Workstream 表示真实项目中的一条具体工作分支，可以依次经过多个 Workflow；
-- Manager 串行创建临时子 Agent，执行一个 Operation、一个 Validator，或 Operation 与其专属 Validator 组成的 task unit；
+- Manager 串行创建临时子 Agent，执行一个 Operation、一个 Validator，或 Operation 与其专属 Validator组成的 task unit；
 - 任意时刻最多一个前台临时子 Agent，但允许多个 Workstream 和多个 tmux/调度任务并存；
 - Operation 与 Validator 即使由同一子 Agent 连续执行，结果也必须分开；
 - Manager 是项目状态和结构化记录的唯一提交者；
@@ -17,7 +17,9 @@
 
 ```text
 ENTRY_STATE_EVALUATED
+→ capability preflight
 → FULL 初始化候选状态校验
+→ controlled state commit
 → PROJECT_INITIALIZED（仅 NEW）
 → ROUTE_SCOPE_RESOLUTION
 → ROUTE_SCOPE_RESOLVED
@@ -28,11 +30,34 @@ ENTRY_STATE_EVALUATED
 
 - `NEW` 只表示入口状态，不包含路线规划或任务执行；
 - NEW 项目在根目录明确且无冲突时自动初始化；
+- `FULL_RUNTIME_VALIDATION` 由 ACTIVE `runtime_schema_validator` 提供；
+- `CONTROLLED_STATE_COMMIT` 可使用初始化协议规定的内建确定性路径；
+- `state_transaction` 尚未 ACTIVE 不阻塞 NEW 初始化；
 - 初始化创建项目状态和首个 Workstream，但不创建首条 route；
-- 路线终点模糊时必须向用户确认，不得选择默认终点；
+- 路线终点模糊时在初始化后向用户确认；
 - `PROJECT_INITIALIZED` 前不调用 Workflow；
 - `ROUTE_SCOPE_RESOLVED` 前不请求 route fragment；
 - 有效 active route 不存在时不创建业务 task。
+
+详细初始化规则：
+
+```text
+00_manager/md_workflow_manager/references/project_initialization_protocol.md
+```
+
+## 阻断因果分层
+
+暂停时区分：
+
+```text
+Current blocker:
+<当前 barrier 的直接原因或 none>
+
+Pending after current barrier:
+<通过当前 barrier 后才处理的问题或 none>
+```
+
+初始化阶段，路线终点歧义和未连接 Workflow 都不是当前初始化 blocker。前者在 `PROJECT_INITIALIZED` 后处理，后者在路线规划到达对应边界后处理。
 
 ## Workflow 的两种接口
 
@@ -46,19 +71,13 @@ ENTRY_STATE_EVALUATED
 - Manager 负责起点、终点、跨 Workflow 拼接和 route revision；
 - Workflow 只生成自身阶段 fragment；
 - 预计路线是动态投影，不是硬编码执行队列；
-- 未连接 Workflow 在边界形成 PARTIAL/BLOCKED。
-
-详细规则：
-
-`00_manager/md_workflow_manager/references/route_planning_protocol.md`
+- 未连接 Workflow 在规划边界形成 PARTIAL/BLOCKED。
 
 ## FAST/FULL runtime validation
 
-普通 task 不再重复执行全量 contract validation。
+普通 task 不重复执行全量 contract validation。
 
 ### FAST
-
-用于普通前台 task：
 
 ```text
 changed runtime instances
@@ -99,10 +118,18 @@ schema bundle hash 未变化且 cache 有效时，不重复 schema meta-validati
 
 当前状态：
 
-- `runtime_schema_validator` 0.1.0：IMPLEMENTED，支持 FAST、FULL、schema hash cache 和直接引用检查；待 tests/benchmark 后决定是否 ACTIVE；
-- `state_transaction`：DESIGNED；
+- `runtime_schema_validator` 0.1.0：ACTIVE；
+- `state_transaction`：DESIGNED，属于可选优化；
 - `incremental_reference_checker`：DESIGNED；
 - `task_closure_renderer`：DESIGNED。
+
+`runtime_schema_validator` 已通过 5 个可执行测试并记录 FAST/FULL benchmark。证据：
+
+```text
+04_evals/runtime_schema_validator/VALIDATION.md
+```
+
+任何 hard gate 在发布前必须有 ACTIVE Tool 或权威协议明确的内建确定性路径，避免运行时启动自锁。
 
 ## 普通 task 最小闭环
 
@@ -128,15 +155,7 @@ task.yaml
 4. `md_simulation`
 5. `analysis`
 
-职责边界：
-
-- `structure_preparation`：初始结构识别、对象选择、缺失处理、质子化、重排与结构验证；
-- `topology_preparation`：标准残基、相连非标准残基和独立非标准组分的拓扑生成与参数准备；
-- `md_preparation`：力场与拓扑整合、建盒、加水、加离子，并生成完整体系；
-- `md_simulation`：准备 MDP 与运行输入，执行 EM、NVT、NPT、生产 MD、续跑及完成核验；
-- `analysis`：模拟结果分析。
-
-目前只有 `structure_preparation_workflow` 正式连接；后续 Workflow 尚未建立时，路线只规划到对应阶段边界。
+目前只有 `structure_preparation_workflow` 正式连接。后续 Workflow 尚未建立时，路线只规划到对应阶段边界；这不会阻塞 NEW 初始化。
 
 ## Workstream 项目模型
 
@@ -170,15 +189,11 @@ task.yaml
 - 只有用户明确授权且 source path 可写时才允许受控移动；
 - 受保护 `01_sources/` 不得移动。
 
-## Shared contracts
-
-运行时共享接口统一位于 `03_contracts/`，入口索引为 `03_contracts/README.md`。
-
 ## 当前实现状态
 
-- Manager 已接入入口 barrier、最小记录、task closure 和 FAST/FULL Tool 选择；待可执行集成验证；
-- Tool Authoring Skill 与 registry 已建立；
-- `runtime_schema_validator` 已实现但尚未 ACTIVE；
+- Manager 已修正 NEW 初始化 capability deadlock，仍待真实项目端到端验证；
+- `runtime_schema_validator` 已 ACTIVE，可作为 FAST/FULL 默认实现；
+- 初始化在 `state_transaction` 尚未实现时使用内建受控提交路径；
 - `structure_preparation_workflow` 已支持 route fragment 与 execution decision，仍需 Manager 集成；
 - `source_recognition` 功能测试已通过一次，需复测 FAST validation 与 closure summary；
 - `component_and_residue_classification_validator` 仍需迁移到 subagent task/result v2；
@@ -189,8 +204,9 @@ task.yaml
 - `AGENTS.md`
 - `design_records/logging_and_record_system.md`
 - `00_manager/md_workflow_manager/SKILL.md`
+- `00_manager/md_workflow_manager/references/project_initialization_protocol.md`
 - `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`
-- `00_authoring/md-workflow-tool-authoring/SKILL.md`
 - `05_tools/tool_registry.yaml`
-- `04_evals/runtime_schema_validator/`
+- `04_evals/runtime_schema_validator/VALIDATION.md`
+- `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`
 - `00_authoring/SYNC_STATUS.md`
