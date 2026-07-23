@@ -2,25 +2,48 @@ schema_version: 3
 skill_name: chain_and_component_selection
 skill_type: operation
 skill_path: 02_operations/chain_and_component_selection
-contract_status: pending
-content_ownership_status: pending
-owned_content: {}
+contract_status: draft
+content_ownership_status: draft
+owned_content:
+  local_execution_flow:
+    owner: 02_operations/chain_and_component_selection/SKILL.md
+  selection_semantics_and_covalent_closure:
+    owner: 02_operations/chain_and_component_selection/references/selection_rules.md
+  explicit_selection_spec:
+    owner: 02_operations/chain_and_component_selection/schemas/selection_spec.schema.yaml
+  selection_manifest:
+    owner: 02_operations/chain_and_component_selection/schemas/selection_manifest.schema.yaml
+  atom_identity_mapping:
+    owner: 02_operations/chain_and_component_selection/schemas/selection_mapping.schema.yaml
 external_references:
-- purpose: layer_boundary
-  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-  access: reference_only
-- purpose: runtime_task_contract
-  owner: 03_contracts/subagent_task.schema.yaml
-  access: reference_only
-- purpose: runtime_result_contract
-  owner: 03_contracts/subagent_result.schema.yaml
-  access: reference_only
-- purpose: confirmation_item_contract
-  owner: 03_contracts/confirmation_item.schema.yaml
-  access: reference_only
-- purpose: examples_and_test_fixtures
-  owner: 04_evals/chain_and_component_selection/fixtures/
-  access: reference_only
-  status: planned
+  - purpose: layer_boundary
+    owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+    access: reference_only
+  - purpose: runtime_task_contract
+    owner: 03_contracts/subagent_task.schema.yaml
+    access: reference_only
+  - purpose: runtime_result_contract
+    owner: 03_contracts/subagent_result.schema.yaml
+    access: reference_only
+  - purpose: confirmation_item_contract
+    owner: 03_contracts/confirmation_item.schema.yaml
+    access: reference_only
+  - purpose: classification_result_contract
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+    access: reference_only
+  - purpose: structure_preparation_workflow
+    owner: 01_workflows/structure_preparation_workflow/SKILL.md
+    access: reference_only
+  - purpose: dedicated_validator
+    owner: 02_validators/chain_and_component_selection_validator/SKILL.md
+    access: reference_only
+  - purpose: examples_and_test_fixtures
+    owner: 04_evals/chain_and_component_selection/fixtures/
+    access: reference_only
+    status: present
 notes:
-- Define the Skill contract before assigning content ownership or creating local references/schemas.
+  - v1 requires an explicit selection_spec; natural-language or convention-based implicit selection is prohibited.
+  - Selection is component-level and exactly one model; residue-range and atom-level selection are not supported.
+  - A confirmed covalent relation crossing the boundary blocks the Operation; the selection is not auto-expanded.
+  - Metal coordination and geometry-only candidates are reported but do not force component inclusion.
+  - Operation creates an UNVALIDATED STRUCTURE candidate for the dedicated Validator.
