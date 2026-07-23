@@ -1,5 +1,5 @@
 schema_version: 3
-status: deterministic_tool_framework_draft_created
+status: runtime_validator_active_and_classification_validator_draft
 runtime_architecture:
   project_model: workstream
   workflow_interfaces:
@@ -42,12 +42,12 @@ skills:
   - name: md-workflow-tool-authoring
     layer: authoring
     path: 00_authoring/md-workflow-tool-authoring
-    status: draft_first_tool_validation_required
+    status: draft_first_tool_lifecycle_validated
     content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: draft_fast_full_tool_integration_required
+    status: draft_runtime_validator_active_end_to_end_required
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
   - name: structure_preparation_workflow
     layer: workflow
@@ -62,7 +62,7 @@ skills:
   - name: component_and_residue_classification_validator
     layer: validator
     path: 02_validators/component_and_residue_classification_validator
-    status: subagent_contract_alignment_required
+    status: draft_subagent_v2_aligned_executable_parser_required
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
   - name: chain_and_component_selection
     layer: operation
@@ -128,8 +128,8 @@ tools:
   registry: 05_tools/tool_registry.yaml
   items:
     - name: runtime_schema_validator
-      status: IMPLEMENTED
-      activation_required: executable_tests_and_benchmark
+      status: ACTIVE
+      validation_evidence: 04_evals/runtime_schema_validator/VALIDATION.md
     - name: state_transaction
       status: DESIGNED
     - name: incremental_reference_checker
