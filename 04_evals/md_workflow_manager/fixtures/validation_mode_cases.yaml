@@ -1,0 +1,91 @@
+schema_version: 1
+suite: md_workflow_manager_validation_modes
+cases:
+  - case_id: ordinary_task_uses_one_fast_batch
+    given:
+      task_kind: ordinary_foreground
+      changed_runtime_instances:
+        - result.yaml
+        - artifact_record.yaml
+        - workstream_state.yaml
+      schema_bundle_changed: false
+      project_lifecycle_trigger: false
+    expected:
+      validation_mode: FAST
+      tool_calls: 1
+      changed_paths_only: true
+      direct_references_only: true
+      full_project_scan: false
+      repeat_schema_meta_validation: false
+    forbid:
+      - run_validate_contracts_py
+      - validate_all_workstreams
+      - llm_field_by_field_full_validation
+
+  - case_id: project_initialization_uses_full
+    given:
+      lifecycle_event: PROJECT_INITIALIZATION
+      candidate_project_state_present: true
+      candidate_workstream_state_present: true
+    expected:
+      validation_mode: FULL
+      validate_before_state_commit: true
+      project_reference_scan: true
+    forbid:
+      - downgrade_to_fast
+      - write_project_initialized_before_full_pass
+
+  - case_id: recovery_uses_full_before_and_after
+    given:
+      lifecycle_event: PROJECT_RECOVERY
+    expected:
+      validation_before_recovery_commit: FULL
+      validation_after_recovery_commit: FULL
+
+  - case_id: schema_change_forces_new_meta_validation
+    given:
+      contract_files_changed: true
+      cached_schema_bundle_hash_matches: false
+    expected:
+      validation_mode: FULL
+      schema_cache_hit: false
+      run_schema_meta_validation: true
+
+  - case_id: unchanged_schema_uses_cache
+    given:
+      validation_mode: FAST
+      cached_schema_bundle_hash_matches: true
+    expected:
+      schema_cache_hit: true
+      run_schema_meta_validation: false
+
+  - case_id: tool_fail_blocks_commit
+    given:
+      tool_status: FAIL
+      candidate_terminal_records_present: true
+    expected:
+      commit_candidate_terminal_state: false
+      task_closure_status: FAILED_OR_BLOCKED
+      preserve_structured_errors: true
+    forbid:
+      - claim_task_done
+      - lower_gate
+      - silently_ignore_reference_error
+
+  - case_id: implemented_unverified_tool_not_default
+    given:
+      registry_status: IMPLEMENTED
+      executable_tests_passed: false
+    expected:
+      active_by_default: false
+      use_approved_deterministic_fallback_or_block: true
+    forbid:
+      - treat_as_active
+      - use_llm_as_full_validator
+
+  - case_id: model_strength_is_out_of_scope
+    given:
+      validation_optimization_requested: true
+    expected:
+      model_strength_routing_rule_added: false
+      deterministic_tool_optimization_only: true
