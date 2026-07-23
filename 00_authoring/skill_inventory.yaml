@@ -1,5 +1,5 @@
 schema_version: 3
-status: route_planning_aligned_source_recognition_draft_created
+status: deterministic_tool_framework_draft_created
 runtime_architecture:
   project_model: workstream
   workflow_interfaces:
@@ -8,8 +8,14 @@ runtime_architecture:
   foreground_subagent_mode: serial
   max_foreground_subagents: 1
   external_submissions_may_coexist: true
+  deterministic_tools:
+    registry: 05_tools/tool_registry.yaml
+    decision_layer: false
+    default_runtime_validation:
+      ordinary_task: FAST
+      lifecycle_and_recovery: FULL
 shared_contracts:
-  status: aligned
+  status: aligned_draft_revalidation_required
   index: 03_contracts/README.md
   files:
     - 03_contracts/common_types.schema.yaml
@@ -31,12 +37,17 @@ skills:
   - name: md-workflow-skill-authoring
     layer: authoring
     path: 00_authoring/md-workflow-skill-authoring
-    status: active_aligned
+    status: active_aligned_tool_requests_supported
     content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
+  - name: md-workflow-tool-authoring
+    layer: authoring
+    path: 00_authoring/md-workflow-tool-authoring
+    status: draft_first_tool_validation_required
+    content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: draft_route_planning_aligned_integration_required
+    status: draft_fast_full_tool_integration_required
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
   - name: structure_preparation_workflow
     layer: workflow
@@ -113,3 +124,15 @@ skills:
     path: 02_validators/structure_preparation_validator
     status: planned
     content_map: 00_authoring/content_maps/structure_preparation_validator.yaml
+tools:
+  registry: 05_tools/tool_registry.yaml
+  items:
+    - name: runtime_schema_validator
+      status: IMPLEMENTED
+      activation_required: executable_tests_and_benchmark
+    - name: state_transaction
+      status: DESIGNED
+    - name: incremental_reference_checker
+      status: DESIGNED
+    - name: task_closure_renderer
+      status: DESIGNED
