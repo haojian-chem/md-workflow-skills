@@ -36,4 +36,5 @@ external_references:
     status: present
 notes:
   - Tool authoring is development-time governance for deterministic utilities and does not add a runtime decision layer.
-  - Contract remains draft until the first tools pass executable tests and benchmark checks.
+  - runtime_schema_validator 0.1.0 has completed the IMPLEMENTED to ACTIVE lifecycle with executable tests and benchmark evidence.
+  - The authoring guide remains draft pending additional Tool lifecycle and migration tests.
