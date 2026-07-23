@@ -14,6 +14,7 @@
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`
 - `05_tools/tool_registry.yaml`
 - `05_tools/runtime_schema_validator/`
+- `04_evals/runtime_schema_validator/VALIDATION.md`
 - `design_records/logging_and_record_system.md`
 - Manager fixtures 与 shared contracts
 
@@ -21,58 +22,90 @@
 
 ```text
 md_workflow_manager/SKILL.md lines: 311
-previous lines: 495
-reduction: 184 lines
-front matter: PASS by GitHub reread
 manager behavior cases: 20
 initialization transaction cases: 4
 route planning cases: 12
 task recording/display cases: 7
 validation mode cases: 8
+bootstrap dependency cases: 6
 route record schema version: 3
-runtime_schema_validator status: IMPLEMENTED, not ACTIVE
+runtime_schema_validator status: ACTIVE
 ```
 
-主文件已回到渐进披露目标范围。该结果是规则与文件结构静态对齐，不代表测试主机上的运行验收已经通过。
+Manager 主文件处于渐进披露目标范围。Manager 整体仍是 draft，因为真实项目端到端测试尚未完成。
 
-## 渐进披露迁移
+## 已修正的启动自锁
 
-主 `SKILL.md` 仅保留：
-
-- 顶层职责与禁止事项；
-- 入口状态和三个 execution barrier；
-- Focus/Workstream 路由；
-- Workflow planning/execution 调用规则；
-- task 顶层闭环；
-- FAST/FULL 选择；
-- 恢复、结束和用户展示入口；
-- 八个顶层自检 barrier。
-
-下沉内容：
+此前存在：
 
 ```text
-初始化事务、候选状态、FULL、原子提交与失败处理
-→ references/project_initialization_protocol.md
-
-完整运行自检
-→ references/manager_runtime_checklist.md
-
-FAST/FULL、cache、Tool 权限与失败
-→ deterministic_tool_protocol.md
-
-记录、session、snapshot 与最小闭环细节
-→ design_records/logging_and_record_system.md
-
-closure 字段与展示格式
-→ references/manager_display_rules.md
+NEW
+→ mandatory FULL
+→ only IMPLEMENTED validator
+→ no ACTIVE implementation
+→ initialization BLOCKED
 ```
 
-本轮只迁移和去重，没有改变已确认入口顺序、路线范围语义、task 闭环或 Tool 规则。
+当前修正为：
+
+```text
+NEW
+→ capability preflight
+→ ACTIVE runtime_schema_validator 0.1.0
+→ candidate FULL validation
+→ built-in controlled atomic state commit
+→ PROJECT_INITIALIZED
+```
+
+`state_transaction` 仍为 `DESIGNED`，但不是 NEW 初始化的强制依赖。初始化协议已定义可运行的内建确定性提交路径。
+
+## Tool 激活证据
+
+`runtime_schema_validator` 精确代码 blob 与 tests 在隔离环境中执行：
+
+```text
+5 passed in 10.02s
+```
+
+benchmark：
+
+```yaml
+FAST cold median: 5.977 ms
+FAST warm median: 3.311 ms
+FULL warm median: 4.181 ms
+```
+
+完整证据：
+
+```text
+04_evals/runtime_schema_validator/VALIDATION.md
+```
+
+该 Tool 已满足当前激活条件并注册为 `ACTIVE`。真实大型项目 benchmark 与 Manager 端到端集成仍待完成，但不再造成 NEW 初始化 capability deadlock。
+
+## 阻断因果分层
+
+Manager 输出必须区分：
+
+```text
+Current blocker
+Pending after current barrier
+```
+
+在初始化 gate：
+
+- FULL capability 缺失可以是当前 blocker；
+- 路线终点歧义只能在初始化后处理；
+- 未连接 Workflow 只能在路线规划到达边界后处理；
+- 后两项不得与初始化 blocker 并列为同一级停止原因。
+
+新增 `bootstrap_dependency_cases.yaml` 覆盖 ACTIVE validator、能力缺失、可选 state transaction、路线歧义时序、未连接 Workflow 时序和 hard-gate release preflight。
 
 ## 入口控制顺序
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
+→ capability preflight
 → candidate project/workstream state
 → FULL schema/reference validation
 → controlled state commit
@@ -88,52 +121,15 @@ ENTRY_STATE_EVALUATED: NEW
 Barrier：
 
 1. `PROJECT_INITIALIZED` 前不调用 Workflow、不创建 route 或业务 task；
-2. `ROUTE_SCOPE_RESOLVED` 前不创建 route；
-3. 有效 active route 不存在或不适用时不创建业务 task。
-
-## 普通 task 最小记录闭环
-
-```text
-task.yaml
-→ subagent execution
-→ candidate result/related records/state
-→ one FAST validation
-→ commit
-→ one terminal task event
-→ Workstream state
-→ task closure summary
-```
-
-普通 task 不机械写 `TASK_PREPARED`、`TASK_STARTED`、无变化 project state、session 增量、snapshot、route revision 或 FULL validation。
-
-## FAST/FULL 与 Tool
-
-FAST 仅处理 changed runtime instances 与直接引用；FULL 仅用于初始化、恢复、contract/root 变化和关键生命周期节点。
-
-禁止：
-
-- 每步扫描全部项目记录；
-- schema hash/cache 命中时重复 meta-validation；
-- 用 LLM 逐字段模拟 FULL；
-- 将未测试 `IMPLEMENTED` Tool 作为默认生产路径。
-
-模型强度分层未采纳，不属于本 contract。
-
-## Task closure 用户展示
-
-每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 前显示精简 closure summary。
-
-`source_recognition` 的 DONE 只能表示来源识别、复制/复用和 SHA-256 检查通过；STRUCTURE artifact 仍为 `UNVALIDATED`。
+2. `ROUTE_SCOPE_RESOLVED` 前不请求 fragment、不创建 route；
+3. 有效 active route 不存在时不创建业务 task。
 
 ## 仍需完成
 
-Manager 保持 `draft`，尚不能冻结。后续必须：
-
-1. 运行全量 authoring contract/content-map validator；
-2. 检查新 references 与主文件之间无遗漏、冲突和重复定义；
-3. 在测试主机运行 `runtime_schema_validator` tests 与 benchmark；
-4. 实测 NEW 初始化严格调用 initialization protocol；
-5. 实测普通 task 只产生一次 FAST Tool 调用；
-6. 实测 `source_recognition` closure summary；
-7. 完成 Manager → Workflow → task → FAST validation → state/record 的端到端测试；
-8. 使用真实目录验证项目级与 Workstream 级恢复。
+1. 在真实测试项目复测 NEW 自动初始化；
+2. 验证初始化实际调用 ACTIVE FULL validator；
+3. 验证 `state_transaction` 未实现时走内建提交路径；
+4. 验证“开始 MD”只在初始化后触发路线终点确认；
+5. 验证未连接 Workflow 只在路线规划边界形成 PARTIAL/BLOCKED；
+6. 完成 Manager → Workflow → task → FAST validation → state/record 端到端测试；
+7. 使用真实目录验证恢复和部分提交异常。
