@@ -49,7 +49,7 @@ external_references:
   - purpose: runtime_schema_validator
     owner: 05_tools/runtime_schema_validator/
     access: conditional_runtime_dependency
-    status: implemented_not_active
+    status: active_default
   - purpose: shared_contract_index
     owner: 03_contracts/README.md
     access: reference_only
@@ -113,4 +113,4 @@ notes:
   - Initialization transaction details and the full runtime checklist are progressively disclosed through references.
   - Ordinary tasks use FAST validation; FULL is reserved for initialization, recovery, contract changes and critical lifecycle nodes.
   - Model reasoning-strength routing is intentionally not part of this contract.
-  - Runtime schema validator remains non-default until executable tests and benchmark pass.
+  - Runtime schema validator 0.1.0 is ACTIVE; Manager end-to-end integration remains pending.
