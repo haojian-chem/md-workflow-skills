@@ -1,0 +1,41 @@
+schema_version: 1
+name: task_closure_renderer
+version: 0.1.0
+status: DESIGNED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: null
+purpose:
+  - render a concise deterministic task closure summary
+  - preserve operation, validator and artifact validation distinctions
+inputs:
+  - task_result
+  - related_artifact_records
+  - expected_next_task
+outputs:
+  format: json
+  fields:
+    - status
+    - task_heading
+    - checks
+    - action_or_output
+    - artifact_status
+    - warnings
+    - report_paths
+    - next
+permissions:
+  read:
+    - explicit task result and related record paths
+  write: []
+side_effects:
+  project_authoritative_files_modified: false
+semantic_guards:
+  - operation DONE must not be rendered as scientific validation PASSED
+  - source_recognition STRUCTURE remains UNVALIDATED until a Validator changes it
+callers:
+  - md_workflow_manager
+release:
+  active_by_default: false
+  activation_requirement:
+    - implementation complete
+    - source_recognition semantic guard fixtures pass
+    - DONE BLOCKED FAILED rendering fixtures pass
