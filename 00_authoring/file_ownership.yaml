@@ -36,13 +36,15 @@ review_queue:
   - skill_name: md-workflow-tool-authoring
     required_action: review_active_tool_lifecycle_and_future_upgrade_path
   - skill_name: component_and_residue_classification_validator
-    required_action: run_real_pdb_rcsb_mmcif_af3_tests_and_manager_workflow_integration
+    required_action: run_actual_contract_fast_real_pdb_rcsb_mmcif_af3_and_manager_integration_tests
+  - skill_name: chain_and_component_selection
+    required_action: implement_deterministic_selection_and_combined_task_tests
+  - skill_name: chain_and_component_selection_validator
+    required_action: implement_independent_selection_validation_and_combined_task_tests
 
 alignment_queue: []
 
 unassigned_skills:
-  - chain_and_component_selection
-  - chain_and_component_selection_validator
   - altloc_occupancy_resolution
   - altloc_occupancy_validator
   - structure_completeness_validator
