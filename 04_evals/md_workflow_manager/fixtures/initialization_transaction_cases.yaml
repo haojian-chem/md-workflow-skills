@@ -1,0 +1,67 @@
+schema_version: 1
+suite: md_workflow_manager_initialization_transaction
+cases:
+  - case_id: evaluated_new_commits_resumable_state
+    given:
+      evaluated_entry_state: NEW
+      candidate_state_schema_valid: true
+      candidate_state_references_valid: true
+      atomic_state_commit_succeeds: true
+    expected:
+      persisted_project_entry_state: RESUMABLE
+      event_order:
+        - ENTRY_STATE_EVALUATED
+        - PROJECT_INITIALIZED
+        - STATE_SNAPSHOT_CREATED
+      project_initialized_event_written: true
+    forbid:
+      - persist_NEW_as_post_initialization_state
+      - write_PROJECT_INITIALIZED_before_state_commit
+
+  - case_id: candidate_validation_failure_has_no_initialized_event
+    given:
+      evaluated_entry_state: NEW
+      candidate_state_schema_valid: false
+      atomic_state_commit_attempted: false
+    expected:
+      status: BLOCKED
+      project_initialized_event_written: false
+      active_route_id: null
+      business_task_created: false
+    forbid:
+      - call_workflow
+      - claim_initialization_complete
+
+  - case_id: partial_initialization_commit_requires_recovery
+    given:
+      evaluated_entry_state: NEW
+      candidate_state_schema_valid: true
+      atomic_state_commit_succeeds: false
+      partial_write_detected: true
+    expected:
+      status: NEEDS_RECOVERY
+      project_initialized_event_written: false
+      route_scope_resolution_started: false
+      business_task_created: false
+    forbid:
+      - continue_to_route_planning
+      - silently_reinitialize_over_partial_state
+
+  - case_id: successful_initialization_has_no_route
+    given:
+      evaluated_entry_state: NEW
+      atomic_state_commit_succeeds: true
+      project_initialized_event_written: true
+    expected:
+      persisted_project_entry_state: RESUMABLE
+      workstream_activity_status: IDLE
+      current_position:
+        workflow_name: null
+        substep: null
+        task_id: null
+      active_route_id: null
+      active_task_id: null
+      next_event_class: ROUTE_SCOPE_REQUESTED_OR_RESOLVED
+    forbid:
+      - create_route_during_initialization
+      - create_task_during_initialization
