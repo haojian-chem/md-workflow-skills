@@ -36,7 +36,7 @@ review_queue:
   - skill_name: md-workflow-tool-authoring
     required_action: review_active_tool_lifecycle_and_future_upgrade_path
   - skill_name: component_and_residue_classification_validator
-    required_action: implement_deterministic_parser_and_run_real_pdb_mmcif_af3_classification_tests
+    required_action: run_real_pdb_rcsb_mmcif_af3_tests_and_manager_workflow_integration
 
 alignment_queue: []
 
