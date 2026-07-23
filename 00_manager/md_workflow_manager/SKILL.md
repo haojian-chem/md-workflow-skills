@@ -1,13 +1,13 @@
 ---
 name: md_workflow_manager
-description: 管理真实 MD 项目的入口初始化、Workstream、Focus、跨 Workflow 路线、串行临时子 Agent、项目状态、精简记录、用户决策和外部模拟任务。用于检查、规划、执行、续跑或恢复 MD 工作流；不执行具体结构、拓扑、模拟或分析业务操作。
+description: 管理真实 MD 项目的入口初始化、Workstream、Focus、跨 Workflow 路线、串行临时子 Agent、项目状态、精简记录、确定性校验工具、用户决策和外部模拟任务。用于检查、规划、执行、续跑或恢复 MD 工作流；不执行具体结构、拓扑、模拟或分析业务操作。
 ---
 
 # 目标
 
-统一管理真实 MD 项目的入口状态、项目初始化、路线范围、Workstream、Focus、Workflow 接口、最多一个前台临时子 Agent、外部任务、产物谱系、用户决策和可恢复记录。
+统一管理真实 MD 项目的入口状态、初始化、路线范围、Workstream、Focus、Workflow 接口、最多一个前台临时子 Agent、外部任务、产物谱系、用户决策和可恢复记录。
 
-Manager 不承担 Operation 或 Validator 的业务工作。
+Manager 不承担 Operation 或 Validator 的业务工作。确定性 schema、引用和状态事务优先交给已注册 Tool，不由 LLM 逐字段模拟。
 
 # 启动时读取
 
@@ -17,12 +17,14 @@ Manager 不承担 Operation 或 Validator 的业务工作。
 2. `03_contracts/README.md` 与本轮适用 schema；
 3. `00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md`；
 4. `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`；
-5. `design_records/logging_and_record_system.md`；
-6. `references/stage_registry.yaml`；
-7. 发生路线范围解析、PLAN、route 创建或 revision 时读取 `references/route_planning_protocol.md`；
-8. `references/manager_display_rules.md`；
-9. 项目索引、Focus Workstream state 及其 active route、decision、submission、artifact records；
-10. 规划时逐个读取涉及范围内的 Workflow，执行时只读取当前 Workflow。
+5. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
+6. `05_tools/tool_registry.yaml`；
+7. `design_records/logging_and_record_system.md`；
+8. `references/stage_registry.yaml`；
+9. 发生路线范围解析、PLAN、route 创建或 revision 时读取 `references/route_planning_protocol.md`；
+10. `references/manager_display_rules.md`；
+11. 项目索引、Focus Workstream state 及其 active route、decision、submission、artifact records；
+12. 规划时逐个读取涉及范围内的 Workflow，执行时只读取当前 Workflow。
 
 不得一次性载入全部项目历史、科学日志、轨迹或无关 Skill。
 
@@ -30,7 +32,7 @@ Manager 不承担 Operation 或 Validator 的业务工作。
 
 用于：初始化、检查、规划、执行、续跑、恢复、创建参数/对照/重复/测试 Workstream，以及管理结构准备、拓扑准备、MD 准备、MD 模拟和分析流程。
 
-不用作：一般 MD 问答、单个业务命令执行、业务文件修改、科学质量判定或 Skill 编写窗口管理。
+不用作：一般 MD 问答、单个业务命令执行、业务文件修改、科学质量判定、Skill/Tool 编写窗口管理。
 
 # 核心职责
 
@@ -46,6 +48,7 @@ Manager 负责：
 - 拼接 route，并在必要时创建 revision；
 - 构建一个 task unit 并串行调用一个临时子 Agent；
 - 核验 subagent result；
+- 调用已注册确定性 Tool 完成 schema、引用和状态事务；
 - 唯一提交 `00_project_state/**` 和 `00_project_records/**`；
 - 以最小必要写入维护恢复能力；
 - 在每个前台 task 闭环后向用户输出精简结果；
@@ -59,13 +62,16 @@ Manager 不得：
 - 在 active route 不存在或不适用时创建业务 task；
 - 根据阶段名称编造 Workflow 内部步骤；
 - 脱离 Workflow decision 选择 Operation/Validator；
-- 同时创建多个前台子 Agent或嵌套委派；
+- 同时创建多个前台子 Agent 或嵌套委派；
 - 在主上下文解析大型业务文件；
 - 直接修改结构、拓扑、MDP、轨迹或分析结果；
 - 因后台任务存在而自动切换 Focus；
 - 覆盖已有下游结果；
 - 自动重试失败 task、降低 gate、跳过 Validator；
-- 为追求记录完整而机械重写所有状态和日志；
+- 为追求记录完整而机械重写全部状态和日志；
+- 对普通 task 执行 FULL contract validation；
+- 在 schema hash 未变化且 cache 有效时重复 schema meta-validation；
+- 用 LLM 逐字段模拟 FULL schema 或项目级引用校验；
 - 静默完成前台 task 后直接启动下一 task，而不输出 closure summary。
 
 # 项目目录与权限
@@ -82,6 +88,8 @@ Manager 不得：
 ```
 
 Manager 可创建管理目录和顶层阶段目录，但不创建阶段业务文件。Operation/Validator 只能写 task 授权的业务路径。
+
+确定性 Tool 只能使用 `tool_registry.yaml` 和自身 `tool.yaml` 声明的权限。cache 必须是可删除、可重建的非权威数据。
 
 # 项目进入
 
@@ -116,10 +124,10 @@ Manager 可创建管理目录和顶层阶段目录，但不创建阶段业务文
 1. 记录入口检查，准备 `ENTRY_STATE_EVALUATED: NEW`；
 2. 创建管理目录和顶层阶段目录；
 3. 生成 project ID、首个 Workstream 和 Focus；
-4. 在临时路径生成候选 project/workstream state；
+4. 在候选路径生成 project/workstream state；
 5. 候选 project state 的持久 `entry_state` 设为 `RESUMABLE`；
-6. 执行 schema、路径、索引和交叉引用检查；
-7. 原子提交状态；
+6. 对候选状态执行 FULL schema、路径、索引和交叉引用校验；
+7. 通过受控状态事务提交；
 8. 追加 `ENTRY_STATE_EVALUATED`；
 9. 追加 `PROJECT_INITIALIZED`；
 10. 创建初始 snapshot 并重新读取核验。
@@ -138,7 +146,7 @@ active_task_id: null
 
 初始化不创建 route，不调用 Workflow，不创建 task。
 
-`PROJECT_INITIALIZED` 只能在状态检查和提交成功后追加。部分提交异常进入 `NEEDS_RECOVERY`；提交前失败返回 `BLOCKED`。
+`PROJECT_INITIALIZED` 只能在候选状态检查和提交成功后追加。部分提交异常进入 `NEEDS_RECOVERY`；提交前失败返回 `BLOCKED`。
 
 ### RESUMABLE
 
@@ -288,11 +296,11 @@ OPERATION_WITH_VALIDATOR
 
 完成后：
 
-1. 校验 ID、mode、分离结果、终态、路径权限、detail files、decision 和 failure；
-2. 写 `result.yaml`；
-3. 有新 artifact、decision 或 submission 时才写对应记录；
-4. 追加一条 `TASK_DONE | TASK_BLOCKED | TASK_FAILED`；
-5. 原子更新目标 Workstream state；
+1. 核验 subagent 返回的 ID、mode、分离结果、终态、路径权限、detail files、decision 和 failure；
+2. 在候选路径准备 `result.yaml`、必要 artifact/decision/submission 和 Workstream state；
+3. 对本次 changed paths 执行一次 FAST schema 与直接引用校验；
+4. FAST PASS 后提交必要记录和目标 Workstream state；
+5. 追加一条 `TASK_DONE | TASK_BLOCKED | TASK_FAILED`；
 6. 输出可见 task closure summary；
 7. 再请求 Workflow 判断下一步。
 
@@ -310,9 +318,50 @@ OPERATION_WITH_VALIDATOR
 → Workstream EXECUTING
 → 必要时 TASK_STARTED
 → 产生副作用
-→ result/相关记录/终态事件
-→ 更新 Workstream
+→ 候选 result/相关记录
+→ FAST 或适用 FULL 校验
+→ 终态事件与状态提交
 ```
+
+# FAST 与 FULL 校验
+
+权威规则见 `deterministic_tool_protocol.md`。
+
+## FAST
+
+普通 task 默认 FAST：
+
+- 只校验本次新增或修改的 runtime instances；
+- 只检查这些对象的直接引用；
+- 一次 Tool 调用批量处理 changed paths；
+- schema bundle hash cache 命中时不重复 meta-validation；
+- 不扫描全部项目历史。
+
+FAST 失败时不得提交候选终态，不得宣称 task 闭环成功。
+
+## FULL
+
+FULL 只在以下节点执行：
+
+- 项目初始化候选状态提交前；
+- schema/contract 变化；
+- 项目恢复前后；
+- Project root 或 Skill root 变化；
+- 重要 Workstream 创建；
+- 重大 artifact 谱系变化；
+- 首个外部长任务提交前；
+- Workstream 完成、归档或放弃前；
+- 用户明确要求完整审计。
+
+FULL 不得在每个普通 task 后机械运行。
+
+## Tool 选择与失败
+
+- 优先使用 `tool_registry.yaml` 中状态为 `ACTIVE` 且版本兼容的 Tool；
+- `IMPLEMENTED` 但未测试的 Tool 不得作为默认生产路径；
+- Tool 不可用时使用已批准的确定性备用程序或返回 blocker；
+- 不得以 LLM 逐字段检查代替 FULL；
+- Tool 返回 FAIL/ERROR 时保留结构化错误，不自动修改 schema、降低 gate 或忽略引用错误。
 
 # Task closure 用户输出
 
@@ -368,7 +417,7 @@ PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
 
 所有对象必须符合 `03_contracts/README.md`。
 
-状态更新采用：临时文件 → schema 校验 → 备份 → 原子替换 → 必要事件。不可变记录不得覆盖。
+状态更新采用：候选文件 → 适用 FAST/FULL 校验 → 备份/回滚准备 → 原子替换或受控事务 → 必要事件。不可变记录不得覆盖。
 
 普通 task 的记录权威核心是：
 
@@ -388,7 +437,7 @@ Snapshot 仅用于初始化、根目录修改、恢复前后、重要 Workstream
 
 # 恢复
 
-项目级恢复暂停全部新写入，读取状态、备份、事件和记录，对业务对象安排 Validator，生成候选状态和差异，经用户确认后提交。
+项目级恢复暂停全部新写入，读取状态、备份、事件和记录，对业务对象安排 Validator，生成候选状态和差异，经用户确认后提交。恢复前后执行 FULL。
 
 Workstream 级恢复可与其他不依赖该分支的 Workstream 并存；影响 Focus、共享依赖或目录所有权时升级为项目级恢复。
 
@@ -396,7 +445,7 @@ Workstream 级恢复可与其他不依赖该分支的 Workstream 并存；影响
 
 失败不自动重试、不降低 gate、不跳过 verifier。用户批准后使用新 task ID；替代方案创建 route revision。
 
-暂停条件包括：范围未明确、blocking decision、缺少输入、恢复要求、初始化失败、task 失败、高风险操作、用户终点、Workflow 未连接或外部任务运行且无其他安全步骤。
+暂停条件包括：范围未明确、blocking decision、缺少输入、恢复要求、初始化失败、Tool FAIL/ERROR、task 失败、高风险操作、用户终点、Workflow 未连接或外部任务运行且无其他安全步骤。
 
 本轮结束前确保：必要状态与记录已落盘、无活动前台子 Agent、应输出的 task closure 已显示、Manager session 已完成，并按显示规则展示当前状态。
 
@@ -431,7 +480,10 @@ Current decisions: <route-scope decision>
 - [ ] decision 偏离 route 时已先 revision 或暂停；
 - [ ] 同时最多一个前台子 Agent；
 - [ ] 子 Agent 未写管理目录；
-- [ ] 普通 task 未机械写 TASK_PREPARED/TASK_STARTED、project state、session 增量或 snapshot；
+- [ ] 普通 task 只对 changed paths 执行 FAST；
+- [ ] 普通 task 未触发 FULL 或重复 schema meta-validation；
+- [ ] 未用 LLM 模拟 FULL schema/reference 检查；
+- [ ] Tool 版本、状态和权限符合 registry；
 - [ ] 必要 artifact/decision/submission 已登记；
 - [ ] task 终态事件和 Workstream state 已落盘；
 - [ ] task closure summary 已在下一前台 task 前显示；
