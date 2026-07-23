@@ -1,7 +1,7 @@
 schema_version: 1
 name: runtime_schema_validator
 version: 0.1.0
-status: IMPLEMENTED
+status: ACTIVE
 owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
 entrypoint: validate.py
 purpose:
@@ -34,7 +34,7 @@ outputs:
     - errors
     - warnings
     - elapsed_ms
-  invocation_audit_must_record:
+  caller_audit_must_record:
     - tool_name
     - tool_version
     - project_root
@@ -75,10 +75,23 @@ security:
   arbitrary_code_execution: false
 tests:
   path: 04_evals/runtime_schema_validator/
+  evidence: 04_evals/runtime_schema_validator/VALIDATION.md
+  tested_code_blob_sha: 7f22d0419b16bdd5cb6e4a7bcf433da4703ff36b
+  tested_test_blob_sha: cfe72649429a616c6581cf1ebd33f0fdc2615349
+  result: 5 passed
+benchmark:
+  evidence: 04_evals/runtime_schema_validator/VALIDATION.md
+  fast_cold_median_ms: 5.977
+  fast_warm_median_ms: 3.311
+  full_warm_median_ms: 4.181
 release:
-  active_by_default: false
-  activation_requirement:
-    - executable fixtures pass
+  active_by_default: true
+  activated_at: '2026-07-23'
+  activation_evidence:
+    - executable fixtures passed
     - FAST and FULL benchmark recorded
-    - candidate overlay tests pass
+    - candidate overlay test passed
     - no false PASS in negative fixtures
+  remaining_non_blocking_work:
+    - Manager end-to-end integration test
+    - real-project scale benchmark
