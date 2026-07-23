@@ -8,6 +8,10 @@
 - `00_manager/md_workflow_manager/references/route_planning_protocol.md`
 - `00_manager/md_workflow_manager/references/manager_display_rules.md`
 - `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`
+- `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`
+- `00_authoring/md-workflow-tool-authoring/SKILL.md`
+- `05_tools/tool_registry.yaml`
+- `05_tools/runtime_schema_validator/`
 - `design_records/logging_and_record_system.md`
 - `03_contracts/project_event.schema.yaml`
 - `03_contracts/route_record.schema.yaml` v3
@@ -15,29 +19,33 @@
 - `04_evals/md_workflow_manager/fixtures/initialization_transaction_cases.yaml`
 - `04_evals/md_workflow_manager/fixtures/route_planning_cases.yaml`
 - `04_evals/md_workflow_manager/fixtures/task_recording_and_display_cases.yaml`
+- `04_evals/md_workflow_manager/fixtures/validation_mode_cases.yaml`
 
 ## 当前静态状态
 
 ```text
-md_workflow_manager/SKILL.md lines: 443
+md_workflow_manager/SKILL.md lines: 495
 front matter: PASS by GitHub reread
 manager behavior cases: 20
 initialization transaction cases: 4
 route planning cases: 12
 task recording/display cases: 7
+validation mode cases: 8
 route record schema version: 3
+runtime_schema_validator status: IMPLEMENTED, not ACTIVE
 ```
 
-Manager Skill 仍低于 500 行渐进披露警告阈值。
+Manager Skill 仍低于 500 行渐进披露警告阈值，但已接近阈值。后续新增细节应优先下沉到 references，避免主文件继续增长。
 
-本报告记录规则和 fixture 对齐状态，不代表测试主机上的真实运行验收已经通过。
+本报告记录规则、content map 和 fixtures 的静态对齐，不代表测试主机上的真实运行验收已经通过。
 
 ## 入口控制顺序
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
-→ 候选状态生成与校验
-→ 原子提交 project/workstream state
+→ 候选状态生成
+→ FULL schema/reference validation
+→ 受控提交 project/workstream state
 → 持久 project state: RESUMABLE
 → PROJECT_INITIALIZED
 → ROUTE_SCOPE_RESOLUTION
@@ -55,11 +63,11 @@ Barrier：
 
 ## 普通 task 最小记录闭环
 
-已确认普通短耗时前台 task 使用：
-
 ```text
 task.yaml
 → subagent execution
+→ candidate result/related records/state
+→ FAST validation
 → result.yaml
 → 必要 artifact/decision/submission record
 → 一条终态 task event
@@ -76,45 +84,85 @@ task.yaml
 - Manager session 逐 task 增量；
 - snapshot；
 - 无变化 route revision；
-- 空 artifact/decision/submission record。
+- 空 artifact/decision/submission record；
+- FULL contract validation。
 
 外部 submission、长耗时、高风险或不可逆 task 仍保留强化预记录和恢复锚点。
+
+## FAST/FULL 校验规则
+
+### FAST
+
+普通 task 只对本次 changed runtime instances 进行一次批量校验，并检查直接引用。
+
+禁止：
+
+- 扫描全部 Workstream/route/artifact/decision/submission/event；
+- 每步调用 authoring `validate_contracts.py`；
+- schema hash 未变化时重复 meta-validation；
+- 用 LLM 逐字段模拟 FULL。
+
+### FULL
+
+仅用于：初始化、schema/contract 变化、恢复前后、root 变化、重要 Workstream、重大 artifact 谱系变化、首个外部长任务提交前、Workstream 终结或用户明确完整审计。
+
+模型强度分层未采纳，不属于本轮规则。
+
+## 确定性 Tool 集成
+
+已建立：
+
+- Tool Authoring Skill；
+- deterministic tool protocol；
+- tool registry；
+- `runtime_schema_validator` 0.1.0 初始实现；
+- `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 设计 contract。
+
+`runtime_schema_validator` 支持：
+
+- FAST/FULL；
+- schema bundle hash cache；
+- changed paths 批量校验；
+- direct reference checks；
+- candidate actual path 到 future logical project path overlay。
+
+该 Tool 尚未运行 tests/benchmark，因此 registry 保持 `IMPLEMENTED`、`active_by_default: false`。
 
 ## Task closure 用户展示
 
 每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 启动前显示精简 closure summary。
 
-DONE 覆盖：task、执行/gate 结果、关键动作或产物、artifact validation status、warning、report 路径和下一 task。
+`source_recognition` 的 DONE 只能表述来源识别、复制/复用和 SHA-256 检查通过；其 STRUCTURE artifact 仍为 `UNVALIDATED`。
 
-BLOCKED 覆盖：已完成部分、阻断原因、用户决定和未启动后续。
+## fixtures 覆盖
 
-FAILED 覆盖：失败位置、直接证据、保留/清理产物、Workstream 状态和可选后续。
+`validation_mode_cases.yaml` 覆盖：
 
-`source_recognition` 的 DONE 只能表述来源识别、复制/复用和 SHA-256 检查通过；其 STRUCTURE artifact 仍为 `UNVALIDATED`，不得显示“结构验证通过”。
+- 普通 task 单次 FAST 批量校验；
+- 初始化和恢复使用 FULL；
+- schema cache hit/miss；
+- Tool FAIL 阻止终态提交；
+- IMPLEMENTED 未验证 Tool 不作为默认路径；
+- 模型强度规则不进入本 contract。
 
-宿主支持中间可见消息时，closure 输出后可继续既定范围；不支持时，本轮以 closure summary 结束，保留 expected next task。
+`runtime_schema_validator` tests/fixtures 覆盖设计包括：
 
-## 新增 fixtures 覆盖
-
-`task_recording_and_display_cases.yaml` 包含 7 个 cases：
-
-- 普通前台 task 最小记录；
-- 高风险 task 保留恢复锚点；
-- source recognition 结果在下一 task 前可见；
-- BLOCKED closure 显示 decision；
-- FAILED closure 显示证据；
-- 不支持中间消息时结束当前轮次；
-- 支持中间消息时可继续且 closure 不构成 confirmation gate。
+- FAST 忽略无关无效记录；
+- FULL 发现无关记录错误；
+- schema hash cache；
+- missing direct reference；
+- candidate logical path overlay。
 
 ## 仍需完成
 
 Manager 保持 `draft`，尚不能冻结。后续必须：
 
-1. 运行全量 contract validator；
-2. 将现有行为 fixtures 转换为完整可执行输入/输出对象；
-3. 实测 NEW 自动初始化；
-4. 实测模糊请求产生 `ROUTE_SCOPE_REQUESTED`；
-5. 实测普通 task 不产生冗余记录；
-6. 实测 `source_recognition` 完成后在对话窗口输出 closure summary；
-7. 完成 Manager → Workflow → task → result → state/record 的端到端测试；
-8. 使用真实目录验证恢复行为。
+1. 在测试主机运行 `04_evals/runtime_schema_validator/test_validate.py`；
+2. 记录 FAST cold-cache、FAST warm-cache 和 FULL benchmark；
+3. 运行全量 authoring contract/content-map validator；
+4. 确认无 false PASS 后，再决定是否把 `runtime_schema_validator` 标为 ACTIVE；
+5. 实测普通 task 只产生一次 FAST Tool 调用；
+6. 实测 NEW 初始化的 candidate overlay + FULL validation；
+7. 实测 `source_recognition` closure summary；
+8. 完成 Manager → Workflow → task → FAST validation → state/record 的端到端测试；
+9. 使用真实目录验证恢复行为。
