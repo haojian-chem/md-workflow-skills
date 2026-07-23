@@ -9,7 +9,9 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/SKILL.md
   deterministic_structure_parser:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
-  parser_dependencies_and_invocation:
+  deterministic_shared_result_wrapper:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/build_subagent_result.py
+  parser_wrapper_dependencies_and_invocation:
     owner: 02_validators/component_and_residue_classification_validator/scripts/
   classification_semantics:
     owner: 02_validators/component_and_residue_classification_validator/references/classification_rules.md
@@ -34,6 +36,10 @@ external_references:
   - purpose: confirmation_item_contract
     owner: 03_contracts/confirmation_item.schema.yaml
     access: reference_only
+  - purpose: active_fast_validator
+    owner: 05_tools/runtime_schema_validator/
+    access: conditional_runtime_dependency
+    status: active
   - purpose: structure_preparation_workflow
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
     access: reference_only
@@ -42,7 +48,7 @@ external_references:
     access: reference_only
     status: present
 notes:
-  - Shared task/result fields are not redefined locally; the Validator returns subagent_result v2.
+  - Shared task/result fields are not redefined locally; build_subagent_result.py produces subagent_result v2.
   - Classification explicitly separates confirmed covalent links, geometric covalent candidates and metal coordination candidates.
-  - The input STRUCTURE remains unchanged and is not promoted to VALIDATED by this Validator.
-  - Deterministic synthetic PDB/mmCIF/AF3-label tests pass; real ordinary PDB, RCSB-style mmCIF and real AF3 CIF acceptance remains required before freezing.
+  - The input STRUCTURE remains unchanged, stays present_unvalidated and is not promoted to a VALIDATED artifact.
+  - Synthetic parser and result-wrapper tests exist; real PDB/mmCIF/AF3 acceptance and Manager end-to-end execution remain required before freezing.
