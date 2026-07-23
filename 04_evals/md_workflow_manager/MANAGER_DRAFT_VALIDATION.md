@@ -5,38 +5,34 @@
 ## 检查对象
 
 - `00_manager/md_workflow_manager/SKILL.md`
-- `00_manager/md_workflow_manager/references/stage_registry.yaml`
 - `00_manager/md_workflow_manager/references/route_planning_protocol.md`
 - `00_manager/md_workflow_manager/references/manager_display_rules.md`
+- `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`
+- `design_records/logging_and_record_system.md`
 - `03_contracts/project_event.schema.yaml`
 - `03_contracts/route_record.schema.yaml` v3
-- `00_authoring/content_maps/md_workflow_manager.yaml`
 - `04_evals/md_workflow_manager/fixtures/manager_behavior_cases.yaml`
 - `04_evals/md_workflow_manager/fixtures/initialization_transaction_cases.yaml`
 - `04_evals/md_workflow_manager/fixtures/route_planning_cases.yaml`
+- `04_evals/md_workflow_manager/fixtures/task_recording_and_display_cases.yaml`
 
 ## 当前静态状态
 
 ```text
-SKILL.md lines: 428
-front matter: PASS
-name field: PASS
-description field: PASS
-parallel foreground execution field: absent
+md_workflow_manager/SKILL.md lines: 443
+front matter: PASS by GitHub reread
 manager behavior cases: 20
 initialization transaction cases: 4
 route planning cases: 12
-project event additions:
-  - ROUTE_SCOPE_REQUESTED
-  - ROUTE_SCOPE_RESOLVED
+task recording/display cases: 7
 route record schema version: 3
 ```
 
-`SKILL.md` 仍低于 authoring validator 的 500 行渐进披露警告阈值。
+Manager Skill 仍低于 500 行渐进披露警告阈值。
 
-本轮已从 GitHub 重新读取修改后的 Manager Skill、route record 开头和 behavior fixtures。完整可执行 schema validation 与端到端运行仍属于待完成事项，不能仅凭本报告视为运行验收通过。
+本报告记录规则和 fixture 对齐状态，不代表测试主机上的真实运行验收已经通过。
 
-## 已确认的入口控制顺序
+## 入口控制顺序
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
@@ -51,54 +47,74 @@ ENTRY_STATE_EVALUATED: NEW
 → EXECUTION
 ```
 
-已明确三个 barrier：
+Barrier：
 
 1. `PROJECT_INITIALIZED` 前不调用 Workflow、不创建 route 或业务 task；
 2. `ROUTE_SCOPE_RESOLVED` 前不请求 fragment、不创建 route；
 3. 有效 active route 不存在时不创建业务 task。
 
-`PROJECT_INITIALIZED` 只能在候选状态通过 schema/引用检查并成功提交后记录。初始化时创建首个 Workstream，但 `active_route_id` 和 `active_task_id` 均为 `null`。
+## 普通 task 最小记录闭环
 
-## 本轮新增覆盖行为
+已确认普通短耗时前台 task 使用：
 
-- NEW 只是本轮入口判定，不是初始化后的持久状态；
-- NEW 成功初始化后，持久 project state 使用 `entry_state: RESUMABLE`；
-- NEW 在根目录明确且无冲突时自动初始化，不要求用户再次提示；
-- 初始化不创建首条业务路线；
-- 候选状态校验失败时不记录 `PROJECT_INITIALIZED`；
-- 部分提交异常时进入 NEEDS_RECOVERY；
-- 明确指定 `source_recognition` 时，初始化后独立解析到该终点；
-- “开始处理这个结构”等模糊请求必须请求用户确认；
-- 不得默认选择下一 task、当前 Workflow 结束、Workstream 目标或项目终点；
-- `route_record` v3 保存 `scope_resolution.source`、resolved event 和 decision 引用；
-- RESUMABLE 项目存在明确有效 active route 时，“继续”可以复用既有范围；
-- 新 Workstream 创建本身不自动触发路线规划。
+```text
+task.yaml
+→ subagent execution
+→ result.yaml
+→ 必要 artifact/decision/submission record
+→ 一条终态 task event
+→ Workstream state
+→ task closure summary
+```
 
-## 既有覆盖行为
+普通 task 默认不机械写入：
 
-- 有业务产物但无状态的项目级恢复；
-- 参数 v1 后台生产 MD 与参数 v2 新分支并存；
-- 原 Workstream 内修正与必须分支的边界；
-- Project/Workstream Focus；
-- 三种 task unit；
-- Operation 与 Validator 返回分离；
-- blocking decision；
-- `FINISHED_UNVERIFIED`；
-- 失败任务不自动重试与新 task ID 重试；
-- 下一 Workflow 尚未连接；
-- Focus 歧义；
-- 子 Agent 写管理目录的越权拒绝；
-- 未变化路线不重复完整展示。
+- `TASK_PREPARED`；
+- `TASK_STARTED`；
+- 执行前 Workstream `EXECUTING` 更新；
+- 无变化的 project state；
+- Manager session 逐 task 增量；
+- snapshot；
+- 无变化 route revision；
+- 空 artifact/decision/submission record。
+
+外部 submission、长耗时、高风险或不可逆 task 仍保留强化预记录和恢复锚点。
+
+## Task closure 用户展示
+
+每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 启动前显示精简 closure summary。
+
+DONE 覆盖：task、执行/gate 结果、关键动作或产物、artifact validation status、warning、report 路径和下一 task。
+
+BLOCKED 覆盖：已完成部分、阻断原因、用户决定和未启动后续。
+
+FAILED 覆盖：失败位置、直接证据、保留/清理产物、Workstream 状态和可选后续。
+
+`source_recognition` 的 DONE 只能表述来源识别、复制/复用和 SHA-256 检查通过；其 STRUCTURE artifact 仍为 `UNVALIDATED`，不得显示“结构验证通过”。
+
+宿主支持中间可见消息时，closure 输出后可继续既定范围；不支持时，本轮以 closure summary 结束，保留 expected next task。
+
+## 新增 fixtures 覆盖
+
+`task_recording_and_display_cases.yaml` 包含 7 个 cases：
+
+- 普通前台 task 最小记录；
+- 高风险 task 保留恢复锚点；
+- source recognition 结果在下一 task 前可见；
+- BLOCKED closure 显示 decision；
+- FAILED closure 显示证据；
+- 不支持中间消息时结束当前轮次；
+- 支持中间消息时可继续且 closure 不构成 confirmation gate。
 
 ## 仍需完成
 
-Manager 保持 `draft`，尚不能冻结。后续必须完成：
+Manager 保持 `draft`，尚不能冻结。后续必须：
 
-1. 运行全量 contract validator，确认 `project_event` 和 `route_record` v3 的 Draft 2020-12 合法性；
-2. 将入口、初始化、范围解析和执行 fixtures 转换为可执行输入状态与预期结构化输出；
-3. 用共享 schemas 校验初始化生成的 project/workstream state、events、decision 和 route v3；
-4. 实测 NEW 自动初始化，不依赖额外用户提示；
-5. 实测模糊请求产生 `ROUTE_SCOPE_REQUESTED`，且不创建 route/task；
-6. 实测明确终点产生 `ROUTE_SCOPE_RESOLVED` 后才进入规划；
-7. 完成至少一次 Manager → Workflow → task unit → result → state/record 的端到端测试；
-8. 使用真实目录案例验证项目级与 Workstream 级恢复。
+1. 运行全量 contract validator；
+2. 将现有行为 fixtures 转换为完整可执行输入/输出对象；
+3. 实测 NEW 自动初始化；
+4. 实测模糊请求产生 `ROUTE_SCOPE_REQUESTED`；
+5. 实测普通 task 不产生冗余记录；
+6. 实测 `source_recognition` 完成后在对话窗口输出 closure summary；
+7. 完成 Manager → Workflow → task → result → state/record 的端到端测试；
+8. 使用真实目录验证恢复行为。
