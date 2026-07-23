@@ -7,6 +7,10 @@ content_ownership_status: draft
 owned_content:
   local_execution_flow_and_model_branching:
     owner: 02_validators/component_and_residue_classification_validator/SKILL.md
+  deterministic_structure_parser:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
+  parser_dependencies_and_invocation:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/
   classification_semantics:
     owner: 02_validators/component_and_residue_classification_validator/references/classification_rules.md
   standard_residue_aliases:
@@ -33,12 +37,12 @@ external_references:
   - purpose: structure_preparation_workflow
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
     access: reference_only
-  - purpose: examples_and_test_fixtures
-    owner: 04_evals/component_and_residue_classification_validator/fixtures/
+  - purpose: executable_tests_and_behavior_fixtures
+    owner: 04_evals/component_and_residue_classification_validator/
     access: reference_only
     status: present
 notes:
   - Shared task/result fields are not redefined locally; the Validator returns subagent_result v2.
   - Classification explicitly separates confirmed covalent links, geometric covalent candidates and metal coordination candidates.
   - The input STRUCTURE remains unchanged and is not promoted to VALIDATED by this Validator.
-  - Draft requires executable parser implementation and real PDB/mmCIF/AF3 fixtures before freezing.
+  - Deterministic synthetic PDB/mmCIF/AF3-label tests pass; real ordinary PDB, RCSB-style mmCIF and real AF3 CIF acceptance remains required before freezing.
