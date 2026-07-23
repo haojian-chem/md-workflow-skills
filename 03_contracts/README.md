@@ -16,6 +16,23 @@ Workflow 有两个独立用途：
 
 Manager 负责拼接多个 Workflow fragment；Workflow 不得跨阶段拼接完整路线。执行阶段每次只消费一个 `workflow_decision`。
 
+## Manager 入口与路线范围
+
+项目入口、初始化和路线范围解析必须分离：
+
+```text
+ENTRY_STATE_EVALUATED
+→ PROJECT_INITIALIZED（仅 NEW）
+→ ROUTE_SCOPE_REQUESTED | ROUTE_SCOPE_RESOLVED
+→ ROUTE_CREATED
+→ TASK_PREPARED
+```
+
+- `project_event.schema.yaml` 定义 `ROUTE_SCOPE_REQUESTED` 和 `ROUTE_SCOPE_RESOLVED`；
+- `route_record.schema.yaml` v3 必须引用对应的 resolved scope event，并记录范围来源；
+- Workstream 初始化时允许 `active_route_id: null`；
+- 路线范围未解决时不得创建 route 或业务 task。
+
 ## 临时子 Agent
 
 - `subagent_task.schema.yaml`：Manager 下发给单个临时子 Agent 的任务单元。
@@ -37,7 +54,7 @@ Manager 负责拼接多个 Workflow fragment；Workflow 不得跨阶段拼接完
 ## 历史和审计记录
 
 - `project_event.schema.yaml`：全项目唯一 JSONL 事件流水中的单条事件。
-- `route_record.schema.yaml`：由一个或多个 Workflow fragment 拼接而成的不可变 Workstream 路线版本。
+- `route_record.schema.yaml`：由一个或多个 Workflow fragment 拼接而成的不可变 Workstream 路线版本；v3 保存 route scope resolution 来源与事件引用。
 - `decision_record.schema.yaml`：持久化人工决策记录。
 - `submission_record.schema.yaml`：tmux 或调度系统外部任务记录。
 - `artifact_set.schema.yaml`：结构、拓扑、完整体系、MD 输入输出和分析结果的版本谱系。
