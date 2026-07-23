@@ -1,0 +1,180 @@
+schema_version: 1
+skill_name: chain_and_component_selection
+status: behavior_specification
+cases:
+  - case_id: CCS-001
+    title: explicit single polymer selection
+    input:
+      selected_model_id: '1'
+      selected_component_ids: [model:1/chain:A/polymer]
+      output_format: PDB
+    expected:
+      operation_status: DONE
+      outcome_code: SELECTION_APPLIED
+      selected_components_exact: true
+      candidate_state: present_unvalidated
+  - case_id: CCS-002
+    title: explicit polymer and independent ligand selection
+    input:
+      selected_component_ids:
+        - model:1/chain:A/polymer
+        - model:1/chain:L/res:LIG:101
+    expected:
+      operation_status: DONE
+      ligand_retained: true
+      implicit_components_added: []
+  - case_id: CCS-003
+    title: unselected solvent and ions are excluded only because spec omits them
+    input:
+      selected_component_ids: [model:1/chain:A/polymer]
+      source_contains: [SOLVENT, ION]
+    expected:
+      operation_status: DONE
+      solvent_retained: false
+      ions_retained: false
+      reason: explicit component selection complement
+      prohibited:
+        - implicit remove-all-solvent policy
+  - case_id: CCS-004
+    title: missing selection spec
+    input:
+      selection_spec: null
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SELECTION_SPEC_MISSING_OR_INVALID
+      candidate_created: false
+  - case_id: CCS-005
+    title: unknown component ID
+    input:
+      selected_component_ids: [unknown_component]
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SELECTION_REFERENCES_UNKNOWN_OBJECT
+      candidate_created: false
+  - case_id: CCS-006
+    title: confirmed covalent relation crosses boundary
+    input:
+      selected_component_ids: [model:1/chain:A/polymer]
+      explicit_connection:
+        relation_type: COVALENT
+        selected_endpoint: model:1/chain:A/res:CYS:10
+        excluded_endpoint: model:1/chain:L/res:LIG:101
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SELECTION_BREAKS_CONFIRMED_COVALENT_LINK
+      blocking_confirmation: true
+      candidate_created: false
+      prohibited:
+        - automatic inclusion
+        - silent bond removal
+  - case_id: CCS-007
+    title: disulfide-linked chains cannot be split
+    input:
+      selected_component_ids: [model:1/chain:A/polymer]
+      explicit_connection:
+        relation_type: DISULFIDE
+        selected_endpoint: model:1/chain:A/res:CYS:10
+        excluded_endpoint: model:1/chain:B/res:CYS:20
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SELECTION_BREAKS_CONFIRMED_COVALENT_LINK
+  - case_id: CCS-008
+    title: metal coordination crosses boundary
+    input:
+      selected_component_ids: [model:1/chain:A/polymer]
+      coordination_relation:
+        selected_endpoint: model:1/chain:A/res:HIS:10
+        excluded_endpoint: model:1/chain:Z/res:ZN:1
+    expected:
+      operation_status: DONE
+      coordination_forces_inclusion: false
+      cross_boundary_relation_recorded: true
+  - case_id: CCS-009
+    title: geometry-only covalent candidate crosses boundary
+    input:
+      selected_component_ids: [model:1/chain:A/polymer]
+      covalent_candidate_crosses_boundary: true
+    expected:
+      operation_status: DONE
+      candidate_forces_inclusion: false
+      warning_recorded: true
+  - case_id: CCS-010
+    title: model not explicitly selected
+    input:
+      selected_model_id: null
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SELECTION_SPEC_MISSING_OR_INVALID
+  - case_id: CCS-011
+    title: component belongs to another model
+    input:
+      selected_model_id: '1'
+      selected_component_ids: [model:2/chain:A/polymer]
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SELECTION_REFERENCES_UNKNOWN_OBJECT
+  - case_id: CCS-012
+    title: PDB cannot represent identifiers losslessly
+    input:
+      output_format: PDB
+      selected_identifiers_include:
+        - multi-character chain ID
+        - colliding truncated residue or atom identity
+    expected:
+      operation_status: BLOCKED
+      outcome_code: OUTPUT_FORMAT_CANNOT_PRESERVE_IDENTIFIERS
+      recommended_format: MMCIF
+  - case_id: CCS-013
+    title: AF3 CIF normalized to selected MMCIF
+    input:
+      source_format: AF3_CIF
+      output_format: MMCIF
+    expected:
+      operation_status: DONE
+      original_source_preserved: true
+      warning_contains: AF3-specific non-coordinate categories may not be preserved
+  - case_id: CCS-014
+    title: selection preserves all altlocs and atoms
+    input:
+      selected_component_has_altlocs: true
+    expected:
+      all_atoms_retained: true
+      all_altlocs_retained: true
+      atom_level_filtering: false
+  - case_id: CCS-015
+    title: source classification or spec hash changed
+    input:
+      hash_mismatch: true
+    expected:
+      operation_status: BLOCKED
+      outcome_code: SOURCE_OR_CLASSIFICATION_HASH_MISMATCH
+      candidate_created: false
+  - case_id: CCS-016
+    title: cross-task output conflict
+    input:
+      existing_output_task_id: another_task
+    expected:
+      operation_status: BLOCKED
+      outcome_code: OUTPUT_CONFLICT
+      overwrite: false
+  - case_id: CCS-017
+    title: management path isolation
+    input:
+      normal_selection: true
+    expected:
+      forbidden_writes:
+        - 00_project_state/**
+        - 00_project_records/**
+      source_unchanged: true
+  - case_id: CCS-018
+    title: output files and artifact candidate
+    input:
+      normal_selection: true
+    expected:
+      created_files:
+        - selected_structure
+        - selection_manifest
+        - selection_mapping
+        - operation_report
+      artifact_type: STRUCTURE
+      artifact_state: present_unvalidated
