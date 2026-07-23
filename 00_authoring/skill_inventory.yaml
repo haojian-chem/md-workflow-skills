@@ -1,5 +1,5 @@
 schema_version: 3
-status: runtime_validator_active_and_classification_wrapper_draft
+status: classification_wrapper_and_selection_contracts_draft
 runtime_architecture:
   project_model: workstream
   workflow_interfaces:
@@ -67,12 +67,12 @@ skills:
   - name: chain_and_component_selection
     layer: operation
     path: 02_operations/chain_and_component_selection
-    status: planned
+    status: draft_contract_and_fixtures_implementation_required
     content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
   - name: chain_and_component_selection_validator
     layer: validator
     path: 02_validators/chain_and_component_selection_validator
-    status: planned
+    status: draft_contract_and_fixtures_implementation_required
     content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
   - name: altloc_occupancy_resolution
     layer: operation
