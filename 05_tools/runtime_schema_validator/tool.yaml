@@ -8,18 +8,20 @@ purpose:
   - validate runtime project records with shared contracts
   - avoid repeated LLM-based field inspection
   - cache schema meta-validation by content hash
+  - validate candidate files against their future logical project paths
 modes:
   FAST:
     scope: explicitly changed runtime instances and direct references
     requires_changed_paths: true
   FULL:
-    scope: all recognized runtime instances and project-level references
+    scope: all recognized runtime instances plus optional candidate overlays and project-level references
     requires_changed_paths: false
 inputs:
   - project_root
   - mode
   - changed_paths
   - optional schema overrides
+  - optional actual-to-logical path mappings
 outputs:
   format: json
   fields:
@@ -36,6 +38,7 @@ permissions:
     - 03_contracts/**
     - 00_project_state/**
     - 00_project_records/**
+    - explicitly supplied candidate paths
   write:
     - .md_workflow_cache/runtime_schema_validator/**
     - explicit output path
@@ -45,6 +48,12 @@ cache:
   enabled: true
   key: SHA-256 over all applicable schema file contents
   location: .md_workflow_cache/runtime_schema_validator/
+candidate_overlay:
+  cli_option: --logical-map ACTUAL_PATH=PROJECT_PATH
+  semantics:
+    - infer schema from the future logical path
+    - include candidate IDs and paths in direct-reference checks
+    - do not modify the future target
 error_model:
   pass_exit_code: 0
   validation_failure_exit_code: 1
@@ -65,4 +74,5 @@ release:
   activation_requirement:
     - executable fixtures pass
     - FAST and FULL benchmark recorded
+    - candidate overlay tests pass
     - no false PASS in negative fixtures
