@@ -102,20 +102,22 @@ Manager 可创建管理目录和顶层阶段目录，但不创建阶段业务文
 
 仅当没有可读状态、目录为空或只有初始输入，且没有明显旧结构、拓扑、完整体系或模拟产物。
 
-`NEW` 只是入口状态判定，不包含路线范围解析、路线规划或任务执行。
+`NEW` 只是本轮入口判定，不是初始化后的持久项目状态，也不包含路线范围解析、路线规划或任务执行。
 
 判定为 NEW 后，只要两个根目录明确且不存在目录冲突或需要确认的破坏性操作，Manager 必须自动初始化，不等待用户额外提示“初始化”。
 
-初始化顺序：
+初始化事务顺序：
 
-1. 创建管理目录和顶层阶段目录；
-2. 生成 project ID；
-3. 创建首个 Workstream 和 Focus；
-4. 写入初始 project state 与 Workstream state；
-5. 创建本轮 Manager session；
-6. 追加 `ENTRY_STATE_EVALUATED` 与 `PROJECT_INITIALIZED`；
-7. 创建初始状态快照；
-8. 执行 schema 与引用一致性检查。
+1. 在 Manager session 中记录入口检查，并准备 `ENTRY_STATE_EVALUATED`，其 evaluated state 为 `NEW`；
+2. 创建管理目录和顶层阶段目录；
+3. 生成 project ID、首个 Workstream 和 Focus；
+4. 在临时路径生成候选 project state 与 Workstream state；
+5. 候选 project state 的持久 `entry_state` 设为 `RESUMABLE`；
+6. 对候选状态执行 schema、路径、索引和交叉引用一致性检查；
+7. 检查通过后，按状态原子写入规则提交 project/workstream state；
+8. 追加 `ENTRY_STATE_EVALUATED`；
+9. 追加 `PROJECT_INITIALIZED`；
+10. 创建初始状态快照并重新读取核验。
 
 初始 Workstream 必须满足：
 
@@ -131,7 +133,9 @@ active_task_id: null
 
 初始化不创建首条业务路线，不调用 Workflow，不创建 task unit。
 
-在 `PROJECT_INITIALIZED` 已落盘且初始化状态通过检查前，禁止：
+`PROJECT_INITIALIZED` 只能在候选状态通过检查并成功提交后追加。不得先写该事件，再补做状态校验。
+
+在 `PROJECT_INITIALIZED` 已落盘且最终状态重新读取通过前，禁止：
 
 - 调用 Workflow planning interface；
 - 调用 Workflow execution interface；
@@ -140,13 +144,17 @@ active_task_id: null
 - 创建前台临时子 Agent；
 - 启动 Operation 或 Validator。
 
-初始化失败时，不进入业务流程；根据失败性质标记 BLOCKED 或 NEEDS_RECOVERY，并保留可诊断记录。
+初始化在状态提交前失败：返回 BLOCKED，保留诊断信息，不宣称项目已初始化。
+
+初始化在部分提交后发生异常：进入 NEEDS_RECOVERY，不进入业务流程。
 
 已有明显业务产物但无状态时，不得判为 NEW。
 
 ### RESUMABLE
 
-项目索引可信且当前目标可安全解释。后台运行、等待决定、失败、暂停、局部恢复、完成或归档的其他 Workstream 均可并存，只要局部异常被隔离且不污染当前目标。
+项目索引可信且当前目标可安全解释。NEW 成功初始化后的持久 project state 也使用 `entry_state: RESUMABLE`。
+
+后台运行、等待决定、失败、暂停、局部恢复、完成或归档的其他 Workstream 均可并存，只要局部异常被隔离且不污染当前目标。
 
 ### NEEDS_RECOVERY
 
@@ -246,7 +254,7 @@ ID 创建后不随 title 修改。
 
 只有同时满足以下条件时才可进入 PLAN：
 
-- 项目已初始化或为可信 RESUMABLE；
+- 项目已完成初始化或为可信 RESUMABLE；
 - Focus Workstream 已确定；
 - 路线范围已通过 `ROUTE_SCOPE_RESOLVED` 或已有有效 active route 明确；
 - 不处于项目级恢复。
@@ -266,7 +274,7 @@ ID 创建后不随 title 修改。
 
 实际推进前必须确认：
 
-- `PROJECT_INITIALIZED` 已完成，或项目为可信 RESUMABLE；
+- `PROJECT_INITIALIZED` 已完成，或项目原本就是可信 RESUMABLE；
 - 路线范围已解析；
 - `active_route_id` 非空且路线仍适用；
 - 当前执行位置位于 active route 范围内。
@@ -382,7 +390,8 @@ Workstream 级恢复：项目可保持 RESUMABLE，问题分支标记 NEEDS_RECO
 NEW 初始化完成但路线范围未解析时，应明确显示：
 
 ```text
-Project state: initialized
+Project state: RESUMABLE
+Initialization: completed
 Route scope: unresolved
 Current position: none
 Expected next task: none
@@ -392,7 +401,9 @@ Current decisions: <route-scope decision>
 # 自检
 
 - [ ] 入口状态有证据，Focus 唯一且理由明确；
-- [ ] NEW 只用于入口判定，且已自动完成初始化；
+- [ ] NEW 只用于本轮入口判定，且已自动完成初始化；
+- [ ] 最终 project state 在初始化后为 RESUMABLE；
+- [ ] `PROJECT_INITIALIZED` 只在候选状态校验和提交成功后追加；
 - [ ] `PROJECT_INITIALIZED` 前未调用 Workflow、创建 route 或业务 task；
 - [ ] 初始化没有隐式创建首条业务路线；
 - [ ] 路线范围解析是初始化后的独立事件；
