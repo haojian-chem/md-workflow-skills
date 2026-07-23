@@ -30,6 +30,50 @@ Other active workstreams:
 
 没有内容时明确写 `none`。
 
+## 阻断因果分层
+
+发生暂停、BLOCKED 或 FAILED 时，必须区分：
+
+```text
+Current blocker:
+<直接导致当前 barrier 无法通过的事实，或 none>
+
+Pending after current barrier:
+<只有通过当前 barrier 后才处理的事项，或 none>
+```
+
+规则：
+
+- 只把当前执行阶段已经到达并直接导致停止的事实列为 `Current blocker`；
+- 初始化 capability 缺失时，路线终点歧义和后续 Workflow 覆盖只能列为 pending；
+- 初始化成功前不得把 `ROUTE_SCOPE_RESOLUTION` 的问题写成初始化失败原因；
+- 路线范围解析完成前不得把未连接 Workflow 写成当前停止原因；
+- 未连接 Workflow 只在路线规划到达对应边界时形成 `PARTIAL | BLOCKED`；
+- 不得把多个未来问题堆叠为同一级“原因”；
+- `Current blocker` 解除后，重新评估 pending 项，不能直接沿用旧结论。
+
+初始化 gate 的正确显示示例：
+
+```text
+Current blocker:
+none
+
+Pending after current barrier:
+- “开始 MD”需要在初始化完成后确认路线终点
+- 下游 Workflow 覆盖在路线规划阶段核验
+```
+
+若 FULL capability 确实缺失：
+
+```text
+Current blocker:
+No ACTIVE implementation for FULL_RUNTIME_VALIDATION
+
+Pending after current barrier:
+- route scope resolution
+- downstream Workflow coverage
+```
+
 ## Task closure 强制输出
 
 每个前台 task unit 进入 `DONE | BLOCKED | FAILED` 后，Manager 必须在启动下一前台 task 前输出一次用户可见的 closure summary。
@@ -115,7 +159,8 @@ Next:
 显示：
 
 - 已安全完成的部分；
-- 阻断原因；
+- 当前阻断原因；
+- pending after current barrier；
 - 需要用户决定的内容；
 - 尚未启动的后续 task。
 
@@ -227,4 +272,4 @@ session/job: <id>
 - 大型文件清单；
 - route schema。
 
-只给 task closure、状态摘要和必要路径。
+只给 task closure、状态摘要、当前 blocker、pending after current barrier 和必要路径。
