@@ -1,0 +1,42 @@
+schema_version: 1
+name: incremental_reference_checker
+version: 0.1.0
+status: DESIGNED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: null
+purpose:
+  - check direct references for changed runtime objects
+  - perform project-wide reference graph checks in FULL mode
+modes:
+  FAST:
+    scope: changed objects and their direct references
+  FULL:
+    scope: all project runtime records and indices
+inputs:
+  - project_root
+  - mode
+  - changed_paths
+outputs:
+  format: json
+  fields:
+    - status
+    - checked_references
+    - missing_references
+    - warnings
+    - elapsed_ms
+permissions:
+  read:
+    - 00_project_state/**
+    - 00_project_records/**
+  write: []
+side_effects:
+  project_authoritative_files_modified: false
+callers:
+  - md_workflow_manager
+  - runtime_schema_validator
+release:
+  active_by_default: false
+  activation_requirement:
+    - implementation complete
+    - FAST direct-reference fixtures pass
+    - FULL graph fixtures pass
