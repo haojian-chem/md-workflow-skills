@@ -18,7 +18,8 @@
 - NEW 初始化 capability 预检与内建确定性状态提交路径；
 - current blocker / pending after current barrier 因果分层；
 - 串行 task-unit 临时子 Agent 协议；
-- `structure_preparation_workflow` 与 `source_recognition` drafts。
+- `structure_preparation_workflow` 与 `source_recognition` drafts；
+- `component_and_residue_classification_validator` 首版规则与 contract draft。
 
 Manager 主文件保持 311 行；初始化事务和完整自检位于 references。
 
@@ -104,6 +105,33 @@ FAST warm median: 3.311 ms
 FULL warm median: 4.181 ms
 ```
 
+## 1.2 Component and residue classification
+
+已建立：
+
+```text
+02_validators/component_and_residue_classification_validator/SKILL.md
+02_validators/component_and_residue_classification_validator/references/classification_rules.md
+02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml
+02_validators/component_and_residue_classification_validator/references/covalently_linked_nonstandard_residue_registry.yaml
+02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml
+02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+04_evals/component_and_residue_classification_validator/fixtures/classification_cases.yaml
+04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md
+```
+
+已确认的 draft 底线：
+
+- 显式共价连接、几何共价候选和金属配位候选必须分开；
+- 距离 alone 不能确认共价键；
+- 金属配位不改变 residue/component 的共价 topology class；
+- Validator 执行成功与分类是否存在歧义分开表达；
+- 阻断歧义通过 `confirmation_items` 返回；
+- 输入 STRUCTURE 不修改、不创建新版本，也不提升为 VALIDATED；
+- 返回共享 `subagent_result` v2。
+
+当前仍缺少确定性结构解析器和真实 PDB/mmCIF/AF3 fixtures，因此 1.2 只能视为 contract/语义 draft，不能视为运行通过。
+
 ## 阻断因果分层
 
 发生停止时使用：
@@ -119,7 +147,7 @@ Pending after current barrier:
 初始化阶段：
 
 - FULL capability 缺失才是 capability blocker；
-- “开始 MD”的路线终点歧义在 `PROJECT_INITIALIZED` 后处理；
+- 路线终点歧义在 `PROJECT_INITIALIZED` 后处理；
 - 未连接 Workflow 在 route planning 到达边界后处理；
 - 后两项不得列为初始化失败原因。
 
@@ -130,7 +158,7 @@ Pending after current barrier:
 - `state_transaction`：DESIGNED；初始化已有内建提交路径，不构成 blocker；
 - `structure_preparation_workflow`：双接口 draft，待 Manager 集成；
 - `source_recognition`：1.1 功能检查已由用户测试通过；需复测 closure、FAST 和最小记录；
-- `component_and_residue_classification_validator`：待迁移到 subagent task/result v2；
+- `component_and_residue_classification_validator`：subagent v2 与分类语义已对齐；待确定性解析器和真实结构测试；
 - 其他 Phase 1 Skills：待编写。
 
 Manager 和完整工作流仍为 draft；Tool 激活不等同于 Manager 端到端验收通过。
@@ -139,6 +167,8 @@ Manager 和完整工作流仍为 draft；Tool 激活不等同于 Manager 端到�
 
 - content map 的 `load_when` 与 `applicable_to` 扩展；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer` 实现；
+- 1.2 标准 residue alias、共价候选和配位阈值 registries；
+- 1.2 确定性结构解析器；
 - Manager 真实项目端到端集成。
 
 ## 当前权威文件
@@ -155,6 +185,7 @@ Manager 和完整工作流仍为 draft；Tool 激活不等同于 Manager 端到�
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`；
 - `05_tools/tool_registry.yaml`；
 - `04_evals/runtime_schema_validator/VALIDATION.md`；
+- `04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md`；
 - `03_contracts/README.md`；
 - `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`；
 - 本文件。
