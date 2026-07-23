@@ -1,0 +1,38 @@
+schema_version: 3
+skill_name: md-workflow-tool-authoring
+skill_type: authoring
+skill_path: 00_authoring/md-workflow-tool-authoring
+contract_status: draft
+content_ownership_status: draft
+owned_content:
+  deterministic_tool_generation_and_maintenance:
+    owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+  tool_contract_versioning_testing_and_release:
+    owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+  tool_registry_and_lifecycle:
+    owner: 05_tools/tool_registry.yaml
+  deterministic_tool_runtime_boundaries:
+    owner: 00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md
+external_references:
+  - purpose: repository_rules
+    owner: AGENTS.md
+    access: reference_only
+  - purpose: shared_contract_index
+    owner: 03_contracts/README.md
+    access: reference_only
+  - purpose: skill_inventory
+    owner: 00_authoring/skill_inventory.yaml
+    access: reference_only
+  - purpose: file_ownership
+    owner: 00_authoring/file_ownership.yaml
+    access: reference_only
+  - purpose: tool_registry
+    owner: 05_tools/tool_registry.yaml
+    access: shared_authoring_write
+  - purpose: tool_evaluation_fixtures
+    owner: 04_evals/md-workflow-tool-authoring/
+    access: reference_only
+    status: planned
+notes:
+  - Tool authoring is development-time governance for deterministic utilities and does not add a runtime decision layer.
+  - Contract remains draft until the first tools pass executable tests and benchmark checks.
