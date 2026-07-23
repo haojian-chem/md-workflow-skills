@@ -31,9 +31,9 @@ external_references:
     owner: 05_tools/tool_registry.yaml
     access: shared_authoring_write
   - purpose: tool_evaluation_fixtures
-    owner: 04_evals/md-workflow-tool-authoring/
+    owner: 04_evals/md-workflow-tool-authoring/fixtures/
     access: reference_only
-    status: planned
+    status: present
 notes:
   - Tool authoring is development-time governance for deterministic utilities and does not add a runtime decision layer.
   - Contract remains draft until the first tools pass executable tests and benchmark checks.
