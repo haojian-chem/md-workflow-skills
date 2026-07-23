@@ -1,6 +1,6 @@
 ---
 name: md-workflow-skill-authoring
-description: 设计、拆分、编写或重构本项目的 MD manager、workflow、operation、validator Skill 时使用；同时约束 Workstream 路线、串行临时子 Agent 接口和网页端多窗口文件所有权。不要用于运行具体 MD 任务。
+description: 设计、拆分、编写或重构本项目的 MD manager、workflow、operation、validator Skill 时使用；同时约束 Workstream 路线、串行临时子 Agent 接口、确定性 Tool 调用边界和网页端多窗口文件所有权。不要用于运行具体 MD 任务或直接维护共享 Tool。
 ---
 
 # 目标
@@ -15,6 +15,8 @@ description: 设计、拆分、编写或重构本项目的 MD manager、workflow
 - task unit 可以是 Operation、Validator 或 Operation 与专属 Validator；
 - 临时子 Agent 用于隔离上下文，不用于前台并行；
 - 多个 Workstream 和多个外部 tmux/调度任务可以并存；
+- 确定性 Tool 不成为第五个决策层；
+- 重复、缓慢或易不一致的确定性逻辑通过 `tool_request` 交给 Tool Authoring；
 - 网页端多个编写窗口与运行时子 Agent 完全分离。
 
 # 启动前检查
@@ -29,7 +31,8 @@ description: 设计、拆分、编写或重构本项目的 MD manager、workflow
 6. 目标窗口的 work order；
 7. `03_contracts/README.md` 与适用 schema；
 8. 相关上下游 Skill；
-9. 涉及路线规划时读取 `00_manager/md_workflow_manager/references/route_planning_protocol.md`。
+9. 涉及路线规划时读取 `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
+10. 涉及确定性 Tool 时读取 `references/deterministic_tool_protocol.md` 和 `05_tools/tool_registry.yaml`。
 
 先列出：
 
@@ -55,15 +58,19 @@ skill_layer:
 primary_job:
 nearest_neighbor_skills: []
 responsibility_conflicts: []
+deterministic_tool_candidates: []
 ```
 
 一个 Skill 同时承担多个层级主职责时，先拆分。
 
+Tool 不是 Skill 层级。Tool 只执行确定性逻辑，不能承担下一步、路线、Focus、用户决策或科学判断。
+
 # 步骤 2：确认运行时关系
 
-涉及 Manager、Workflow、Workstream 或临时子 Agent 时，读取：
+涉及 Manager、Workflow、Workstream、临时子 Agent 或 Tool 时，读取：
 
 - `references/runtime_subagent_protocol.md`；
+- `references/deterministic_tool_protocol.md`；
 - `00_manager/md_workflow_manager/references/route_planning_protocol.md`。
 
 必须满足：
@@ -77,7 +84,9 @@ responsibility_conflicts: []
 - Operation 与 Validator 的结果必须分开；
 - 子 Agent 不再委派；
 - 子 Agent 不直接修改项目状态和记录目录；
-- 多个外部 MD 任务可并存，但不高频轮询。
+- 多个外部 MD 任务可并存，但不高频轮询；
+- Tool 只执行注册的确定性程序；
+- Tool 不向用户提问、不创建 Agent、不作科学判决。
 
 # 步骤 3：冻结局部 contract
 
@@ -105,6 +114,8 @@ downstream_consumers: []
 shared_contracts: []
 workstream_effects: []
 record_effects: []
+tool_dependencies: []
+tool_requests: []
 ```
 
 Workflow 还必须冻结：
@@ -122,7 +133,38 @@ execution_interface:
 
 共享状态和接口只引用 `03_contracts/`。
 
-# 步骤 4：建立内容归属
+# 步骤 4：识别 Tool 候选
+
+满足以下任一条件时，不应继续把逻辑写成长篇自然语言执行规则：
+
+- 同一确定性逻辑重复出现；
+- LLM 执行明显慢于程序；
+- 自然语言结果容易不一致；
+- 需要 cache、批量或增量处理；
+- 需要原子写入、事务或回滚；
+- 需要稳定 benchmark。
+
+生成：
+
+```yaml
+tool_request:
+  capability:
+  reason:
+  callers: []
+  required_inputs: []
+  expected_outputs: []
+  read_paths: []
+  write_paths: []
+  side_effects: []
+```
+
+然后交由：
+
+`00_authoring/md-workflow-tool-authoring/SKILL.md`
+
+业务 Skill 可以声明 Tool 依赖和失败处理，但不得在运行 task 中临时生成或修改共享 Tool。
+
+# 步骤 5：建立内容归属
 
 使用：
 
@@ -132,9 +174,9 @@ execution_interface:
 
 `references/content_ownership_and_deduplication.md`
 
-每个概念只能有一个 owner。完整路线拼接规则归 Manager；阶段内 route fragment 归相应 Workflow。
+每个概念只能有一个 owner。完整路线拼接规则归 Manager；阶段内 route fragment 归相应 Workflow；确定性 Tool 边界归 `deterministic_tool_protocol.md`；具体 Tool contract 归其 `tool.yaml`。
 
-# 步骤 5：设计文件结构
+# 步骤 6：设计 Skill 文件结构
 
 按需创建：
 
@@ -148,17 +190,19 @@ execution_interface:
 └── agents/
 ```
 
-仅创建实际需要的目录。`agents/openai.yaml` 仅用于 Skill 元数据、调用策略或工具依赖，不用于定义开发子 Agent。
+仅创建实际需要的目录。Skill 内 `scripts/` 只用于该 Skill 独有且不应共享的辅助逻辑；跨 Skill 重复使用的程序应进入 `05_tools/`。
+
+`agents/openai.yaml` 仅用于 Skill 元数据、调用策略或 Tool 依赖，不用于定义开发子 Agent。
 
 渐进披露规则见 `references/progressive_disclosure.md`。
 
-# 步骤 6：分配网页窗口
+# 步骤 7：分配网页窗口
 
 使用 `assets/window_work_order.template.md`，规则见 `references/multi_window_authoring_protocol.md`。
 
-每个窗口必须有互斥的 `write_paths`。共享文件仅由主窗口修改。
+每个窗口必须有互斥的 `write_paths`。共享文件和 `05_tools/tool_registry.yaml` 仅由主窗口修改。
 
-# 步骤 7：编写
+# 步骤 8：编写
 
 选择模板：
 
@@ -178,12 +222,14 @@ execution_interface:
 - 确认项返回 Manager；
 - 不复制共享 contract；
 - 仅在实际需要时读取特定 reference；
+- 明确 Tool 名称、版本要求、输入输出和失败处理；
+- 未测试 Tool 不得声明为默认生产依赖；
 - 不将网页窗口写成 Agent；
 - 不将 Workflow 写成 Agent；
 - 不引入多个前台 MD 子 Agent；
 - 不把多个外部任务并存误写成前台 Agent 并行。
 
-# 步骤 8：检查
+# 步骤 9：检查
 
 运行：
 
@@ -201,14 +247,16 @@ python 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py
   <project-root>
 ```
 
-修改 `03_contracts/` 后还需运行：
+修改 `03_contracts/` 后还需运行 authoring 级全量检查：
 
 ```bash
 python 00_authoring/md-workflow-skill-authoring/scripts/validate_contracts.py \
   <project-root>
 ```
 
-# 步骤 9：评测
+该 authoring 检查不应被普通运行时 task 重复调用。运行时 schema 校验由注册 Tool 的 FAST/FULL 模式处理。
+
+# 步骤 10：评测
 
 示例和夹具统一放入：
 
@@ -229,7 +277,9 @@ python 00_authoring/md-workflow-skill-authoring/scripts/validate_contracts.py \
 - 三种 task unit；
 - Operation 与 Validator 结果分离；
 - 外部任务 FINISHED_UNVERIFIED；
-- 子 Agent 禁止写管理目录。
+- 子 Agent 禁止写管理目录；
+- Tool dependency 不可用、FAIL 和版本不兼容；
+- 普通 task 只使用 FAST，不机械触发 FULL。
 
 # 交付
 
@@ -246,6 +296,7 @@ validation:
   errors: []
   warnings: []
 duplication_findings: []
+tool_requests: []
 contract_change_requests: []
 open_questions: []
 next_action:
@@ -257,6 +308,8 @@ next_action:
 - 局部 contract 与 content map 已确认；
 - 文件所有权无冲突；
 - Workflow planning/execution、Workstream、Manager 和子 Agent 边界正确；
+- Tool 候选已交给 Tool Authoring，而非嵌入业务 Skill；
+- Tool 依赖不承担决策或科学判断；
 - 主文件与附属文件无重复定义；
 - 静态检查和行为评测通过；
 - 未出现开发子 Agent、嵌套委派或多个前台 MD 子 Agent 残留。
