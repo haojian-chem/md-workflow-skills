@@ -1,0 +1,73 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: selection_mapping.schema.yaml
+title: Chain and Component Selection Atom Mapping
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - source_structure
+  - output_structure
+  - atom_mappings
+properties:
+  schema_version:
+    type: integer
+    const: 1
+  task_id:
+    type: string
+    minLength: 1
+  workstream_id:
+    type: string
+    minLength: 1
+  source_structure:
+    $ref: '#/$defs/file_identity'
+  output_structure:
+    $ref: '#/$defs/file_identity'
+  atom_mappings:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - source
+        - output
+      properties:
+        source:
+          $ref: '#/$defs/atom_identity'
+        output:
+          $ref: '#/$defs/atom_identity'
+      additionalProperties: false
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
+  atom_identity:
+    type: object
+    required:
+      - model_id
+      - chain_id
+      - residue_name
+      - residue_number
+      - insertion_code
+      - atom_name
+      - altloc
+      - element
+      - serial
+    properties:
+      model_id: {type: string, minLength: 1}
+      chain_id: {type: string}
+      residue_name: {type: string, minLength: 1}
+      residue_number: {type: string, minLength: 1}
+      insertion_code: {type: [string, 'null']}
+      atom_name: {type: string, minLength: 1}
+      altloc: {type: [string, 'null']}
+      element: {type: string, minLength: 1}
+      serial: {type: [integer, 'null'], minimum: 0}
+    additionalProperties: false
