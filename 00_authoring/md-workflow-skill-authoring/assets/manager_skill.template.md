@@ -1,6 +1,6 @@
 ---
 name: <manager-skill-name>
-description: <全局 MD 项目、Workstream、路线、状态和记录管理用途及触发边界>。
+description: <全局 MD 项目、入口初始化、Workstream、路线、状态和记录管理用途及触发边界>。
 ---
 
 # 目标
@@ -24,7 +24,7 @@ description: <全局 MD 项目、Workstream、路线、状态和记录管理用�
 - `03_contracts/project_state.schema.yaml`
 - `03_contracts/workstream_state.schema.yaml`
 
-# 项目入口与恢复
+# 项目入口、初始化与恢复
 
 处理：
 
@@ -34,7 +34,20 @@ RESUMABLE
 NEEDS_RECOVERY
 ```
 
-区分项目级恢复与 Workstream 级恢复。
+- `NEW` 只表示入口判定；
+- NEW 项目在根目录明确且无冲突时自动初始化；
+- 初始化不创建 route 或业务 task；
+- `PROJECT_INITIALIZED` 前不得调用 Workflow；
+- 区分项目级恢复与 Workstream 级恢复。
+
+# 初始化后的路线范围解析
+
+路线范围解析是独立事件，不属于 NEW 初始化，也不等于 PLAN。
+
+- 明确终点：记录 `ROUTE_SCOPE_RESOLVED`；
+- 模糊终点：创建 blocking decision，记录 `ROUTE_SCOPE_REQUESTED`；
+- 不得默认选择下一 task、当前 Workflow 结束、Workstream 目标或项目终点；
+- `ROUTE_SCOPE_RESOLVED` 前不得请求 route fragment 或创建 route。
 
 # 路线规划循环
 
@@ -42,7 +55,7 @@ NEEDS_RECOVERY
 
 `00_manager/md_workflow_manager/references/route_planning_protocol.md`
 
-1. 解析起点、终点和停止条件；
+1. 读取已经解析的起点、终点和停止条件；
 2. 按 stage registry 确定涉及的 Workflow；
 3. 逐个请求 `workflow_route_fragment.schema.yaml`；
 4. 核验相邻 fragment 的 artifact 接口；
@@ -50,6 +63,14 @@ NEEDS_RECOVERY
 6. 未连接 Workflow 在边界形成 PARTIAL/BLOCKED，不虚构内部步骤。
 
 # Workflow 执行循环
+
+执行前确认：
+
+```text
+PROJECT_INITIALIZED
+→ ROUTE_SCOPE_RESOLVED
+→ ROUTE_CREATED
+```
 
 1. 解析 Focus Workstream；
 2. 只加载当前 Workflow；
@@ -66,6 +87,7 @@ NEEDS_RECOVERY
 # Workstream
 
 - 创建、选择、分支和结束 Workstream；
+- 初始化时创建 Workstream 不自动创建 route；
 - 路线属于 Workstream；
 - route fragment 由各 Workflow 产生；
 - 完整 route 由 Manager 拼接；
@@ -75,6 +97,7 @@ NEEDS_RECOVERY
 
 - 子 Agent 不直接向用户提问；
 - Manager 创建和解决 decision record；
+- 路线范围模糊时由 Manager 请求用户决定；
 - 不使用与 `confirmation_items` 重复的确认布尔字段。
 
 # 外部任务
@@ -97,7 +120,7 @@ Manager 是以下目录的唯一提交者：
 
 # 用户展示
 
-始终展示两个根目录、Focus、当前位置、route planning status、预计下一任务、当前决策、后台任务和其他活动 Workstream 摘要。
+始终展示两个根目录、Focus、当前位置、route scope、route planning status、预计下一任务、当前决策、后台任务和其他活动 Workstream 摘要。
 
 # 失败与恢复
 
