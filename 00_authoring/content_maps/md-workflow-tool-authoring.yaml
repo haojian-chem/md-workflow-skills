@@ -11,9 +11,10 @@ owned_content:
     owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
   tool_registry_and_lifecycle:
     owner: 05_tools/tool_registry.yaml
-  deterministic_tool_runtime_boundaries:
-    owner: 00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md
 external_references:
+  - purpose: deterministic_tool_runtime_boundaries
+    owner: 00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md
+    access: reference_only
   - purpose: repository_rules
     owner: AGENTS.md
     access: reference_only
