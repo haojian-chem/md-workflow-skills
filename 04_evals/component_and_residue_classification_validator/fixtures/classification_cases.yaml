@@ -70,13 +70,14 @@ cases:
       blocking_confirmation: true
       confirmation_category: MODEL_SELECTION
   - case_id: CRC-007
-    title: entity metadata conflicts with coordinate connectivity
+    title: entity polymer metadata conflicts with residue chemistry
     input_summary:
       format: MMCIF
-      contents: entity metadata marks nonpolymer while explicit polymer linkage indicates covalent membership
+      contents: entity_poly declares DNA while the entity contains canonical protein residue ALA and protein backbone atoms
     expected:
       validator_status: DONE
       outcome_code: CLASSIFICATION_DECISION_REQUIRED
+      topology_class: UNKNOWN
       blocking_confirmation: true
       confirmation_category: METADATA_CONFLICT
   - case_id: CRC-008
