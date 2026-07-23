@@ -16,12 +16,13 @@
 - Workflow planning/execution 双接口；
 - 跨 Workflow route planning protocol；
 - Manager 入口初始化与路线范围 barrier；
+- `route_record.schema.yaml` v3；
 - 串行 task-unit 临时子 Agent 协议；
 - `md_workflow_manager` draft；
 - `structure_preparation_workflow` 双接口 draft；
 - `source_recognition` 安全复制 draft。
 
-验证结果：
+验证与状态记录：
 
 - `00_authoring/CONTRACT_ALIGNMENT_VALIDATION.md`；
 - `00_authoring/ROUTE_PLANNING_ALIGNMENT_VALIDATION.md`；
@@ -39,8 +40,11 @@
 ## 已确认的 Manager 入口顺序
 
 ```text
-ENTRY_STATE_EVALUATED
-→ PROJECT_INITIALIZED（仅 NEW）
+ENTRY_STATE_EVALUATED: NEW
+→ 候选 project/workstream state 生成与校验
+→ 原子提交状态
+→ 持久 project state: RESUMABLE
+→ PROJECT_INITIALIZED
 → ROUTE_SCOPE_RESOLUTION
 → ROUTE_SCOPE_RESOLVED
 → ROUTE_PLANNING
@@ -50,8 +54,9 @@ ENTRY_STATE_EVALUATED
 
 硬规则：
 
-- `NEW` 只表示入口判定；
+- `NEW` 只表示本轮入口判定，不是初始化后的持久状态；
 - NEW 项目在根目录明确且无冲突时自动初始化；
+- `PROJECT_INITIALIZED` 只能在候选状态校验和提交成功后记录；
 - 初始化创建首个 Workstream，但不创建 route；
 - `PROJECT_INITIALIZED` 前不得调用 Workflow；
 - 路线范围解析是初始化后的独立事件；
@@ -59,11 +64,19 @@ ENTRY_STATE_EVALUATED
 - `ROUTE_SCOPE_RESOLVED` 前不得请求 fragment 或创建 route；
 - 有效 active route 不存在时不得创建业务 task。
 
-项目事件已加入：
+项目事件：
 
 ```text
 ROUTE_SCOPE_REQUESTED
 ROUTE_SCOPE_RESOLVED
+```
+
+`route_record.schema.yaml` v3 必须保存：
+
+```text
+scope_resolution.source
+scope_resolution.resolved_event_id
+scope_resolution.decision_id
 ```
 
 ## 已确认的运行模型
@@ -86,16 +99,7 @@ ROUTE_SCOPE_RESOLVED
 
 权威索引：`03_contracts/README.md`
 
-包括：
-
-- 公共类型和 decision request；
-- Workflow route fragment；
-- Workflow execution decision；
-- subagent task/result；
-- project/workstream state；
-- project event；
-- Manager session；
-- route、decision、submission、artifact set 和 snapshot。
+包括公共类型、decision request、Workflow route fragment/decision、subagent task/result、project/workstream state、project event、Manager session、route、decision、submission、artifact set 和 snapshot。
 
 外部任务必须经过：
 
@@ -108,11 +112,13 @@ RUNNING
 
 ## 当前实现状态
 
-- `md_workflow_manager`：已明确 NEW 自动初始化、独立 route scope resolution、规划循环与执行循环；20 个行为 cases 已建立，待可执行验证；
+- `md_workflow_manager`：428 行；20 个 behavior cases、4 个 initialization transaction cases、12 个 route planning cases；待可执行验证；
 - `structure_preparation_workflow`：已支持 route fragment 与 execution decision；待 Manager 集成；
 - `source_recognition`：默认复制、SHA-256 校验、相同副本复用、不同内容不覆盖；待真实结构文件测试；
 - `component_and_residue_classification_validator`：需要迁移到 subagent task/result v2；
 - 其他 Phase 1 Skills：尚待编写。
+
+本轮尚未在测试主机重新运行全量 `validate_contracts.py`。Manager 和 contracts 仍为 draft，不得宣称运行验收通过。
 
 ## Source recognition 已确认规则
 
