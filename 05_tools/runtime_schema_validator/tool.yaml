@@ -18,6 +18,7 @@ modes:
     requires_changed_paths: false
 inputs:
   - project_root
+  - contracts_dir_from_skill_architecture_root
   - mode
   - changed_paths
   - optional schema overrides
@@ -33,14 +34,19 @@ outputs:
     - errors
     - warnings
     - elapsed_ms
+  invocation_audit_must_record:
+    - tool_name
+    - tool_version
+    - project_root
+    - contracts_dir
 permissions:
   read:
-    - 03_contracts/**
-    - 00_project_state/**
-    - 00_project_records/**
+    - 03_contracts/** under Skill architecture root
+    - 00_project_state/** under MD project root
+    - 00_project_records/** under MD project root
     - explicitly supplied candidate paths
   write:
-    - .md_workflow_cache/runtime_schema_validator/**
+    - .md_workflow_cache/runtime_schema_validator/** under MD project root
     - explicit output path
 side_effects:
   project_authoritative_files_modified: false
