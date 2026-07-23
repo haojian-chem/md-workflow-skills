@@ -3,7 +3,7 @@ status: draft
 tools:
   - name: runtime_schema_validator
     version: 0.1.0
-    status: IMPLEMENTED
+    status: ACTIVE
     path: 05_tools/runtime_schema_validator
     entrypoint: 05_tools/runtime_schema_validator/validate.py
     callers:
@@ -24,9 +24,11 @@ tools:
       - .md_workflow_cache/runtime_schema_validator/**
       - explicit output path
     tests: 04_evals/runtime_schema_validator/
-    active_by_default: false
+    validation_evidence: 04_evals/runtime_schema_validator/VALIDATION.md
+    active_by_default: true
     notes:
-      - Implemented but not ACTIVE until executable tests and benchmark pass.
+      - Executable fixtures passed and FAST/FULL benchmark recorded on 2026-07-23.
+      - Manager end-to-end integration remains pending but does not block Tool activation.
   - name: state_transaction
     version: 0.1.0
     status: DESIGNED
@@ -45,6 +47,8 @@ tools:
       - 00_project_state/**
     tests: 04_evals/state_transaction/
     active_by_default: false
+    notes:
+      - Optional optimization; NEW initialization uses the documented built-in controlled atomic file commit path until this Tool becomes ACTIVE.
   - name: incremental_reference_checker
     version: 0.1.0
     status: DESIGNED
