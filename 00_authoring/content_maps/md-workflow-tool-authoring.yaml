@@ -29,7 +29,7 @@ external_references:
     access: reference_only
   - purpose: tool_registry
     owner: 05_tools/tool_registry.yaml
-    access: shared_authoring_write
+    access: reference_only
   - purpose: tool_evaluation_fixtures
     owner: 04_evals/md-workflow-tool-authoring/fixtures/
     access: reference_only
