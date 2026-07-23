@@ -94,9 +94,56 @@ description: 读取结构准备阶段的 PDB、mmCIF 或 AlphaFold 3 CIF，识�
 - 输出目录位于 allowed write paths；
 - `00_project_state/**` 和 `00_project_records/**` 位于 forbidden paths；
 - 适用 registries 和本地输出 schema 可读取；
+- `scripts/classify_structure.py` 及 `scripts/requirements.txt` 可用；
 - 不存在要求本 Validator 修改结构的 task 指令。
 
 Preflight 不通过时不写部分分类结果。
+
+# 确定性解析器
+
+实际结构解析、分类、候选连接检测和本地 schema 校验必须调用：
+
+```text
+scripts/classify_structure.py
+```
+
+不得由 LLM 在主上下文或子 Agent 中逐原子模拟解析器。
+
+基本调用：
+
+```bash
+python scripts/classify_structure.py \
+  --structure <input.pdb-or-cif> \
+  --task-id <task_id> \
+  --workstream-id <workstream_id> \
+  --report <component_and_residue_classification_report.yaml> \
+  --result-data <classification_result.yaml>
+```
+
+AF3 CIF 增加：
+
+```text
+--source-label AF3_CIF
+```
+
+已有 resolved model decision 时增加：
+
+```text
+--model-id <model_id>
+```
+
+解析器完成：
+
+- PDB/mmCIF/AF3 CIF 读取；
+- entity、polymer、chain、residue 和 atom 枚举；
+- PDB `LINK/SSBOND/CONECT` 与 mmCIF connection 读取；
+- registry 应用；
+- 几何共价候选和金属配位候选生成；
+- 输入 SHA-256 前后核验；
+- `classification_outputs.schema.yaml` 校验；
+- report/result data 原子写入和跨 task 覆盖保护。
+
+解析器只返回本地分类数据，不生成共享 `subagent_result`。Validator 必须读取其结构化输出，将 ambiguities 转换为 `confirmation_items`，再包装共享 result v2。
 
 # 分类层级
 
@@ -131,7 +178,7 @@ Preflight 不通过时不写部分分类结果。
 
 ```text
 polymer_class
- topology_class
+topology_class
 ```
 
 允许值由本地输出 schema 管理。
@@ -178,7 +225,7 @@ polymer_class
 - 多模型产生不同链/组分分类且未指定模型；
 - 非标准组分是否与聚合物共价相连只能由几何候选支持；
 - 同一 residue name 在当前上下文可能是标准别名，也可能是独立配体；
-- polymer/entity metadata 与坐标连接证据冲突；
+- polymer/entity metadata 与 residue chemistry、backbone 或连接证据冲突；
 - 未知残基的分类会改变下一步链或组分选择；
 - 输入文件的链或 residue 标识不足以唯一引用对象。
 
@@ -193,16 +240,12 @@ Validator 完成所有可执行检查后返回统一 `confirmation_items`，不�
 # 执行流程
 
 1. 解析 task、权限和上游摘要；
-2. 读取输入结构及格式元数据；
-3. 枚举 model、entity、chain、residue 和 atom；
-4. 读取显式聚合物与连接记录；
-5. 应用标准残基与别名 registry；
-6. 根据显式连接和聚合物连续性确定共价 topology class；
-7. 生成几何共价候选，但不自动升级；
-8. 生成金属配位候选；
-9. 汇总链、组分、残基和歧义；
-10. 写 report 与 classification result data；
-11. 返回符合共享 contract 的 Validator result。
+2. 完成 preflight 并定位确定性 parser；
+3. 调用 parser 读取结构、应用 registries 并生成 report/result data；
+4. 核验 parser exit code、输入 SHA-256 和本地 schema 结果；
+5. 汇总模型、链、组分、残基、显式连接、候选连接和 warning；
+6. 将 blocking/non-blocking ambiguities 转换为共享 `confirmation_items`；
+7. 返回符合共享 contract 的 Validator result。
 
 # Outcome codes
 
@@ -249,7 +292,7 @@ Validator 完成所有可执行检查后返回统一 `confirmation_items`，不�
 # 失败与清理
 
 - 输入不唯一或越权：返回 `BLOCKED`，不创建部分报告；
-- 结构无法解析：返回 `FAILED`，保留最小技术诊断；
+- parser 返回确定性输入/registry/schema 错误：返回 `FAILED`，保留最小技术诊断；
 - 报告写入中断：删除本次不完整临时文件后返回 `FAILED`；
 - 局部残基未知：只要整体解析可靠，返回 DONE + warning/decision，不得整项失败；
 - 不覆盖已有不同 task ID 的报告；同一 task 重试使用新 task ID 或明确的幂等复用规则。
@@ -257,6 +300,7 @@ Validator 完成所有可执行检查后返回统一 `confirmation_items`，不�
 # 自检
 
 - [ ] 只读取唯一授权结构；
+- [ ] 实际调用了 `scripts/classify_structure.py`；
 - [ ] 未修改输入结构；
 - [ ] 显式共价、几何共价候选和配位候选已分离；
 - [ ] 配位未被归入共价相连非标准残基；
