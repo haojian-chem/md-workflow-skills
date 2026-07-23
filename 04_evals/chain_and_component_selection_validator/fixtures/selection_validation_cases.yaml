@@ -1,0 +1,139 @@
+schema_version: 1
+skill_name: chain_and_component_selection_validator
+status: behavior_specification
+cases:
+  - case_id: CSV-001
+    title: exact selected set and mapping
+    input:
+      operation_status: DONE
+      candidate_matches_spec: true
+    expected:
+      validator_status: DONE
+      outcome_code: SELECTION_VALIDATED
+      accept_artifact_candidate: true
+  - case_id: CSV-002
+    title: extra unselected residue in output
+    input:
+      output_has_extra_residue: true
+    expected:
+      validator_status: FAILED
+      outcome_code: SELECTED_SET_MISMATCH
+      accept_artifact_candidate: false
+  - case_id: CSV-003
+    title: selected residue missing
+    input:
+      output_missing_selected_residue: true
+    expected:
+      validator_status: FAILED
+      outcome_code: SELECTED_SET_MISMATCH
+  - case_id: CSV-004
+    title: selected atom or altloc missing
+    input:
+      output_missing_atom_or_altloc: true
+    expected:
+      validator_status: FAILED
+      outcome_code: ATOM_MAPPING_MISMATCH
+  - case_id: CSV-005
+    title: duplicate source or output atom mapping
+    input:
+      mapping_not_one_to_one: true
+    expected:
+      validator_status: FAILED
+      outcome_code: ATOM_MAPPING_MISMATCH
+  - case_id: CSV-006
+    title: coordinate changed beyond tolerance
+    input:
+      coordinate_delta_angstrom: 0.01
+    expected:
+      validator_status: FAILED
+      outcome_code: COORDINATE_OR_ATTRIBUTE_CHANGED
+  - case_id: CSV-007
+    title: PDB rounding within declared tolerance
+    input:
+      output_format: PDB
+      coordinate_delta_within_format_tolerance: true
+    expected:
+      validator_status: DONE
+      outcome_code: SELECTION_VALIDATED_WITH_WARNINGS
+  - case_id: CSV-008
+    title: occupancy or B factor changed
+    input:
+      atom_attribute_changed: true
+    expected:
+      validator_status: FAILED
+      outcome_code: COORDINATE_OR_ATTRIBUTE_CHANGED
+  - case_id: CSV-009
+    title: confirmed covalent connection removed
+    input:
+      selected_endpoints_both_present: true
+      output_connection_missing: true
+    expected:
+      validator_status: FAILED
+      outcome_code: EXPLICIT_CONNECTION_MISMATCH
+  - case_id: CSV-010
+    title: connection points to removed atom
+    input:
+      stale_output_connection: true
+    expected:
+      validator_status: FAILED
+      outcome_code: EXPLICIT_CONNECTION_MISMATCH
+  - case_id: CSV-011
+    title: coordination relation crosses selection boundary
+    input:
+      coordination_boundary_recorded: true
+    expected:
+      validator_status: DONE
+      coordination_not_covalent_gate: true
+  - case_id: CSV-012
+    title: manifest selected set lies
+    input:
+      manifest_does_not_match_actual_output: true
+    expected:
+      validator_status: FAILED
+      outcome_code: MANIFEST_OR_HASH_MISMATCH
+      independent_recomputation_required: true
+  - case_id: CSV-013
+    title: spec itself breaks confirmed covalent relation
+    input:
+      invalid_spec_covalent_break: true
+    expected:
+      validator_status: FAILED
+      outcome_code: INVALID_SELECTION_SPEC_COVALENT_BREAK
+  - case_id: CSV-014
+    title: source hash changed after operation
+    input:
+      source_hash_changed: true
+    expected:
+      validator_status: FAILED
+      outcome_code: MANIFEST_OR_HASH_MISMATCH
+  - case_id: CSV-015
+    title: candidate file missing
+    input:
+      candidate_file_missing: true
+    expected:
+      validator_status: BLOCKED
+      outcome_code: VALIDATOR_INPUT_INCOMPLETE
+  - case_id: CSV-016
+    title: limited validation scope
+    input:
+      valid_selection: true
+      altloc_present: true
+      missing_residue_possible: true
+    expected:
+      validator_status: DONE
+      outcome_code: SELECTION_VALIDATED
+      prohibited_claims:
+        - altloc resolved
+        - structure complete
+        - protonation validated
+        - topology preparation ready
+  - case_id: CSV-017
+    title: no candidate mutation
+    input:
+      normal_validation: true
+    expected:
+      source_unchanged: true
+      candidate_unchanged: true
+      forbidden_writes:
+        - 00_project_state/**
+        - 00_project_records/**
