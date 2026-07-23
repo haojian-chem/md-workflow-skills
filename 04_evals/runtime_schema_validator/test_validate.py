@@ -17,7 +17,12 @@ def write_yaml(path: Path, data: object) -> None:
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
-def run_tool(project_root: Path, mode: str, *changed: str) -> tuple[int, dict]:
+def run_tool(
+    project_root: Path,
+    mode: str,
+    *changed: str,
+    extra: list[str] | None = None,
+) -> tuple[int, dict]:
     command = [
         sys.executable,
         str(TOOL),
@@ -28,6 +33,8 @@ def run_tool(project_root: Path, mode: str, *changed: str) -> tuple[int, dict]:
     ]
     if changed:
         command.extend(["--changed", *changed])
+    if extra:
+        command.extend(extra)
     completed = subprocess.run(command, check=False, capture_output=True, text=True)
     return completed.returncode, json.loads(completed.stdout)
 
@@ -127,6 +134,42 @@ def test_fast_reports_missing_direct_reference(tmp_path: Path) -> None:
     assert code == 1
     assert result["status"] == "FAIL"
     assert any(item.get("schema_path") == "direct_reference" for item in result["errors"])
+
+
+def test_candidate_overlay_satisfies_future_state_path(tmp_path: Path) -> None:
+    install_synthetic_contracts(tmp_path)
+    candidate_dir = tmp_path / ".candidates"
+    project_candidate = candidate_dir / "project.yaml"
+    workstream_candidate = candidate_dir / "workstream.yaml"
+    write_yaml(
+        project_candidate,
+        {
+            "value": 1,
+            "workstreams": [
+                {"state_path": "00_project_state/workstreams/ws_0001.yaml"}
+            ],
+        },
+    )
+    write_yaml(workstream_candidate, {"value": 1})
+
+    code, result = run_tool(
+        tmp_path,
+        "FAST",
+        str(project_candidate),
+        str(workstream_candidate),
+        extra=[
+            "--logical-map",
+            f"{project_candidate}=00_project_state/project_state.yaml",
+            "--logical-map",
+            f"{workstream_candidate}=00_project_state/workstreams/ws_0001.yaml",
+        ],
+    )
+
+    assert code == 0
+    assert result["status"] == "PASS"
+    logical_paths = {item["logical_path"] for item in result["validated"]}
+    assert str(tmp_path / "00_project_state/project_state.yaml") in logical_paths
+    assert str(tmp_path / "00_project_state/workstreams/ws_0001.yaml") in logical_paths
 
 
 def test_schema_change_invalidates_cache(tmp_path: Path) -> None:
