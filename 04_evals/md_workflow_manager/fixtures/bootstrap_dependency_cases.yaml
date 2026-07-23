@@ -1,0 +1,80 @@
+schema_version: 1
+suite: manager_bootstrap_dependency
+cases:
+  - id: BOOT-001
+    title: ACTIVE FULL validator allows NEW initialization
+    given:
+      entry_state: NEW
+      required_capability: FULL_RUNTIME_VALIDATION
+      tool_registry:
+        runtime_schema_validator: ACTIVE
+    expect:
+      initialization_may_start: true
+      current_blocker: null
+
+  - id: BOOT-002
+    title: Missing FULL implementation is the only current initialization blocker
+    given:
+      entry_state: NEW
+      required_capability: FULL_RUNTIME_VALIDATION
+      active_implementations: []
+      user_request: 开始 MD
+      downstream_workflow_coverage: incomplete
+    expect:
+      initialization_may_start: false
+      current_blocker:
+        capability: FULL_RUNTIME_VALIDATION
+      pending_after_current_barrier:
+        - route_scope_resolution
+        - downstream_workflow_coverage
+      forbidden_current_blocker_reasons:
+        - ambiguous_route_endpoint
+        - downstream_workflow_not_connected
+
+  - id: BOOT-003
+    title: DESIGNED state transaction Tool does not block NEW initialization
+    given:
+      entry_state: NEW
+      runtime_schema_validator: ACTIVE
+      state_transaction: DESIGNED
+      builtin_controlled_commit_path: available
+    expect:
+      initialization_may_start: true
+      state_transaction_tool_required: false
+      commit_path: BUILTIN_CONTROLLED_ATOMIC_FILE_COMMIT
+
+  - id: BOOT-004
+    title: Route ambiguity is evaluated only after PROJECT_INITIALIZED
+    given:
+      entry_state: NEW
+      user_request: 开始 MD
+      initialization_capabilities_available: true
+    expect_sequence:
+      - PROJECT_INITIALIZED
+      - ROUTE_SCOPE_RESOLUTION
+      - ROUTE_SCOPE_REQUESTED
+    forbidden:
+      - block_initialization_for_route_ambiguity
+
+  - id: BOOT-005
+    title: Unconnected Workflow is evaluated during route planning
+    given:
+      initialization_status: completed
+      route_scope_status: resolved
+      downstream_workflow_coverage: incomplete
+    expect:
+      evaluation_phase: ROUTE_PLANNING
+      route_status: PARTIAL_OR_BLOCKED_AT_UNCONNECTED_BOUNDARY
+    forbidden:
+      - use_as_initialization_blocker
+
+  - id: BOOT-006
+    title: Hard gate dependency must be satisfiable before release
+    given:
+      manager_requires:
+        - FULL_RUNTIME_VALIDATION
+      capability_paths:
+        FULL_RUNTIME_VALIDATION: []
+    expect:
+      manager_release_status: NOT_RUNNABLE
+      required_action: add_active_tool_or_explicit_builtin_deterministic_path
