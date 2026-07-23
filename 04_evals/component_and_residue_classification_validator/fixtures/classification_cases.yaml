@@ -1,0 +1,153 @@
+schema_version: 1
+skill_name: component_and_residue_classification_validator
+status: behavior_specification
+cases:
+  - case_id: CRC-001
+    title: canonical protein ligand water and monoatomic ion
+    input_summary:
+      format: PDB
+      contents: one canonical protein chain, one unlinked ligand, HOH waters and single-atom sodium
+    expected:
+      validator_status: DONE
+      outcome_code: CLASSIFIED_CLEAR
+      protein_residues: STANDARD_RESIDUE
+      ligand: INDEPENDENT_NONSTANDARD
+      water: SOLVENT
+      sodium: ION
+      confirmation_items: 0
+  - case_id: CRC-002
+    title: explicit covalently linked nonstandard residue
+    input_summary:
+      format: MMCIF
+      contents: nonstandard component linked to a protein atom by explicit covalent struct_conn
+    expected:
+      validator_status: DONE
+      outcome_code: CLASSIFIED_CLEAR
+      topology_class: COVALENTLY_LINKED_NONSTANDARD
+      evidence_contains: explicit_mmcif_covalent_connection
+  - case_id: CRC-003
+    title: short geometric contact without explicit covalent evidence
+    input_summary:
+      format: PDB
+      contents: nonstandard component near a protein atom below the geometric screening cutoff, no LINK or CONECT
+    expected:
+      validator_status: DONE
+      outcome_code: CLASSIFICATION_DECISION_REQUIRED
+      topology_class: UNKNOWN
+      covalent_candidate_count_min: 1
+      blocking_confirmation: true
+      prohibited:
+        - automatic COVALENTLY_LINKED_NONSTANDARD classification
+  - case_id: CRC-004
+    title: metal coordination remains separate from covalent topology
+    input_summary:
+      format: MMCIF
+      contents: zinc coordinated by protein donors and an independent ligand
+    expected:
+      validator_status: DONE
+      ligand_topology_class: INDEPENDENT_NONSTANDARD
+      coordination_candidate_count_min: 1
+      prohibited:
+        - ligand classified as covalently linked solely from coordination
+  - case_id: CRC-005
+    title: identical classification across multiple models
+    input_summary:
+      format: PDB
+      contents: two models with identical chains and component classes
+    expected:
+      validator_status: DONE
+      outcome_code: CLASSIFIED_WITH_WARNINGS
+      blocking_confirmation: false
+      warning_contains: multiple models
+  - case_id: CRC-006
+    title: model-dependent classification
+    input_summary:
+      format: PDB
+      contents: ligand connected in one model but independent in another, no resolved model decision
+    expected:
+      validator_status: DONE
+      outcome_code: CLASSIFICATION_DECISION_REQUIRED
+      blocking_confirmation: true
+      confirmation_category: MODEL_SELECTION
+  - case_id: CRC-007
+    title: entity metadata conflicts with coordinate connectivity
+    input_summary:
+      format: MMCIF
+      contents: entity metadata marks nonpolymer while explicit polymer linkage indicates covalent membership
+    expected:
+      validator_status: DONE
+      outcome_code: CLASSIFICATION_DECISION_REQUIRED
+      blocking_confirmation: true
+      confirmation_category: METADATA_CONFLICT
+  - case_id: CRC-008
+    title: histidine protonation alias in protein context
+    input_summary:
+      format: PDB
+      contents: HID residue in a continuous protein backbone with compatible atoms
+    expected:
+      validator_status: DONE
+      topology_class: STANDARD_RESIDUE
+      canonical_parent: HIS
+      warning_contains: force-field check required
+  - case_id: CRC-009
+    title: selenomethionine in polymer context
+    input_summary:
+      format: MMCIF
+      contents: MSE participates in a continuous protein backbone
+    expected:
+      validator_status: DONE
+      topology_class: COVALENTLY_LINKED_NONSTANDARD
+      canonical_parent: MET
+  - case_id: CRC-010
+    title: ion-like residue name with conflicting atom composition
+    input_summary:
+      format: PDB
+      contents: residue named CA contains multiple atoms or element does not match calcium
+    expected:
+      validator_status: DONE
+      topology_class: UNKNOWN
+      prohibited:
+        - automatic ION classification
+  - case_id: CRC-011
+    title: altloc affects coordination contact
+    input_summary:
+      format: PDB
+      contents: donor atom has mutually exclusive altlocs and only one satisfies metal cutoff
+    expected:
+      validator_status: DONE
+      coordination_status: AMBIGUOUS_CLOSE_CONTACT
+      route_note: report for altloc stage
+  - case_id: CRC-012
+    title: no unique authorized input structure
+    input_summary:
+      contents: zero or multiple current valid structure files without resolved decision
+    expected:
+      validator_status: BLOCKED
+      outcome_code: INPUT_SCOPE_INVALID
+      report_must_not_be_partial: true
+  - case_id: CRC-013
+    title: unparseable structure
+    input_summary:
+      contents: authorized file with invalid PDB/CIF syntax
+    expected:
+      validator_status: FAILED
+      outcome_code: UNSUPPORTED_OR_UNPARSEABLE_STRUCTURE
+      minimal_diagnostic_required: true
+  - case_id: CRC-014
+    title: management path isolation
+    input_summary:
+      contents: valid structure and normal classification
+    expected:
+      forbidden_writes:
+        - 00_project_state/**
+        - 00_project_records/**
+      input_structure_unchanged: true
+  - case_id: CRC-015
+    title: output and shared result contracts
+    input_summary:
+      contents: valid clear classification
+    expected:
+      local_result_schema: PASS
+      subagent_result_v2: PASS
+      artifact_candidates: []
+      input_structure_validation_status_unchanged: true
