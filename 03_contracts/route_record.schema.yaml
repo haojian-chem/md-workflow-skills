@@ -10,6 +10,7 @@ required:
   - created_by
   - supersedes
   - planning_status
+  - scope_resolution
   - scope
   - source_fragments
   - steps
@@ -19,7 +20,7 @@ required:
   - known_blockers
   - stop_conditions
 properties:
-  schema_version: {type: integer, const: 2}
+  schema_version: {type: integer, const: 3}
   route_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
   created_at: {type: string, format: date-time}
@@ -28,6 +29,21 @@ properties:
   planning_status:
     type: string
     enum: [COMPLETE, PARTIAL, BLOCKED]
+  scope_resolution:
+    type: object
+    required: [source, resolved_event_id, decision_id]
+    properties:
+      source:
+        type: string
+        enum: [USER_REQUEST, RESOLVED_DECISION, ACTIVE_ROUTE, RECORDED_WORKSTREAM_GOAL]
+      resolved_event_id: {type: string, minLength: 1}
+      decision_id: {type: [string, 'null']}
+    allOf:
+      - if:
+          properties: {source: {const: RESOLVED_DECISION}}
+        then:
+          properties: {decision_id: {type: string, minLength: 1}}
+    additionalProperties: false
   scope:
     type: object
     required: [start, end]
