@@ -1,21 +1,113 @@
 schema_version: 1
 skill_name: md_workflow_manager
 cases:
-  - case_id: new_empty_project
-    intent: 初始化空项目并开始结构准备
+  - case_id: new_project_initialization_barrier
+    intent: 空项目被判定为 NEW 后先自动初始化，不直接进入业务流程
     given:
       project_state_exists: false
       business_artifacts_present: false
+      roots_resolved: true
+      destructive_conflict: false
       requested_actions: [INSPECT, PLAN, EXECUTE]
+      route_end_explicit: false
     expect:
       entry_state: NEW
-      focus_target: WORKSTREAM
+      initialize_automatically: true
+      project_initialized_event: true
       create_first_workstream: true
-      create_initial_route: true
-      next_workflow: structure_preparation_workflow
+      initial_active_route_id: null
+      initial_active_task_id: null
+      route_scope_status: UNRESOLVED
+      create_business_task: false
     forbid:
-      - classify_as_recovery
-      - create_business_files
+      - wait_for_extra_initialization_prompt
+      - create_initial_route_during_initialization
+      - call_workflow_before_project_initialized
+      - start_source_recognition_directly
+
+  - case_id: new_project_initializes_without_extra_prompt
+    intent: 用户没有补充“请初始化”时仍完成 NEW 初始化
+    given:
+      entry_state: NEW
+      roots_resolved: true
+      destructive_conflict: false
+      user_explicitly_requested_initialization: false
+    expect:
+      initialize_automatically: true
+      project_initialized_event: true
+      schema_validate_initial_state: true
+    forbid:
+      - require_user_to_repeat_initialization_request
+      - remain_uninitialized_without_blocker
+
+  - case_id: initialization_failure_blocks_business_tasks
+    intent: NEW 初始化写入或一致性检查失败
+    given:
+      entry_state: NEW
+      initialization_completed: false
+      initialization_error_present: true
+    expect:
+      create_business_task: false
+      call_workflow_planning_interface: false
+      call_workflow_execution_interface: false
+      expose_initialization_failure: true
+      project_status: NEEDS_RECOVERY_OR_BLOCKED
+    forbid:
+      - continue_to_operation
+      - fabricate_project_initialized_event
+
+  - case_id: explicit_scope_resolved_after_initialization
+    intent: 用户明确只测试 source_recognition
+    given:
+      entry_state: NEW
+      project_initialized: true
+      user_request: 只完成 source_recognition
+    expect:
+      route_scope_event: ROUTE_SCOPE_RESOLVED
+      route_end:
+        workflow_name: structure_preparation_workflow
+        substep: source_recognition
+      request_user_decision: false
+      planning_may_begin: true
+    forbid:
+      - resolve_scope_before_project_initialization
+      - extend_route_to_structure_preparation_end
+      - extend_route_to_project_end
+
+  - case_id: vague_scope_requires_confirmation
+    intent: 用户只说“开始处理这个结构”
+    given:
+      project_initialized: true
+      active_route_exists: false
+      user_request: 开始处理这个结构
+    expect:
+      route_scope_event: ROUTE_SCOPE_REQUESTED
+      request_user_decision: true
+      workstream_activity_status: WAITING
+      hold_reason: USER_DECISION
+      create_route: false
+      create_business_task: false
+    forbid:
+      - default_to_next_task
+      - default_to_current_workflow_end
+      - default_to_workstream_goal
+      - default_to_project_end
+
+  - case_id: resumable_continue_existing_route
+    intent: 用户对已有明确 active route 请求继续
+    given:
+      entry_state: RESUMABLE
+      active_route_exists: true
+      active_route_valid: true
+      active_route_end_explicit: true
+      user_request: 继续
+    expect:
+      reuse_existing_route_scope: true
+      request_user_decision: false
+      execution_may_begin: true
+    forbid:
+      - create_duplicate_scope_decision
+      - choose_new_route_end
 
   - case_id: legacy_project_without_state
     intent: 接入已有结构、拓扑和模拟文件的旧项目
@@ -45,13 +137,14 @@ cases:
       preserve_existing_submission: true
       create_workstream: ws_0002_parameter_v2_test
       focus_workstream: ws_0002_parameter_v2_test
-      start_workflow: topology_preparation_workflow
+      route_scope_requires_independent_resolution: true
       related_workstreams:
         - workstream_id: ws_0001_main_v1
           relation: BACKGROUND_CONTEXT
     forbid:
       - move_ws_0001_back_to_topology
       - cancel_background_submission
+      - create_route_only_because_workstream_created
 
   - case_id: minor_unclosed_correction_without_fork
     intent: 当前拓扑步骤尚未闭合且无下游依赖时修正参数
@@ -75,6 +168,7 @@ cases:
     expect:
       focus_target: PROJECT
       create_foreground_subagent: false
+      require_route_scope: false
       show_background_runs: true
       show_other_active_workstreams: true
     forbid:
@@ -84,6 +178,9 @@ cases:
   - case_id: paired_operation_validator
     intent: Operation 与专属 Validator 共享即时上下文
     given:
+      project_initialized: true
+      route_scope_resolved: true
+      active_route_exists: true
       workflow_decision: EXECUTE
       task_unit_mode: OPERATION_WITH_VALIDATOR
       dedicated_validator: true
@@ -100,6 +197,9 @@ cases:
   - case_id: standalone_final_validator
     intent: 阶段终检 Validator 独立执行
     given:
+      project_initialized: true
+      route_scope_resolved: true
+      active_route_exists: true
       workflow_decision: EXECUTE
       task_unit_mode: VALIDATOR
       validator_role: stage_final_gate
