@@ -1,0 +1,132 @@
+schema_version: 1
+suite: md_workflow_manager_task_recording_and_display
+cases:
+  - case_id: ordinary_foreground_task_uses_minimal_recording
+    given:
+      task_kind: ordinary_foreground
+      external_submission: false
+      long_running: false
+      high_risk_or_irreversible: false
+      project_index_fields_changed: false
+      route_projection_changed: false
+      new_artifact_candidates: 1
+    expected:
+      pre_execution_writes:
+        - task.yaml
+      terminal_writes:
+        - result.yaml
+        - artifact_record
+        - terminal_task_event
+        - workstream_state
+      terminal_event_count: 1
+      update_project_state: false
+      update_manager_session_incrementally: false
+      create_snapshot: false
+      create_route_revision: false
+    forbid:
+      - TASK_PREPARED
+      - TASK_STARTED
+      - pre_execution_workstream_executing_update
+      - write_empty_decision_record
+      - write_empty_submission_record
+
+  - case_id: high_risk_task_keeps_recovery_anchor
+    given:
+      task_kind: high_risk
+      external_submission: false
+      high_risk_or_irreversible: true
+    expected:
+      pre_execution_writes:
+        - task.yaml
+        - TASK_PREPARED
+        - workstream_state_executing
+      TASK_STARTED: conditional
+      terminal_task_event_required: true
+      task_closure_summary_required: true
+    forbid:
+      - use_ordinary_minimal_pre_recording
+
+  - case_id: source_recognition_done_is_visible_before_next_task
+    given:
+      task: source_recognition
+      task_status: DONE
+      operation_checks:
+        source_recognized: true
+        copy_or_reuse_completed: true
+        sha256_match: true
+      artifact:
+        type: STRUCTURE
+        validation_status: UNVALIDATED
+      expected:
+        visible_task_closure_summary: true
+        display_before_next_foreground_task: true
+        displayed_status: DONE
+        displayed_checks_include:
+          - source_recognition
+          - copy_or_reuse
+          - sha256
+        displayed_artifact_status: STRUCTURE_UNVALIDATED
+        displayed_report_path: true
+        displayed_expected_next_task: true
+        user_confirmation_required: false
+    forbid:
+      - silently_continue_to_next_task
+      - claim_structure_validation_passed
+      - hide_result_only_in_result_yaml
+
+  - case_id: blocked_task_closure_exposes_decision
+    given:
+      task_status: BLOCKED
+      completed_safe_partial_work: true
+      blocking_confirmation_items: 1
+    expected:
+      visible_task_closure_summary: true
+      show_completed_partial_work: true
+      show_blocking_reason: true
+      show_user_decision: true
+      next_foreground_task_started: false
+    forbid:
+      - continue_past_blocker
+      - display_only_generic_waiting_status
+
+  - case_id: failed_task_closure_exposes_evidence
+    given:
+      task_status: FAILED
+      failure_evidence_present: true
+      preserved_outputs_present: true
+    expected:
+      visible_task_closure_summary: true
+      show_failure_location: true
+      show_direct_evidence: true
+      show_preserved_or_cleaned_outputs: true
+      show_workstream_status: true
+      show_recovery_or_retry_options: true
+    forbid:
+      - automatic_retry
+      - suppress_failure_details
+
+  - case_id: host_without_intermediate_messages_stops_after_closure
+    given:
+      task_status: DONE
+      host_supports_intermediate_visible_messages: false
+      route_has_later_steps: true
+    expected:
+      end_current_turn_after_closure_summary: true
+      expected_next_task_preserved: true
+      next_foreground_task_started_in_same_turn: false
+    forbid:
+      - silently_execute_later_task
+      - require_new_route_scope_confirmation
+
+  - case_id: host_with_intermediate_messages_may_continue
+    given:
+      task_status: DONE
+      host_supports_intermediate_visible_messages: true
+      route_authorizes_later_steps: true
+      no_blocking_decision: true
+    expected:
+      emit_closure_summary_before_next_task: true
+      may_continue_without_confirmation: true
+    forbid:
+      - treat_closure_as_confirmation_gate
+      - start_next_task_before_visible_summary
