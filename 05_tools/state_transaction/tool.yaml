@@ -1,0 +1,46 @@
+schema_version: 1
+name: state_transaction
+version: 0.1.0
+status: DESIGNED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: null
+purpose:
+  - validate candidate project and workstream state files
+  - prepare backups and rollback metadata
+  - commit one controlled state transaction
+inputs:
+  - project_root
+  - transaction_manifest
+outputs:
+  format: json
+  fields:
+    - status
+    - validated_candidates
+    - committed_targets
+    - backups
+    - rollback_status
+    - errors
+    - elapsed_ms
+permissions:
+  read:
+    - 03_contracts/**
+    - 00_project_state/**
+  write:
+    - 00_project_state/**
+side_effects:
+  project_authoritative_files_modified: true
+transaction_rules:
+  - generate or receive candidates outside authoritative targets
+  - run applicable FAST or FULL validation before commit
+  - prepare backup and rollback map
+  - replace targets through controlled transaction
+  - rollback on partial failure when possible
+  - never append project events by itself
+callers:
+  - md_workflow_manager
+release:
+  active_by_default: false
+  activation_requirement:
+    - implementation complete
+    - multi-file rollback fixtures pass
+    - interruption test passes
