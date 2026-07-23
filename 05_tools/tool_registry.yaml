@@ -14,10 +14,12 @@ tools:
       - FULL project runtime validation
       - schema bundle hash cache
       - direct runtime reference checks
+      - candidate actual-to-logical path overlays
     read_paths:
       - 03_contracts/**
       - 00_project_state/**
       - 00_project_records/**
+      - explicitly supplied candidate paths
     write_paths:
       - .md_workflow_cache/runtime_schema_validator/**
       - explicit output path
