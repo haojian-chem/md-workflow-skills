@@ -9,7 +9,6 @@
 - 17 份现有 Skill content map；
 - content map v3 schema；
 - Skill inventory 与文件所有权表；
-- 多窗口 work order 与 authoring Skill；
 - Workstream 项目模型；
 - 日志和记录体系；
 - 15 份共享运行 contract；
@@ -17,6 +16,8 @@
 - 跨 Workflow route planning protocol；
 - Manager 入口初始化与路线范围 barrier；
 - `route_record.schema.yaml` v3；
+- 普通 task 最小同步记录策略；
+- 前台 task closure 用户可见输出；
 - 串行 task-unit 临时子 Agent 协议；
 - `md_workflow_manager` draft；
 - `structure_preparation_workflow` 双接口 draft；
@@ -32,12 +33,12 @@
 ## 使用原则
 
 - `contract_status: pending|draft` 或 `content_ownership_status: pending|draft` 的 Skill 尚未冻结；
-- 多窗口编写前必须读取 `AGENTS.md`、本文件、`skill_inventory.yaml`、`file_ownership.yaml`、目标 content map、目标 work order 和 `03_contracts/README.md`；
-- 涉及 Workflow 或路线时必须读取 `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
-- `AGENTS.md`、`03_contracts/`、authoring references、content maps、inventory 和 ownership 表仅由主窗口修改；
+- 多窗口编写前必须读取 `AGENTS.md`、本文件、inventory、ownership、目标 content map、work order 和 `03_contracts/README.md`；
+- 涉及 Workflow 或路线时必须读取 route planning protocol；
+- 涉及状态、事件、task、session、snapshot 或 artifact 记录时必须读取 `design_records/logging_and_record_system.md`；
 - 业务窗口不得本地重定义共享状态、路线和记录字段。
 
-## 已确认的 Manager 入口顺序
+## Manager 入口顺序
 
 ```text
 ENTRY_STATE_EVALUATED: NEW
@@ -54,71 +55,73 @@ ENTRY_STATE_EVALUATED: NEW
 
 硬规则：
 
-- `NEW` 只表示本轮入口判定，不是初始化后的持久状态；
+- `NEW` 只是本轮入口判定；
 - NEW 项目在根目录明确且无冲突时自动初始化；
-- `PROJECT_INITIALIZED` 只能在候选状态校验和提交成功后记录；
 - 初始化创建首个 Workstream，但不创建 route；
 - `PROJECT_INITIALIZED` 前不得调用 Workflow；
 - 路线范围解析是初始化后的独立事件；
-- 用户未明确终点时必须请求决定，不得选取默认终点；
-- `ROUTE_SCOPE_RESOLVED` 前不得请求 fragment 或创建 route；
+- 用户未明确终点时必须请求决定，不得选默认终点；
+- `ROUTE_SCOPE_RESOLVED` 前不得创建 route；
 - 有效 active route 不存在时不得创建业务 task。
 
-项目事件：
+## 普通 task 最小同步记录
+
+普通、短耗时、无外部 submission、无高风险副作用的前台 task 使用：
 
 ```text
-ROUTE_SCOPE_REQUESTED
-ROUTE_SCOPE_RESOLVED
+task.yaml
+→ subagent execution
+→ result.yaml
+→ 必要 artifact/decision/submission record
+→ 一条终态 task event
+→ Workstream state
+→ visible task closure summary
 ```
 
-`route_record.schema.yaml` v3 必须保存：
+普通 task 默认不机械写入：
 
-```text
-scope_resolution.source
-scope_resolution.resolved_event_id
-scope_resolution.decision_id
-```
+- `TASK_PREPARED`；
+- `TASK_STARTED`；
+- 执行前 Workstream EXECUTING 更新；
+- 无变化的 project state；
+- Manager session 逐 task 增量；
+- snapshot；
+- 无变化 route revision；
+- 空 artifact/decision/submission record。
+
+外部 submission、长耗时、高风险或不可逆 task 仍保留强化预记录。
+
+## Task closure 可见性
+
+每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 启动前显示精简 closure summary。
+
+`source_recognition` 完成只能说明来源识别、复制/复用和 SHA-256 检查通过；STRUCTURE artifact 仍为 `UNVALIDATED`，不得显示“结构验证通过”。
+
+宿主支持中间可见消息时可在显示后继续既定范围；不支持时，本轮以 closure summary 结束并保留 expected next task。
 
 ## 已确认的运行模型
 
 - Workflow 是可复用阶段流程；
-- Workstream 是真实项目中的具体工作分支；
+- Workstream 是具体项目分支；
 - 一个 Workstream 可以经过多个 Workflow；
-- 一个项目可以同时存在多个 Workstream；
-- Workflow 规划时返回本阶段 route fragment；
-- Workflow 执行时返回一个当前 decision；
-- Manager 负责跨 Workflow 起终点、fragment 拼接和 route revision；
-- Manager 不得自行编造 Workflow 内部步骤；
+- 一个项目可以存在多个 Workstream；
+- Workflow 规划返回 route fragment，执行返回一个当前 decision；
+- Manager 负责跨 Workflow 范围、拼接与 revision；
 - 任意时刻最多一个前台临时子 Agent；
-- 多个 tmux 或调度系统外部任务可以并存；
+- 多个外部任务可以并存；
 - task unit 支持 `OPERATION | VALIDATOR | OPERATION_WITH_VALIDATOR`；
-- Operation 与配套 Validator 即使同一子 Agent 连续执行，结果也必须分开；
-- Manager 是 `00_project_state/` 和 `00_project_records/` 的唯一提交者。
-
-## 已对齐的共享 contracts
-
-权威索引：`03_contracts/README.md`
-
-包括公共类型、decision request、Workflow route fragment/decision、subagent task/result、project/workstream state、project event、Manager session、route、decision、submission、artifact set 和 snapshot。
-
-外部任务必须经过：
-
-```text
-RUNNING
-→ FINISHED_UNVERIFIED
-→ Validator 核验
-→ COMPLETED 或 FAILED
-```
+- Operation 与 Validator 结果必须分开；
+- Manager 是管理状态和记录的唯一提交者。
 
 ## 当前实现状态
 
-- `md_workflow_manager`：428 行；20 个 behavior cases、4 个 initialization transaction cases、12 个 route planning cases；待可执行验证；
-- `structure_preparation_workflow`：已支持 route fragment 与 execution decision；待 Manager 集成；
-- `source_recognition`：默认复制、SHA-256 校验、相同副本复用、不同内容不覆盖；待真实结构文件测试；
+- `md_workflow_manager`：443 行；20 个 behavior cases、4 个 initialization cases、12 个 route planning cases、7 个 task recording/display cases；待可执行验证；
+- `structure_preparation_workflow`：已支持双接口，待 Manager 集成；
+- `source_recognition`：1.1 功能检查已由用户测试通过；需复测 closure summary 展示与最小记录行为；
 - `component_and_residue_classification_validator`：需要迁移到 subagent task/result v2；
 - 其他 Phase 1 Skills：尚待编写。
 
-本轮尚未在测试主机重新运行全量 `validate_contracts.py`。Manager 和 contracts 仍为 draft，不得宣称运行验收通过。
+本轮尚未在测试主机重新运行全量 validator。Manager 和 contracts 仍为 draft，不得宣称运行验收通过。
 
 ## Source recognition 已确认规则
 
@@ -136,11 +139,11 @@ RUNNING
 
 ## 当前权威文件
 
-- 根目录 `README.md`；
-- `design_records/manager_and_project_structure_decisions.md`；
 - `design_records/logging_and_record_system.md`；
 - `00_manager/md_workflow_manager/SKILL.md`；
 - `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
+- `00_manager/md_workflow_manager/references/manager_display_rules.md`；
+- `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`；
 - `03_contracts/README.md`；
 - `04_evals/md_workflow_manager/MANAGER_DRAFT_VALIDATION.md`；
 - 本文件。
