@@ -1,0 +1,74 @@
+schema_version: 1
+suite: runtime_schema_validator
+cases:
+  - case_id: fast_validates_only_changed_instances
+    given:
+      mode: FAST
+      changed_paths:
+        - 00_project_state/project_state.yaml
+      unrelated_invalid_runtime_record_exists: true
+      schema_bundle_unchanged: true
+    expected:
+      validate_changed_path: true
+      validate_unrelated_record: false
+      project_wide_scan: false
+    forbid:
+      - full_contract_validation
+      - llm_field_by_field_validation
+
+  - case_id: full_discovers_unrelated_invalid_record
+    given:
+      mode: FULL
+      unrelated_invalid_runtime_record_exists: true
+    expected:
+      project_wide_scan: true
+      status: FAIL
+      error_includes_object_path: true
+
+  - case_id: schema_cache_hit_skips_meta_validation
+    given:
+      prior_cache_status: PASS
+      cached_schema_bundle_hash_matches: true
+    expected:
+      schema_cache_hit: true
+      repeat_check_schema: false
+
+  - case_id: schema_change_invalidates_cache
+    given:
+      prior_cache_status: PASS
+      cached_schema_bundle_hash_matches: false
+    expected:
+      schema_cache_hit: false
+      run_schema_meta_validation: true
+      write_new_hash_cache: true
+
+  - case_id: fast_checks_direct_missing_reference
+    given:
+      mode: FAST
+      changed_record: 00_project_state/project_state.yaml
+      referenced_workstream_state_missing: true
+    expected:
+      status: FAIL
+      schema_path: direct_reference
+      missing_reference_path_visible: true
+
+  - case_id: tool_error_is_not_pass
+    given:
+      contracts_directory_missing: true
+    expected:
+      status: ERROR
+      exit_code: 2
+    forbid:
+      - fabricate_pass
+      - lower_gate
+
+  - case_id: ordinary_task_cannot_request_full
+    given:
+      caller: md_workflow_manager
+      task_kind: ordinary_foreground
+      requested_mode: FULL
+    expected:
+      reject_or_downgrade_before_tool_call: true
+      selected_mode: FAST
+    forbid:
+      - run_full_after_every_task
