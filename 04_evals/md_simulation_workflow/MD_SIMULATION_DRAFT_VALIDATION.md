@@ -7,241 +7,344 @@ status: REVIEW_REQUIRED
 branch: draft/md-simulation-skills
 scope: md_simulation workflow contract draft
 runtime_ready: false
+skills: 11
+files_added: 35
+behavior_cases: 201
 ```
 
-本记录只确认第一轮职责、接口、schema 和行为 fixtures 已建立，不表示 GROMACS、tmux 或调度系统执行实现已经通过。
+本记录确认 MD 模拟阶段的职责、局部接口、schemas 和行为 fixtures 已完成第二轮结构设计。它不表示 GROMACS、tmux、调度系统、parser 或 Manager 集成已经可执行通过。
 
 ## 已做过
 
-- 读取并对齐 `AGENTS.md`、authoring Skill、四层边界、runtime subagent protocol、route planning protocol、deterministic tool protocol；
-- 读取并对齐 `workflow_route_fragment`、`workflow_decision`、`subagent_task`、`subagent_result`、`submission_record` 和 `artifact_set` contracts；
-- 将 MD 模拟阶段定义为动态 run unit 序列，而非固定 EM/NVT/NPT/production 队列；
-- 将单个 run unit 拆分为 execution、on-demand status check 和 output validation；
-- 建立阶段 completion gate；
-- 建立本地 execution spec 和三类 detail report schemas；
-- 建立 66 个正向、负向、边界、恢复和失败 behavior cases。
+- 对齐 `AGENTS.md`、authoring Skill、四层边界、runtime subagent protocol、route planning protocol 和 deterministic tool protocol；
+- 对齐 Workflow fragment/decision、subagent task/result、submission、artifact contracts；
+- 读取权威 `stage_registry.yaml`，修正 `md_preparation → md_simulation` 边界；
+- 将标准入口改为 VALIDATED SYSTEM；
+- 将 protocol、MDP、grompp、TPR 和 execution 归入 `md_simulation_workflow`；
+- 建立 protocol specification/validation 层，禁止从自然语言或常见实践直接生成科学计划；
+- 建立 field-level provenance；
+- 建立 immutable protocol/plan version 和 supersedes 语义；
+- 将 run unit 拆分为 input preparation、input validation、execution、on-demand status check 和 output validation；
+- 建立 Workflow completion gate；
+- 建立 10 个本地 schemas；
+- 建立 201 个正向、负向、边界、分支、恢复和失败 behavior cases。
 
 ## 已否定
 
-- 固定写死 `EM → NVT → NPT → MD`；
-- 一个 Operation 内提交任务并循环等待到完成；
-- 把 `OPERATION_WITH_VALIDATOR` 用于跨越长时间外部运行；
-- 把 job/session 消失直接视为成功或失败；
-- 把 submission accepted 视为模拟完成；
-- 仅凭 checkpoint、目录或输出文件存在跳过验证；
-- 在缺少明确策略时自动选择 checkpoint、append/noappend、时长或科学阈值；
+- 固定 `EM → NVT → NPT → MD` 队列；
+- 根据“按标准流程”“使用默认参数”补充科学步骤；
+- Manager/Workflow 直接从自然语言生成 protocol 或 plan；
+- 将 run plan 归入 `md_preparation_workflow`；
+- 将现成 MD_INPUT 设为标准 Workflow entry；
+- 在一个 Operation 中 grompp、提交并等待模拟完成；
+- 使用 `OPERATION_WITH_VALIDATOR` 跨越长时间外部任务；
+- submission accepted 即模拟完成；
+- job/session 消失即成功或失败；
+- 高频轮询外部任务；
+- 自动选择 checkpoint、append/noappend、maxwarn、时长或 acceptance threshold；
+- 仅凭目录、TPR、checkpoint 或输出文件存在跳过 gate；
+- 需要新 TPR 时一律返回 `md_preparation_workflow`；
 - 将技术输出验证表述为采样充分或科学收敛。
 
 ## 仍未验证
 
-- `external_submission_adapter` Tool 的设计、实现、测试、benchmark 和 ACTIVE 注册；
-- GROMACS executable/version、argv、安全 backend adapter 的可执行实现；
-- LOCAL、TMUX、LSF、SLURM、PBS 的真实提交和状态映射；
-- GROMACS `.log/.edr/.xtc/.trr/.gro/.cpt/.tpr` parser；
-- execution spec 和 detail report schemas 的可执行 schema tests；
-- fixtures 的自动化测试 runner；
-- Manager 对外部 submission 的强化预记录、恢复锚点和 closure 集成；
-- `md_preparation_workflow` 到 MD_INPUT 的实际出口接口；
-- `analysis_workflow` 对 MD_OUTPUT 的实际入口接口；
-- 真实 EM、平衡、production、continuation 和失败恢复项目测试；
-- authoring 静态检查脚本；
-- FAST/FULL runtime integration；
-- 多 Workstream 外部任务并存和 Focus 切换测试。
+- 全部本地 schemas 的可执行 JSON Schema tests；
+- fixtures 自动化 runner；
+- authoring static checks；
+- Manager route fragment/decision 集成；
+- Manager 对 protocol/plan 业务文件的引用和 closure 处理；
+- FAST/FULL runtime validation integration；
+- 首个外部长任务的强化预记录和 prepared submission identity；
+- GROMACS executable/version discovery；
+- MDP parser、topology include closure parser 和 TPR inspection；
+- log、EDR、trajectory、structure 和 checkpoint parser；
+- role-specific metric registry；
+- LOCAL、TMUX、LSF、SLURM、PBS 真实 backend；
+- external submission recovery；
+- real EM/equilibration/production/continuation projects；
+- multi-Workstream external task coexistence and Focus switching；
+- upstream `md_preparation_workflow` 的真实 VALIDATED SYSTEM interface；
+- downstream `analysis_workflow` 的真实 VALIDATED MD_OUTPUT interface。
+
+## Frozen stage boundary
+
+```text
+md_preparation_workflow
+→ VALIDATED SYSTEM
+→ md_simulation_workflow
+→ validated simulation protocol
+→ immutable validated simulation plan
+→ per-run VALIDATED MD_INPUT
+→ execution / submission
+→ FINISHED_UNVERIFIED
+→ per-run VALIDATED MD_OUTPUT
+→ completion validation
+→ analysis_workflow
+```
+
+只有 SYSTEM 的 structure、topology、box、solvent 或 ions 改变时，才返回 `md_preparation_workflow`。
 
 ## Frozen local architecture
 
 ```yaml
 workflow:
   name: md_simulation_workflow
-  path: 01_workflows/md_simulation_workflow
-  entry_artifact: VALIDATED MD_INPUT
+  entry_artifact: VALIDATED SYSTEM
   exit_artifact: VALIDATED MD_OUTPUT
   planning_interface: 03_contracts/workflow_route_fragment.schema.yaml
   execution_interface: 03_contracts/workflow_decision.schema.yaml
-  route_model: dynamic_run_units
+  route_model: dynamic_projection_from_validated_plan
 
-run_unit_tasks:
+protocol:
+  operation: md_simulation_protocol_specification
+  validator: md_simulation_protocol_validator
+  owner: 01_workflows/md_simulation_workflow
+  rule: every scientific field requires provenance
+
+plan:
+  operation: md_simulation_plan_materialization
+  validator: md_simulation_plan_validator
+  owner: 01_workflows/md_simulation_workflow
+  immutable: true
+  route_record: separate_manager_owned_object
+
+run_unit:
+  input_preparation:
+    operation: md_run_input_preparation
+    validator: md_run_input_validator
   execution:
     operation: md_run_execution
-    mode: OPERATION
   status_check:
     validator: md_run_status_validator
-    mode: VALIDATOR
-    condition: asynchronous submission requires on-demand refresh
+    mode: ON_DEMAND
   output_validation:
     validator: md_run_output_validator
-    mode: VALIDATOR
-  workflow_completion:
-    validator: md_simulation_completion_validator
-    mode: VALIDATOR
+
+completion:
+  validator: md_simulation_completion_validator
 ```
 
-## Run unit lifecycle
+## Substep sequence
 
 ```text
-execute_or_submit
-→ SUBMITTED/RUNNING or synchronous terminal
-→ on-demand status check when needed
+0. specify_and_validate_simulation_protocol
+1. materialize_and_validate_simulation_plan
+
+for each selected run unit:
+2. prepare_and_validate_run_input:<run_unit_id>
+3. execute_run_unit:<run_unit_id>
+4. check_run_unit_status:<run_unit_id>       # conditional
+5. validate_run_unit_output:<run_unit_id>
+
+6. workflow_completion_validation            # Workflow exit only
+```
+
+若尚无 validated protocol，route 只能安全规划到 protocol gate；若已有 protocol 但没有 validated plan，只规划到 plan gate。Workflow 不得虚构后续 run units。
+
+## Protocol and plan ownership
+
+```text
+simulation_protocol_spec: md_simulation_workflow local owner
+md_simulation_plan: md_simulation_workflow local owner
+Workstream route: Manager owner
+```
+
+- protocol 从 resolved decisions、route scope、explicit files 和 validated artifacts 物化；
+- plan 从 validated protocol 保真物化；
+- route 是 Manager 对当前 plan 的 task projection；
+- protocol/plan 变化生成新 immutable version；
+- route 变化生成新 route record；
+- 三者不得覆盖或互相代替。
+
+## Unresolved item barriers
+
+```text
+PLAN_VALIDATION
+→ blocks protocol/plan acceptance
+
+INPUT_PREPARATION
+→ protocol/plan may exist
+→ blocks affected grompp/input task
+
+EXECUTION
+→ protocol/plan and MD_INPUT may exist
+→ blocks affected execution task
+```
+
+科学字段不得伪装为 execution-only unresolved item。
+
+## External run lifecycle
+
+```text
+VALIDATED MD_INPUT
+→ execute_or_submit
+→ SUBMITTED/RUNNING
+→ on-demand status check
 → FINISHED_UNVERIFIED
 → output validation
-→ Manager accepts VALIDATED MD_OUTPUT
+→ COMPLETED or FAILED
 ```
 
-外部任务运行期间 Workflow 返回 PAUSE。状态检查是单次 ON_DEMAND task，不是轮询服务。
-
-## Created files
-
-```text
-01_workflows/md_simulation_workflow/SKILL.md
-01_workflows/md_simulation_workflow/references/run_unit_model.md
-
-02_operations/md_run_execution/SKILL.md
-02_operations/md_run_execution/schemas/md_run_execution_spec.schema.yaml
-
-02_validators/md_run_status_validator/SKILL.md
-02_validators/md_run_status_validator/schemas/md_run_status_report.schema.yaml
-
-02_validators/md_run_output_validator/SKILL.md
-02_validators/md_run_output_validator/schemas/md_run_output_validation_report.schema.yaml
-
-02_validators/md_simulation_completion_validator/SKILL.md
-02_validators/md_simulation_completion_validator/schemas/md_simulation_completion_report.schema.yaml
-
-04_evals/md_simulation_workflow/fixtures/route_and_decision_cases.yaml
-04_evals/md_run_execution/fixtures/execution_cases.yaml
-04_evals/md_run_status_validator/fixtures/status_cases.yaml
-04_evals/md_run_output_validator/fixtures/output_validation_cases.yaml
-04_evals/md_simulation_completion_validator/fixtures/completion_cases.yaml
-```
+外部任务运行期间 Workflow 返回 PAUSE。status Validator 是一次 ON_DEMAND task，不是轮询服务。
 
 ## Behavior coverage
 
 ```yaml
-md_simulation_workflow: 14
-md_run_execution: 14
+md_simulation_workflow: 21
+md_simulation_protocol_specification: 16
+md_simulation_protocol_validator: 17
+md_simulation_plan_materialization: 19
+md_simulation_plan_validator: 22
+md_run_input_preparation: 18
+md_run_input_validator: 18
+md_run_execution: 19
 md_run_status_validator: 11
-md_run_output_validator: 15
-md_simulation_completion_validator: 12
-total: 66
+md_run_output_validator: 21
+md_simulation_completion_validator: 19
+total: 201
 ```
 
 覆盖：
 
-- 单一 EM；
-- 非标准平衡序列；
-- 分段 production；
-- Workflow exit；
-- run unit 范围缺失；
-- 循环依赖；
-- VALIDATED MD_INPUT gate；
-- synchronous/asynchronous；
-- tmux 与 scheduler；
-- submission rejected/identity unresolved；
-- UNKNOWN 状态；
-- continuation/append policy；
-- 输出缺失、截断、fatal、target 未达到；
-- checkpoint 和跨文件一致性；
-- 显式/隐式 role-specific threshold；
-- active/unverified submission closure；
+- VALIDATED SYSTEM entry；
+- protocol decisions and field provenance；
+- implicit default detection；
+- protocol/plan revision；
+- plan DAG and start-state lineage；
+- single EM and nonstandard equilibration；
+- segmented production；
+- SYSTEM/prior-output input sources；
+- MDP/topology/include/TPR validation；
+- maxwarn and grompp warnings；
+- synchronous/asynchronous execution；
+- LOCAL/TMUX/scheduler submission；
+- submission rejection/unknown identity；
+- continuation and append policy；
+- required output, truncation, fatal and target failure；
+- checkpoint and cross-file consistency；
+- explicit metric thresholds and no implicit thresholds；
+- active/unknown/FINISHED_UNVERIFIED submission closure；
 - failed run replacement；
-- scope completion 与 Workflow completion 区分；
-- 目录存在不得作为完成证据。
+- SYSTEM→protocol→plan→MD_INPUT→MD_OUTPUT lineage；
+- scope completion vs Workflow completion；
+- directory existence not being completion evidence。
 
 ## Architecture findings
 
-### PASS
+### PASS at contract-draft level
 
-- Workflow planning/execution 双接口保持分离；
-- 每次 execution decision 只选择一个 task unit；
-- 长时间外部运行没有被包装为前台长驻子 Agent；
-- Operation、status Validator、output Validator 和 completion Validator 职责分离；
-- Operation/Validator 不写管理目录；
-- submission、artifact 和 Workstream state 均由 Manager 提交；
-- `FINISHED_UNVERIFIED` 与 `COMPLETED` 分离；
-- 条件 status check 未在规划阶段无证据删除；
-- 单环节、跨片段和动态路线需求可表达；
-- 技术完成与科学收敛边界明确。
+- Workflow planning/execution interfaces remain separated；
+- 每个 execution decision 只选择一个 task unit；
+- protocol、plan、route ownership 分离；
+- Operation/Validator responsibilities separated；
+- long external jobs are not resident foreground subagents；
+- status checking is ON_DEMAND；
+- FINISHED_UNVERIFIED is separated from COMPLETED；
+- scientific parameters require explicit provenance；
+- dynamic route and single-substep use cases are expressible；
+- new TPR work remains in md_simulation unless SYSTEM changes；
+- technical completion and scientific convergence are separated；
+- this window did not modify shared contracts or management files。
 
 ### REVIEW REQUIRED
 
-1. 外部 submission 是强化预记录 task。Manager 集成时必须在副作用前建立恢复锚点，并为异步 execution 提供 prepared submission identity；当前 execution spec 尚未冻结该共享引用方式。
-2. run unit 列表和依赖目前由 planning context 提供，尚无跨 Workflow 的权威结构化 contract。若 `md_preparation_workflow` 需要直接生成 run plan，应由主窗口决定其 owner，优先考虑共享 contract 或明确的 MD_INPUT manifest owner。
-3. GROMACS role-specific checks 的 metric registry 尚未定义。不得让自由文本 metric 在实现阶段形成不一致解析。
-4. output Validator 是否直接返回 MD_OUTPUT candidate，或只返回 gate 后由 Manager 从文件集合构造 candidate，需要与现有 Manager artifact closure 实现复核。
-5. 同一 Workstream 是否允许多个无依赖 run units 同时外部运行尚未冻结。当前 draft 按依赖顺序推进；独立重复优先不同 Workstream。
+1. `decision_record.schema.yaml` stores selected option and user statement, not typed MD parameters. The protocol specification Operation must use deterministic parsers or return confirmation items; it may not rely on unrestricted LLM interpretation in production.
+2. Protocol/plan business file references are not currently represented by a shared artifact type. Main window must decide whether they remain detail files referenced by tasks/routes or require a shared typed record extension.
+3. Manager artifact closure must confirm whether Validator returns MD_INPUT/MD_OUTPUT candidate directly or recommends Manager constructing the artifact from the validated file set.
+4. Same-Workstream independent run-unit concurrency is not frozen. Current draft advances by dependency order; independent replicas should generally use separate Workstreams.
+5. Role-specific metric IDs require a registry before executable validation.
+6. Hard gates depending on external submission or GROMACS inspection require ACTIVE Tools or an authoritative tested built-in path before runtime activation.
 
-## Tool request
+## Tool requests
+
+### 1. External submission adapter
 
 ```yaml
 tool_request:
   capability: safe external submission and on-demand status adapter
-  reason: backend submission, identity parsing and status mapping are deterministic, repeated, environment-sensitive and recovery-critical
   callers:
     - md_run_execution
     - md_run_status_validator
-  required_inputs:
-    - backend type
-    - immutable command or submission script identity
-    - working directory
-    - resource request
-    - prepared submission identity
-    - status identity
-  expected_outputs:
-    - accepted/rejected submission result
-    - PID/session/job identity
-    - raw backend evidence
-    - normalized non-decisional status data
-  read_paths:
-    - explicit executable and script paths
-    - explicit run-unit logs
-  write_paths:
-    - explicit run-unit evidence paths only
-  side_effects:
-    - submit exactly one process or scheduler job when called in submit mode
-    - perform exactly one status query when called in status mode
+  responsibilities:
+    - submit exactly one LOCAL/TMUX/scheduler task
+    - return PID/session/job identity
+    - retain raw backend evidence
+    - perform exactly one status query
+    - normalize non-decisional backend status data
 ```
 
-该请求必须由 `00_authoring/md-workflow-tool-authoring/SKILL.md` 处理。本业务窗口不修改 `05_tools/` 或 registry。
+### 2. GROMACS artifact inspector
+
+```yaml
+tool_request:
+  capability: deterministic GROMACS input and output inspection
+  callers:
+    - md_run_input_preparation
+    - md_run_input_validator
+    - md_run_output_validator
+  responsibilities:
+    - parse MDP and topology include closure
+    - inspect TPR metadata
+    - parse log/EDR/trajectory/structure/checkpoint metadata
+    - compare step, time, atom count and identities
+    - compute registered role-specific metrics
+```
+
+Neither Tool may choose scientific thresholds, route, Focus or user decisions. They must be created through Tool Authoring and become ACTIVE only after executable tests and benchmark.
 
 ## Shared-file handoff requests
 
-主窗口审查通过后再处理：
+Main window should review and, if accepted, create content maps and inventory entries for:
 
-```yaml
-content_maps_to_create:
-  - 00_authoring/content_maps/md_simulation_workflow.yaml
-  - 00_authoring/content_maps/md_run_execution.yaml
-  - 00_authoring/content_maps/md_run_status_validator.yaml
-  - 00_authoring/content_maps/md_run_output_validator.yaml
-  - 00_authoring/content_maps/md_simulation_completion_validator.yaml
-
-inventory_entries_to_add:
-  - md_simulation_workflow
-  - md_run_execution
-  - md_run_status_validator
-  - md_run_output_validator
-  - md_simulation_completion_validator
-
-ownership_assignment:
-  window: md-simulation-window
-  write_paths:
-    - 01_workflows/md_simulation_workflow/**
-    - 02_operations/md_run_execution/**
-    - 02_validators/md_run_status_validator/**
-    - 02_validators/md_run_output_validator/**
-    - 02_validators/md_simulation_completion_validator/**
-    - 04_evals/md_simulation_workflow/**
-    - 04_evals/md_run_execution/**
-    - 04_evals/md_run_status_validator/**
-    - 04_evals/md_run_output_validator/**
-    - 04_evals/md_simulation_completion_validator/**
+```text
+md_simulation_workflow
+md_simulation_protocol_specification
+md_simulation_protocol_validator
+md_simulation_plan_materialization
+md_simulation_plan_validator
+md_run_input_preparation
+md_run_input_validator
+md_run_execution
+md_run_status_validator
+md_run_output_validator
+md_simulation_completion_validator
 ```
 
-本窗口未修改 `AGENTS.md`、`SYNC_STATUS.md`、inventory、ownership、content maps、contracts、Manager references、design records 或 tool registry。
+Ownership assignment requested for:
 
-## Validation not yet executed
+```text
+01_workflows/md_simulation_workflow/**
+02_operations/md_simulation_protocol_specification/**
+02_validators/md_simulation_protocol_validator/**
+02_operations/md_simulation_plan_materialization/**
+02_validators/md_simulation_plan_validator/**
+02_operations/md_run_input_preparation/**
+02_validators/md_run_input_validator/**
+02_operations/md_run_execution/**
+02_validators/md_run_status_validator/**
+02_validators/md_run_output_validator/**
+02_validators/md_simulation_completion_validator/**
+04_evals/md_simulation_*/**
+04_evals/md_run_*/**
+```
 
-以下检查尚未运行，因此不得标记 PASS：
+After review and executable integration, main window may change `stage_registry.yaml` connection status for `md_simulation_workflow` from `planned` to `connected`. Its existing responsibility boundary is already correct.
+
+This window did not modify:
+
+```text
+AGENTS.md
+00_authoring/SYNC_STATUS.md
+00_authoring/skill_inventory.yaml
+00_authoring/file_ownership.yaml
+00_authoring/content_maps/**
+00_manager/**
+03_contracts/**
+05_tools/**
+design_records/**
+```
+
+## Validation not executed
 
 ```text
 validate_md_skill.py
@@ -249,20 +352,22 @@ validate_architecture_separation.py
 validate_content_maps.py
 validate_contracts.py
 fixture schema/tests
-real backend integration tests
+real GROMACS/backend integration tests
+Manager + FAST/FULL + recovery end-to-end tests
 ```
 
-原因：当前只完成 GitHub 分支中的 contract draft，尚未建立本地可执行实现和主窗口共享文件同步。
+Therefore the branch remains `REVIEW_REQUIRED` and `runtime_ready: false`.
 
 ## Next action
 
 ```yaml
 next_action:
-  - 主窗口审查 run unit 边界、prepared submission identity 和跨 Workflow run plan owner
-  - 同步 content maps/inventory/ownership
-  - 为 execution spec 和 report schemas 编写 schema tests
-  - 设计 external_submission_adapter Tool
-  - 实现最小 LOCAL/TMUX backend，再扩展 scheduler
-  - 实现 GROMACS output parser 和真实 fixtures
-  - 执行 Manager + FAST/FULL + recovery 端到端测试
+  - main window reviews protocol/plan ownership and Manager representation
+  - synchronize content maps, inventory and ownership
+  - implement schema and fixture test runners
+  - design external_submission_adapter Tool
+  - design gromacs_artifact_inspector Tool and metric registry
+  - implement minimum LOCAL/TMUX plus MDP/TPR/log/checkpoint path
+  - run Manager, runtime validation and recovery integration
+  - test real EM, equilibration, production and continuation Workstreams
 ```
