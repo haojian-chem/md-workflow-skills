@@ -1,21 +1,43 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_simulation_plan_validator
 cases:
-  - case_id: exact_spec_to_plan_match
+  - case_id: exact_protocol_to_plan_match
     purpose: positive_validation
-    input: {spec_plan_fields_match: true, dag_valid: true, sources_valid: true}
+    input:
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
+      protocol_plan_fields_match: true
+      field_provenance_complete: true
+      dag_valid: true
+      sources_valid: true
     expected: {status: DONE, outcome_code: SIMULATION_PLAN_VALIDATED}
 
   - case_id: valid_plan_with_execution_unresolved
     purpose: deferred_execution_gate
     input:
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
       unresolved_items:
-        - {item_id: backend.1, blocking_stage: EXECUTION}
+        - {item_id: backend.1, blocking_stage: EXECUTION, affected_field_paths: [run_units.md.1.execution_policy.backend_type]}
     expected: {status: DONE, outcome_code: SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED}
+
+  - case_id: protocol_validation_missing
+    purpose: protocol_gate
+    input: {protocol_validation_result_present: false}
+    expected: {outcome_code: PLAN_PROTOCOL_NOT_VALIDATED}
+
+  - case_id: protocol_rejected
+    purpose: protocol_outcome
+    input: {protocol_validation_outcome: SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED}
+    expected: {outcome_code: PLAN_PROTOCOL_NOT_VALIDATED}
+
+  - case_id: protocol_superseded
+    purpose: protocol_lifecycle
+    input: {protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED, protocol_superseded: true}
+    expected: {outcome_code: PLAN_PROTOCOL_NOT_VALIDATED}
 
   - case_id: operation_report_not_trusted
     purpose: independent_recalculation
     input:
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
       operation_report_says_valid: true
       actual_plan_missing_run_unit: true
     expected: {status: DONE, outcome_code: PLAN_SPEC_MISMATCH}
@@ -23,9 +45,25 @@ cases:
   - case_id: extra_implicit_run_unit
     purpose: prevent_default_invention
     input:
-      spec_run_units: [em.1, md.1]
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
+      protocol_run_units: [em.1, md.1]
       plan_run_units: [em.1, nvt.1, npt.1, md.1]
     expected: {outcome_code: PLAN_SPEC_MISMATCH}
+
+  - case_id: field_provenance_missing
+    purpose: provenance_coverage
+    input:
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
+      required_field_count: 20
+      covered_field_count: 19
+      uncovered_field_paths: [run_units.md.1.completion_criteria.target_time_ps]
+    expected: {outcome_code: PLAN_FIELD_PROVENANCE_INCOMPLETE}
+
+  - case_id: plan_invents_materialization_as_scientific_source
+    purpose: invalid_provenance_source
+    input:
+      field_source_type: PLAN_MATERIALIZATION_TASK
+    expected: {outcome_code: PLAN_FIELD_PROVENANCE_INCOMPLETE}
 
   - case_id: dag_cycle_detected_independently
     purpose: invalid_dag
@@ -35,6 +73,14 @@ cases:
   - case_id: start_state_source_missing
     purpose: invalid_start_state
     input: {source_type: PRIOR_RUN_OUTPUT, source_run_unit_id: missing}
+    expected: {outcome_code: PLAN_START_STATE_INVALID}
+
+  - case_id: start_state_not_in_dependency_closure
+    purpose: invalid_start_state_dependency
+    input:
+      run_unit_id: md.2
+      source_run_unit_id: md.1
+      dependency_closure: []
     expected: {outcome_code: PLAN_START_STATE_INVALID}
 
   - case_id: mdp_hash_changed
@@ -56,7 +102,16 @@ cases:
     purpose: barrier_classification
     input:
       unresolved_item: temperature_target
+      affected_field_paths: [run_units.eq.1.mdp]
       declared_blocking_stage: EXECUTION
+    expected: {outcome_code: PLAN_UNRESOLVED_ITEM_MISCLASSIFIED}
+
+  - case_id: input_item_without_affected_fields
+    purpose: unresolved_item_integrity
+    input:
+      unresolved_item: index_selection
+      declared_blocking_stage: INPUT_PREPARATION
+      affected_field_paths: []
     expected: {outcome_code: PLAN_UNRESOLVED_ITEM_MISCLASSIFIED}
 
   - case_id: valid_revision_chain
