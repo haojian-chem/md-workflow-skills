@@ -1,0 +1,188 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_simulation_protocol_spec.schema.yaml
+title: MD Simulation Protocol Specification
+type: object
+required:
+  - schema_version
+  - spec_id
+  - workstream_id
+  - system_artifact_set_ids
+  - run_units
+  - resolved_decision_ids
+  - unresolved_items
+  - policies
+properties:
+  schema_version: {type: integer, const: 1}
+  spec_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  system_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  run_units:
+    type: array
+    minItems: 1
+    items: {$ref: '#/$defs/run_unit_spec'}
+  resolved_decision_ids:
+    type: array
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  unresolved_items:
+    type: array
+    items:
+      type: object
+      required: [item_id, category, description, blocking_stage]
+      properties:
+        item_id: {type: string, minLength: 1}
+        category: {type: string, minLength: 1}
+        description: {type: string, minLength: 1}
+        blocking_stage:
+          enum: [PLAN_VALIDATION, INPUT_PREPARATION, EXECUTION]
+      additionalProperties: false
+  supersedes_spec_id: {type: [string, 'null']}
+  notes:
+    type: array
+    items: {type: string}
+  policies:
+    type: object
+    required:
+      - allow_implicit_scientific_defaults
+      - require_explicit_run_dependencies
+      - require_explicit_mdp_identity
+      - preserve_source_files
+    properties:
+      allow_implicit_scientific_defaults: {const: false}
+      require_explicit_run_dependencies: {const: true}
+      require_explicit_mdp_identity: {const: true}
+      preserve_source_files: {const: true}
+    additionalProperties: false
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      artifact_set_id: {type: [string, 'null']}
+    additionalProperties: false
+  expected_output:
+    type: object
+    required: [role, required]
+    properties:
+      role: {type: string, minLength: 1}
+      path: {type: [string, 'null']}
+      required: {type: boolean}
+    additionalProperties: false
+  completion_criteria:
+    type: object
+    required:
+      - require_normal_termination
+      - target_nsteps
+      - target_time_ps
+      - require_checkpoint
+      - role_specific_checks
+    properties:
+      require_normal_termination: {type: boolean}
+      target_nsteps: {type: [integer, 'null'], minimum: 0}
+      target_time_ps: {type: [number, 'null'], minimum: 0}
+      require_checkpoint: {type: boolean}
+      role_specific_checks:
+        type: array
+        items:
+          type: object
+          required: [check_id, metric_id, operator, value, unit, blocking]
+          properties:
+            check_id: {type: string, minLength: 1}
+            metric_id: {type: string, minLength: 1}
+            operator: {enum: [LT, LE, EQ, GE, GT, BETWEEN]}
+            value:
+              oneOf:
+                - type: number
+                - type: array
+                  minItems: 2
+                  maxItems: 2
+                  items: {type: number}
+            unit: {type: [string, 'null']}
+            blocking: {type: boolean}
+          additionalProperties: false
+    additionalProperties: false
+  run_unit_spec:
+    type: object
+    required:
+      - run_unit_id
+      - role
+      - sequence
+      - depends_on
+      - work_directory
+      - mdp
+      - start_state
+      - grompp
+      - execution_policy
+      - expected_outputs
+      - completion_criteria
+    properties:
+      run_unit_id: {type: string, minLength: 1}
+      role:
+        enum: [ENERGY_MINIMIZATION, EQUILIBRATION, PRODUCTION, CONTINUATION, CUSTOM]
+      sequence: {type: integer, minimum: 1}
+      depends_on:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      work_directory: {type: string, minLength: 1}
+      mdp:
+        allOf:
+          - $ref: '#/$defs/file_identity'
+          - type: object
+            required: [source_kind]
+            properties:
+              source_kind: {enum: [PROJECT_FILE, TEMPLATE, USER_PROVIDED]}
+      start_state:
+        type: object
+        required: [source_type, source_run_unit_id, checkpoint]
+        properties:
+          source_type: {enum: [SYSTEM, PRIOR_RUN_OUTPUT]}
+          source_run_unit_id: {type: [string, 'null']}
+          checkpoint:
+            oneOf:
+              - type: 'null'
+              - $ref: '#/$defs/file_identity'
+        allOf:
+          - if:
+              properties: {source_type: {const: SYSTEM}}
+            then:
+              properties: {source_run_unit_id: {type: 'null'}}
+          - if:
+              properties: {source_type: {const: PRIOR_RUN_OUTPUT}}
+            then:
+              properties: {source_run_unit_id: {type: string, minLength: 1}}
+        additionalProperties: false
+      grompp:
+        type: object
+        required: [executable, executable_version, maxwarn, extra_argv]
+        properties:
+          executable: {type: string, minLength: 1}
+          executable_version: {type: [string, 'null']}
+          maxwarn: {type: integer, minimum: 0}
+          extra_argv:
+            type: array
+            items: {type: string}
+        additionalProperties: false
+      execution_policy:
+        type: object
+        required: [mode, backend_type, resource_profile_id]
+        properties:
+          mode: {enum: [SYNCHRONOUS, ASYNCHRONOUS, UNRESOLVED]}
+          backend_type: {enum: [LOCAL, TMUX, LSF, SLURM, PBS, UNRESOLVED]}
+          resource_profile_id: {type: [string, 'null']}
+        additionalProperties: false
+      expected_outputs:
+        type: array
+        minItems: 1
+        items: {$ref: '#/$defs/expected_output'}
+      completion_criteria: {$ref: '#/$defs/completion_criteria'}
+    additionalProperties: false
