@@ -1,11 +1,14 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_simulation_completion_validator
 cases:
   - case_id: workflow_completed
     input:
       workflow_exit_required: true
+      plan_validated: true
+      route_matches_plan: true
       required_run_units: [em.1, eq.1, md.1]
-      validated_run_units: [em.1, eq.1, md.1]
+      validated_md_inputs: [em.1, eq.1, md.1]
+      validated_md_outputs: [em.1, eq.1, md.1]
       unresolved_submissions: []
       dependency_graph_valid: true
       final_md_output_ids: [artifact-mdout-1]
@@ -19,13 +22,42 @@ cases:
     input:
       workflow_exit_required: false
       scope_end: validate_run_unit_output:eq.1
+      plan_validated: true
       required_run_units: [em.1, eq.1]
-      validated_run_units: [em.1, eq.1]
+      validated_md_inputs: [em.1, eq.1]
+      validated_md_outputs: [em.1, eq.1]
       later_run_units: [md.1]
     expected:
       outcome_code: MD_SIMULATION_SCOPE_COMPLETED
       gate_recommendation: COMPLETE_SCOPE
       workflow_completed: false
+
+  - case_id: plan_missing
+    input: {plan_validated: false}
+    expected:
+      outcome_code: SIMULATION_PLAN_MISSING_OR_STALE
+      gate_recommendation: REVISE_ROUTE
+
+  - case_id: route_uses_superseded_plan
+    input:
+      active_route_plan_id: plan.v1
+      current_valid_plan_id: plan.v2
+    expected: {outcome_code: ROUTE_PLAN_MISMATCH, gate_recommendation: REVISE_ROUTE}
+
+  - case_id: required_md_input_not_validated
+    input:
+      required_run_units: [em.1, md.1]
+      validated_md_inputs: [em.1]
+      validated_md_outputs: [em.1, md.1]
+    expected:
+      outcome_code: REQUIRED_MD_INPUT_NOT_VALIDATED
+      gate_recommendation: REVISE_ROUTE
+
+  - case_id: md_input_from_wrong_plan
+    input:
+      plan_id: plan.v2
+      md_input_plan_id: plan.v1
+    expected: {outcome_code: MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE}
 
   - case_id: active_submission_remains
     input:
@@ -41,25 +73,29 @@ cases:
       required_run_units: [md.1]
       unresolved_submissions:
         - {submission_id: sub-1, status: FINISHED_UNVERIFIED}
-    expected:
-      outcome_code: ACTIVE_OR_UNVERIFIED_SUBMISSION_REMAINS
+    expected: {outcome_code: ACTIVE_OR_UNVERIFIED_SUBMISSION_REMAINS}
 
-  - case_id: required_run_not_validated
+  - case_id: required_output_not_validated
     input:
       required_run_units: [em.1, md.1]
-      validated_run_units: [em.1]
+      validated_md_outputs: [em.1]
     expected:
       outcome_code: REQUIRED_RUN_UNIT_NOT_VALIDATED
       gate_recommendation: REVISE_ROUTE
 
   - case_id: circular_dependency
     input:
-      dependency_graph:
-        md.1: [md.2]
-        md.2: [md.1]
+      dependency_graph: {md.1: [md.2], md.2: [md.1]}
     expected:
       component_status: DONE
       outcome_code: RUN_UNIT_DEPENDENCY_INVALID
+
+  - case_id: prior_run_source_not_in_dependency_closure
+    input:
+      run_unit_id: md.2
+      depends_on: []
+      start_state_source_run_unit: md.1
+    expected: {outcome_code: RUN_UNIT_DEPENDENCY_INVALID}
 
   - case_id: failed_run_superseded_validly
     input:
@@ -67,9 +103,8 @@ cases:
       failed_submissions:
         - {run_unit_id: md.1, status: FAILED}
       replacements:
-        - {old_run_unit_id: md.1, new_run_unit_id: md.1.retry, route_accepts: true, validated: true}
-    expected:
-      failed_old_run_blocks_completion: false
+        - {old_run_unit_id: md.1, new_run_unit_id: md.1.retry, route_accepts: true, md_input_validated: true, md_output_validated: true}
+    expected: {failed_old_run_blocks_completion: false}
 
   - case_id: failed_run_without_replacement
     input:
@@ -77,15 +112,19 @@ cases:
       failed_submissions:
         - {run_unit_id: md.1, status: FAILED}
       replacements: []
-    expected:
-      outcome_code: FAILED_OR_CANCELLED_RUN_UNRESOLVED
+    expected: {outcome_code: FAILED_OR_CANCELLED_RUN_UNRESOLVED}
+
+  - case_id: output_derived_from_wrong_md_input
+    input:
+      expected_md_input_artifact_id: mdinput-current
+      md_output_derived_from: [mdinput-old]
+    expected: {outcome_code: MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE}
 
   - case_id: final_output_invalidated
     input:
       final_md_output_ids: [artifact-mdout-1]
       final_artifact_validation_status: INVALIDATED
-    expected:
-      outcome_code: MD_OUTPUT_LINEAGE_INCOMPLETE
+    expected: {outcome_code: MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE}
 
   - case_id: two_final_outputs_without_selection
     input:
@@ -94,6 +133,14 @@ cases:
     expected:
       outcome_code: FINAL_MD_OUTPUT_NOT_UNIQUE
       gate_recommendation: PAUSE_FOR_DECISION
+
+  - case_id: system_to_input_to_output_lineage_complete
+    input:
+      lineage:
+        - {artifact: system-1, type: SYSTEM, derived_from: []}
+        - {artifact: mdinput-1, type: MD_INPUT, derived_from: [system-1]}
+        - {artifact: mdout-1, type: MD_OUTPUT, derived_from: [mdinput-1]}
+    expected: {lineage_closed: true}
 
   - case_id: directory_scan_extra_run_not_in_scope
     input:
@@ -104,9 +151,7 @@ cases:
       old_directory_auto_included: false
 
   - case_id: completion_scope_missing
-    input:
-      route_id: null
-      scope: null
+    input: {route_id: null, scope: null}
     expected:
       component_status: BLOCKED
       outcome_code: COMPLETION_SCOPE_UNRESOLVED
