@@ -1,10 +1,13 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_run_output_validator
 cases:
   - case_id: valid_production_segment
     input:
+      plan_validated: true
+      run_unit_matches_plan: true
+      md_input_validated: true
+      input_manifest_tpr_match: true
       process_active: false
-      input_hashes_match: true
       required_outputs_present: true
       outputs_readable: true
       normal_termination: true
@@ -19,23 +22,39 @@ cases:
 
   - case_id: valid_with_nonblocking_warning
     input:
+      plan_validated: true
+      md_input_validated: true
       all_blocking_checks_pass: true
       nonblocking_check_unresolved: true
     expected:
       outcome_code: MD_RUN_OUTPUT_VALIDATED_WITH_WARNINGS
       artifact_candidate_type: MD_OUTPUT
 
+  - case_id: stale_plan
+    input: {plan_superseded: true}
+    expected: {outcome_code: SIMULATION_PLAN_OR_RUN_UNIT_MISMATCH}
+
+  - case_id: run_unit_not_in_plan
+    input: {execution_run_unit_id: md.2, plan_run_units: [md.1]}
+    expected: {outcome_code: SIMULATION_PLAN_OR_RUN_UNIT_MISMATCH}
+
+  - case_id: md_input_not_validated
+    input: {md_input_present: true, md_input_validated: false}
+    expected: {outcome_code: MD_INPUT_NOT_VALIDATED_OR_MISMATCHED}
+
+  - case_id: md_input_from_old_plan
+    input: {current_plan_id: plan.v2, md_input_plan_id: plan.v1}
+    expected: {outcome_code: MD_INPUT_NOT_VALIDATED_OR_MISMATCHED}
+
   - case_id: run_still_active
-    input:
-      process_active: true
+    input: {process_active: true}
     expected:
       component_status: BLOCKED
       outcome_code: RUN_STILL_ACTIVE
       artifact_candidates: []
 
   - case_id: input_tpr_hash_changed
-    input:
-      input_hashes_match: false
+    input: {input_manifest_tpr_hash_matches_actual: false}
     expected:
       component_status: BLOCKED
       outcome_code: INPUT_OR_COMMAND_PROVENANCE_MISMATCH
@@ -50,57 +69,44 @@ cases:
       artifact_candidates: []
 
   - case_id: trajectory_truncated
-    input:
-      required_outputs_present: true
-      trajectory_readable: false
-    expected:
-      outcome_code: OUTPUT_UNREADABLE_OR_TRUNCATED
+    input: {required_outputs_present: true, trajectory_readable: false}
+    expected: {outcome_code: OUTPUT_UNREADABLE_OR_TRUNCATED}
 
   - case_id: normal_marker_missing
     input:
       require_normal_termination: true
       normal_termination: false
       fatal_evidence: false
-    expected:
-      outcome_code: NORMAL_TERMINATION_NOT_CONFIRMED
+    expected: {outcome_code: NORMAL_TERMINATION_NOT_CONFIRMED}
 
   - case_id: fatal_error_conflicts_with_normal_marker
-    input:
-      normal_termination: true
-      fatal_evidence: true
-    expected:
-      outcome_code: FATAL_OR_NONZERO_EXIT_DETECTED
+    input: {normal_termination: true, fatal_evidence: true}
+    expected: {outcome_code: FATAL_OR_NONZERO_EXIT_DETECTED}
 
   - case_id: target_steps_not_reached
-    input:
-      final_step: 900000
-      target_nsteps: 1000000
-    expected:
-      outcome_code: TARGET_STEP_OR_TIME_NOT_REACHED
+    input: {final_step: 900000, target_nsteps: 1000000}
+    expected: {outcome_code: TARGET_STEP_OR_TIME_NOT_REACHED}
 
   - case_id: checkpoint_required_but_invalid
     input:
       require_checkpoint: true
       checkpoint_present: true
       checkpoint_readable: false
-    expected:
-      outcome_code: CHECKPOINT_INVALID_OR_INCONSISTENT
+    expected: {outcome_code: CHECKPOINT_INVALID_OR_INCONSISTENT}
 
   - case_id: cross_file_step_mismatch
     input:
       log_final_step: 1000000
       checkpoint_final_step: 900000
       trajectory_final_step: 1000000
-    expected:
-      outcome_code: OUTPUT_CROSS_FILE_INCONSISTENCY
+    expected: {outcome_code: OUTPUT_CROSS_FILE_INCONSISTENCY}
 
   - case_id: explicit_em_force_check_fails
     input:
       run_role: ENERGY_MINIMIZATION
       role_specific_checks:
         - {check_id: max_force, blocking: true, threshold: 1000, measured: 1200}
-    expected:
-      outcome_code: ROLE_SPECIFIC_CHECK_FAILED
+    expected: {outcome_code: ROLE_SPECIFIC_CHECK_FAILED}
 
   - case_id: no_implicit_em_threshold
     input:
@@ -127,3 +133,17 @@ cases:
     expected:
       validation_passed: false
       checkpoint_used_as_sole_completion_evidence: false
+
+  - case_id: new_tpr_required_stays_in_md_simulation
+    input:
+      technical_failure_requires_new_tpr: true
+      system_change_required: false
+    expected:
+      route_revision_target_workflow: md_simulation_workflow
+      route_revision_target_substep: materialize_and_validate_simulation_plan
+
+  - case_id: system_topology_change_returns_md_preparation
+    input:
+      system_change_required: true
+      changed_dimension: topology
+    expected: {route_revision_target_workflow: md_preparation_workflow}
