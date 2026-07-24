@@ -1,0 +1,142 @@
+schema_version: 1
+skill_name: md_simulation_protocol_specification
+cases:
+  - case_id: explicit_single_em_protocol
+    purpose: positive_explicit_protocol
+    input:
+      system_validated: true
+      resolved_decisions:
+        - {decision_id: d1, field: run_units, value: [em.1]}
+        - {decision_id: d2, field: run_units.em.1.role, value: ENERGY_MINIMIZATION}
+      mdp_identity_valid: true
+    expected: {status: DONE, outcome_code: SIMULATION_PROTOCOL_SPECIFIED}
+
+  - case_id: explicit_nonstandard_sequence
+    purpose: no_fixed_protocol
+    input:
+      explicit_run_units: [eq.restraint, eq.release, prod.a]
+      explicit_dependencies:
+        eq.restraint: []
+        eq.release: [eq.restraint]
+        prod.a: [eq.release]
+    expected:
+      actual_run_units: [eq.restraint, eq.release, prod.a]
+      invented_run_units: []
+
+  - case_id: standard_workflow_phrase_is_ambiguous
+    purpose: no_implicit_defaults
+    input:
+      user_statement: 按标准流程跑
+      explicit_run_units: []
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_PROTOCOL_DECISIONS_INCOMPLETE
+      confirmation_item_required: true
+
+  - case_id: production_goal_does_not_add_equilibration
+    purpose: prevent_invented_steps
+    input:
+      explicit_run_units: [md.1]
+      production_requested: true
+      equilibration_decision_present: false
+    expected:
+      actual_run_units: [md.1]
+      invented_run_units: []
+
+  - case_id: multiple_mdp_candidates_unresolved
+    purpose: file_ambiguity
+    input:
+      mdp_candidates: [a.mdp, b.mdp]
+      selected_mdp: null
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_PROTOCOL_SOURCE_AMBIGUOUS
+
+  - case_id: explicit_mdp_template
+    purpose: file_provenance
+    input:
+      selected_mdp: npt.mdp
+      selected_mdp_hash_matches: true
+      source_kind: TEMPLATE
+    expected: {status: DONE, field_provenance_contains: FILE}
+
+  - case_id: mdp_hash_mismatch
+    purpose: invalid_file_identity
+    input: {selected_mdp_hash_matches: false}
+    expected: {status: BLOCKED, outcome_code: SIMULATION_PROTOCOL_MDP_IDENTITY_INVALID}
+
+  - case_id: invalid_system
+    purpose: entry_artifact
+    input: {system_validated: false}
+    expected: {status: BLOCKED, outcome_code: SIMULATION_PROTOCOL_SYSTEM_INVALID}
+
+  - case_id: execution_backend_deferred
+    purpose: deferred_execution_item
+    input:
+      scientific_fields_complete: true
+      backend_resolved: false
+    expected:
+      status: DONE
+      outcome_code: SIMULATION_PROTOCOL_SPECIFIED_WITH_DEFERRED_ITEMS
+      unresolved_item_blocking_stage: EXECUTION
+
+  - case_id: index_selection_deferred
+    purpose: deferred_input_item
+    input:
+      scientific_fields_complete: true
+      index_group_resolved: false
+    expected:
+      status: DONE
+      unresolved_item_blocking_stage: INPUT_PREPARATION
+
+  - case_id: target_temperature_missing
+    purpose: plan_validation_item
+    input:
+      selected_mdp_requires_temperature_decision: true
+      temperature_resolved: false
+    expected:
+      status: BLOCKED
+      unresolved_item_blocking_stage: PLAN_VALIDATION
+
+  - case_id: superseded_decision_ignored
+    purpose: decision_lifecycle
+    input:
+      decisions:
+        - {decision_id: old, status: SUPERSEDED, value: 300}
+        - {decision_id: new, status: RESOLVED, value: 310}
+    expected:
+      selected_value: 310
+      used_decision_ids: [new]
+
+  - case_id: approximate_duration_not_uniquely_mapped
+    purpose: numeric_ambiguity
+    input:
+      user_statement: 跑大约100 ns
+      exact_target_time_ps: null
+    expected:
+      confirmation_item_required: true
+      inferred_exact_value: false
+
+  - case_id: revision_creates_new_spec
+    purpose: immutable_revision
+    input:
+      old_spec_id: protocol.v1
+      revision_decision_id: duration.extend
+      output_path_is_new: true
+    expected:
+      supersedes_spec_id: protocol.v1
+      old_spec_modified: false
+
+  - case_id: output_conflict
+    purpose: no_overwrite
+    input:
+      output_path_exists: true
+      existing_hash_matches: false
+    expected: {status: BLOCKED, outcome_code: SIMULATION_PROTOCOL_OUTPUT_CONFLICT}
+
+  - case_id: every_scientific_field_gets_provenance
+    purpose: provenance_completeness
+    input: {all_scientific_fields_explicit: true}
+    expected:
+      uncovered_scientific_fields: []
+      field_provenance_created: true
