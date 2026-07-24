@@ -1,0 +1,115 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_run_input_validation_report.schema.yaml
+title: MD Run Input Validation Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - plan_identity
+  - run_unit_id
+  - source_artifact_set_ids
+  - input_manifest
+  - tpr_identity
+  - file_findings
+  - topology_findings
+  - tpr_findings
+  - grompp_findings
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  plan_identity:
+    type: object
+    required: [plan_id, path, sha256]
+    properties:
+      plan_id: {type: string, minLength: 1}
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
+  run_unit_id: {type: string, minLength: 1}
+  source_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  input_manifest: {$ref: '#/$defs/file_identity'}
+  tpr_identity: {$ref: '#/$defs/file_identity'}
+  file_findings:
+    type: array
+    items:
+      type: object
+      required: [role, path, hash_matches, source_unchanged]
+      properties:
+        role: {type: string, minLength: 1}
+        path: {type: string, minLength: 1}
+        hash_matches: {type: boolean}
+        source_unchanged: {type: boolean}
+      additionalProperties: false
+  topology_findings:
+    type: object
+    required: [root_readable, include_closure_complete, coordinate_compatible]
+    properties:
+      root_readable: {type: boolean}
+      include_closure_complete: {type: boolean}
+      coordinate_compatible: {type: boolean}
+    additionalProperties: false
+  tpr_findings:
+    type: object
+    required: [readable, atom_count, parameters_match_mdp, start_state_matches_plan]
+    properties:
+      readable: {type: boolean}
+      atom_count: {type: [integer, 'null'], minimum: 0}
+      parameters_match_mdp: {type: boolean}
+      start_state_matches_plan: {type: boolean}
+      inspected_fields:
+        type: object
+        additionalProperties: true
+    additionalProperties: false
+  grompp_findings:
+    type: object
+    required: [argv_matches, executable_version_matches, maxwarn_matches, warnings_complete, warning_policy_passed]
+    properties:
+      argv_matches: {type: boolean}
+      executable_version_matches: {type: boolean}
+      maxwarn_matches: {type: boolean}
+      warnings_complete: {type: boolean}
+      warning_policy_passed: {type: boolean}
+    additionalProperties: false
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - MD_RUN_INPUT_VALIDATED
+      - MD_RUN_INPUT_VALIDATED_WITH_NONBLOCKING_WARNINGS
+      - RUN_INPUT_PLAN_MISMATCH
+      - RUN_INPUT_SOURCE_PROVENANCE_MISMATCH
+      - RUN_INPUT_FILE_HASH_MISMATCH
+      - RUN_INPUT_TOPOLOGY_CLOSURE_INVALID
+      - RUN_INPUT_TPR_UNREADABLE
+      - RUN_INPUT_TPR_PARAMETER_MISMATCH
+      - RUN_INPUT_GROMPP_COMMAND_MISMATCH
+      - RUN_INPUT_WARNING_POLICY_VIOLATION
+      - RUN_INPUT_MANIFEST_MISMATCH
+      - RUN_INPUT_VALIDATOR_INPUT_INCOMPLETE
+      - RUN_INPUT_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [ACCEPT_MD_INPUT, REJECT_MD_INPUT, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      artifact_set_id: {type: [string, 'null']}
+    additionalProperties: false
