@@ -1,0 +1,129 @@
+schema_version: 1
+skill_name: md_run_output_validator
+cases:
+  - case_id: valid_production_segment
+    input:
+      process_active: false
+      input_hashes_match: true
+      required_outputs_present: true
+      outputs_readable: true
+      normal_termination: true
+      final_step: 5000000
+      target_nsteps: 5000000
+      cross_file_consistent: true
+      blocking_checks_pass: true
+    expected:
+      component_status: DONE
+      outcome_code: MD_RUN_OUTPUT_VALIDATED
+      artifact_candidate_type: MD_OUTPUT
+
+  - case_id: valid_with_nonblocking_warning
+    input:
+      all_blocking_checks_pass: true
+      nonblocking_check_unresolved: true
+    expected:
+      outcome_code: MD_RUN_OUTPUT_VALIDATED_WITH_WARNINGS
+      artifact_candidate_type: MD_OUTPUT
+
+  - case_id: run_still_active
+    input:
+      process_active: true
+    expected:
+      component_status: BLOCKED
+      outcome_code: RUN_STILL_ACTIVE
+      artifact_candidates: []
+
+  - case_id: input_tpr_hash_changed
+    input:
+      input_hashes_match: false
+    expected:
+      component_status: BLOCKED
+      outcome_code: INPUT_OR_COMMAND_PROVENANCE_MISMATCH
+
+  - case_id: required_trajectory_missing
+    input:
+      expected_outputs:
+        - {path: md.xtc, required: true, exists: false}
+    expected:
+      component_status: DONE
+      outcome_code: REQUIRED_OUTPUT_MISSING
+      artifact_candidates: []
+
+  - case_id: trajectory_truncated
+    input:
+      required_outputs_present: true
+      trajectory_readable: false
+    expected:
+      outcome_code: OUTPUT_UNREADABLE_OR_TRUNCATED
+
+  - case_id: normal_marker_missing
+    input:
+      require_normal_termination: true
+      normal_termination: false
+      fatal_evidence: false
+    expected:
+      outcome_code: NORMAL_TERMINATION_NOT_CONFIRMED
+
+  - case_id: fatal_error_conflicts_with_normal_marker
+    input:
+      normal_termination: true
+      fatal_evidence: true
+    expected:
+      outcome_code: FATAL_OR_NONZERO_EXIT_DETECTED
+
+  - case_id: target_steps_not_reached
+    input:
+      final_step: 900000
+      target_nsteps: 1000000
+    expected:
+      outcome_code: TARGET_STEP_OR_TIME_NOT_REACHED
+
+  - case_id: checkpoint_required_but_invalid
+    input:
+      require_checkpoint: true
+      checkpoint_present: true
+      checkpoint_readable: false
+    expected:
+      outcome_code: CHECKPOINT_INVALID_OR_INCONSISTENT
+
+  - case_id: cross_file_step_mismatch
+    input:
+      log_final_step: 1000000
+      checkpoint_final_step: 900000
+      trajectory_final_step: 1000000
+    expected:
+      outcome_code: OUTPUT_CROSS_FILE_INCONSISTENCY
+
+  - case_id: explicit_em_force_check_fails
+    input:
+      run_role: ENERGY_MINIMIZATION
+      role_specific_checks:
+        - {check_id: max_force, blocking: true, threshold: 1000, measured: 1200}
+    expected:
+      outcome_code: ROLE_SPECIFIC_CHECK_FAILED
+
+  - case_id: no_implicit_em_threshold
+    input:
+      run_role: ENERGY_MINIMIZATION
+      role_specific_checks: []
+      measured_max_force: 1200
+    expected:
+      implicit_threshold_added: false
+      max_force_alone_causes_failure: false
+
+  - case_id: blocking_check_uncomputable
+    input:
+      role_specific_checks:
+        - {check_id: density_window, blocking: true, parser_available: false}
+    expected:
+      outcome_code: ROLE_SPECIFIC_CHECK_UNRESOLVED
+      artifact_candidates: []
+
+  - case_id: checkpoint_exists_only
+    input:
+      checkpoint_present: true
+      normal_termination: false
+      required_outputs_present: false
+    expected:
+      validation_passed: false
+      checkpoint_used_as_sole_completion_evidence: false
