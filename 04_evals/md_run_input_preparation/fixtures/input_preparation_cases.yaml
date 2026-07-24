@@ -1,0 +1,112 @@
+schema_version: 1
+skill_name: md_run_input_preparation
+cases:
+  - case_id: prepare_em_input_from_system
+    purpose: positive_system_start
+    input:
+      plan_validated: true
+      run_unit_id: em.1
+      start_state: SYSTEM
+      source_artifact_validated: true
+      grompp_return_code: 0
+      tpr_readable: true
+    expected: {status: DONE, outcome_code: MD_RUN_INPUT_PREPARED}
+
+  - case_id: prepare_downstream_input_from_prior_output
+    purpose: positive_prior_output
+    input:
+      run_unit_id: nvt.1
+      start_state: PRIOR_RUN_OUTPUT
+      source_run_unit_id: em.1
+      source_md_output_validated: true
+      grompp_return_code: 0
+    expected: {status: DONE, outcome_code: MD_RUN_INPUT_PREPARED}
+
+  - case_id: nonblocking_grompp_warning_within_limit
+    purpose: allowed_warning
+    input: {maxwarn: 1, warning_count: 1, return_code: 0}
+    expected: {status: DONE, outcome_code: MD_RUN_INPUT_PREPARED_WITH_WARNINGS}
+
+  - case_id: plan_not_validated
+    purpose: invalid_plan_gate
+    input: {plan_validated: false}
+    expected: {status: BLOCKED, outcome_code: SIMULATION_PLAN_INVALID_OR_STALE}
+
+  - case_id: run_unit_missing_from_plan
+    purpose: invalid_target
+    input: {run_unit_exists: false}
+    expected: {status: BLOCKED, outcome_code: RUN_UNIT_NOT_FOUND_OR_NOT_READY}
+
+  - case_id: dependency_output_not_validated
+    purpose: dependency_gate
+    input: {dependency_md_output_validated: false}
+    expected: {status: BLOCKED, outcome_code: RUN_UNIT_NOT_FOUND_OR_NOT_READY}
+
+  - case_id: ambiguous_system_coordinates
+    purpose: source_ambiguity
+    input: {coordinate_candidates: 2, explicitly_selected: false}
+    expected: {status: BLOCKED, outcome_code: RUN_INPUT_SOURCE_AMBIGUOUS}
+
+  - case_id: latest_checkpoint_not_auto_selected
+    purpose: no_timestamp_selection
+    input:
+      checkpoint_candidates: [state.1.cpt, state.2.cpt]
+      plan_checkpoint: null
+    expected: {status: BLOCKED, outcome_code: RUN_INPUT_SOURCE_AMBIGUOUS}
+
+  - case_id: mdp_hash_mismatch
+    purpose: mdp_identity
+    input: {plan_mdp_hash_matches_actual: false}
+    expected: {status: BLOCKED, outcome_code: MDP_IDENTITY_MISMATCH}
+
+  - case_id: topology_include_missing
+    purpose: topology_closure
+    input: {missing_include_count: 1}
+    expected: {status: BLOCKED, outcome_code: TOPOLOGY_INCLUDE_INCOMPLETE}
+
+  - case_id: grompp_not_available
+    purpose: capability_missing
+    input: {grompp_executable_available: false}
+    expected: {status: BLOCKED, outcome_code: GROMPP_CAPABILITY_UNAVAILABLE}
+
+  - case_id: maxwarn_not_automatically_increased
+    purpose: warning_policy
+    input: {maxwarn: 0, warning_count: 1}
+    expected:
+      status: FAILED
+      outcome_code: GROMPP_WARNING_LIMIT_EXCEEDED
+      retry_with_higher_maxwarn: false
+
+  - case_id: grompp_nonzero
+    purpose: process_failure
+    input: {grompp_return_code: 1}
+    expected: {status: FAILED, outcome_code: GROMPP_FAILED}
+
+  - case_id: existing_different_tpr
+    purpose: output_conflict
+    input: {output_tpr_exists: true, existing_hash_matches_expected: false}
+    expected: {status: BLOCKED, outcome_code: RUN_INPUT_OUTPUT_CONFLICT}
+
+  - case_id: source_mdp_not_modified
+    purpose: source_protection
+    input: {source_mdp_hash_before_equal_after: true}
+    expected: {source_mdp_modified: false}
+
+  - case_id: parameter_change_requires_plan_revision
+    purpose: no_inline_parameter_edit
+    input:
+      requested_mdp_change: nsteps
+      plan_revision_present: false
+    expected:
+      status: BLOCKED
+      mdp_modified_by_operation: false
+
+  - case_id: operation_does_not_run_mdrun
+    purpose: layer_boundary
+    input: {grompp_success: true}
+    expected: {mdrun_invoked: false}
+
+  - case_id: candidate_remains_unvalidated
+    purpose: artifact_gate
+    input: {grompp_success: true, validator_not_run: true}
+    expected: {artifact_type: MD_INPUT, validation_status: UNVALIDATED}
