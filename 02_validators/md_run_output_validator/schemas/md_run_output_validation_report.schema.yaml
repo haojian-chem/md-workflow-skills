@@ -1,0 +1,139 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_run_output_validation_report.schema.yaml
+title: MD Run Output Validation Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - run_unit_id
+  - source_artifact_set_ids
+  - execution_identity
+  - output_files
+  - actual_completion
+  - termination_findings
+  - checkpoint_findings
+  - cross_file_findings
+  - role_specific_checks
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  run_unit_id: {type: string, minLength: 1}
+  source_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  execution_identity:
+    type: object
+    required: [execution_spec_sha256, command_record_sha256, submission_id]
+    properties:
+      execution_spec_sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      command_record_sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      submission_id: {type: [string, 'null']}
+    additionalProperties: false
+  output_files:
+    type: array
+    items:
+      type: object
+      required: [path, role, required, exists, readable, sha256, size_bytes]
+      properties:
+        path: {type: string, minLength: 1}
+        role: {type: string, minLength: 1}
+        required: {type: boolean}
+        exists: {type: boolean}
+        readable: {type: boolean}
+        sha256:
+          type: [string, 'null']
+          pattern: '^[A-Fa-f0-9]{64}$'
+        size_bytes: {type: [integer, 'null'], minimum: 0}
+      additionalProperties: false
+  actual_completion:
+    type: object
+    required: [final_step, final_time_ps, target_step_met, target_time_met]
+    properties:
+      final_step: {type: [integer, 'null'], minimum: 0}
+      final_time_ps: {type: [number, 'null'], minimum: 0}
+      target_step_met: {type: [boolean, 'null']}
+      target_time_met: {type: [boolean, 'null']}
+    additionalProperties: false
+  termination_findings:
+    type: object
+    required: [normal_termination_confirmed, fatal_evidence, nonzero_exit_evidence]
+    properties:
+      normal_termination_confirmed: {type: boolean}
+      fatal_evidence:
+        type: array
+        items: {type: string}
+      nonzero_exit_evidence:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+  checkpoint_findings:
+    type: object
+    required: [required, present, readable, consistent]
+    properties:
+      required: {type: boolean}
+      present: {type: boolean}
+      readable: {type: boolean}
+      consistent: {type: [boolean, 'null']}
+    additionalProperties: false
+  cross_file_findings:
+    type: array
+    items:
+      type: object
+      required: [check_id, passed, details]
+      properties:
+        check_id: {type: string, minLength: 1}
+        passed: {type: boolean}
+        details: {type: string}
+      additionalProperties: false
+  role_specific_checks:
+    type: array
+    items:
+      type: object
+      required: [check_id, blocking, status, measured_value, unit, details]
+      properties:
+        check_id: {type: string, minLength: 1}
+        blocking: {type: boolean}
+        status: {enum: [PASS, FAIL, UNRESOLVED, NOT_APPLICABLE]}
+        measured_value:
+          oneOf:
+            - type: 'null'
+            - type: number
+            - type: array
+              items: {type: number}
+        unit: {type: [string, 'null']}
+        details: {type: string}
+      additionalProperties: false
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - MD_RUN_OUTPUT_VALIDATED
+      - MD_RUN_OUTPUT_VALIDATED_WITH_WARNINGS
+      - OUTPUT_VALIDATION_INPUT_INCOMPLETE
+      - INPUT_OR_COMMAND_PROVENANCE_MISMATCH
+      - RUN_STILL_ACTIVE
+      - REQUIRED_OUTPUT_MISSING
+      - OUTPUT_UNREADABLE_OR_TRUNCATED
+      - NORMAL_TERMINATION_NOT_CONFIRMED
+      - FATAL_OR_NONZERO_EXIT_DETECTED
+      - TARGET_STEP_OR_TIME_NOT_REACHED
+      - CHECKPOINT_INVALID_OR_INCONSISTENT
+      - OUTPUT_CROSS_FILE_INCONSISTENCY
+      - ROLE_SPECIFIC_CHECK_FAILED
+      - ROLE_SPECIFIC_CHECK_UNRESOLVED
+      - OUTPUT_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [ACCEPT_MD_OUTPUT, REJECT_MD_OUTPUT, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
