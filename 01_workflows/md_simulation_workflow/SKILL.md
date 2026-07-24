@@ -1,6 +1,6 @@
 ---
 name: md_simulation_workflow
-description: 为一个 Focus Workstream 规划并推进 MD 模拟阶段。该 Workflow 从 VALIDATED SYSTEM 和明确模拟协议生成可修订的 simulation plan，为每个 run unit 准备并验证 MD_INPUT，再管理执行、按需状态检查、输出核验和阶段完成 gate。它不执行子 Skill、不轮询外部任务，也不修改项目状态或业务文件。
+description: 为一个 Focus Workstream 规划并推进 MD 模拟阶段。该 Workflow 从 VALIDATED SYSTEM 和已解决决定生成并验证 simulation protocol，再物化可修订 plan，为每个 run unit 准备和验证 MD_INPUT，随后管理执行、按需状态检查、输出核验与阶段完成 gate。它不执行子 Skill、不轮询外部任务，也不修改项目状态或业务文件。
 ---
 
 # 目标
@@ -17,30 +17,23 @@ VALIDATED SYSTEM
 VALIDATED MD_OUTPUT
 ```
 
-阶段内先形成明确且可修订的 `md_simulation_plan`，再对每个 run unit 依次经历：
+阶段内生命周期：
 
 ```text
-prepare_and_validate_input
-→ execute_or_submit
-→ wait_or_status_check
-→ output_validation
+specify_and_validate_protocol
+→ materialize_and_validate_plan
+→ per-run input preparation and validation
+→ execute or submit
+→ on-demand status check
+→ output validation
+→ workflow completion validation
 ```
 
-本 Workflow 不把阶段写死为固定的 `EM → NVT → NPT → production` 队列。EM、任意平衡片段、生产片段和显式续跑片段都表示为独立 run unit。
-
-这样支持：
-
-- 只生成计划或只准备一个 run unit 的输入；
-- 只执行一个 EM、平衡或生产片段；
-- 从指定 run unit/substep 开始或停止；
-- `md.1 → md.2 → md.3` 等分段 production；
-- 从有效 checkpoint 继续同一 run unit；
-- 新增 run unit 后动态修订 plan 和 route；
-- 其他 Workstream 的外部任务继续后台运行时切换 Focus。
+本 Workflow 不把协议写死为 `EM → NVT → NPT → production`。EM、任意平衡片段、production segment 和显式 continuation 均为独立 run unit；run unit 数量、顺序和参数必须来自明确决定或文件。
 
 # 权威阶段边界
 
-当前权威 `stage_registry.yaml` 规定：
+权威 `stage_registry.yaml` 规定：
 
 ```text
 md_preparation_workflow
@@ -50,24 +43,19 @@ md_preparation_workflow
 md_simulation_workflow
 → MDP 与运行输入准备
 → EM / equilibration / production / continuation
-→ VALIDATED MDOUTPUT
+→ VALIDATED MD_OUTPUT
 ```
 
 因此：
 
-- 本 Workflow 的标准入口是 VALIDATED SYSTEM，不是预先生成的 MD_INPUT；
-- `.mdp`、`grompp`、`.tpr` 和 run plan 属于本 Workflow；
+- 标准入口为 VALIDATED SYSTEM，不是预生成 MD_INPUT；
+- protocol、plan、`.mdp`、`grompp`、`.tpr` 和 execution 属于本 Workflow；
 - 只有 SYSTEM 的结构、拓扑、盒子、溶剂或离子需要改变时，才返回 `md_preparation_workflow`。
 
-计划归属与 route 区别见：
+详细语义：
 
 ```text
 references/simulation_plan_ownership.md
-```
-
-run unit 语义见：
-
-```text
 references/run_unit_model.md
 ```
 
@@ -75,96 +63,101 @@ references/run_unit_model.md
 
 Manager 必须提供：
 
-- `workstream_id`；
-- 符合 `workstream_state.schema.yaml` 的 Focus Workstream state；
-- 当前 active route 与已解析的本阶段起点、终点和停止条件；
+- Focus `workstream_id` 和 Workstream state；
+- active route、已解析起点、终点和停止条件；
 - 当前有效 SYSTEM、MD_INPUT 和 MD_OUTPUT artifact sets；
-- 当前 simulation plan 和 plan validation evidence，如已存在；
+- 当前 protocol spec、plan 及其 Validator evidence，如存在；
 - submission records 及最新状态；
-- 已解决 decision 摘要；
-- 当前 Skill 可用性；
-- 项目根与 `04_md_simulation/` 业务目录。
+- 当前有效 resolved decisions；
+- 显式 MDP/template file records；
+- Skill availability；
+- 项目根和 `04_md_simulation/` 业务目录。
 
 规划接口还必须提供：
 
-- 本 Workflow 内的起点与终点；
-- protocol spec 或足以判断其仍缺哪些明确决定的上下文；
-- 请求范围内的 run unit IDs，或足以唯一解析范围的已验证 plan；
-- 用户明确的科学协议、MDP、backend、资源、续跑和停止约束，如已确定。
+- 本 Workflow 内的 start/end；
+- resolved route scope；
+- 已知科学协议、文件、backend、资源、restart 和停止约束；
+- 若已有 validated plan，请求范围内 run unit IDs 或可唯一解析的范围。
 
-执行接口还必须提供：
+执行接口还必须提供当前 protocol/plan/run unit lifecycle position，以及 task/result/artifact/submission evidence。
 
-- 当前预计 plan/run unit/lifecycle position；
-- 对应 task/result、artifact、submission 和 Validator evidence；
-- 外部任务是否运行、结束未核验或状态未知。
-
-缺少 Workstream ID 或路线范围时返回 BLOCKED。缺少科学协议决定时返回 PAUSE 和 confirmation items，不得默认生成“标准模拟流程”。
+缺少 Workstream 或范围时 BLOCKED。科学协议未明确时 PAUSE 并返回 confirmation items；不得默认生成标准流程。
 
 # 职责边界
 
 负责：
 
-- 定义 simulation plan、run unit 和局部生命周期；
-- 为请求范围生成本阶段 route fragment；
-- 判断 plan materialization/validation 是否需要执行；
-- 为每个 run unit声明 input preparation/validation、execution、status check 和 output validation；
-- 根据有效 artifact 和 gate 选择一个当前 task unit；
-- 根据 backend/submission 状态判断 status check 是否适用；
-- 在外部任务运行时返回 PAUSE，而不是轮询；
-- 判断当前 substep、run unit、请求范围或 Workflow 是否完成；
+- 定义 protocol、plan、run unit 和阶段内 substeps；
+- 返回本阶段 route fragment；
+- 判断 protocol/plan/input/execution/status/output/completion 中的一个当前 task unit；
+- 根据最新 evidence 决定 EXECUTE、SKIP、PAUSE、BLOCKED 或 COMPLETE；
+- 外部任务运行时返回 PAUSE，不创建轮询循环；
 - 返回 route revision signal。
 
 不得：
 
-- 自行创建 protocol spec、plan、`.mdp`、`.tpr`、topology、structure 或 checkpoint；
-- 执行 `grompp`、`mdrun`、tmux 或调度命令；
-- 根据常见做法补充 EM/NVT/NPT/production 步骤或参数；
-- 在缺少明确策略时猜测 checkpoint、`-append`、`-noappend`、`maxwarn` 或完成阈值；
-- 高频轮询外部任务；
-- 把 session/job 消失直接判定为成功或失败；
+- 自行生成 protocol、plan、MDP、TPR、checkpoint 或 execution spec；
+- 执行 `grompp`、`mdrun`、tmux 或 scheduler 命令；
+- 从常见实践推导 run units、参数、checkpoint、append、maxwarn 或 threshold；
+- 根据目录或时间戳推断完成；
 - 修改 state、records、route、plan、submission 或 artifact；
 - 拼接其他 Workflow；
 - 直接向用户提问；
 - 创建或管理子 Agent；
-- 把技术输出通过表述为科学平衡、收敛或分析结论成立。
+- 将技术通过表述为科学平衡、采样充分或收敛。
 
-# Simulation plan
+# 阶段内对象
 
-Workflow 本地 schemas：
+## Simulation protocol spec
+
+由：
+
+```text
+md_simulation_protocol_specification
+→ md_simulation_protocol_validator
+```
+
+从 VALIDATED SYSTEM、resolved decisions、route scope 和显式文件物化并验证。
+
+每个科学字段必须有 field provenance。PLAN_VALIDATION 类未决项阻止进入 plan；INPUT_PREPARATION 和 EXECUTION 类未决项可以保留到对应 barrier。
+
+Schema：
 
 ```text
 schemas/md_simulation_protocol_spec.schema.yaml
+```
+
+## Simulation plan
+
+由：
+
+```text
+md_simulation_plan_materialization
+→ md_simulation_plan_validator
+```
+
+从 validated protocol spec 物化 immutable plan。
+
+plan 是阶段内科学运行方案；Workstream route 是 Manager 根据 fragment 生成的 task projection。二者不可混用。plan 变化生成新版本，记录 `supersedes_plan_id` 并触发 route revision；不得覆盖旧 plan。
+
+Schema：
+
+```text
 schemas/md_simulation_plan.schema.yaml
 ```
 
-plan 描述：
+## Run unit
 
-- run unit 列表、角色和依赖；
-- MDP identities；
-- SYSTEM 或 prior-run start-state 来源；
-- grompp 设置；
-- execution policy 中已解决或明确 UNRESOLVED 的字段；
-- expected outputs 和 completion criteria；
-- resolved decisions、unresolved items 和 revision lineage。
+每个 run unit 至少包含：
 
-plan 与 Workstream route 分离：
-
-- plan 是本阶段科学运行方案；
-- route 是 Manager 根据 Workflow fragment 生成的 task 路线；
-- plan 变化产生新 immutable 版本并触发 route revision；
-- plan 不直接授权执行。
-
-# Run unit 模型
-
-每个 run unit 至少有：
-
-- 稳定 `run_unit_id`；
-- role：`ENERGY_MINIMIZATION | EQUILIBRATION | PRODUCTION | CONTINUATION | CUSTOM`；
+- stable `run_unit_id`；
+- role；
+- sequence 和 explicit dependencies；
 - work directory；
-- explicit dependencies；
 - MDP identity；
 - SYSTEM 或 prior-run start-state；
-- input preparation requirements；
+- grompp 设置；
 - execution policy；
 - expected outputs 和 completion criteria。
 
@@ -176,6 +169,7 @@ plan 与 Workstream route 分离：
 04_md_simulation/
 ├── 00_plan/
 │   ├── simulation_protocol_spec.yaml
+│   ├── md_simulation_protocol_validation_report.yaml
 │   ├── md_simulation_plan.yaml
 │   └── md_simulation_plan_validation_report.yaml
 ├── <run_unit_id>/
@@ -195,39 +189,53 @@ plan 与 Workstream route 分离：
     └── md_simulation_completion_report.yaml
 ```
 
-目录和文件存在均不是完成证据。
+目录或文件存在不是完成证据。
 
 # 动态 Substep registry
 
-## 0. materialize_and_validate_simulation_plan
+## 0. specify_and_validate_simulation_protocol
 
-目标：从结构化 protocol spec 生成并独立验证一个 immutable simulation plan。
+```text
+mode: OPERATION_WITH_VALIDATOR
+operation: md_simulation_protocol_specification
+validator: md_simulation_protocol_validator
+work_directory: 04_md_simulation/00_plan
+necessity: REQUIRED at Workflow entry; CONDITIONAL when an equivalent validated protocol exists
+```
+
+目标：将明确 decisions/files 结构化为 protocol spec，并独立检查 field provenance、隐式默认值和未决项分类。
+
+前置 gate：
+
+- VALIDATED SYSTEM 可用；
+- route scope 已解析；
+-影响协议的当前 decision records 和显式 MDP/template 可定位；
+- 输出不覆盖旧版本。
+
+已有等价且仍有效的 validated protocol 时可 SKIP。
+
+## 1. materialize_and_validate_simulation_plan
 
 ```text
 mode: OPERATION_WITH_VALIDATOR
 operation: md_simulation_plan_materialization
 validator: md_simulation_plan_validator
 work_directory: 04_md_simulation/00_plan
-necessity: REQUIRED at Workflow entry; CONDITIONAL when an equivalent validated plan already exists
+necessity: REQUIRED after protocol validation; CONDITIONAL when an equivalent validated plan exists
 ```
 
 前置 gate：
 
-- VALIDATED SYSTEM 可用；
-- protocol spec 可定位；
-- 所有 PLAN_VALIDATION 类科学决定已解决；
-- MDP identities 可定位；
-- plan 输出路径不覆盖旧版本。
+- protocol Validator outcome 允许进入 plan；
+- PLAN_VALIDATION 未决项为空；
+- SYSTEM 和 MDP identities 可定位；
+- plan 输出不覆盖旧版本。
 
-若路线明确从已有 plan 后的 substep 开始，且 plan 仍有效，可 SKIP。
+完成证据：plan Validator 建议接受计划。该步骤不创建 MD_INPUT artifact。
 
-完成证据：plan Validator 建议接受 plan。该步骤不创建 MD_INPUT artifact。
+## 对每个 run unit 展开
 
-## 对每个 run unit 展开以下步骤
-
-### 1. prepare_and_validate_run_input:<run_unit_id>
-
-目标：从 validated plan 和 SYSTEM/prior MD_OUTPUT 生成并验证 MD_INPUT。
+### 2. prepare_and_validate_run_input:<run_unit_id>
 
 ```text
 mode: OPERATION_WITH_VALIDATOR
@@ -239,21 +247,17 @@ necessity: REQUIRED
 
 前置 gate：
 
-- validated plan 可用且未失效；
-- run unit 唯一；
-- INPUT_PREPARATION 类 blocking unresolved items 为空；
-- start-state source 为 VALIDATED SYSTEM 或上游 VALIDATED MD_OUTPUT；
+- validated plan 有效；
+- run unit 唯一且 dependencies ready；
+- INPUT_PREPARATION blocking items 为空；
+- start state 为 VALIDATED SYSTEM 或上游 VALIDATED MD_OUTPUT；
 - MDP、topology、coordinates 和可选 checkpoint 唯一；
 - grompp capability 可用；
 - 输出无冲突。
 
-完成证据：MD_INPUT candidate 经 `md_run_input_validator` 通过，并由 Manager 登记为 VALIDATED。
+完成证据：MD_INPUT candidate 经专属 Validator 通过并由 Manager 登记为 VALIDATED。已有等价 VALIDATED MD_INPUT 时可 SKIP。
 
-已有等价且仍有效的 VALIDATED MD_INPUT 时可 SKIP。
-
-### 2. execute_run_unit:<run_unit_id>
-
-目标：同步执行或异步提交一个明确 run unit。
+### 3. execute_run_unit:<run_unit_id>
 
 ```text
 mode: OPERATION
@@ -265,39 +269,32 @@ necessity: REQUIRED
 
 前置 gate：
 
-- validated plan 和目标 run unit 可用；
-- 当前 run unit 的 MD_INPUT 为 VALIDATED；
-- 所有 blocking dependencies 的 MD_OUTPUT 已通过；
-- EXECUTION 类 blocking unresolved items 为空；
-- continuation checkpoint 和 append policy 明确；
-- backend、资源和 execution spec 可用；
-- 工作目录/输出冲突已解决；
-- 首个外部长任务提交前所需 FULL runtime validation 已通过。
+- validated plan/run unit 可用；
+- 当前 MD_INPUT 为 VALIDATED；
+- dependencies 的 MD_OUTPUT 已通过；
+- EXECUTION blocking items 为空；
+- checkpoint/append policy、backend、resources 和 execution spec 明确；
+- 工作目录无冲突；
+- 首个外部长任务前所需 FULL runtime validation 已通过。
 
-完成证据：同步进程结束，或外部提交被接受并产生可记录 submission evidence。提交成功不等于模拟完成。
+完成证据：同步进程结束，或异步提交被接受并产生 submission evidence。提交成功不等于模拟完成。
 
-### 3. check_run_unit_status:<run_unit_id>
-
-目标：按需检查异步 submission 当前状态。
+### 4. check_run_unit_status:<run_unit_id>
 
 ```text
 mode: VALIDATOR
-operation: null
 validator: md_run_status_validator
 work_directory: 04_md_simulation/<run_unit_id>
 necessity: CONDITIONAL
-condition: asynchronous submission is SUBMITTED/RUNNING/UNKNOWN and a refresh is currently required
+condition: asynchronous submission is SUBMITTED, RUNNING or UNKNOWN and an on-demand refresh is required
 ```
 
-使用 ON_DEMAND 策略。任务仍运行且当前无需刷新时 Workflow 返回 PAUSE。同步执行或已有可信 terminal status 时 SKIP。
+状态检查只执行一次。任务仍运行且当前无需刷新时 PAUSE。同步运行或已有可信 terminal status 时 SKIP。
 
-### 4. validate_run_unit_output:<run_unit_id>
-
-目标：核验已结束 run unit 是否满足显式技术完成条件。
+### 5. validate_run_unit_output:<run_unit_id>
 
 ```text
 mode: VALIDATOR
-operation: null
 validator: md_run_output_validator
 work_directory: 04_md_simulation/<run_unit_id>
 necessity: REQUIRED
@@ -306,120 +303,101 @@ necessity: REQUIRED
 前置 gate：
 
 - 同步进程结束，或异步 submission 为 FINISHED_UNVERIFIED；
-- validated MD_INPUT、execution spec、command record 和 provenance 可用；
-- expected outputs 已停止写入；
-- 不存在同一 run unit 的活动进程。
+- validated MD_INPUT、execution spec、command 和 provenance 可用；
+- outputs 已停止写入；
+- 不存在活动进程。
 
 完成证据：Validator 建议接受 MD_OUTPUT candidate。
 
-## 5. workflow_completion_validation
-
-目标：核验请求范围内 plan、MD_INPUT、run units、submission 和 MDOUTPUT 谱系闭合。
+## 6. workflow_completion_validation
 
 ```text
 mode: VALIDATOR
-operation: null
 validator: md_simulation_completion_validator
 work_directory: 04_md_simulation/99_validation
 necessity: REQUIRED for Workflow exit
 ```
 
-若用户终点只是 plan、input preparation、execution、status 或单个 output validation，则 route 可以在对应 substep 结束，不强制阶段 completion Validator。
+核验 protocol、plan、MD_INPUT、run units、submissions、MD_OUTPUT 和 lineage 闭合。终点仅为某个中间 substep 时不强制执行。
 
-# 规划接口：route fragment
+# 规划接口
 
-Manager 请求规划时，本 Workflow：
+Manager 请求 fragment 时，本 Workflow：
 
-1. 核验起点、终点和停止条件；
-2. 判断是否需要 plan materialization/validation；
-3. 若已有 validated plan，按 plan 解析 run unit 范围和 DAG；
-4. 若尚无 plan，只规划到 plan gate；不得虚构后续 run units；
-5. 对每个已解析 run unit 展开 input preparation、execution、conditional status check 和 output validation；
-6. 保留所有 REQUIRED steps；
-7. 无证据时不提前删除 CONDITIONAL status check；
-8. 终点为 Workflow exit 时追加 completion validation；
-9. 声明入口 SYSTEM/plan/artifact requirements 和出口 MD_OUTPUT；
-10. 对缺失 Skill、未解析 protocol、循环依赖、缺失 start-state artifact 或冲突路径形成 blocker；
-11. 返回 `workflow_route_fragment.schema.yaml`。
+1. 核验 start/end 和停止条件；
+2. 判断 protocol 是否存在且有效；
+3. 无 validated protocol 时，只安全规划 protocol gate；
+4. 有 validated protocol 但无 validated plan 时，规划到 plan gate；
+5. 有 validated plan 时，按其 DAG 展开请求范围内 run units；
+6. 对每个 run unit 展开 input、execution、conditional status 和 output validation；
+7. 保留 REQUIRED steps；无 evidence 时不提前删除 CONDITIONAL status check；
+8. Workflow exit 时追加 completion validation；
+9. 声明 entry requirements、exit MD_OUTPUT、assumptions 和 blockers；
+10. 返回 `workflow_route_fragment.schema.yaml`。
 
 Fragment 状态：
 
-- `COMPLETE`：请求范围内计划与 run units 可完整表达；
-- `PARTIAL`：只能安全规划到 plan gate，或已知部分 run units 后存在未决边界；
-- `BLOCKED`：入口 SYSTEM、protocol spec 或当前起点无法安全确定。
+- `COMPLETE`：请求范围可完整表达；
+- `PARTIAL`：只能规划到 protocol/plan gate，或后续边界仍未解析；
+- `BLOCKED`：入口 SYSTEM、范围、当前对象或必要 Skill 无法安全确定。
 
-标准 Workflow entry requirement 为 VALIDATED SYSTEM。若起点位于已有 run unit 的后续 substep，可以要求对应 validated plan、MD_INPUT、submission 或 MDOUTPUT evidence。
+标准 entry requirement 为 VALIDATED SYSTEM。若起点位于已有后续 substep，可以要求相应 validated protocol、plan、MD_INPUT、submission 或 MD_OUTPUT evidence。
 
-`next_workflow_hint` 为 `analysis_workflow`，要求满足当前范围的 VALIDATED MDOUTPUT。
+`next_workflow_hint` 为 `analysis_workflow`，要求当前范围的 VALIDATED MD_OUTPUT。
 
-# 执行接口：当前 decision
+# 执行接口
 
-## EXECUTE
+每次只返回一个决定和至多一个 task unit。
 
-每次只返回一个 task unit：
+## EXECUTE 优先顺序
 
-- plan 不存在/需修订且 gate 满足：plan materialization + validator；
-- run input 未验证且 gate 满足：input preparation + validator；
-- input 已验证且未执行：`md_run_execution`；
-- 异步任务需要刷新：`md_run_status_validator`；
-- 任务结束未核验：`md_run_output_validator`；
-- 范围完成且需要 Workflow exit：`md_simulation_completion_validator`。
-
-目标 Skill 不可用时不得返回可执行 task。
+- protocol 不存在、失效或需修订：protocol Operation + Validator；
+- plan 不存在、失效或需修订：plan Operation + Validator；
+- run input 未验证：input Operation + Validator；
+- input 已验证且未执行：execution Operation；
+- 异步任务需要刷新：status Validator；
+- 任务结束未核验：output Validator；
+- 范围闭合且要求 Workflow exit：completion Validator。
 
 ## SKIP
 
-仅在可信 evidence 支持时：
-
-- 已有等价 validated plan；
-- 已有等价 VALIDATED MDINPUT；
-- run unit 已有等价 VALIDATED MDOUTPUT；
-- status check 对同步执行不适用；
-- submission 已有可信 terminal status；
-- 用户范围已达到终点。
-
-不得仅凭目录、文件名或时间戳 SKIP。
+仅在可信 evidence 支持时跳过等价 validated protocol、plan、MD_INPUT、MD_OUTPUT，或不适用的 status check。不得仅凭目录、文件名或时间戳跳过。
 
 ## PAUSE
 
 用于：
 
-- protocol spec 的科学决定未解决；
-- INPUT_PREPARATION/EXECUTION 类未决项到达其 barrier；
-- submission 为 SUBMITTED/RUNNING 且当前无需刷新；
-- backend 资源暂不可用；
-- 需要用户解决 checkpoint、append、maxwarn、覆盖冲突或范围；
-- Validator 返回需要人工判断。
-
-返回 confirmation items 或明确依赖，不返回 task unit。
+- protocol 科学决定未解决；
+- INPUT_PREPARATION/EXECUTION 未决项到达其 barrier；
+- submission 正在运行且无需刷新；
+- backend/resource 暂不可用；
+- checkpoint、append、maxwarn、输出冲突或人工判断待解决。
 
 ## BLOCKED
 
 用于：
 
 - SYSTEM 缺失、失效或未验证；
-- protocol spec/plan/run unit 不唯一；
-- plan DAG 有环或 start-state 引用不一致；
-- 当前所需 MDINPUT/MDOUTPUT 缺失或失效；
-- task、submission、artifact 或 Workstream state 矛盾；
-- 工作目录存在无法解释的活动进程/输出冲突；
-- continuation 缺少 checkpoint/append policy；
+- scope/protocol/plan/run unit 不唯一；
+- protocol provenance 不完整或存在隐式默认；
+- plan DAG/start-state 无效；
+- 所需 MD_INPUT/MD_OUTPUT 缺失或失效；
+- task/submission/artifact/Workstream state 矛盾；
+- 活动进程或输出冲突无法解释；
 - 必要 Skill/backend capability 缺失；
-- 需要恢复未闭环 task。
+- 存在未闭环 task 需要恢复。
 
 ## COMPLETE
 
-仅当请求范围终点达到。终点为 Workflow exit 时还必须满足：
+请求终点已达到。Workflow exit 还要求：
 
-- validated plan 覆盖该范围；
-- required run units 的 MDINPUT 和 MDOUTPUT 谱系闭合；
+- validated protocol 和 plan 覆盖当前范围；
+- required MD_INPUT/MD_OUTPUT 谱系闭合；
 - 不存在 active、UNKNOWN 或 FINISHED_UNVERIFIED submission；
 - completion Validator 通过；
-- 最终 MDOUTPUT 已由 Manager 登记为 VALIDATED。
+- final MD_OUTPUT 已由 Manager 登记为 VALIDATED。
 
 # 外部任务状态
-
-submission 状态使用共享 contract：
 
 ```text
 SUBMITTED | RUNNING
@@ -429,57 +407,41 @@ SUBMITTED | RUNNING
 → COMPLETED | FAILED
 ```
 
-- backend 报告结束后先进入 FINISHED_UNVERIFIED；
-- 只有 output Validator 通过后 Manager 才可标记 COMPLETED；
-- job/session 不存在但证据不足时使用 UNKNOWN 或 FINISHED_UNVERIFIED；
-- Workflow 不循环等待。
+backend 报告结束后先进入 FINISHED_UNVERIFIED。只有 output Validator 通过后 Manager 才可标记 COMPLETED。job/session 消失但证据不足时不得自动判定失败或成功。
 
-# 续跑、修订与分支
+# 修订与跨 Workflow 边界
 
-- 相同 `.tpr` + 明确 checkpoint 的正常 continuation 可使用新的 execution spec 留在当前 run unit；
-- 改变 `.mdp`、`nsteps`、科学参数、起始 artifact 或 `.tpr` 时必须修订 plan 或重新准备 MDINPUT；
-- 仅 backend/资源变化且 `.tpr` 不变时，不必修订科学 plan，可生成新 execution spec；
-- 已有有效下游结果时不覆盖，创建新 run unit/plan version 或新 Workstream；
-- 只有 SYSTEM 的结构、拓扑、盒子、溶剂或离子改变时才返回 `md_preparation_workflow`。
+- protocol scientific fields、run units、MDP、start state 或 completion criteria 改变：新 protocol + plan version；
+- `.tpr` 改变：重新准备 MD_INPUT；
+- 相同 `.tpr`、明确 checkpoint 和 append policy 的 continuation：可只生成新 execution spec；
+- backend/resource 改变且科学输入不变：通常只需新 execution spec；
+- SYSTEM 结构、拓扑、盒子、溶剂或离子改变：返回 `md_preparation_workflow`；
+- 已有有效下游结果时不得覆盖，创建新版本、run unit 或 Workstream。
 
-# Route revision signals
-
-- protocol spec 或 plan version 变化；
-- run unit 列表、顺序、终点或依赖变化；
-- 新增 continuation/production segment；
-- MDP/start-state/completion criteria 变化；
-- MDINPUT 被 INVALIDATED/SUPERSEDED；
-- execution spec/backend/resource strategy 变化；
-- output Validator 要求新 MDINPUT 或新 SYSTEM；
-- checkpoint/MDOUTPUT 被 INVALIDATED/SUPERSEDED；
-- submission 失败/取消/未知后采用替代方案；
-- 用户创建对照、重复或参数分支；
-- Skill 可用性变化。
-
-Workflow 只返回修订理由和 fragment，不写 route/plan。
+以上变化可能触发 route revision；Workflow 只返回理由和 fragment，不写 route、spec 或 plan。
 
 # 阶段出口
 
-阶段出口为 VALIDATED MDOUTPUT artifact set，至少包含当前范围所需的：
+阶段出口为 VALIDATED MD_OUTPUT，至少包含当前范围所需的：
 
-- 最终结构或 checkpoint；
-- required 轨迹、能量和日志；
-- validated plan 和 MDINPUT provenance；
-- run input/output validation reports；
+- final structure/checkpoint；
+- required trajectory、energy 和 log；
+- validated protocol、plan 和 MD_INPUT provenance；
+- input/output validation reports；
 - command、submission 和 continuation provenance；
-- completion report，如终点为 Workflow exit。
+- completion report，如要求 Workflow exit。
 
-该出口只说明技术 gate 已通过，不证明采样充分或科学收敛。
+该出口只说明技术 gate 通过，不证明科学收敛。
 
 # 返回
 
-规划时返回：
+规划返回：
 
 ```text
 03_contracts/workflow_route_fragment.schema.yaml
 ```
 
-执行时返回：
+执行返回：
 
 ```text
 03_contracts/workflow_decision.schema.yaml
@@ -490,17 +452,16 @@ Workflow 只返回修订理由和 fragment，不写 route/plan。
 # 自检
 
 - [ ] 标准入口为 VALIDATED SYSTEM；
-- [ ] MDP/grompp/tpr/run plan 未错误归入 md_preparation；
-- [ ] 未把模拟协议固定为 EM/NVT/NPT/production；
-- [ ] plan 与 Workstream route 已区分；
+- [ ] protocol spec 由专属 Operation/Validator 生成和验证；
+- [ ] 每个科学字段要求 provenance；
+- [ ] 未固定或隐式补充 EM/NVT/NPT/production；
+- [ ] protocol、plan 与 Workstream route 已区分；
 - [ ] plan 可修订且旧版本不覆盖；
-- [ ] 每个 run unit 的 input、execution、status、output validation 已分离；
+- [ ] 每个 run unit 的 input、execution、status 和 output validation 已分离；
 - [ ] 外部任务没有轮询循环；
-- [ ] FINISHED_UNVERIFIED 后才进入输出核验；
-- [ ] 提交成功未表述为模拟完成；
-- [ ] checkpoint/append/maxwarn 未隐式选择；
-- [ ] 已有结果只凭可信 artifact/Validator evidence 跳过；
+- [ ] FINISHED_UNVERIFIED 后才输出核验；
+- [ ] checkpoint、append 和 maxwarn 未隐式选择；
 - [ ] 每次 execution decision 只有一个 task unit；
-- [ ] 未执行或模拟子 Skill；
-- [ ] Workflow exit 要求 VALIDATED MDOUTPUT；
+- [ ] 新 TPR 未错误归回 md_preparation；
+- [ ] Workflow exit 要求 VALIDATED MD_OUTPUT；
 - [ ] 技术完成未夸大为科学收敛。
