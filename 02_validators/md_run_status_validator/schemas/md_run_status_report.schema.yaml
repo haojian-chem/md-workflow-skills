@@ -1,0 +1,74 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_run_status_report.schema.yaml
+title: MD Run Status Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - run_unit_id
+  - submission_id
+  - checked_at
+  - backend
+  - previous_status
+  - raw_backend_state
+  - evidence
+  - recommended_status
+  - outcome_code
+  - warnings
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  run_unit_id: {type: string, minLength: 1}
+  submission_id: {type: string, minLength: 1}
+  checked_at: {type: string, format: date-time}
+  backend:
+    type: object
+    required: [type, host, session_name, job_id]
+    properties:
+      type: {enum: [LOCAL, TMUX, LSF, SLURM, PBS]}
+      host: {type: [string, 'null']}
+      session_name: {type: [string, 'null']}
+      job_id: {type: [string, 'null']}
+    additionalProperties: false
+  previous_status:
+    enum: [SUBMITTED, RUNNING, UNKNOWN]
+  raw_backend_state: {type: [string, 'null']}
+  evidence:
+    type: object
+    required: [active, normal_terminal, failure, cancelled, unknown]
+    properties:
+      active:
+        type: array
+        items: {type: string}
+      normal_terminal:
+        type: array
+        items: {type: string}
+      failure:
+        type: array
+        items: {type: string}
+      cancelled:
+        type: array
+        items: {type: string}
+      unknown:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+  recommended_status:
+    enum: [RUNNING, FINISHED_UNVERIFIED, FAILED, CANCELLED, UNKNOWN]
+  outcome_code:
+    enum:
+      - RUN_STILL_ACTIVE
+      - RUN_FINISHED_UNVERIFIED
+      - RUN_FAILED_WITH_EVIDENCE
+      - RUN_CANCELLED_WITH_EVIDENCE
+      - RUN_STATUS_UNKNOWN
+      - SUBMISSION_RECORD_MISMATCH
+      - STATUS_INPUT_INCOMPLETE
+      - BACKEND_STATUS_CHECK_UNAVAILABLE
+      - STATUS_VALIDATOR_INTERNAL_FAILURE
+  warnings:
+    type: array
+    items: {type: string}
+additionalProperties: false
