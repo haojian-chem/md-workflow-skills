@@ -1,0 +1,105 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_simulation_plan_validation_report.schema.yaml
+title: MD Simulation Plan Validation Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - protocol_spec
+  - plan
+  - system_artifact_set_ids
+  - run_unit_findings
+  - dependency_findings
+  - unresolved_item_findings
+  - revision_findings
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  protocol_spec: {$ref: '#/$defs/file_identity'}
+  plan:
+    allOf:
+      - $ref: '#/$defs/file_identity'
+      - type: object
+        required: [plan_id]
+        properties:
+          plan_id: {type: string, minLength: 1}
+  system_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  run_unit_findings:
+    type: array
+    items:
+      type: object
+      required: [run_unit_id, spec_match, source_valid, path_valid, input_preparation_allowed]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        spec_match: {type: boolean}
+        source_valid: {type: boolean}
+        path_valid: {type: boolean}
+        input_preparation_allowed: {type: boolean}
+      additionalProperties: false
+  dependency_findings:
+    type: object
+    required: [ids_unique, references_valid, acyclic, start_state_references_valid]
+    properties:
+      ids_unique: {type: boolean}
+      references_valid: {type: boolean}
+      acyclic: {type: boolean}
+      start_state_references_valid: {type: boolean}
+    additionalProperties: false
+  unresolved_item_findings:
+    type: array
+    items:
+      type: object
+      required: [item_id, blocking_stage, classification_valid]
+      properties:
+        item_id: {type: string, minLength: 1}
+        blocking_stage: {enum: [PLAN_VALIDATION, INPUT_PREPARATION, EXECUTION]}
+        classification_valid: {type: boolean}
+      additionalProperties: false
+  revision_findings:
+    type: object
+    required: [is_revision, supersedes_valid, revision_reason_present, old_plan_unchanged]
+    properties:
+      is_revision: {type: boolean}
+      supersedes_valid: {type: boolean}
+      revision_reason_present: {type: boolean}
+      old_plan_unchanged: {type: boolean}
+    additionalProperties: false
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - SIMULATION_PLAN_VALIDATED
+      - SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED
+      - PLAN_SPEC_MISMATCH
+      - PLAN_DAG_INVALID
+      - PLAN_START_STATE_INVALID
+      - PLAN_SOURCE_OR_HASH_MISMATCH
+      - PLAN_DECISION_PROVENANCE_MISMATCH
+      - PLAN_UNRESOLVED_ITEM_MISCLASSIFIED
+      - PLAN_REVISION_CHAIN_INVALID
+      - PLAN_PATH_CONFLICT
+      - PLAN_VALIDATOR_INPUT_INCOMPLETE
+      - PLAN_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [ACCEPT_PLAN, REJECT_PLAN, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: true
