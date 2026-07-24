@@ -9,6 +9,7 @@ required:
   - protocol_spec
   - plan
   - system_artifact_set_ids
+  - field_provenance_coverage
   - run_unit_findings
   - dependency_findings
   - unresolved_item_findings
@@ -20,27 +21,61 @@ properties:
   schema_version: {type: integer, const: 1}
   task_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
-  protocol_spec: {$ref: '#/$defs/file_identity'}
+  protocol_spec:
+    type: object
+    required: [spec_id, path, sha256, validator_task_id, validation_outcome]
+    properties:
+      spec_id: {type: string, minLength: 1}
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      validator_task_id: {type: string, minLength: 1}
+      validation_outcome:
+        enum:
+          - SIMULATION_PROTOCOL_VALIDATED
+          - SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
+    additionalProperties: false
   plan:
-    allOf:
-      - $ref: '#/$defs/file_identity'
-      - type: object
-        required: [plan_id]
-        properties:
-          plan_id: {type: string, minLength: 1}
+    type: object
+    required: [plan_id, path, sha256]
+    properties:
+      plan_id: {type: string, minLength: 1}
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
   system_artifact_set_ids:
     type: array
     minItems: 1
     uniqueItems: true
     items: {type: string, minLength: 1}
+  field_provenance_coverage:
+    type: object
+    required: [required_field_count, covered_field_count, uncovered_field_paths, complete]
+    properties:
+      required_field_count: {type: integer, minimum: 0}
+      covered_field_count: {type: integer, minimum: 0}
+      uncovered_field_paths:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      complete: {type: boolean}
+    additionalProperties: false
   run_unit_findings:
     type: array
     items:
       type: object
-      required: [run_unit_id, spec_match, source_valid, path_valid, input_preparation_allowed]
+      required:
+        - run_unit_id
+        - protocol_match
+        - source_valid
+        - path_valid
+        - input_preparation_allowed
       properties:
         run_unit_id: {type: string, minLength: 1}
-        spec_match: {type: boolean}
+        protocol_match: {type: boolean}
         source_valid: {type: boolean}
         path_valid: {type: boolean}
         input_preparation_allowed: {type: boolean}
@@ -58,10 +93,14 @@ properties:
     type: array
     items:
       type: object
-      required: [item_id, blocking_stage, classification_valid]
+      required: [item_id, blocking_stage, affected_field_paths, classification_valid]
       properties:
         item_id: {type: string, minLength: 1}
         blocking_stage: {enum: [PLAN_VALIDATION, INPUT_PREPARATION, EXECUTION]}
+        affected_field_paths:
+          type: array
+          minItems: 1
+          items: {type: string, minLength: 1}
         classification_valid: {type: boolean}
       additionalProperties: false
   revision_findings:
@@ -80,7 +119,9 @@ properties:
     enum:
       - SIMULATION_PLAN_VALIDATED
       - SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED
+      - PLAN_PROTOCOL_NOT_VALIDATED
       - PLAN_SPEC_MISMATCH
+      - PLAN_FIELD_PROVENANCE_INCOMPLETE
       - PLAN_DAG_INVALID
       - PLAN_START_STATE_INVALID
       - PLAN_SOURCE_OR_HASH_MISMATCH
@@ -93,13 +134,3 @@ properties:
   gate_recommendation:
     enum: [ACCEPT_PLAN, REJECT_PLAN, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
 additionalProperties: false
-$defs:
-  file_identity:
-    type: object
-    required: [path, sha256]
-    properties:
-      path: {type: string, minLength: 1}
-      sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-    additionalProperties: true
