@@ -1,0 +1,158 @@
+schema_version: 1
+skill_name: md_simulation_workflow
+cases:
+  - case_id: single_em_to_output_validation
+    purpose: positive_route_fragment
+    input:
+      scope: {start: execute_run_unit:em.1, end: validate_run_unit_output:em.1}
+      run_units:
+        - run_unit_id: em.1
+          role: ENERGY_MINIMIZATION
+          depends_on: []
+          md_input_validated: true
+    expected:
+      fragment_status: COMPLETE
+      step_ids:
+        - execute_run_unit:em.1
+        - check_run_unit_status:em.1
+        - validate_run_unit_output:em.1
+      completion_validator_included: false
+
+  - case_id: segmented_production_to_workflow_exit
+    purpose: positive_dynamic_route
+    input:
+      scope: {start: execute_run_unit:md.1, end: WORKFLOW_EXIT}
+      run_units:
+        - {run_unit_id: md.1, role: PRODUCTION, depends_on: [], md_input_validated: true}
+        - {run_unit_id: md.2, role: PRODUCTION, depends_on: [md.1], md_input_validated: true}
+    expected:
+      fragment_status: COMPLETE
+      ordered_run_units: [md.1, md.2]
+      completion_validator_included: true
+
+  - case_id: nonstandard_equilibration_sequence
+    purpose: no_fixed_nvt_npt_assumption
+    input:
+      scope: {start: WORKFLOW_ENTRY, end: WORKFLOW_EXIT}
+      run_units:
+        - {run_unit_id: eq.restraint.1, role: EQUILIBRATION, depends_on: [], md_input_validated: true}
+        - {run_unit_id: eq.release.1, role: EQUILIBRATION, depends_on: [eq.restraint.1], md_input_validated: true}
+        - {run_unit_id: prod.a, role: PRODUCTION, depends_on: [eq.release.1], md_input_validated: true}
+    expected:
+      fragment_status: COMPLETE
+      ordered_run_units: [eq.restraint.1, eq.release.1, prod.a]
+      invented_default_steps: []
+
+  - case_id: unresolved_run_unit_scope
+    purpose: blocking_scope
+    input:
+      scope: {start: WORKFLOW_ENTRY, end: WORKFLOW_EXIT}
+      run_units: []
+    expected:
+      fragment_status: BLOCKED
+      blocker_code: SIMULATION_RUN_UNITS_UNRESOLVED
+
+  - case_id: circular_run_unit_dependencies
+    purpose: dependency_cycle
+    input:
+      scope: {start: WORKFLOW_ENTRY, end: WORKFLOW_EXIT}
+      run_units:
+        - {run_unit_id: md.1, role: PRODUCTION, depends_on: [md.2], md_input_validated: true}
+        - {run_unit_id: md.2, role: PRODUCTION, depends_on: [md.1], md_input_validated: true}
+    expected:
+      fragment_status: BLOCKED
+      blocker_code: RUN_UNIT_DEPENDENCY_CYCLE
+
+  - case_id: invalid_md_input
+    purpose: missing_entry_artifact
+    input:
+      current_run_unit: md.1
+      md_input_validated: false
+    expected:
+      decision: BLOCKED
+      next_task_unit: null
+
+  - case_id: async_submission_running
+    purpose: external_wait
+    input:
+      current_run_unit: md.1
+      submission_status: RUNNING
+      status_evidence_fresh: true
+      status_check_requested: false
+    expected:
+      decision: PAUSE
+      next_task_unit: null
+
+  - case_id: async_status_refresh_required
+    purpose: on_demand_status_check
+    input:
+      current_run_unit: md.1
+      submission_status: UNKNOWN
+      status_check_requested: true
+    expected:
+      decision: EXECUTE
+      task_unit_mode: VALIDATOR
+      validator: md_run_status_validator
+
+  - case_id: finished_unverified_requires_output_validation
+    purpose: output_gate
+    input:
+      current_run_unit: md.1
+      submission_status: FINISHED_UNVERIFIED
+    expected:
+      decision: EXECUTE
+      task_unit_mode: VALIDATOR
+      validator: md_run_output_validator
+
+  - case_id: synchronous_run_skips_status_check
+    purpose: conditional_skip
+    input:
+      current_run_unit: em.1
+      execution_mode: SYNCHRONOUS
+      process_terminal_evidence: true
+    expected:
+      decision: SKIP
+      skipped_substep: check_run_unit_status:em.1
+
+  - case_id: continuation_policy_missing
+    purpose: blocking_continuation
+    input:
+      current_run_unit: md.1
+      restart_mode: CONTINUE_FROM_CHECKPOINT
+      checkpoint_present: true
+      append_mode: null
+    expected:
+      decision: PAUSE
+      confirmation_category: MD_RESTART_POLICY
+
+  - case_id: validated_existing_run_unit
+    purpose: safe_skip_existing_result
+    input:
+      current_run_unit: md.1
+      validated_md_output_equivalent: true
+      artifact_not_invalidated: true
+    expected:
+      decision: SKIP
+      skipped_substep: execute_run_unit:md.1
+
+  - case_id: directory_exists_without_records
+    purpose: negative_directory_inference
+    input:
+      current_run_unit: md.1
+      directory_exists: true
+      task_result_present: false
+      artifact_evidence_present: false
+    expected:
+      decision: BLOCKED
+      reason_contains: recovery
+
+  - case_id: workflow_exit_ready
+    purpose: completion_gate
+    input:
+      all_required_run_units_validated: true
+      unresolved_submission_count: 0
+      completion_validator_passed: true
+      final_md_output_validated: true
+    expected:
+      decision: COMPLETE
+      workflow_status: DONE
