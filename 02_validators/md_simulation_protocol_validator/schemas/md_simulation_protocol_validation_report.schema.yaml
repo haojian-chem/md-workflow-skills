@@ -1,0 +1,116 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_simulation_protocol_validation_report.schema.yaml
+title: MD Simulation Protocol Validation Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - protocol_spec
+  - system_artifact_set_ids
+  - decision_findings
+  - field_provenance_findings
+  - run_unit_findings
+  - unresolved_item_findings
+  - revision_findings
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  protocol_spec:
+    type: object
+    required: [spec_id, path, sha256]
+    properties:
+      spec_id: {type: string, minLength: 1}
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
+  system_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  decision_findings:
+    type: array
+    items:
+      type: object
+      required: [decision_id, status, applicable, resolution_matches_spec]
+      properties:
+        decision_id: {type: string, minLength: 1}
+        status: {enum: [RESOLVED, WITHDRAWN, SUPERSEDED, OPEN]}
+        applicable: {type: boolean}
+        resolution_matches_spec: {type: boolean}
+      additionalProperties: false
+  field_provenance_findings:
+    type: object
+    required: [required_field_count, covered_field_count, uncovered_field_paths, implicit_field_paths]
+    properties:
+      required_field_count: {type: integer, minimum: 0}
+      covered_field_count: {type: integer, minimum: 0}
+      uncovered_field_paths:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      implicit_field_paths:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+    additionalProperties: false
+  run_unit_findings:
+    type: array
+    items:
+      type: object
+      required: [run_unit_id, explicitly_supported, dependency_valid, mdp_identity_valid, start_state_valid]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        explicitly_supported: {type: boolean}
+        dependency_valid: {type: boolean}
+        mdp_identity_valid: {type: boolean}
+        start_state_valid: {type: boolean}
+      additionalProperties: false
+  unresolved_item_findings:
+    type: array
+    items:
+      type: object
+      required: [item_id, blocking_stage, affected_field_paths, classification_valid]
+      properties:
+        item_id: {type: string, minLength: 1}
+        blocking_stage: {enum: [PLAN_VALIDATION, INPUT_PREPARATION, EXECUTION]}
+        affected_field_paths:
+          type: array
+          minItems: 1
+          items: {type: string, minLength: 1}
+        classification_valid: {type: boolean}
+      additionalProperties: false
+  revision_findings:
+    type: object
+    required: [is_revision, supersedes_valid, old_spec_unchanged]
+    properties:
+      is_revision: {type: boolean}
+      supersedes_valid: {type: boolean}
+      old_spec_unchanged: {type: boolean}
+    additionalProperties: false
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - SIMULATION_PROTOCOL_VALIDATED
+      - SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
+      - SIMULATION_PROTOCOL_SPEC_MISMATCH
+      - SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED
+      - SIMULATION_PROTOCOL_DECISION_PROVENANCE_MISMATCH
+      - SIMULATION_PROTOCOL_SOURCE_HASH_MISMATCH
+      - SIMULATION_PROTOCOL_RUN_UNIT_OR_DEPENDENCY_INVALID
+      - SIMULATION_PROTOCOL_UNRESOLVED_ITEM_MISCLASSIFIED
+      - SIMULATION_PROTOCOL_REVISION_INVALID
+      - SIMULATION_PROTOCOL_VALIDATOR_INPUT_INCOMPLETE
+      - SIMULATION_PROTOCOL_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [ACCEPT_PROTOCOL, REJECT_PROTOCOL, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
