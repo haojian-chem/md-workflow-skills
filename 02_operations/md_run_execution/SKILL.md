@@ -1,46 +1,46 @@
 ---
 name: md_run_execution
-description: 根据不可变的 md_run_execution_spec，在授权的 run unit 目录内同步执行或向 LOCAL、TMUX、LSF、SLURM、PBS backend 异步提交一个 GROMACS mdrun，并记录命令、输入身份和提交证据。该 Operation 不生成新的模拟参数，不判断输出是否通过，也不轮询任务完成。
+description: 根据不可变 md_run_execution_spec、validated simulation plan 和 VALIDATED MD_INPUT，在授权 run unit 目录内同步执行或向 LOCAL、TMUX、LSF、SLURM、PBS backend 异步提交一个 GROMACS mdrun，并记录命令和提交证据。该 Operation 不生成运行输入、不判断输出是否通过，也不轮询任务完成。
 ---
 
 # 目标
 
-执行 `md_simulation_workflow` 中一个明确的 run unit：
+执行 `md_simulation_workflow` 中一个已经完成 input validation 的 run unit：
 
-- 核验 execution spec、输入和路径；
+- 核验 plan、execution spec 和 MDINPUT provenance；
 - 为 GROMACS `mdrun` 构建无 shell 隐式解释的命令；
 - 同步运行短任务，或异步提交长任务；
 - 记录可恢复、可审计的 command 和 submission evidence；
-- 将后续状态检查与输出验证交给专属 Validators。
+- 将后续状态检查与输出验证交给 Validators。
 
 # 职责边界
 
 负责：
 
-- 读取一个符合本 Skill schema 的 immutable execution spec；
-- 核验 run unit、Workstream、task、MD_INPUT 和 checkpoint 身份；
+- 读取 immutable execution spec；
+- 核验 plan/run unit/task/Workstream 身份；
+- 核验 MDINPUT artifact、input manifest、`.tpr` 和 continuation checkpoint；
 - 核验 backend、工作目录、资源和输出冲突；
-- 记录 GROMACS executable 和版本；
+- 记录 executable/version；
 - 使用 argv 或受控 backend adapter 执行，不拼接任意 shell 字符串；
 - 同步执行或异步提交一次；
-- 捕获 PID、tmux session 或 scheduler job ID 等提交证据；
+- 捕获 PID、tmux session 或 scheduler job ID；
 - 写 operation report、command record、execution log 和 submission evidence；
-- 返回 Operation component result。
+- 返回 Operation result。
 
 不负责：
 
-- 创建或修改 `.mdp`、`.tpr`、topology、structure 或 checkpoint；
-- 根据文件名猜测输入；
-- 根据 run unit role 补充默认参数；
-- 选择路线、下一个 run unit 或 Workstream；
-- 自动选择 continuation checkpoint；
-- 自动选择 `append` 或 `noappend`；
-- 高频轮询外部任务；
-- 判断能量最小化、平衡或生产模拟是否通过；
-- 修改 `00_project_state/**` 或 `00_project_records/**`；
-- 直接创建 submission record；
-- 覆盖其他 task 或既有有效 run unit 输出；
-- 创建其他子 Agent或直接向用户提问。
+- 创建或修改 protocol spec、plan、`.mdp`、`.tpr`、topology、structure 或 checkpoint；
+- 运行 `grompp`；
+- 根据文件名或时间戳猜测输入；
+- 根据 role 补充参数；
+- 选择路线或下一个 run unit；
+- 自动选择 checkpoint、append/noappend；
+- 高频轮询；
+- 判断 EM、平衡或 production 输出是否通过；
+- 写 Manager 状态/记录或直接创建 submission record；
+- 覆盖既有有效输出；
+- 创建其他子 Agent 或直接向用户提问。
 
 # 输入
 
@@ -54,170 +54,155 @@ validator: null
 任务必须提供：
 
 - 唯一 `md_run_execution_spec.yaml`；
-- spec 引用的 VALIDATED MD_INPUT file records；
-- continuation 时使用的 checkpoint file record；
-- allowed read/write paths；
-- forbidden management paths；
-- operation report、log 和 result data 路径。
+- validated `md_simulation_plan` 和 plan validation evidence；
+- spec 引用的 VALIDATED MDINPUT artifact records；
+- `md_run_input_manifest.yaml` 和 input validation report；
+- `.tpr` file record；
+- continuation 时明确 checkpoint record；
+- allowed read/write、forbidden paths 和 detail output paths。
 
-execution spec 权威 schema：
+execution spec schema：
 
 ```text
 schemas/md_run_execution_spec.schema.yaml
 ```
 
-spec 必须作为不可变 task input。Operation 不得根据自然语言临时补全缺失字段。
+spec 必须作为不可变 task input。Operation 不得从自然语言补全缺失字段。
 
 # 读写权限
 
-只允许写：
+只允许写 task 授权的：
 
 ```text
 04_md_simulation/<run_unit_id>/**
 ```
 
-且必须受 task `allowed_write_paths` 约束。
-
 只读：
 
 - execution spec；
-- VALIDATED MD_INPUT；
-- 明确 continuation checkpoint；
-- backend 可执行程序和明确提交脚本；
-- task 指定的必要环境信息。
+- validated plan；
+- VALIDATED MDINPUT、input manifest 和 validation evidence；
+- 明确 checkpoint；
+- backend executable/submission script；
+- task 指定环境信息。
 
-禁止：
-
-- 修改任何输入文件；
-- 写管理目录；
-- 写其他 run unit 目录；
-- 跟随指向未授权路径的 symlink；
-- 在未明确授权的远程 host 执行命令。
+禁止修改输入、写管理目录/其他 run unit、跟随未授权 symlink，或在未授权 host 执行。
 
 # Preflight
 
 必须依次确认：
 
-1. task、Workstream 和 run unit IDs 一致；
+1. task、Workstream、plan 和 run unit IDs 一致；
 2. execution spec schema 有效；
-3. `engine` 为当前支持的 `GROMACS`；
-4. `.tpr` file identity 与 task 中 VALIDATED MD_INPUT 一致；
-5. spec 中所有输入 SHA-256 与实际文件一致；
-6. continuation 模式下 checkpoint 存在、可读且 hash 一致；
-7. fresh 模式下没有隐式 checkpoint；
-8. `append_mode` 与 restart mode 组合有效；
-9. 工作目录位于 allowed write paths；
-10. source、spec 和目标输出不是同一路径；
-11. 不存在未解决的活动进程、submission 或输出覆盖冲突；
-12. GROMACS executable 可解析，并记录实际版本；
-13. backend 类型受支持；
-14. backend 所需 session name、script、host 或资源字段完整；
-15. command 使用结构化 argv，不含 shell control operator；
-16. 输出前缀和 expected outputs 唯一；
-17. 首个外部长任务提交所需 FULL runtime validation evidence 已由 Manager 提供。
+3. plan 已验证且未被 superseded/invalidated；
+4. run unit 存在于 plan；
+5. execution spec 的 role/dependencies/work directory 与 plan 一致；
+6. MDINPUT artifact 为 VALIDATED；
+7. input manifest、`.tpr` identities 与 execution spec/task 一致；
+8. input validation outcome 允许执行；
+9. `engine` 为 GROMACS；
+10. spec 中所有 input hashes 与实际文件一致；
+11. continuation checkpoint 可读且 hash 一致；
+12. fresh 模式不存在隐式 checkpoint；
+13. append mode 与 restart mode 有效；
+14. EXECUTION 类 blocking unresolved items 已解决；
+15. work directory 位于 allowed write paths；
+16. source/spec/target 不同路径；
+17. 不存在未解决 active process、submission 或输出覆盖冲突；
+18. executable 可解析并记录实际版本；
+19. backend 所需字段完整；
+20. command 为结构化 argv，不含 shell control operator；
+21. output prefix/expected outputs 唯一；
+22. 首个外部长任务提交所需 FULL runtime validation evidence 已提供。
 
-任一 blocking preflight 失败时返回 BLOCKED，不执行或提交部分任务。
+任一 blocking preflight 失败时返回 BLOCKED，不执行或提交。
 
 # 命令构建
 
-## GROMACS 命令
+命令必须由 execution spec 构建，至少包含：
 
-命令必须由 execution spec 中的结构化字段构建，至少包含：
-
-- GROMACS executable；
-- `mdrun`；
+- executable + `mdrun`；
 - 明确 `.tpr`；
-- 明确 output prefix 或 `deffnm`；
-- 明确 continuation/checkpoint 参数，如适用；
-- 明确 append policy，如适用；
-- 明确并行和 GPU 参数，如适用。
+- output prefix/deffnm；
+- checkpoint/continuation 参数，如适用；
+- append policy，如适用；
+- 并行/GPU/资源参数，如适用。
 
-不得：
+不得执行 `eval`、未审查的 `bash -c`、自由文本 shell 拼接，或自动增加 `-cpi/-append/-noappend/-maxh` 等字段。
 
-- 执行 `eval`；
-- 使用未审查的 `bash -c`；
-- 将自由文本直接拼入 shell；
-- 在 Operation 内自动增加 `-cpi`、`-append`、`-noappend`、`-maxh` 或资源参数。
-
-## Backend
+# Backend
 
 v1 支持：
 
 ```text
-LOCAL
-TMUX
-LSF
-SLURM
-PBS
+LOCAL | TMUX | LSF | SLURM | PBS
 ```
 
-`OTHER` 必须 BLOCKED，除非后续 contract 明确扩展。
-
-- `LOCAL + SYNCHRONOUS`：当前进程等待 `mdrun` 结束；
-- `LOCAL + ASYNCHRONOUS`：必须返回可检查 PID 和日志路径；
-- `TMUX`：session name 必须唯一且显式；
-- scheduler：提交脚本必须作为有 hash 的只读输入，捕获 job ID；
-- backend 不得通过“命令似乎执行成功”推测 job 已接受，必须有接受证据。
+- `LOCAL + SYNCHRONOUS`：当前进程等待结束；
+- `LOCAL + ASYNCHRONOUS`：返回可检查 PID/log；
+- `TMUX`：session name 唯一且显式；
+- scheduler：submission script 是有 hash 的只读输入，捕获 job ID；
+- backend 必须提供接受证据，不能仅凭提交命令 return code 推测成功；
+- `OTHER` 在 contract 扩展前 BLOCKED。
 
 # 执行流程
 
-1. 解析 task、权限和 execution spec；
+1. 解析 task、权限、plan、MDINPUT 和 execution spec；
 2. 执行完整 preflight；
-3. 创建临时 command record 和 operation report；
-4. 记录 executable、版本、环境摘要和输入 hashes；
-5. 构建最终 argv 或受控 backend submission；
-6. 在目标 run unit 目录执行一次同步运行或异步提交；
-7. 捕获退出码、PID/session/job ID 和 backend 原始返回；
-8. 核验提交是否被 backend 接受，或同步进程是否已结束；
-9. 写 submission evidence 和 execution log；
-10. 重新读取本 Operation 生成的结构化文件并完成最小 parse/hash 检查；
-11. 原子提交业务记录文件；
-12. 返回 Operation result。
+3. 创建临时 command record/report；
+4. 记录 plan/input manifest/TPR/checkpoint identities；
+5. 记录 executable/version/environment 摘要；
+6. 构建最终 argv 或受控 backend submission；
+7. 在目标目录执行一次同步运行或异步提交；
+8. 捕获退出码、PID/session/job ID 和 backend raw evidence；
+9. 核验同步结束或 backend acceptance；
+10. 写 submission evidence 和 execution log；
+11. 重新读取结构化输出并进行最小 parse/hash 检查；
+12. 原子提交业务记录文件；
+13. 返回 Operation result。
 
-# 同步运行结果
+# 同步运行
 
 同步进程结束后：
 
-- 退出码为零不表示 MD_OUTPUT 已通过；
-- Operation 只返回 `PROCESS_FINISHED_UNVERIFIED`；
-- 不创建 VALIDATED MD_OUTPUT；
+- return code 0 不表示 MDOUTPUT 通过；
+- Operation 返回 `PROCESS_FINISHED_UNVERIFIED`；
+- 不创建 VALIDATED MDOUTPUT；
 - 后续必须执行 `md_run_output_validator`。
 
-非零退出码且有明确 process failure evidence 时返回 FAILED，并保留日志。
+非零 return code 且有明确 failure evidence 时返回 FAILED 并保留日志。
 
-# 异步提交结果
+# 异步提交
 
-backend 接受任务后：
+backend 接受后：
 
-- Operation 返回 `SUBMISSION_ACCEPTED`；
-- report 中提供 Manager 创建 submission record 所需候选字段；
-- 不等待任务完成；
-- 不启动轮询；
-- 不创建 MD_OUTPUT artifact candidate。
+- 返回 `SUBMISSION_ACCEPTED`；
+- report 提供 Manager 创建 submission record 所需候选字段；
+- 不等待、不轮询、不创建 MDOUTPUT。
 
-若提交命令完成但无法解析 job/session/PID，返回 `SUBMISSION_ID_UNRESOLVED`，不得假定提交成功。
+若无法解析 PID/session/job ID，返回 `SUBMISSION_ID_UNRESOLVED`，不得假定成功。
 
 # 输出目录
 
-默认：
-
 ```text
 04_md_simulation/<run_unit_id>/
-├── md_run_execution_spec.yaml       # task 输入的受控副本或引用，可选
+├── md_run_execution_spec.yaml
 ├── command_record.yaml
 ├── md_run_execution_report.yaml
 ├── submission_evidence.yaml
 └── execution.log
 ```
 
-engine 输出文件由 GROMACS 写入同一 run unit 目录，文件名必须与 spec 一致。
+engine 输出文件名必须与 spec 一致。
 
 # Outcome codes
 
 - `SUBMISSION_ACCEPTED`；
 - `PROCESS_FINISHED_UNVERIFIED`；
 - `EXECUTION_SPEC_MISSING_OR_INVALID`；
-- `INPUT_ARTIFACT_MISMATCH`；
+- `SIMULATION_PLAN_INVALID_OR_STALE`；
+- `MD_INPUT_NOT_VALIDATED`；
+- `INPUT_MANIFEST_OR_TPR_MISMATCH`；
 - `CHECKPOINT_MISSING_OR_MISMATCH`；
 - `RESTART_POLICY_UNRESOLVED`；
 - `OUTPUT_CONFLICT`；
@@ -229,49 +214,41 @@ engine 输出文件由 GROMACS 写入同一 run unit 目录，文件名必须与
 
 # 返回
 
-返回符合：
-
-```text
-03_contracts/subagent_result.schema.yaml
-```
-
-的独立 `operation_result`。
+返回共享 `subagent_result` 的独立 `operation_result`。
 
 成功提交或同步结束时：
 
 - `status: DONE`；
 - `artifact_candidates: []`；
-- `created_files` 包含 command record、report、submission evidence 和 log；
-- `next_step_recommendation` 指向等待/状态检查或输出验证；
+- created files 包含 command/report/submission evidence/log；
+- next recommendation 指向等待/状态或输出验证；
 - 不自行写 submission record。
 
 # 失败与恢复
 
-- BLOCKED：没有启动进程或提交任务；
-- FAILED：保留已产生的日志和 failure evidence；
-- 异步提交是否实际存在不明确时，不允许自动重提；必须先执行恢复或状态检查；
-- task 中断后若已出现 PID/session/job evidence，恢复流程必须按“可能已经提交”处理；
-- 不删除已有 engine 输出；
-- 不自动修改 spec 后重试；
-- 同一 task 幂等复用必须核验 command、input 和 evidence hashes。
+- BLOCKED：没有启动或提交；
+- FAILED：保留日志/failure evidence；
+- submission 是否存在不明确时不得自动重提，先恢复/状态检查；
+- task 中断后出现 PID/session/job evidence 时按“可能已提交”处理；
+- 不删除 engine 输出；
+- 不自动修改 spec 重试；
+- 幂等复用必须核验 command/input/evidence hashes。
 
 # Tool candidate
 
-跨 backend 的安全提交、job ID 解析和状态检查具有重复、确定性和高风险特征，建议主窗口向 Tool Authoring 提交 `external_submission_adapter` tool request。
-
-该 Tool 未 ACTIVE 前，本 Skill 只能处于 contract draft 或使用经权威实现明确测试的内建执行路径，不能把未来 Tool 当作默认可运行能力。
+跨 backend 安全提交、job ID 解析和状态查询应由 `external_submission_adapter` 确定性 Tool 提供。该 Tool 未 ACTIVE 前，本 Skill 仍是 contract draft，不能将未来能力作为默认生产路径。
 
 # 自检
 
-- [ ] execution spec 是显式不可变输入；
-- [ ] 没有修改 MD_INPUT 或 checkpoint；
-- [ ] continuation 和 append policy 均明确；
-- [ ] 命令没有自由文本 shell 拼接；
-- [ ] backend 接受证据已记录；
-- [ ] 提交成功没有被写成模拟完成；
-- [ ] 同步退出码没有代替 output validation；
-- [ ] 没有轮询外部任务；
-- [ ] 没有覆盖其他 task/run unit 输出；
-- [ ] 没有写管理目录；
-- [ ] 没有返回 VALIDATED MD_OUTPUT；
-- [ ] 没有自动重试不明确的 submission。
+- [ ] plan 有效且 run unit 一致；
+- [ ] MDINPUT 已验证；
+- [ ] input manifest/TPR/checkpoint hashes 一致；
+- [ ] execution spec 是不可变输入；
+- [ ] 未修改或生成 MDINPUT；
+- [ ] continuation/append policy 明确；
+- [ ] 命令无自由文本 shell 拼接；
+- [ ] backend acceptance evidence 已记录；
+- [ ] 提交/同步结束未写成输出通过；
+- [ ] 没有轮询、覆盖或自动重提；
+- [ ] 未写管理目录；
+- [ ] 未返回 VALIDATED MDOUTPUT。
