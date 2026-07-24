@@ -1,18 +1,49 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_simulation_plan_materialization
 cases:
-  - case_id: single_em_from_validated_system
+  - case_id: single_em_from_validated_protocol
     purpose: positive_first_plan
     input:
+      protocol_validated: true
       system_validated: true
+      field_provenance_complete: true
       run_units:
         - {run_unit_id: em.1, role: ENERGY_MINIMIZATION, depends_on: [], start_state: SYSTEM}
       plan_validation_unresolved: []
     expected: {status: DONE, outcome_code: SIMULATION_PLAN_MATERIALIZED}
 
+  - case_id: validated_protocol_with_execution_deferred
+    purpose: deferred_execution_decision
+    input:
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
+      unresolved_items:
+        - {item_id: backend.1, blocking_stage: EXECUTION, affected_field_paths: [run_units.md.1.execution_policy.backend_type]}
+    expected: {status: DONE, outcome_code: SIMULATION_PLAN_MATERIALIZED_WITH_EXECUTION_UNRESOLVED}
+
+  - case_id: protocol_not_validated
+    purpose: protocol_gate
+    input: {protocol_validation_result_present: false}
+    expected: {status: BLOCKED, outcome_code: PROTOCOL_SPEC_NOT_VALIDATED}
+
+  - case_id: rejected_protocol_cannot_materialize
+    purpose: protocol_outcome_gate
+    input: {protocol_validation_outcome: SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED}
+    expected: {status: BLOCKED, outcome_code: PROTOCOL_SPEC_NOT_VALIDATED}
+
+  - case_id: stale_protocol
+    purpose: protocol_lifecycle
+    input: {protocol_validated: true, protocol_superseded: true}
+    expected: {status: BLOCKED, outcome_code: PROTOCOL_SPEC_NOT_VALIDATED}
+
+  - case_id: protocol_field_provenance_incomplete
+    purpose: provenance_gate
+    input: {protocol_validated: true, field_provenance_complete: false}
+    expected: {status: BLOCKED, outcome_code: PROTOCOL_FIELD_PROVENANCE_INCOMPLETE}
+
   - case_id: nonstandard_equilibration_sequence_preserved
     purpose: no_default_protocol
     input:
+      protocol_validated: true
       run_units:
         - {run_unit_id: eq.restraint, role: EQUILIBRATION, depends_on: [], start_state: SYSTEM}
         - {run_unit_id: eq.release, role: EQUILIBRATION, depends_on: [eq.restraint], start_state: PRIOR_RUN_OUTPUT}
@@ -23,56 +54,54 @@ cases:
   - case_id: segmented_production_dag
     purpose: positive_dependencies
     input:
+      protocol_validated: true
       run_units:
         - {run_unit_id: md.1, role: PRODUCTION, depends_on: [], start_state: SYSTEM}
         - {run_unit_id: md.2, role: PRODUCTION, depends_on: [md.1], start_state: PRIOR_RUN_OUTPUT}
     expected: {status: DONE, dependency_order: [md.1, md.2]}
 
-  - case_id: execution_backend_unresolved_allowed
-    purpose: deferred_execution_decision
-    input:
-      unresolved_items:
-        - {item_id: backend.1, blocking_stage: EXECUTION}
-    expected: {status: DONE, outcome_code: SIMULATION_PLAN_MATERIALIZED_WITH_EXECUTION_UNRESOLVED}
-
   - case_id: input_source_unresolved_deferred
     purpose: deferred_input_gate
     input:
+      protocol_validated: true
       unresolved_items:
-        - {item_id: index.selection, blocking_stage: INPUT_PREPARATION}
+        - {item_id: index.selection, blocking_stage: INPUT_PREPARATION, affected_field_paths: [run_units.md.1.start_state]}
     expected: {status: DONE, plan_created: true, input_preparation_allowed: false}
 
   - case_id: scientific_parameter_unresolved_blocks_plan
     purpose: plan_barrier
     input:
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
       unresolved_items:
-        - {item_id: temperature.target, blocking_stage: PLAN_VALIDATION}
+        - {item_id: temperature.target, blocking_stage: PLAN_VALIDATION, affected_field_paths: [run_units.eq.1.mdp]}
     expected: {status: BLOCKED, outcome_code: PLAN_VALIDATION_ITEM_UNRESOLVED}
 
   - case_id: system_not_validated
     purpose: invalid_entry_artifact
-    input: {system_validated: false}
+    input: {protocol_validated: true, system_validated: false}
     expected: {status: BLOCKED, outcome_code: SYSTEM_ARTIFACT_INVALID}
 
   - case_id: mdp_hash_mismatch
     purpose: source_identity
-    input: {mdp_declared_hash_matches: false}
+    input: {protocol_validated: true, mdp_declared_hash_matches: false}
     expected: {status: BLOCKED, outcome_code: PROTOCOL_SOURCE_HASH_MISMATCH}
 
   - case_id: duplicate_run_unit_id
     purpose: identifier_collision
-    input: {run_unit_ids: [md.1, md.1]}
+    input: {protocol_validated: true, run_unit_ids: [md.1, md.1]}
     expected: {status: BLOCKED, outcome_code: RUN_UNIT_ID_OR_DEPENDENCY_INVALID}
 
   - case_id: dependency_cycle
     purpose: invalid_dag
     input:
+      protocol_validated: true
       dependencies: {md.1: [md.2], md.2: [md.1]}
     expected: {status: BLOCKED, outcome_code: RUN_UNIT_ID_OR_DEPENDENCY_INVALID}
 
   - case_id: prior_output_not_in_dependency_closure
     purpose: invalid_start_state
     input:
+      protocol_validated: true
       run_unit_id: md.2
       depends_on: []
       source_run_unit_id: md.1
@@ -81,6 +110,7 @@ cases:
   - case_id: plan_revision_preserves_old_plan
     purpose: immutable_revision
     input:
+      protocol_validated: true
       old_plan_id: plan.v1
       old_plan_exists: true
       output_path_is_new: true
@@ -92,12 +122,13 @@ cases:
 
   - case_id: revision_attempts_overwrite
     purpose: output_conflict
-    input: {output_path_already_exists_with_different_hash: true}
+    input: {protocol_validated: true, output_path_already_exists_with_different_hash: true}
     expected: {status: BLOCKED, outcome_code: PLAN_OUTPUT_CONFLICT}
 
   - case_id: run_name_does_not_infer_parameters
     purpose: no_name_semantics
     input:
+      protocol_validated: true
       run_unit_id: npt.1
       pressure_coupling_specified: false
     expected:
@@ -106,5 +137,5 @@ cases:
 
   - case_id: source_files_preserved
     purpose: input_protection
-    input: {source_hashes_before_equal_after: true}
+    input: {protocol_validated: true, source_hashes_before_equal_after: true}
     expected: {source_files_modified: false}
