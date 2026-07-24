@@ -1,0 +1,90 @@
+schema_version: 1
+skill_name: md_simulation_plan_validator
+cases:
+  - case_id: exact_spec_to_plan_match
+    purpose: positive_validation
+    input: {spec_plan_fields_match: true, dag_valid: true, sources_valid: true}
+    expected: {status: DONE, outcome_code: SIMULATION_PLAN_VALIDATED}
+
+  - case_id: valid_plan_with_execution_unresolved
+    purpose: deferred_execution_gate
+    input:
+      unresolved_items:
+        - {item_id: backend.1, blocking_stage: EXECUTION}
+    expected: {status: DONE, outcome_code: SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED}
+
+  - case_id: operation_report_not_trusted
+    purpose: independent_recalculation
+    input:
+      operation_report_says_valid: true
+      actual_plan_missing_run_unit: true
+    expected: {status: DONE, outcome_code: PLAN_SPEC_MISMATCH}
+
+  - case_id: extra_implicit_run_unit
+    purpose: prevent_default_invention
+    input:
+      spec_run_units: [em.1, md.1]
+      plan_run_units: [em.1, nvt.1, npt.1, md.1]
+    expected: {outcome_code: PLAN_SPEC_MISMATCH}
+
+  - case_id: dag_cycle_detected_independently
+    purpose: invalid_dag
+    input: {dependencies: {a: [b], b: [a]}}
+    expected: {outcome_code: PLAN_DAG_INVALID}
+
+  - case_id: start_state_source_missing
+    purpose: invalid_start_state
+    input: {source_type: PRIOR_RUN_OUTPUT, source_run_unit_id: missing}
+    expected: {outcome_code: PLAN_START_STATE_INVALID}
+
+  - case_id: mdp_hash_changed
+    purpose: source_hash
+    input: {mdp_hash_matches: false}
+    expected: {outcome_code: PLAN_SOURCE_OR_HASH_MISMATCH}
+
+  - case_id: system_artifact_mismatch
+    purpose: system_provenance
+    input: {task_system_ids_equal_plan: false}
+    expected: {outcome_code: PLAN_SOURCE_OR_HASH_MISMATCH}
+
+  - case_id: decision_id_not_traceable
+    purpose: decision_provenance
+    input: {all_decision_ids_traceable: false}
+    expected: {outcome_code: PLAN_DECISION_PROVENANCE_MISMATCH}
+
+  - case_id: scientific_parameter_misclassified_as_execution
+    purpose: barrier_classification
+    input:
+      unresolved_item: temperature_target
+      declared_blocking_stage: EXECUTION
+    expected: {outcome_code: PLAN_UNRESOLVED_ITEM_MISCLASSIFIED}
+
+  - case_id: valid_revision_chain
+    purpose: immutable_revision
+    input:
+      old_plan_id: plan.v1
+      new_supersedes: plan.v1
+      revision_reason_present: true
+      old_hash_unchanged: true
+    expected: {outcome_code: SIMULATION_PLAN_VALIDATED}
+
+  - case_id: revision_overwrites_old_path
+    purpose: invalid_revision
+    input: {new_path_equals_old_path: true}
+    expected: {outcome_code: PLAN_REVISION_CHAIN_INVALID}
+
+  - case_id: work_directory_collision
+    purpose: path_conflict
+    input:
+      run_work_directories: [04_md_simulation/md.1, 04_md_simulation/md.1]
+    expected: {outcome_code: PLAN_PATH_CONFLICT}
+
+  - case_id: management_path_used_as_run_directory
+    purpose: forbidden_path
+    input: {work_directory: 00_project_records/tasks/md.1}
+    expected: {outcome_code: PLAN_PATH_CONFLICT}
+
+  - case_id: source_files_unchanged
+    purpose: source_protection
+    input: {source_hashes_unchanged: true}
+    expected: {source_files_modified: false}
