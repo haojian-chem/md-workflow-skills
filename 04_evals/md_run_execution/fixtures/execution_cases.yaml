@@ -1,0 +1,150 @@
+schema_version: 1
+skill_name: md_run_execution
+cases:
+  - case_id: local_sync_em
+    purpose: positive_synchronous_execution
+    input:
+      engine: GROMACS
+      mode: SYNCHRONOUS
+      backend: LOCAL
+      restart_mode: FRESH
+      tpr_validated: true
+      output_conflict: false
+      process_exit_code: 0
+    expected:
+      status: DONE
+      outcome_code: PROCESS_FINISHED_UNVERIFIED
+      artifact_candidates: []
+
+  - case_id: tmux_async_submission
+    purpose: positive_tmux_submission
+    input:
+      engine: GROMACS
+      mode: ASYNCHRONOUS
+      backend: TMUX
+      session_name: md_ws1_md1
+      session_unique: true
+      submission_accepted: true
+    expected:
+      status: DONE
+      outcome_code: SUBMISSION_ACCEPTED
+      submission_evidence_contains: [session_name]
+
+  - case_id: lsf_submission
+    purpose: positive_scheduler_submission
+    input:
+      engine: GROMACS
+      mode: ASYNCHRONOUS
+      backend: LSF
+      submission_script_hash_valid: true
+      job_id: '12345'
+      submission_accepted: true
+    expected:
+      status: DONE
+      outcome_code: SUBMISSION_ACCEPTED
+
+  - case_id: missing_tpr
+    purpose: blocking_input
+    input:
+      tpr_present: false
+    expected:
+      status: BLOCKED
+      outcome_code: INPUT_ARTIFACT_MISMATCH
+      process_started: false
+
+  - case_id: tpr_hash_mismatch
+    purpose: blocking_provenance
+    input:
+      tpr_present: true
+      tpr_hash_matches: false
+    expected:
+      status: BLOCKED
+      outcome_code: INPUT_ARTIFACT_MISMATCH
+      process_started: false
+
+  - case_id: continuation_without_checkpoint
+    purpose: blocking_restart
+    input:
+      restart_mode: CONTINUE_FROM_CHECKPOINT
+      checkpoint_present: false
+      append_mode: APPEND
+    expected:
+      status: BLOCKED
+      outcome_code: CHECKPOINT_MISSING_OR_MISMATCH
+
+  - case_id: continuation_without_append_policy
+    purpose: blocking_restart_policy
+    input:
+      restart_mode: CONTINUE_FROM_CHECKPOINT
+      checkpoint_present: true
+      append_mode: null
+    expected:
+      status: BLOCKED
+      outcome_code: RESTART_POLICY_UNRESOLVED
+
+  - case_id: output_directory_conflict
+    purpose: no_overwrite
+    input:
+      output_files_exist: true
+      same_task_hashes_match: false
+    expected:
+      status: BLOCKED
+      outcome_code: OUTPUT_CONFLICT
+
+  - case_id: unsupported_backend
+    purpose: backend_boundary
+    input:
+      backend: OTHER
+    expected:
+      status: BLOCKED
+      outcome_code: BACKEND_UNSUPPORTED_OR_UNAVAILABLE
+
+  - case_id: scheduler_rejects_submission
+    purpose: rejected_submission
+    input:
+      backend: SLURM
+      submission_exit_code: 1
+      job_id: null
+    expected:
+      status: FAILED
+      outcome_code: SUBMISSION_REJECTED
+
+  - case_id: submission_identity_unresolved
+    purpose: ambiguous_submission
+    input:
+      backend: PBS
+      submission_exit_code: 0
+      job_id: null
+    expected:
+      status: BLOCKED
+      outcome_code: SUBMISSION_ID_UNRESOLVED
+      automatic_resubmit_allowed: false
+
+  - case_id: synchronous_nonzero_exit
+    purpose: process_failure
+    input:
+      mode: SYNCHRONOUS
+      process_exit_code: 1
+      fatal_evidence_present: true
+    expected:
+      status: FAILED
+      outcome_code: PROCESS_EXITED_NONZERO
+
+  - case_id: shell_control_operator_in_argument
+    purpose: command_safety
+    input:
+      extra_argv: ['-deffnm', 'md; rm -rf /']
+    expected:
+      status: BLOCKED
+      outcome_code: EXECUTION_SPEC_MISSING_OR_INVALID
+
+  - case_id: interrupted_after_possible_submit
+    purpose: recovery_boundary
+    input:
+      operation_result_missing: true
+      submission_evidence_partial: true
+      job_or_session_may_exist: true
+    expected:
+      status: BLOCKED
+      automatic_resubmit_allowed: false
+      next_step: recovery_or_status_check
