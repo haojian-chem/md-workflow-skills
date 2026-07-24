@@ -1,0 +1,128 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_simulation_completion_report.schema.yaml
+title: MD Simulation Completion Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - route_id
+  - scope
+  - run_units
+  - dependency_closure
+  - submission_closure
+  - validation_closure
+  - artifact_lineage
+  - final_md_output_artifact_set_id
+  - unresolved_items
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  route_id: {type: string, minLength: 1}
+  scope:
+    type: object
+    required: [start_substep, end_substep, workflow_exit_required]
+    properties:
+      start_substep: {type: [string, 'null']}
+      end_substep: {type: [string, 'null']}
+      workflow_exit_required: {type: boolean}
+    additionalProperties: false
+  run_units:
+    type: object
+    required: [required, skipped, out_of_scope]
+    properties:
+      required:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      skipped:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      out_of_scope:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+    additionalProperties: false
+  dependency_closure:
+    type: array
+    items:
+      type: object
+      required: [run_unit_id, dependencies, closed]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        dependencies:
+          type: array
+          uniqueItems: true
+          items: {type: string, minLength: 1}
+        closed: {type: boolean}
+      additionalProperties: false
+  submission_closure:
+    type: array
+    items:
+      type: object
+      required: [run_unit_id, submission_ids, closed, unresolved_statuses]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        submission_ids:
+          type: array
+          uniqueItems: true
+          items: {type: string, minLength: 1}
+        closed: {type: boolean}
+        unresolved_statuses:
+          type: array
+          items:
+            enum: [PREPARED, SUBMITTED, RUNNING, FINISHED_UNVERIFIED, UNKNOWN]
+      additionalProperties: false
+  validation_closure:
+    type: array
+    items:
+      type: object
+      required: [run_unit_id, validator_task_id, outcome_code, accepted]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        validator_task_id: {type: [string, 'null']}
+        outcome_code: {type: [string, 'null']}
+        accepted: {type: boolean}
+      additionalProperties: false
+  artifact_lineage:
+    type: array
+    items:
+      type: object
+      required: [artifact_set_id, artifact_type, derived_from_artifact_set_ids, valid]
+      properties:
+        artifact_set_id: {type: string, minLength: 1}
+        artifact_type: {enum: [MD_INPUT, MD_OUTPUT]}
+        derived_from_artifact_set_ids:
+          type: array
+          items: {type: string, minLength: 1}
+        valid: {type: boolean}
+      additionalProperties: false
+  final_md_output_artifact_set_id: {type: [string, 'null']}
+  unresolved_items:
+    type: array
+    items: {type: string}
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - MD_SIMULATION_SCOPE_COMPLETED
+      - MD_SIMULATION_WORKFLOW_COMPLETED
+      - COMPLETION_SCOPE_UNRESOLVED
+      - RUN_UNIT_SET_MISMATCH
+      - RUN_UNIT_DEPENDENCY_INVALID
+      - ACTIVE_OR_UNVERIFIED_SUBMISSION_REMAINS
+      - REQUIRED_RUN_UNIT_NOT_VALIDATED
+      - FAILED_OR_CANCELLED_RUN_UNRESOLVED
+      - MD_OUTPUT_LINEAGE_INCOMPLETE
+      - FINAL_MD_OUTPUT_NOT_UNIQUE
+      - COMPLETION_RECORD_MISMATCH
+      - COMPLETION_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [COMPLETE_SCOPE, COMPLETE_WORKFLOW, REVISE_ROUTE, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
