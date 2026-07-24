@@ -1,128 +1,153 @@
-# MD Simulation Plan Ownership
+# MD Simulation Protocol and Plan Ownership
 
-## 1. 决定
+## 1. 唯一 owner
 
-`md_simulation_plan` 的唯一领域 owner 为：
+以下阶段内对象的唯一领域 owner 均为：
 
 ```text
 01_workflows/md_simulation_workflow/
 ```
 
-它不属于 `md_preparation_workflow`，也不属于 Manager route record。
+- `simulation_protocol_spec`；
+- `md_simulation_plan`。
 
-权威阶段边界为：
+它们不属于 `md_preparation_workflow`，也不属于 Manager route record。
+
+权威边界：
 
 ```text
 md_preparation_workflow
 → VALIDATED SYSTEM
 → md_simulation_workflow
-→ simulation protocol resolution
+→ validated simulation protocol
 → immutable md_simulation_plan
-→ per-run MD_INPUT preparation
+→ per-run VALIDATED MD_INPUT
 → execution / status / output validation
 → VALIDATED MD_OUTPUT
 ```
 
-`md_preparation_workflow` 负责完整体系生成，包括结构、拓扑、盒子、溨剂和离子等 SYSTEM 内容；`.mdp`、`grompp`、`.tpr`、EM/平衡/生产/续跑片段及其执行计划属于 `md_simulation_workflow`。
+`md_preparation_workflow` 负责结构、拓扑、盒子、溶剂和离子后的完整 SYSTEM；protocol、`.mdp`、`grompp`、`.tpr`、run units 和执行计划属于 `md_simulation_workflow`。
 
-## 2. 与 Workstream route 的区别
+## 2. Protocol spec
 
-`md_simulation_plan` 与 Workstream active route 不是同一个对象。
+protocol spec 是已解决用户决定、显式文件和 artifact facts 的结构化阶段输入，由：
+
+```text
+md_simulation_protocol_specification
+→ md_simulation_protocol_validator
+```
+
+生成和验证。
+
+它描述：
+
+- run units、roles、sequence 和 dependencies；
+- MDP/template identities；
+- SYSTEM 或 prior-run start states；
+- grompp settings；
+- execution policy 中已解决或 deferred 的字段；
+- expected outputs/completion criteria；
+- field provenance；
+- resolved decisions 和分层 unresolved items。
+
+每个科学字段必须有明确来源。不得把“按标准流程”“使用默认设置”等模糊表述直接物化为科学参数。
+
+## 3. Plan
+
+validated protocol spec 由：
+
+```text
+md_simulation_plan_materialization
+→ md_simulation_plan_validator
+```
+
+保真物化为 immutable plan。
+
+plan 描述当前科学模拟方案，但不直接授权执行。它不得新增 protocol 未声明的 run unit 或参数。
+
+## 4. 与 Workstream route 的区别
 
 ### Workstream route
 
-由 Manager 根据 Workflow route fragments 拼接并持久化，描述：
+由 Manager 根据 Workflow fragments 拼接并持久化，描述：
 
-- 当前请求预计经过哪些 task unit；
-- 起点、终点和停止条件；
-- Workflow/Operation/Validator 调用顺序；
-- 当前路线版本及其修订关系。
+- 本轮预计 task units；
+- start/end/stop conditions；
+- Workflow/Operation/Validator 调用路径；
+- route version 和 revision lineage。
 
-### MD simulation plan
+### Simulation protocol/plan
 
-由 `md_simulation_workflow` 局部拥有，描述：
+由本 Workflow 局部拥有，描述科学方案和 run DAG。
 
-- 当前科学模拟方案包含哪些 run units；
-- run unit 角色、依赖和输入来源；
-- 每个 run unit 的 MDP 来源、起始状态、预期输出和技术完成标准；
-- 哪些 execution/backend/resource 字段已解决，哪些仍待执行前解决；
-- plan 与 SYSTEM、用户决定、模板和旧 plan 的谱系。
+```text
+validated protocol/plan
+→ Workflow route fragment
+→ Manager Workstream route
+```
 
-Manager 使用 plan 生成或修订 route，但 plan 本身不授权执行，也不替代 route record。
+Manager 使用 plan 投影或修订 route；plan 不替代 route record，route 也不得反向发明 plan 内容。
 
-## 3. 动态而非硬锁定
+## 5. 动态而非硬锁定
 
-计划生成后不得作为不可调整的固定队列。
-
-当出现以下变化时，创建新的 immutable plan 版本：
+protocol/plan 生成后仍可因新 evidence 或用户决定修订。以下变化创建新 protocol 和/或 plan version：
 
 - 新增、删除或重排 run unit；
-- 修改 `.mdp`、温度、压力、约束、步数或其他科学参数；
-- 延长生产模拟并需要新 `.tpr`；
-- 新增 continuation 或新的 production segment；
-- 改变起始 SYSTEM、上游 MD_OUTPUT 或 checkpoint；
-- 改变完成标准；
+- 修改 MDP、温度、压力、约束、步数或其他科学参数；
+- 延长 production 并需要新 TPR；
+- 新增 continuation/production segment；
+- 改变 SYSTEM、上游 MD_OUTPUT 或 start checkpoint；
+- 改变 completion criteria；
 - 用户改变阶段终点或比较方案。
 
-新 plan 使用 `supersedes_plan_id` 指向旧 plan，并返回 route revision signal。旧 plan、旧 MD_INPUT 和已有 MD_OUTPUT 不得覆盖。
+新 version 使用 `supersedes_spec_id` 或 `supersedes_plan_id` 指向旧版本，并触发 route revision。旧 protocol、plan、MD_INPUT 和 MD_OUTPUT 不得覆盖。
 
-仅资源分配或 backend 变化是否需要新 plan，取决于它是否改变科学输入：
+仅 backend/resource 变化：
 
-- 不改变 `.tpr` 和科学方案：可以只生成新的 execution spec；
-- 改变并行分解之外的科学参数或运行输入：必须生成新 plan/MD_INPUT。
+- 不改变 TPR 和科学方案：通常只生成新 execution spec；
+- 改变科学输入：修订 protocol/plan 并重新准备 MD_INPUT。
 
-## 4. 阶段入口
+## 6. 阶段入口
 
-从 Workflow entry 开始时，默认入口 artifact 为：
+标准 Workflow entry artifact：
 
 ```text
 VALIDATED SYSTEM
 ```
 
-SYSTEM 至少应提供当前 run input preparation 所需的：
+SYSTEM 至少提供 run input preparation 所需的：
 
-- 坐标/结构；
-- 拓扑及 include 依赖；
-- 盒子、溶剂和离子后的完整体系身份；
-- 上游验证和谱系。
+- coordinates/structure；
+- topology root 和 include closure；
+- box、solvent 和 ions 后的完整体系 identity；
+- upstream validation/lineage。
 
-若路线明确从已有 run unit 的 input preparation、execution、status 或 output validation 开始，可以使用已有且仍有效的：
+若 route 从已有后续 substep 开始，可以使用仍有效的 validated protocol、plan、MD_INPUT、submission 或 MD_OUTPUT evidence。不得因为存在 TPR 或目录而跳过 provenance gate。
 
-- `md_simulation_plan`；
-- VALIDATED MD_INPUT；
-- submission record；
-- MD_OUTPUT candidate/validation evidence。
+## 7. Protocol 生成输入
 
-不得因为存在 `.tpr` 或运行目录而跳过 plan 和 provenance 核验。
+protocol specification 必须基于：
 
-## 5. Plan 生成输入
+- resolved route scope；
+- VALIDATED SYSTEM IDs；
+- 当前有效 RESOLVED decision records；
+- explicit MDP/template identities；
+- 明确 prior-run MD_OUTPUT/checkpoint identities，如适用。
 
-计划生成必须基于结构化、可追踪的 protocol spec。不得从“按常规跑”“做标准平衡”等模糊表述自动推断。
+协议字段与来源通过 `field_provenance` 关联。
 
-protocol spec 至少引用：
+未决项分层：
 
-- Workstream ID；
-- VALIDATED SYSTEM artifact set IDs；
-- run unit 列表和依赖；
-- 每个 run unit 的 role；
-- MDP 文件或模板身份；
-- 起始状态来源；
-- 预期输出；
-- 技术完成标准；
-- 已解决 decision IDs；
-- 明确的未决项。
+- `PLAN_VALIDATION`：阻止 protocol/plan gate；
+- `INPUT_PREPARATION`：允许 protocol/plan 存在，但阻止相应 grompp task；
+- `EXECUTION`：不改变科学输入时可 deferred，阻止 execution task。
 
-未决科学参数阻塞 plan validation；只影响执行环境的 backend/resource 字段可以在 plan 中保持未解决，但必须在 execution 前形成 gate。
-
-## 6. Plan 与 MD_INPUT
-
-一个 run unit 的 MD_INPUT 在 plan 通过后由专门 Operation 生成。
+## 8. Plan 与 MD_INPUT
 
 ```text
 VALIDATED SYSTEM or upstream VALIDATED MD_OUTPUT
-+ validated md_simulation_plan
++ validated protocol and plan
 + selected run unit
-+ MDP identity
 → md_run_input_preparation
 → MD_INPUT candidate
 → md_run_input_validator
@@ -131,21 +156,20 @@ VALIDATED SYSTEM or upstream VALIDATED MD_OUTPUT
 
 MD_INPUT 至少包含：
 
-- `.tpr`；
-- 实际使用的 `.mdp` 或其不可变副本/身份；
-- 输入坐标、拓扑和 checkpoint provenance；
-- `grompp` command record、版本和 warning evidence；
+- TPR；
+- actual MDP identity/controlled copy；
+- coordinates/topology/include/checkpoint provenance；
+- grompp command/version/warning evidence；
 - run input manifest；
 - input validation report。
 
-## 7. 目录
-
-默认：
+## 9. 默认目录
 
 ```text
 04_md_simulation/
 ├── 00_plan/
 │   ├── simulation_protocol_spec.yaml
+│   ├── md_simulation_protocol_validation_report.yaml
 │   ├── md_simulation_plan.yaml
 │   └── md_simulation_plan_validation_report.yaml
 ├── <run_unit_id>/
@@ -161,22 +185,21 @@ MD_INPUT 至少包含：
 
 目录名称不构成完成证据。
 
-## 8. 修复边界
+## 10. 修复边界
 
-output validation 发现问题后：
+output/input validation 发现问题后：
 
-- 仅 execution 命令、backend 或资源需要调整，且 `.tpr` 不变：留在当前 run unit，生成新 execution spec；
-- 需要新的 `.mdp` 或 `.tpr`：回到本 Workflow 的 plan revision 或 run input preparation；
-- SYSTEM 的结构、拓扑、溶剂、离子或盒子需要改变：返回 `md_preparation_workflow` 或从相应 SYSTEM artifact 创建新 Workstream；
-- 不得把任何 MD_INPUT 变化笼统地归回 `md_preparation_workflow`。
+- 仅 command/backend/resources 变化且 TPR 不变：新 execution spec；
+- 需要新 TPR 但 protocol 不变：重新执行 run input preparation；
+- MDP、run units、start state 或 completion criteria 变化：新 protocol/plan version，再生成 MD_INPUT；
+- SYSTEM 的结构、拓扑、盒子、溶剂或离子变化：返回 `md_preparation_workflow` 或创建新 Workstream；
+- 不得把所有 MD_INPUT 变化笼统归回 `md_preparation_workflow`。
 
-## 9. 本地接口文件
-
-本阶段局部结构由以下 schema 拥有：
+## 11. 本地接口
 
 ```text
 01_workflows/md_simulation_workflow/schemas/md_simulation_protocol_spec.schema.yaml
 01_workflows/md_simulation_workflow/schemas/md_simulation_plan.schema.yaml
 ```
 
-它们是阶段内接口，不替代 `03_contracts/` 的 runtime contracts。
+它们是阶段内接口，不替代 `03_contracts/` runtime contracts。
