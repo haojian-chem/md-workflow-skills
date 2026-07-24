@@ -7,11 +7,13 @@ required:
   - task_id
   - workstream_id
   - route_id
+  - plan
   - scope
   - run_units
   - dependency_closure
+  - input_validation_closure
   - submission_closure
-  - validation_closure
+  - output_validation_closure
   - artifact_lineage
   - final_md_output_artifact_set_id
   - unresolved_items
@@ -23,6 +25,19 @@ properties:
   task_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
   route_id: {type: string, minLength: 1}
+  plan:
+    type: object
+    required: [plan_id, path, sha256, validator_task_id, validation_outcome, valid]
+    properties:
+      plan_id: {type: string, minLength: 1}
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      validator_task_id: {type: [string, 'null']}
+      validation_outcome: {type: [string, 'null']}
+      valid: {type: boolean}
+    additionalProperties: false
   scope:
     type: object
     required: [start_substep, end_substep, workflow_exit_required]
@@ -52,14 +67,32 @@ properties:
     type: array
     items:
       type: object
-      required: [run_unit_id, dependencies, closed]
+      required: [run_unit_id, dependencies, start_state_source, closed]
       properties:
         run_unit_id: {type: string, minLength: 1}
         dependencies:
           type: array
           uniqueItems: true
           items: {type: string, minLength: 1}
+        start_state_source: {enum: [SYSTEM, PRIOR_RUN_OUTPUT]}
         closed: {type: boolean}
+      additionalProperties: false
+  input_validation_closure:
+    type: array
+    items:
+      type: object
+      required:
+        - run_unit_id
+        - md_input_artifact_set_id
+        - validator_task_id
+        - outcome_code
+        - accepted
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        md_input_artifact_set_id: {type: [string, 'null']}
+        validator_task_id: {type: [string, 'null']}
+        outcome_code: {type: [string, 'null']}
+        accepted: {type: boolean}
       additionalProperties: false
   submission_closure:
     type: array
@@ -78,13 +111,19 @@ properties:
           items:
             enum: [PREPARED, SUBMITTED, RUNNING, FINISHED_UNVERIFIED, UNKNOWN]
       additionalProperties: false
-  validation_closure:
+  output_validation_closure:
     type: array
     items:
       type: object
-      required: [run_unit_id, validator_task_id, outcome_code, accepted]
+      required:
+        - run_unit_id
+        - md_output_artifact_set_id
+        - validator_task_id
+        - outcome_code
+        - accepted
       properties:
         run_unit_id: {type: string, minLength: 1}
+        md_output_artifact_set_id: {type: [string, 'null']}
         validator_task_id: {type: [string, 'null']}
         outcome_code: {type: [string, 'null']}
         accepted: {type: boolean}
@@ -96,7 +135,7 @@ properties:
       required: [artifact_set_id, artifact_type, derived_from_artifact_set_ids, valid]
       properties:
         artifact_set_id: {type: string, minLength: 1}
-        artifact_type: {enum: [MD_INPUT, MD_OUTPUT]}
+        artifact_type: {enum: [SYSTEM, MD_INPUT, MD_OUTPUT]}
         derived_from_artifact_set_ids:
           type: array
           items: {type: string, minLength: 1}
@@ -114,12 +153,15 @@ properties:
       - MD_SIMULATION_SCOPE_COMPLETED
       - MD_SIMULATION_WORKFLOW_COMPLETED
       - COMPLETION_SCOPE_UNRESOLVED
+      - SIMULATION_PLAN_MISSING_OR_STALE
+      - ROUTE_PLAN_MISMATCH
       - RUN_UNIT_SET_MISMATCH
       - RUN_UNIT_DEPENDENCY_INVALID
+      - REQUIRED_MD_INPUT_NOT_VALIDATED
       - ACTIVE_OR_UNVERIFIED_SUBMISSION_REMAINS
       - REQUIRED_RUN_UNIT_NOT_VALIDATED
       - FAILED_OR_CANCELLED_RUN_UNRESOLVED
-      - MD_OUTPUT_LINEAGE_INCOMPLETE
+      - MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE
       - FINAL_MD_OUTPUT_NOT_UNIQUE
       - COMPLETION_RECORD_MISMATCH
       - COMPLETION_VALIDATOR_INTERNAL_FAILURE
