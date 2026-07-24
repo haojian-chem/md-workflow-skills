@@ -14,19 +14,14 @@ required:
   - output_records
   - policies
 properties:
-  schema_version:
-    type: integer
-    const: 1
-  task_id:
-    type: string
-    minLength: 1
-  workstream_id:
-    type: string
-    minLength: 1
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
   run_unit:
     type: object
-    required: [run_unit_id, role, sequence, depends_on, work_directory]
+    required: [plan_id, run_unit_id, role, sequence, depends_on, work_directory]
     properties:
+      plan_id: {type: string, minLength: 1}
       run_unit_id: {type: string, minLength: 1}
       role:
         enum: [ENERGY_MINIMIZATION, EQUILIBRATION, PRODUCTION, CONTINUATION, CUSTOM]
@@ -39,15 +34,21 @@ properties:
     additionalProperties: false
   input:
     type: object
-    required: [md_input_artifact_set_ids, tpr, checkpoint]
+    required:
+      - simulation_plan
+      - md_input_artifact_set_ids
+      - input_manifest
+      - tpr
+      - checkpoint
     properties:
+      simulation_plan: {$ref: '#/$defs/file_identity'}
       md_input_artifact_set_ids:
         type: array
         minItems: 1
         uniqueItems: true
         items: {type: string, minLength: 1}
-      tpr:
-        $ref: '#/$defs/file_identity'
+      input_manifest: {$ref: '#/$defs/file_identity'}
+      tpr: {$ref: '#/$defs/file_identity'}
       checkpoint:
         oneOf:
           - type: 'null'
@@ -55,20 +56,11 @@ properties:
     additionalProperties: false
   execution:
     type: object
-    required:
-      - engine
-      - mode
-      - backend
-      - gromacs
-      - restart
-      - resources
+    required: [engine, mode, backend, gromacs, restart, resources]
     properties:
-      engine:
-        const: GROMACS
-      mode:
-        enum: [SYNCHRONOUS, ASYNCHRONOUS]
-      backend:
-        $ref: '#/$defs/backend'
+      engine: {const: GROMACS}
+      mode: {enum: [SYNCHRONOUS, ASYNCHRONOUS]}
+      backend: {$ref: '#/$defs/backend'}
       gromacs:
         type: object
         required: [executable, executable_version, deffnm, extra_argv]
@@ -84,10 +76,8 @@ properties:
         type: object
         required: [mode, append_mode]
         properties:
-          mode:
-            enum: [FRESH, CONTINUE_FROM_CHECKPOINT]
-          append_mode:
-            enum: [NOT_APPLICABLE, APPEND, NOAPPEND]
+          mode: {enum: [FRESH, CONTINUE_FROM_CHECKPOINT]}
+          append_mode: {enum: [NOT_APPLICABLE, APPEND, NOAPPEND]}
         allOf:
           - if:
               properties: {mode: {const: FRESH}}
@@ -96,9 +86,7 @@ properties:
           - if:
               properties: {mode: {const: CONTINUE_FROM_CHECKPOINT}}
             then:
-              properties:
-                append_mode:
-                  enum: [APPEND, NOAPPEND]
+              properties: {append_mode: {enum: [APPEND, NOAPPEND]}}
         additionalProperties: false
       resources:
         type: object
@@ -141,12 +129,11 @@ properties:
         type: array
         items:
           type: object
-          required: [check_id, metric, operator, value, unit, blocking]
+          required: [check_id, metric_id, operator, value, unit, blocking]
           properties:
             check_id: {type: string, minLength: 1}
-            metric: {type: string, minLength: 1}
-            operator:
-              enum: [LT, LE, EQ, GE, GT, BETWEEN]
+            metric_id: {type: string, minLength: 1}
+            operator: {enum: [LT, LE, EQ, GE, GT, BETWEEN]}
             value:
               oneOf:
                 - type: number
@@ -169,11 +156,7 @@ properties:
     additionalProperties: false
   policies:
     type: object
-    required:
-      - allow_overwrite
-      - allow_shell_interpretation
-      - preserve_inputs
-      - submit_once
+    required: [allow_overwrite, allow_shell_interpretation, preserve_inputs, submit_once]
     properties:
       allow_overwrite: {const: false}
       allow_shell_interpretation: {const: false}
@@ -194,16 +177,9 @@ $defs:
     additionalProperties: false
   backend:
     type: object
-    required:
-      - type
-      - host
-      - session_name
-      - submission_script
-      - submission_argv
-      - status_argv
+    required: [type, host, session_name, submission_script, submission_argv, status_argv]
     properties:
-      type:
-        enum: [LOCAL, TMUX, LSF, SLURM, PBS]
+      type: {enum: [LOCAL, TMUX, LSF, SLURM, PBS]}
       host: {type: [string, 'null']}
       session_name: {type: [string, 'null']}
       submission_script:
@@ -218,17 +194,11 @@ $defs:
         items: {type: string}
     allOf:
       - if:
-          properties:
-            type:
-              enum: [TMUX]
+          properties: {type: {const: TMUX}}
         then:
-          properties:
-            session_name: {type: string, minLength: 1}
+          properties: {session_name: {type: string, minLength: 1}}
       - if:
-          properties:
-            type:
-              enum: [LSF, SLURM, PBS]
+          properties: {type: {enum: [LSF, SLURM, PBS]}}
         then:
-          properties:
-            submission_script: {$ref: '#/$defs/file_identity'}
+          properties: {submission_script: {$ref: '#/$defs/file_identity'}}
     additionalProperties: false
