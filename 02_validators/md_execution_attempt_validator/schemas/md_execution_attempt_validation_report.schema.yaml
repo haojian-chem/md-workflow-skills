@@ -1,0 +1,103 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_execution_attempt_validation_report.schema.yaml
+title: MD Execution Attempt Validation Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - plan_id
+  - run_unit_id
+  - attempt_id
+  - execution_spec
+  - identity_findings
+  - attempt_kind_findings
+  - runtime_findings
+  - recovery_findings
+  - mutation_findings
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
+  run_unit_id: {type: string, minLength: 1}
+  attempt_id: {type: string, minLength: 1}
+  execution_spec: {$ref: '#/$defs/file_identity'}
+  identity_findings:
+    type: object
+    required: [spec_id_unique, attempt_id_unique, directory_matches, md_input_matches]
+    properties:
+      spec_id_unique: {type: boolean}
+      attempt_id_unique: {type: boolean}
+      directory_matches: {type: boolean}
+      md_input_matches: {type: boolean}
+    additionalProperties: false
+  attempt_kind_findings:
+    type: object
+    required: [attempt_kind, parent_valid, checkpoint_valid, tpr_matches_parent]
+    properties:
+      attempt_kind: {enum: [FRESH, RETRY_SAME_INPUT, CONTINUE_NOAPPEND]}
+      parent_valid: {type: boolean}
+      checkpoint_valid: {type: [boolean, 'null']}
+      tpr_matches_parent: {type: [boolean, 'null']}
+    additionalProperties: false
+  runtime_findings:
+    type: object
+    required: [backend_provenance_valid, resource_provenance_valid, command_policy_valid, output_paths_isolated]
+    properties:
+      backend_provenance_valid: {type: boolean}
+      resource_provenance_valid: {type: boolean}
+      command_policy_valid: {type: boolean}
+      output_paths_isolated: {type: boolean}
+    additionalProperties: false
+  recovery_findings:
+    type: object
+    required: [asynchronous, prepared_submission_required, prepared_submission_present, possible_prior_submission_unresolved]
+    properties:
+      asynchronous: {type: boolean}
+      prepared_submission_required: {type: boolean}
+      prepared_submission_present: {type: boolean}
+      possible_prior_submission_unresolved: {type: boolean}
+    additionalProperties: false
+  mutation_findings:
+    type: object
+    required: [preserve_previous_attempts, overwrite_disabled, append_disabled, submit_once]
+    properties:
+      preserve_previous_attempts: {type: boolean}
+      overwrite_disabled: {type: boolean}
+      append_disabled: {type: boolean}
+      submit_once: {type: boolean}
+    additionalProperties: false
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - EXECUTION_ATTEMPT_VALIDATED
+      - EXECUTION_ATTEMPT_VALIDATED_WITH_WARNINGS
+      - EXECUTION_ATTEMPT_VALIDATOR_INPUT_INCOMPLETE
+      - EXECUTION_ATTEMPT_IDENTITY_MISMATCH
+      - EXECUTION_ATTEMPT_KIND_MISMATCH
+      - EXECUTION_ATTEMPT_PARENT_INVALID
+      - EXECUTION_ATTEMPT_CHECKPOINT_INVALID
+      - EXECUTION_ATTEMPT_RUNTIME_PROVENANCE_INVALID
+      - EXECUTION_ATTEMPT_PREPARED_SUBMISSION_MISSING
+      - EXECUTION_ATTEMPT_PATH_OR_MUTATION_INVALID
+      - EXECUTION_ATTEMPT_COMMAND_POLICY_INVALID
+      - EXECUTION_ATTEMPT_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [ACCEPT_EXECUTION_ATTEMPT, REJECT_EXECUTION_ATTEMPT, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
