@@ -1,101 +1,125 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_run_input_validator
 cases:
-  - case_id: valid_tpr_from_system
-    purpose: positive_validation
+  - case_id: valid_final_file_input
     input:
-      plan_matches: true
-      md_input_source: SYSTEM
+      protocol_and_plan_match: true
+      mdp_source_kind: FINAL_FILE
+      source_hash_matches: true
+      rendered_hash_matches_source: true
       tpr_readable: true
-      parameters_match: true
-      warning_policy_passed: true
-    expected: {status: DONE, outcome_code: MD_RUN_INPUT_VALIDATED}
+      tpr_matches_rendered_mdp: true
+      source_files_unchanged: true
+    expected:
+      status: DONE
+      outcome_code: MD_RUN_INPUT_VALIDATED
 
-  - case_id: valid_tpr_with_nonblocking_warning
-    purpose: warning_pass
-    input: {all_blocking_checks_pass: true, nonblocking_warning_count: 1}
-    expected: {outcome_code: MD_RUN_INPUT_VALIDATED_WITH_NONBLOCKING_WARNINGS}
+  - case_id: valid_template_rendered_input
+    input:
+      mdp_source_kind: TEMPLATE_WITH_TYPED_OVERRIDES
+      template_hash_matches: true
+      override_set_matches: true
+      rendered_parameters_match: true
+      undeclared_changes: []
+      tpr_matches_rendered_mdp: true
+    expected:
+      outcome_code: MD_RUN_INPUT_VALIDATED
 
   - case_id: manifest_not_trusted
-    purpose: independent_validation
     input:
       manifest_says_valid: true
-      actual_tpr_parameters_match: false
-    expected: {outcome_code: RUN_INPUT_TPR_PARAMETER_MISMATCH}
+      actual_tpr_matches_rendered_mdp: false
+    expected:
+      outcome_code: RUN_INPUT_TPR_UNREADABLE_OR_INCONSISTENT
 
-  - case_id: plan_run_unit_mismatch
-    purpose: plan_gate
-    input: {manifest_run_unit_id: md.2, plan_target_run_unit_id: md.1}
-    expected: {outcome_code: RUN_INPUT_PLAN_MISMATCH}
-
-  - case_id: prior_output_not_validated
-    purpose: source_provenance
-    input: {start_state: PRIOR_RUN_OUTPUT, source_artifact_validated: false}
-    expected: {outcome_code: RUN_INPUT_SOURCE_PROVENANCE_MISMATCH}
-
-  - case_id: checkpoint_hash_mismatch
-    purpose: checkpoint_provenance
-    input: {checkpoint_hash_matches_plan: false}
-    expected: {outcome_code: RUN_INPUT_SOURCE_PROVENANCE_MISMATCH}
-
-  - case_id: source_mdp_changed
-    purpose: hash_check
-    input: {mdp_source_hash_unchanged: false}
-    expected: {outcome_code: RUN_INPUT_FILE_HASH_MISMATCH}
-
-  - case_id: topology_include_missing
-    purpose: topology_closure
-    input: {include_closure_complete: false}
-    expected: {outcome_code: RUN_INPUT_TOPOLOGY_CLOSURE_INVALID}
-
-  - case_id: tpr_unreadable
-    purpose: parser_failure_object
-    input: {tpr_readable: false}
-    expected: {outcome_code: RUN_INPUT_TPR_UNREADABLE}
-
-  - case_id: tpr_nsteps_differs_from_mdp
-    purpose: parameter_mismatch
-    input: {mdp_nsteps: 50000, tpr_nsteps: 100000}
-    expected: {outcome_code: RUN_INPUT_TPR_PARAMETER_MISMATCH}
-
-  - case_id: tpr_atom_count_differs_from_system
-    purpose: system_identity
-    input: {source_atom_count: 10000, tpr_atom_count: 9999}
-    expected: {outcome_code: RUN_INPUT_TPR_PARAMETER_MISMATCH}
-
-  - case_id: command_argv_mismatch
-    purpose: command_provenance
-    input: {manifest_argv_equals_command_record: false}
-    expected: {outcome_code: RUN_INPUT_GROMPP_COMMAND_MISMATCH}
-
-  - case_id: maxwarn_differs_from_plan
-    purpose: warning_policy
-    input: {plan_maxwarn: 0, actual_maxwarn: 1}
-    expected: {outcome_code: RUN_INPUT_WARNING_POLICY_VIOLATION}
-
-  - case_id: unrecorded_grompp_warning
-    purpose: warning_completeness
-    input: {actual_warning_count: 1, manifest_warning_count: 0}
-    expected: {outcome_code: RUN_INPUT_WARNING_POLICY_VIOLATION}
-
-  - case_id: input_file_list_mismatch
-    purpose: manifest_integrity
-    input: {actual_used_files_equal_manifest: false}
-    expected: {outcome_code: RUN_INPUT_MANIFEST_MISMATCH}
-
-  - case_id: validator_does_not_rerun_grompp
-    purpose: layer_boundary
-    input: {candidate_present: true}
-    expected: {grompp_invoked: false}
-
-  - case_id: validator_does_not_add_role_defaults
-    purpose: no_implicit_science
+  - case_id: protocol_run_mismatch
     input:
-      role: EQUILIBRATION
-      pressure_check_not_in_plan: true
-    expected: {invented_pressure_gate: false}
+      manifest_run_unit_id: md.2
+      protocol_run_unit_id: md.1
+    expected:
+      outcome_code: RUN_INPUT_PROTOCOL_OR_PLAN_MISMATCH
 
-  - case_id: validated_candidate_can_be_accepted
-    purpose: artifact_gate
-    input: {outcome_code: MD_RUN_INPUT_VALIDATED}
-    expected: {manager_may_register_validated_md_input: true}
+  - case_id: template_override_value_mismatch
+    input:
+      protocol_override_value: 300
+      rendered_mdp_value: 310
+    expected:
+      outcome_code: RUN_INPUT_MDP_RENDERING_MISMATCH
+
+  - case_id: undeclared_parameter_changed
+    input:
+      declared_override_parameters: [ref_t]
+      changed_parameters: [ref_t, tau_t]
+    expected:
+      outcome_code: RUN_INPUT_UNDECLARED_MDP_CHANGE
+
+  - case_id: final_file_modified
+    input:
+      source_kind: FINAL_FILE
+      rendered_hash_matches_source: false
+    expected:
+      outcome_code: RUN_INPUT_MDP_RENDERING_MISMATCH
+
+  - case_id: system_start_has_checkpoint
+    input:
+      start_state: SYSTEM
+      input_checkpoint_present: true
+    expected:
+      outcome_code: RUN_INPUT_TOPOLOGY_OR_SOURCE_INVALID
+
+  - case_id: prior_run_output_not_validated
+    input:
+      start_state: PRIOR_RUN_OUTPUT
+      source_run_output_validated: false
+    expected:
+      outcome_code: RUN_INPUT_TOPOLOGY_OR_SOURCE_INVALID
+
+  - case_id: topology_include_incomplete
+    input:
+      include_closure_complete: false
+    expected:
+      outcome_code: RUN_INPUT_TOPOLOGY_OR_SOURCE_INVALID
+
+  - case_id: maxwarn_differs_from_protocol
+    input:
+      protocol_maxwarn: 0
+      actual_maxwarn: 1
+    expected:
+      outcome_code: RUN_INPUT_GROMPP_COMMAND_OR_WARNING_INVALID
+
+  - case_id: warning_not_recorded
+    input:
+      actual_warning_count: 1
+      manifest_warning_count: 0
+    expected:
+      outcome_code: RUN_INPUT_GROMPP_COMMAND_OR_WARNING_INVALID
+
+  - case_id: runtime_version_recorded
+    input:
+      actual_version_recorded: true
+      version_constraint_satisfied: true
+      protocol_contains_runtime_version: false
+    expected:
+      runtime_evidence_valid: true
+      protocol_modified: false
+
+  - case_id: tpr_atom_count_mismatch
+    input:
+      source_atom_count: 10000
+      tpr_atom_count: 9999
+    expected:
+      outcome_code: RUN_INPUT_TPR_UNREADABLE_OR_INCONSISTENT
+
+  - case_id: source_file_mutated
+    input:
+      source_hash_before_equals_after: false
+    expected:
+      outcome_code: RUN_INPUT_SOURCE_FILE_MUTATION_DETECTED
+
+  - case_id: validator_does_not_rerun_or_modify
+    input:
+      candidate_present: true
+    expected:
+      grompp_invoked: false
+      rendered_mdp_modified: false
+      tpr_modified: false
