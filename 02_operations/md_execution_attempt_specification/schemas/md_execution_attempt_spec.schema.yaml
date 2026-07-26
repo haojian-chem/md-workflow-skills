@@ -1,0 +1,199 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_execution_attempt_spec.schema.yaml
+title: MD Execution Attempt Specification
+type: object
+required:
+  - schema_version
+  - execution_spec_id
+  - workstream_id
+  - plan_id
+  - protocol_spec_id
+  - run_unit_id
+  - attempt_id
+  - attempt_kind
+  - attempt_directory
+  - parent_attempt_id
+  - input
+  - runtime
+  - continuation_checkpoint
+  - prepared_submission_id
+  - expected_attempt_outputs
+  - output_records
+  - source_decision_ids
+  - policies
+properties:
+  schema_version: {type: integer, const: 1}
+  execution_spec_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
+  protocol_spec_id: {type: string, minLength: 1}
+  run_unit_id: {type: string, minLength: 1}
+  attempt_id: {type: string, minLength: 1}
+  attempt_kind:
+    enum: [FRESH, RETRY_SAME_INPUT, CONTINUE_NOAPPEND]
+  attempt_directory: {type: string, minLength: 1}
+  parent_attempt_id: {type: [string, 'null']}
+  input:
+    type: object
+    required:
+      - md_input_artifact_set_id
+      - input_manifest
+      - tpr
+    properties:
+      md_input_artifact_set_id: {type: string, minLength: 1}
+      input_manifest: {$ref: '#/$defs/file_identity'}
+      tpr: {$ref: '#/$defs/file_identity'}
+    additionalProperties: false
+  runtime:
+    type: object
+    required: [engine, mode, backend, gromacs, resources]
+    properties:
+      engine: {const: GROMACS}
+      mode: {enum: [SYNCHRONOUS, ASYNCHRONOUS]}
+      backend: {$ref: '#/$defs/backend'}
+      gromacs:
+        type: object
+        required: [executable, version_constraint, deffnm, extra_argv]
+        properties:
+          executable: {type: string, minLength: 1}
+          version_constraint: {type: [string, 'null']}
+          deffnm: {type: string, minLength: 1}
+          extra_argv:
+            type: array
+            items: {type: string}
+        additionalProperties: false
+      resources:
+        type: object
+        required: [profile_id, mpi_ranks, omp_threads, gpu_ids, memory_mb, walltime]
+        properties:
+          profile_id: {type: [string, 'null']}
+          mpi_ranks: {type: [integer, 'null'], minimum: 1}
+          omp_threads: {type: [integer, 'null'], minimum: 1}
+          gpu_ids:
+            type: array
+            items: {type: string, minLength: 1}
+          memory_mb: {type: [integer, 'null'], minimum: 1}
+          walltime: {type: [string, 'null']}
+        additionalProperties: false
+    additionalProperties: false
+  continuation_checkpoint:
+    oneOf:
+      - type: 'null'
+      - $ref: '#/$defs/file_identity'
+  prepared_submission_id: {type: [string, 'null']}
+  expected_attempt_outputs:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [path, role, required]
+      properties:
+        path: {type: string, minLength: 1}
+        role: {type: string, minLength: 1}
+        required: {type: boolean}
+      additionalProperties: false
+  output_records:
+    type: object
+    required: [command_record, operation_report, submission_evidence, execution_log, status_report]
+    properties:
+      command_record: {type: string, minLength: 1}
+      operation_report: {type: string, minLength: 1}
+      submission_evidence: {type: string, minLength: 1}
+      execution_log: {type: string, minLength: 1}
+      status_report: {type: string, minLength: 1}
+    additionalProperties: false
+  source_decision_ids:
+    type: array
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  policies:
+    type: object
+    required:
+      - allow_shell_interpretation
+      - preserve_md_input
+      - preserve_previous_attempts
+      - allow_overwrite_existing_attempt
+      - append_existing_engine_outputs
+      - submit_once
+    properties:
+      allow_shell_interpretation: {const: false}
+      preserve_md_input: {const: true}
+      preserve_previous_attempts: {const: true}
+      allow_overwrite_existing_attempt: {const: false}
+      append_existing_engine_outputs: {const: false}
+      submit_once: {const: true}
+    additionalProperties: false
+allOf:
+  - if:
+      properties: {attempt_kind: {const: FRESH}}
+    then:
+      properties:
+        parent_attempt_id: {type: 'null'}
+        continuation_checkpoint: {type: 'null'}
+  - if:
+      properties: {attempt_kind: {const: RETRY_SAME_INPUT}}
+    then:
+      properties:
+        parent_attempt_id: {type: string, minLength: 1}
+        continuation_checkpoint: {type: 'null'}
+  - if:
+      properties: {attempt_kind: {const: CONTINUE_NOAPPEND}}
+    then:
+      properties:
+        parent_attempt_id: {type: string, minLength: 1}
+        continuation_checkpoint: {$ref: '#/$defs/file_identity'}
+  - if:
+      properties:
+        runtime:
+          properties: {mode: {const: ASYNCHRONOUS}}
+    then:
+      properties:
+        prepared_submission_id: {type: string, minLength: 1}
+  - if:
+      properties:
+        runtime:
+          properties: {mode: {const: SYNCHRONOUS}}
+    then:
+      properties:
+        prepared_submission_id: {type: 'null'}
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      artifact_set_id: {type: [string, 'null']}
+    additionalProperties: false
+  backend:
+    type: object
+    required: [type, host, session_name, submission_script, submission_argv, status_argv]
+    properties:
+      type: {enum: [LOCAL, TMUX, LSF, SLURM, PBS]}
+      host: {type: [string, 'null']}
+      session_name: {type: [string, 'null']}
+      submission_script:
+        oneOf:
+          - type: 'null'
+          - $ref: '#/$defs/file_identity'
+      submission_argv:
+        type: array
+        items: {type: string}
+      status_argv:
+        type: array
+        items: {type: string}
+    allOf:
+      - if:
+          properties: {type: {const: TMUX}}
+        then:
+          properties:
+            session_name: {type: string, minLength: 1}
+      - if:
+          properties: {type: {enum: [LSF, SLURM, PBS]}}
+        then:
+          properties:
+            submission_script: {$ref: '#/$defs/file_identity'}
+    additionalProperties: false
