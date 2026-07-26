@@ -1,108 +1,100 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_run_status_validator
 cases:
-  - case_id: lsf_job_running
+  - case_id: lsf_attempt_running
     input:
+      attempt_id: attempt.001
+      execution_spec_id: exec-001
       backend: LSF
       previous_status: SUBMITTED
       raw_backend_state: RUN
       job_identity_matches: true
     expected:
       component_status: DONE
-      outcome_code: RUN_STILL_ACTIVE
+      outcome_code: ATTEMPT_STILL_ACTIVE
       recommended_status: RUNNING
 
-  - case_id: slurm_job_completed
+  - case_id: slurm_attempt_terminal
     input:
+      attempt_id: attempt.001
       backend: SLURM
-      previous_status: RUNNING
       raw_backend_state: COMPLETED
       exit_code: 0
     expected:
-      component_status: DONE
-      outcome_code: RUN_FINISHED_UNVERIFIED
+      outcome_code: ATTEMPT_FINISHED_UNVERIFIED
       recommended_status: FINISHED_UNVERIFIED
+      run_output_validated: false
 
-  - case_id: pbs_job_failed
+  - case_id: pbs_attempt_failed
     input:
+      attempt_id: attempt.002
       backend: PBS
       raw_backend_state: FAILED
       exit_code: 1
       failure_evidence_present: true
     expected:
-      component_status: DONE
-      outcome_code: RUN_FAILED_WITH_EVIDENCE
+      outcome_code: ATTEMPT_FAILED_WITH_EVIDENCE
       recommended_status: FAILED
 
-  - case_id: tmux_session_and_process_active
+  - case_id: tmux_attempt_active
     input:
-      backend: TMUX
       session_exists: true
       expected_process_exists: true
+      attempt_directory_matches: true
     expected:
-      outcome_code: RUN_STILL_ACTIVE
+      outcome_code: ATTEMPT_STILL_ACTIVE
       recommended_status: RUNNING
 
-  - case_id: tmux_session_missing_normal_marker
+  - case_id: tmux_missing_with_terminal_marker
     input:
-      backend: TMUX
       session_exists: false
       normal_terminal_evidence: true
       failure_evidence: false
     expected:
-      outcome_code: RUN_FINISHED_UNVERIFIED
-      recommended_status: FINISHED_UNVERIFIED
+      outcome_code: ATTEMPT_FINISHED_UNVERIFIED
 
-  - case_id: tmux_session_missing_no_terminal_evidence
+  - case_id: tmux_missing_without_terminal_evidence
     input:
-      backend: TMUX
       session_exists: false
       normal_terminal_evidence: false
       failure_evidence: false
     expected:
-      outcome_code: RUN_STATUS_UNKNOWN
-      recommended_status: UNKNOWN
+      outcome_code: ATTEMPT_STATUS_UNKNOWN
       automatic_resubmit_allowed: false
 
-  - case_id: local_pid_reused_by_other_process
+  - case_id: local_pid_reused
     input:
-      backend: LOCAL
       pid_exists: true
-      command_identity_matches: false
+      process_command_matches_execution_spec: false
     expected:
-      outcome_code: RUN_STATUS_UNKNOWN
-      recommended_status: UNKNOWN
+      outcome_code: ATTEMPT_STATUS_UNKNOWN
 
-  - case_id: explicit_cancelled_state
+  - case_id: explicit_attempt_cancelled
     input:
-      backend: SLURM
       raw_backend_state: CANCELLED
+      cancellation_evidence_present: true
     expected:
-      outcome_code: RUN_CANCELLED_WITH_EVIDENCE
+      outcome_code: ATTEMPT_CANCELLED_WITH_EVIDENCE
       recommended_status: CANCELLED
 
-  - case_id: status_command_unavailable
+  - case_id: status_adapter_unavailable
     input:
-      backend: LSF
-      status_command_available: false
+      status_capability_available: false
       terminal_evidence_available: false
     expected:
-      component_status: DONE
-      outcome_code: BACKEND_STATUS_CHECK_UNAVAILABLE
+      outcome_code: ATTEMPT_BACKEND_STATUS_CHECK_UNAVAILABLE
       recommended_status: UNKNOWN
 
-  - case_id: submission_record_job_id_mismatch
+  - case_id: submission_attempt_mismatch
     input:
-      backend: PBS
-      record_job_id: '100'
-      evidence_job_id: '101'
+      record_work_directory: 04_md_simulation/md.1/attempts/attempt.001
+      spec_work_directory: 04_md_simulation/md.1/attempts/attempt.002
     expected:
       component_status: BLOCKED
-      outcome_code: SUBMISSION_RECORD_MISMATCH
+      outcome_code: ATTEMPT_SUBMISSION_RECORD_MISMATCH
 
-  - case_id: no_polling_loop
+  - case_id: one_on_demand_check_only
     input:
-      requested_check_mode: ON_DEMAND
       requested_retry_count: 10
     expected:
       checks_executed: 1
