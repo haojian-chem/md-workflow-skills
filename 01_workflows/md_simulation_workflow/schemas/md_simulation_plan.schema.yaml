@@ -1,51 +1,48 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: md_simulation_plan.schema.yaml
-title: Immutable MD Simulation Plan
+title: Immutable MD Simulation Task Projection Plan
 type: object
 required:
   - schema_version
   - plan_id
   - workstream_id
   - protocol_spec
+  - protocol_spec_id
+  - protocol_validator_task_id
   - system_artifact_set_ids
-  - run_units
-  - resolved_decision_ids
-  - unresolved_items
+  - run_unit_projection
+  - unresolved_gates
   - supersedes_plan_id
   - revision_reason
   - policies
 properties:
-  schema_version: {type: integer, const: 1}
+  schema_version: {type: integer, const: 2}
   plan_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
   protocol_spec: {$ref: '#/$defs/file_identity'}
+  protocol_spec_id: {type: string, minLength: 1}
+  protocol_validator_task_id: {type: string, minLength: 1}
   system_artifact_set_ids:
     type: array
     minItems: 1
     uniqueItems: true
     items: {type: string, minLength: 1}
-  run_units:
+  run_unit_projection:
     type: array
     minItems: 1
-    items: {$ref: '#/$defs/run_unit_plan'}
-  resolved_decision_ids:
-    type: array
-    uniqueItems: true
-    items: {type: string, minLength: 1}
-  unresolved_items:
+    items: {$ref: '#/$defs/run_unit_projection'}
+  unresolved_gates:
     type: array
     items:
       type: object
-      required: [item_id, category, description, blocking_stage, affected_field_paths]
+      required: [item_id, blocking_stage, affected_run_unit_ids]
       properties:
         item_id: {type: string, minLength: 1}
-        category: {type: string, minLength: 1}
-        description: {type: string, minLength: 1}
         blocking_stage:
-          enum: [PLAN_VALIDATION, INPUT_PREPARATION, EXECUTION]
-        affected_field_paths:
+          enum: [INPUT_PREPARATION, ATTEMPT_SPECIFICATION]
+        affected_run_unit_ids:
           type: array
-          minItems: 1
+          uniqueItems: true
           items: {type: string, minLength: 1}
       additionalProperties: false
   supersedes_plan_id: {type: [string, 'null']}
@@ -54,13 +51,15 @@ properties:
     type: object
     required:
       - immutable
-      - allow_implicit_scientific_defaults
+      - protocol_is_scientific_owner
       - route_is_derived_projection
+      - runtime_status_not_embedded
       - preserve_previous_plan
     properties:
       immutable: {const: true}
-      allow_implicit_scientific_defaults: {const: false}
+      protocol_is_scientific_owner: {const: true}
       route_is_derived_projection: {const: true}
+      runtime_status_not_embedded: {const: true}
       preserve_previous_plan: {const: true}
     additionalProperties: false
 additionalProperties: false
@@ -73,130 +72,51 @@ $defs:
       sha256:
         type: string
         pattern: '^[A-Fa-f0-9]{64}$'
-      artifact_set_id: {type: [string, 'null']}
     additionalProperties: false
-  mdp_identity:
-    type: object
-    required: [path, sha256, artifact_set_id, source_kind]
-    properties:
-      path: {type: string, minLength: 1}
-      sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-      artifact_set_id: {type: [string, 'null']}
-      source_kind: {enum: [PROJECT_FILE, TEMPLATE, USER_PROVIDED]}
-    additionalProperties: false
-  expected_output:
-    type: object
-    required: [role, required]
-    properties:
-      role: {type: string, minLength: 1}
-      path: {type: [string, 'null']}
-      required: {type: boolean}
-    additionalProperties: false
-  completion_check:
-    type: object
-    required: [check_id, metric_id, operator, value, unit, blocking]
-    properties:
-      check_id: {type: string, minLength: 1}
-      metric_id: {type: string, minLength: 1}
-      operator: {enum: [LT, LE, EQ, GE, GT, BETWEEN]}
-      value:
-        oneOf:
-          - type: number
-          - type: array
-            minItems: 2
-            maxItems: 2
-            items: {type: number}
-      unit: {type: [string, 'null']}
-      blocking: {type: boolean}
-    additionalProperties: false
-  run_unit_plan:
+  run_unit_projection:
     type: object
     required:
       - run_unit_id
+      - protocol_field_path
       - role
-      - sequence
       - depends_on
       - work_directory
-      - mdp
-      - start_state
-      - grompp
-      - execution_policy
-      - expected_outputs
-      - completion_criteria
-      - input_preparation_status
+      - input_work_directory
+      - attempts_work_directory
+      - start_state_source_type
+      - start_state_source_run_unit_id
+      - input_gate_status
+      - attempt_gate_status
+      - blocking_item_ids
     properties:
       run_unit_id: {type: string, minLength: 1}
+      protocol_field_path: {type: string, minLength: 1}
       role:
-        enum: [ENERGY_MINIMIZATION, EQUILIBRATION, PRODUCTION, CONTINUATION, CUSTOM]
-      sequence: {type: integer, minimum: 1}
+        enum: [ENERGY_MINIMIZATION, EQUILIBRATION, PRODUCTION, CUSTOM]
       depends_on:
         type: array
         uniqueItems: true
         items: {type: string, minLength: 1}
       work_directory: {type: string, minLength: 1}
-      mdp: {$ref: '#/$defs/mdp_identity'}
-      start_state:
-        type: object
-        required: [source_type, source_run_unit_id, checkpoint]
-        properties:
-          source_type: {enum: [SYSTEM, PRIOR_RUN_OUTPUT]}
-          source_run_unit_id: {type: [string, 'null']}
-          checkpoint:
-            oneOf:
-              - type: 'null'
-              - $ref: '#/$defs/file_identity'
-        allOf:
-          - if:
-              properties: {source_type: {const: SYSTEM}}
-            then:
-              properties: {source_run_unit_id: {type: 'null'}}
-          - if:
-              properties: {source_type: {const: PRIOR_RUN_OUTPUT}}
-            then:
-              properties: {source_run_unit_id: {type: string, minLength: 1}}
-        additionalProperties: false
-      grompp:
-        type: object
-        required: [executable, executable_version, maxwarn, extra_argv]
-        properties:
-          executable: {type: string, minLength: 1}
-          executable_version: {type: [string, 'null']}
-          maxwarn: {type: integer, minimum: 0}
-          extra_argv:
-            type: array
-            items: {type: string}
-        additionalProperties: false
-      execution_policy:
-        type: object
-        required: [mode, backend_type, resource_profile_id]
-        properties:
-          mode: {enum: [SYNCHRONOUS, ASYNCHRONOUS, UNRESOLVED]}
-          backend_type: {enum: [LOCAL, TMUX, LSF, SLURM, PBS, UNRESOLVED]}
-          resource_profile_id: {type: [string, 'null']}
-        additionalProperties: false
-      expected_outputs:
+      input_work_directory: {type: string, minLength: 1}
+      attempts_work_directory: {type: string, minLength: 1}
+      start_state_source_type: {enum: [SYSTEM, PRIOR_RUN_OUTPUT]}
+      start_state_source_run_unit_id: {type: [string, 'null']}
+      input_gate_status: {enum: [READY, BLOCKED_BY_UNRESOLVED_ITEM]}
+      attempt_gate_status: {enum: [READY, BLOCKED_BY_UNRESOLVED_ITEM]}
+      blocking_item_ids:
         type: array
-        minItems: 1
-        items: {$ref: '#/$defs/expected_output'}
-      completion_criteria:
-        type: object
-        required:
-          - require_normal_termination
-          - target_nsteps
-          - target_time_ps
-          - require_checkpoint
-          - role_specific_checks
-        properties:
-          require_normal_termination: {type: boolean}
-          target_nsteps: {type: [integer, 'null'], minimum: 0}
-          target_time_ps: {type: [number, 'null'], minimum: 0}
-          require_checkpoint: {type: boolean}
-          role_specific_checks:
-            type: array
-            items: {$ref: '#/$defs/completion_check'}
-        additionalProperties: false
-      input_preparation_status:
-        enum: [NOT_PREPARED, CANDIDATE_AVAILABLE, VALIDATED]
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+    allOf:
+      - if:
+          properties: {start_state_source_type: {const: SYSTEM}}
+        then:
+          properties:
+            start_state_source_run_unit_id: {type: 'null'}
+      - if:
+          properties: {start_state_source_type: {const: PRIOR_RUN_OUTPUT}}
+        then:
+          properties:
+            start_state_source_run_unit_id: {type: string, minLength: 1}
     additionalProperties: false
