@@ -1,157 +1,154 @@
-schema_version: 2
+schema_version: 3
 skill_name: md_simulation_completion_validator
 cases:
-  - case_id: workflow_completed
+  - case_id: workflow_completed_with_stage_output
     input:
       workflow_exit_required: true
+      protocol_validated: true
       plan_validated: true
       route_matches_plan: true
-      required_run_units: [em.1, eq.1, md.1]
-      validated_md_inputs: [em.1, eq.1, md.1]
-      validated_md_outputs: [em.1, eq.1, md.1]
-      unresolved_submissions: []
-      dependency_graph_valid: true
-      final_md_output_ids: [artifact-mdout-1]
-      final_artifact_validated: true
+      required_run_units: [em.1, eq.1, md.1, md.2]
+      validated_md_inputs: [em.1, eq.1, md.1, md.2]
+      accepted_attempts_closed: true
+      validated_run_outputs: [em.1, eq.1, md.1, md.2]
+      stage_output_validated: true
+      stage_output_included_runs: [em.1, eq.1, md.1, md.2]
     expected:
-      component_status: DONE
       outcome_code: MD_SIMULATION_WORKFLOW_COMPLETED
       gate_recommendation: COMPLETE_WORKFLOW
 
-  - case_id: partial_scope_completed
+  - case_id: scope_complete_without_stage_output
     input:
       workflow_exit_required: false
-      scope_end: validate_run_unit_output:eq.1
-      plan_validated: true
+      scope_end: validate_run_output:eq.1
       required_run_units: [em.1, eq.1]
       validated_md_inputs: [em.1, eq.1]
-      validated_md_outputs: [em.1, eq.1]
-      later_run_units: [md.1]
+      accepted_attempts_closed: true
+      validated_run_outputs: [em.1, eq.1]
+      stage_output_present: false
     expected:
       outcome_code: MD_SIMULATION_SCOPE_COMPLETED
       gate_recommendation: COMPLETE_SCOPE
-      workflow_completed: false
 
-  - case_id: plan_missing
-    input: {plan_validated: false}
+  - case_id: protocol_or_plan_missing
+    input:
+      protocol_validated: false
+      plan_validated: false
     expected:
-      outcome_code: SIMULATION_PLAN_MISSING_OR_STALE
-      gate_recommendation: REVISE_ROUTE
+      outcome_code: SIMULATION_PROTOCOL_OR_PLAN_MISSING_OR_STALE
 
   - case_id: route_uses_superseded_plan
     input:
       active_route_plan_id: plan.v1
-      current_valid_plan_id: plan.v2
-    expected: {outcome_code: ROUTE_PLAN_MISMATCH, gate_recommendation: REVISE_ROUTE}
+      current_plan_id: plan.v2
+    expected:
+      outcome_code: ROUTE_PLAN_MISMATCH
+      gate_recommendation: REVISE_ROUTE
 
-  - case_id: required_md_input_not_validated
+  - case_id: required_md_input_missing
     input:
       required_run_units: [em.1, md.1]
       validated_md_inputs: [em.1]
-      validated_md_outputs: [em.1, md.1]
     expected:
       outcome_code: REQUIRED_MD_INPUT_NOT_VALIDATED
-      gate_recommendation: REVISE_ROUTE
 
-  - case_id: md_input_from_wrong_plan
+  - case_id: active_attempt_remains
     input:
-      plan_id: plan.v2
-      md_input_plan_id: plan.v1
-    expected: {outcome_code: MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE}
-
-  - case_id: active_submission_remains
-    input:
-      required_run_units: [md.1]
-      unresolved_submissions:
-        - {submission_id: sub-1, status: RUNNING}
+      attempts:
+        - {run_unit_id: md.1, attempt_id: attempt.001, status: RUNNING}
     expected:
-      outcome_code: ACTIVE_OR_UNVERIFIED_SUBMISSION_REMAINS
+      outcome_code: ACTIVE_OR_UNVERIFIED_ATTEMPT_REMAINS
       gate_recommendation: PAUSE_FOR_DECISION
 
-  - case_id: finished_unverified_submission_remains
+  - case_id: finished_unverified_attempt_remains
     input:
-      required_run_units: [md.1]
-      unresolved_submissions:
-        - {submission_id: sub-1, status: FINISHED_UNVERIFIED}
-    expected: {outcome_code: ACTIVE_OR_UNVERIFIED_SUBMISSION_REMAINS}
-
-  - case_id: required_output_not_validated
-    input:
-      required_run_units: [em.1, md.1]
-      validated_md_outputs: [em.1]
+      attempts:
+        - {run_unit_id: md.1, attempt_id: attempt.001, status: FINISHED_UNVERIFIED}
     expected:
-      outcome_code: REQUIRED_RUN_UNIT_NOT_VALIDATED
-      gate_recommendation: REVISE_ROUTE
+      outcome_code: ACTIVE_OR_UNVERIFIED_ATTEMPT_REMAINS
 
-  - case_id: circular_dependency
+  - case_id: failed_attempt_without_replacement
     input:
-      dependency_graph: {md.1: [md.2], md.2: [md.1]}
+      attempts:
+        - {attempt_id: attempt.001, status: FAILED}
+      replacement_or_exclusion_lineage_present: false
     expected:
-      component_status: DONE
-      outcome_code: RUN_UNIT_DEPENDENCY_INVALID
+      outcome_code: FAILED_OR_CANCELLED_ATTEMPT_UNRESOLVED
 
-  - case_id: prior_run_source_not_in_dependency_closure
+  - case_id: failed_attempt_replaced
     input:
-      run_unit_id: md.2
-      depends_on: []
-      start_state_source_run_unit: md.1
-    expected: {outcome_code: RUN_UNIT_DEPENDENCY_INVALID}
-
-  - case_id: failed_run_superseded_validly
-    input:
-      required_run_units: [md.1.retry]
-      failed_submissions:
-        - {run_unit_id: md.1, status: FAILED}
-      replacements:
-        - {old_run_unit_id: md.1, new_run_unit_id: md.1.retry, route_accepts: true, md_input_validated: true, md_output_validated: true}
-    expected: {failed_old_run_blocks_completion: false}
-
-  - case_id: failed_run_without_replacement
-    input:
-      required_run_units: [md.1]
-      failed_submissions:
-        - {run_unit_id: md.1, status: FAILED}
-      replacements: []
-    expected: {outcome_code: FAILED_OR_CANCELLED_RUN_UNRESOLVED}
-
-  - case_id: output_derived_from_wrong_md_input
-    input:
-      expected_md_input_artifact_id: mdinput-current
-      md_output_derived_from: [mdinput-old]
-    expected: {outcome_code: MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE}
-
-  - case_id: final_output_invalidated
-    input:
-      final_md_output_ids: [artifact-mdout-1]
-      final_artifact_validation_status: INVALIDATED
-    expected: {outcome_code: MD_INPUT_OUTPUT_LINEAGE_INCOMPLETE}
-
-  - case_id: two_final_outputs_without_selection
-    input:
-      final_md_output_ids: [artifact-mdout-a, artifact-mdout-b]
-      resolved_final_selection: null
+      attempts:
+        - {attempt_id: attempt.001, status: FAILED}
+        - {attempt_id: attempt.002, status: FINISHED_UNVERIFIED}
+      accepted_attempt_chain: [attempt.002]
+      replacement_lineage_present: true
+      run_output_validated: true
     expected:
-      outcome_code: FINAL_MD_OUTPUT_NOT_UNIQUE
-      gate_recommendation: PAUSE_FOR_DECISION
+      failed_attempt_blocks_completion: false
 
-  - case_id: system_to_input_to_output_lineage_complete
+  - case_id: required_run_output_missing
     input:
-      lineage:
-        - {artifact: system-1, type: SYSTEM, derived_from: []}
-        - {artifact: mdinput-1, type: MD_INPUT, derived_from: [system-1]}
-        - {artifact: mdout-1, type: MD_OUTPUT, derived_from: [mdinput-1]}
-    expected: {lineage_closed: true}
-
-  - case_id: directory_scan_extra_run_not_in_scope
-    input:
-      route_required_run_units: [md.1]
-      directory_run_units: [md.1, old.md.0]
+      required_run_units: [md.1, md.2]
+      validated_run_outputs: [md.2]
     expected:
-      required_run_units_used: [md.1]
-      old_directory_auto_included: false
+      outcome_code: REQUIRED_RUN_OUTPUT_NOT_VALIDATED
+
+  - case_id: workflow_exit_without_stage_output
+    input:
+      workflow_exit_required: true
+      all_run_outputs_validated: true
+      stage_output_present: false
+    expected:
+      outcome_code: STAGE_MD_OUTPUT_MISSING_OR_NOT_VALIDATED
+
+  - case_id: stage_output_not_validated
+    input:
+      stage_output_present: true
+      stage_output_validation_status: UNVALIDATED
+    expected:
+      outcome_code: STAGE_MD_OUTPUT_MISSING_OR_NOT_VALIDATED
+
+  - case_id: stage_output_omits_early_segment
+    input:
+      required_run_units: [md.1, md.2]
+      validated_run_outputs: [md.1, md.2]
+      stage_output_included_runs: [md.2]
+    expected:
+      outcome_code: STAGE_MD_OUTPUT_SCOPE_OR_LINEAGE_INVALID
+
+  - case_id: stage_output_derived_ids_wrong
+    input:
+      required_run_output_artifacts: [artifact-md1, artifact-md2]
+      stage_output_derived_from: [artifact-md2]
+    expected:
+      outcome_code: STAGE_MD_OUTPUT_SCOPE_OR_LINEAGE_INVALID
+
+  - case_id: dependency_cycle
+    input:
+      dependency_graph: {a: [b], b: [a]}
+    expected:
+      outcome_code: RUN_UNIT_SET_OR_DEPENDENCY_INVALID
+
+  - case_id: directory_extra_run_not_in_scope
+    input:
+      route_required_runs: [md.1]
+      directory_runs: [old.md.0, md.1]
+    expected:
+      required_runs_used: [md.1]
+      old_run_auto_included: false
+
+  - case_id: completion_does_not_claim_convergence
+    input:
+      all_technical_gates_pass: true
+      convergence_analysis_present: false
+    expected:
+      outcome_code: MD_SIMULATION_WORKFLOW_COMPLETED
+      scientific_convergence_claimed: false
 
   - case_id: completion_scope_missing
-    input: {route_id: null, scope: null}
+    input:
+      route_id: null
+      scope: null
     expected:
       component_status: BLOCKED
       outcome_code: COMPLETION_SCOPE_UNRESOLVED
