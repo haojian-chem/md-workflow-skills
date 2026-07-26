@@ -1,186 +1,156 @@
 ---
 name: md_simulation_plan_validator
-description: 独立核验 md_simulation_plan candidate 是否准确物化已验证 protocol spec，并与 VALIDATED SYSTEM、field provenance、run unit DAG、MDP identities、未决项和修订谱系一致。该 Validator 不修改计划、不补充科学参数，也不生成 MD_INPUT。
+description: 独立核验 MD simulation plan candidate 是否是 validated scientific protocol 的准确静态 task projection，检查 run-unit DAG、目录、start-state logical source、unresolved gate 投影和 revision lineage，并确认 plan 未复制拥有科学参数或嵌入运行状态。该 Validator 不修改 plan，也不生成 MD_INPUT。
 ---
 
 # 目标
 
-确认 `md_simulation_plan` 可以作为动态 route projection 和逐 run input preparation 的权威阶段计划。
+确认 plan 可供 Workflow 生成 route fragments：
 
-通过只表示：
-
-- protocol spec 已由专属 Validator 接受；
-- plan 对 protocol 逐字段保真；
-- DAG、来源、路径和未决项分层一致；
-- plan 可用于后续 input preparation gate。
-
-不表示 MDP 科学设置最佳、TPR 已生成或模拟已完成。
+- protocol 已通过专属 Validator；
+- run-unit projection 精确覆盖 protocol run units；
+- DAG、start-state、paths 和 gates 正确；
+- protocol 仍是科学字段唯一 owner；
+- plan 是 immutable static projection。
 
 # 职责边界
 
 负责：
 
-- 读取 protocol spec 及其 validation evidence；
-- 读取 SYSTEM、source files、旧 plan 和 plan candidate；
-- 独立重算 expected run unit set、字段和 DAG；
-- 核验 protocol-to-plan 保真、field provenance coverage 和 hashes；
-- 核验 start state、未决项、路径与 revision chain；
-- 写 report 并返回 gate 建议。
+- 读取 validated protocol、protocol validation、SYSTEM、old plan 和 plan candidate；
+- 独立重算 expected run-unit projection；
+- 检查 projection set、DAG、paths、gate refs 和 revision chain；
+- 检查 plan 未复制 MDP/completion/runtime/status 字段；
+- 写 validation report 和 gate 建议。
 
-不负责修改 plan/protocol/MDP，运行 grompp/mdrun，接受或替换 SYSTEM，写管理目录或自动重试。
+不得：
+
+- 修改 plan/protocol；
+- 补充 run units 或科学参数；
+- 生成 MDP/TPR/attempt；
+- 把 runtime state 写入 plan；
+- 写管理目录；
+- 自动重跑 Operation。
 
 # 输入
 
-作为组合 task 的 validator 部分，必须接收：
+作为 plan materialization 的专属 Validator，接收：
 
-- 同一 task 的 Operation result；
-- validated `simulation_protocol_spec.yaml`；
-- protocol validation report/result；
-- plan candidate 和 materialization report；
+- Operation result/report；
+- plan candidate；
+- validated protocol spec 和 validation evidence；
 - VALIDATED SYSTEM records；
-- MDP/template files；
 - old plan，如为 revision；
-- allowed read/write、forbidden paths 和 Validator detail paths。
-
-Operation 未产生完整 candidate 时 BLOCKED 或 FAILED，不推测内容。
+- allowed read/write 与 forbidden paths；
+- report/result data路径。
 
 # Preflight
 
 确认：
 
-- task mode、Skill refs、task/workstream IDs 正确；
-- Operation status 为 DONE；
-- protocol 和 plan 均通过各自 schema；
-- protocol validation outcome 允许进入 plan；
-- protocol spec path/hash/validator task 与 report 一致；
-- protocol 未被 superseded/invalidated；
-- required files 可读且 hashes 一致；
-- SYSTEM 为 VALIDATED；
-- Validator 不以被验证对象为写入目标；
-- 管理目录不可写。
+1. Operation status 为 DONE；
+2. protocol schema v2 和 plan schema v2 有效；
+3. protocol Validator outcome 可接受；
+4. task/workstream/protocol/plan/SYSTEM IDs 一致；
+5. files 可读且 hashes 一致；
+6. Validator 不写 plan/protocol/SYSTEM；
+7. 管理目录禁止写入。
 
 # 独立检查
 
-## Protocol gate
+## Projection set
 
-只有以下 protocol outcomes 可作为输入：
+从 protocol 独立计算每个 run unit：
 
-```text
-SIMULATION_PROTOCOL_VALIDATED
-SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
-```
+- ID、role、dependencies；
+- protocol field path；
+- start-state source type/source run；
+- run/input/attempts directories；
+- input/attempt gate status；
+- blocking item IDs。
 
-第二种情况下必须确认没有 PLAN_VALIDATION unresolved items。否则返回 `PLAN_PROTOCOL_NOT_VALIDATED`。
+plan projection 必须精确匹配，不得漏项或增加默认 run unit。
 
-## Protocol-to-plan 保真
-
-从 protocol spec 独立计算 expected：
-
-- SYSTEM artifact IDs；
-- run unit IDs、roles、sequence、depends_on；
-- work directories；
-- MDP identities；
-- start-state sources；
-- grompp settings；
-- execution policy；
-- expected outputs/completion criteria；
-- resolved decisions/unresolved items。
-
-不得信任 materialization report 自报结果。plan 不得新增、删除或改变科学字段。
-
-## Field provenance
-
-- protocol 中 required scientific fields 必须有 provenance；
-- plan 必须完整继承这些字段及其来源关系；
-- provenance source IDs 必须可定位；
-- uncovered fields 返回 `PLAN_FIELD_PROVENANCE_INCOMPLETE`；
-- 不得用 plan materialization task 自身作为科学来源。
-
-## DAG 与 start state
-
-检查：
+## DAG/start-state
 
 - IDs 唯一；
-- dependency references 存在；
-- 无 self-dependency/cycle；
-- sequence 与 dependency 无反向矛盾；
+- dependencies 全部存在、无 self/cycle；
 - PRIOR_RUN_OUTPUT source 位于 dependency closure；
-- SYSTEM source 不引用 source run unit。
+- SYSTEM source 的 source run 为 null；
+- topological route projection 可生成。
 
-## Files 与 lineage
+## Paths
 
-- protocol/MDP hashes 与实际文件一致；
-- SYSTEM IDs 与 records 一致；
-- decisions 可追溯；
-- source files 未改变；
-- plan paths 属于当前 Workstream。
+- run directories 在当前 `04_md_simulation/`；
+- input/attempts directories 是各 run directory 的唯一子路径；
+- 不与 `00_plan/`、`99_validation/`、其他 run 或管理目录冲突；
+- paths 采用项目约定的规范化形式。
 
-## 未决项
+## Gate projection
 
-- PLAN_VALIDATION 项存在：不通过；
-- INPUT_PREPARATION 项必须有 affected field paths，并阻止对应 input task；
-- EXECUTION 项只允许不改变科学输入的执行问题；
-- 科学字段不得伪装为 execution-only。
+- INPUT_PREPARATION items 只阻塞受影响 run input gate；
+- ATTEMPT_SPECIFICATION items 只阻塞受影响 attempt gate；
+- blocking item IDs 全部引用 protocol unresolved items；
+- 没有 PROTOCOL_VALIDATION unresolved item；
+- scientific field 未误分类绕过 protocol gate。
+
+## Owner separation
+
+plan 不得包含或拥有：
+
+- MDP source/typed overrides；
+- preprocessing values；
+- expected output details；
+- completion targets/checks；
+- GROMACS executable/backend/resources；
+- attempt/submission identities；
+- NOT_PREPARED/RUNNING/VALIDATED 等 runtime status。
+
+这些字段仍从 validated protocol 或 runtime records 读取。
 
 ## Revision
 
-- `supersedes_plan_id` 指向提供的旧 plan；
-- revision reason 非空；
-- 新 plan 使用新 identity/path；
-- 旧 plan 和下游 artifacts 不被覆盖；
-- 首版 plan 的 supersedes/reason 可以为 null。
+- 首版 supersedes/reason 可以 null；
+- revision 指向提供的 old plan 且 reason 非空；
+- old plan hash 不变；
+- 新路径/identity 唯一；
+- 不覆盖下游 artifacts。
 
 # Outcome codes
 
 - `SIMULATION_PLAN_VALIDATED`；
-- `SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED`；
-- `PLAN_PROTOCOL_NOT_VALIDATED`；
-- `PLAN_SPEC_MISMATCH`；
-- `PLAN_FIELD_PROVENANCE_INCOMPLETE`；
-- `PLAN_DAG_INVALID`；
-- `PLAN_START_STATE_INVALID`；
-- `PLAN_SOURCE_OR_HASH_MISMATCH`；
-- `PLAN_DECISION_PROVENANCE_MISMATCH`；
-- `PLAN_UNRESOLVED_ITEM_MISCLASSIFIED`；
-- `PLAN_REVISION_CHAIN_INVALID`；
-- `PLAN_PATH_CONFLICT`；
+- `SIMULATION_PLAN_VALIDATED_WITH_DEFERRED_GATES`；
 - `PLAN_VALIDATOR_INPUT_INCOMPLETE`；
+- `PLAN_PROTOCOL_OR_SYSTEM_MISMATCH`；
+- `PLAN_PROJECTION_SET_MISMATCH`；
+- `PLAN_DAG_OR_START_STATE_INVALID`；
+- `PLAN_GATE_PROJECTION_INVALID`；
+- `PLAN_PATH_CONFLICT`；
+- `PLAN_OWNER_SEPARATION_VIOLATION`；
+- `PLAN_RUNTIME_STATUS_EMBEDDED`；
+- `PLAN_REVISION_CHAIN_INVALID`；
 - `PLAN_VALIDATOR_INTERNAL_FAILURE`。
 
-只有前两个 outcomes 可以建议 Workflow 使用 plan。
+只有前两个 outcome 可用于 route projection。
 
 # 输出
 
 ```text
 04_md_simulation/00_plan/
-├── md_simulation_plan_validation_report.yaml
-└── md_simulation_plan_validation_result.yaml
+├── md_simulation_plan_validation_report*.yaml
+└── md_simulation_plan_validation*.log
 ```
 
-report schema：
+不创建 MD artifact candidate。
 
-```text
-schemas/md_simulation_plan_validation_report.schema.yaml
-```
+# 自检
 
-Validation result 必须与 Operation result 分开，记录 validated files、field provenance coverage、unresolved items 和 `input_preparation_allowed_run_unit_ids`；不创建 MD_INPUT artifact。
-
-# 失败处理与自检
-
-- 输入不完整：BLOCKED；
-- 对象可检查但 gate 不通过：DONE + 不通过 outcome；
-- parser/internal error：FAILED；
-- 不修改 plan，不自动重跑。
-
-自检：
-
-- [ ] protocol 已由专属 Validator 接受；
-- [ ] expected plan 从 protocol 独立重算；
-- [ ] 未信任 Operation report；
-- [ ] field provenance coverage 完整；
-- [ ] DAG/start state/paths 已检查；
-- [ ] hashes/SYSTEM lineage 一致；
-- [ ] 未决项分类正确；
+- [ ] expected projection 从 protocol 独立重算；
+- [ ] run set/DAG/start-state 精确匹配；
+- [ ] paths 唯一且受控；
+- [ ] unresolved gates 投影正确；
+- [ ] plan 未复制拥有科学字段；
+- [ ] plan 未嵌入 runtime status；
 - [ ] revision 未覆盖旧 plan；
-- [ ] 未补充科学参数或生成 MD_INPUT；
-- [ ] 未修改对象或写管理目录。
+- [ ] 未生成 MDINPUT/attempt；
+- [ ] 未修改对象或管理目录。
