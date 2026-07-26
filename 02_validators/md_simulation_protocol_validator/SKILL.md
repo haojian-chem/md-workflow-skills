@@ -1,144 +1,171 @@
 ---
 name: md_simulation_protocol_validator
-description: 独立核验 simulation_protocol_spec candidate 是否完整、与 VALIDATED SYSTEM、resolved decisions、route scope 和明确 MDP/template 来源一致，确认没有隐式添加科学流程或参数。该 Validator 不修改 spec，也不生成 plan 或运行输入。
+description: 独立核验 scientific simulation protocol candidate 与 VALIDATED SYSTEM、structured inputs、resolved decisions、route scope、MDP final files/templates 和 field provenance 是否一致，并确认没有隐式科学默认值或 misplaced runtime configuration。该 Validator 不修改 spec，也不生成 plan。
 ---
 
 # 目标
 
-确认 protocol spec 可以进入 `md_simulation_plan_materialization`：
-
-- 每个科学字段有可追踪来源；
-- run unit set、依赖和范围与当前决定一致；
-- MDP/template identities 有效；
-- PLAN_VALIDATION 未决项为空；
-- INPUT_PREPARATION/EXECUTION 未决项被正确分类；
-- Operation 没有补充默认步骤或参数。
+确认 protocol 可作为科学字段唯一 owner 并进入 plan materialization。
 
 # 职责边界
 
 负责：
 
-- 读取 SYSTEM、route scope、decision records、source files 和 spec candidate；
-- 独立重建 decisions/files 支持的 expected protocol；
-- 比较 run units、字段值和 provenance；
-- 检查未决项分类与 completeness；
-- 核验 revision chain 和 source hashes；
-- 写 report 并返回 gate 建议。
+- 读取 protocol candidate、specification report、SYSTEM artifacts、decision records、structured protocol inputs 和文件；
+- 独立重建 expected run-unit set、roles、dependencies、MDP specs、start states、preprocessing policies、expected outputs 和 completion criteria；
+- 检查 field-provenance coverage 与冲突；
+- 检查 unresolved barrier 分类；
+- 检查 runtime/backend/resource 字段未混入 protocol；
+- 写 validation report 和 gate 建议。
 
-不负责：
+不得：
 
-- 修改 spec；
-- 选择更好的模拟方案；
-- 补充默认 EM/NVT/NPT/production；
-- 修改 decision records、MDP 或 SYSTEM；
-- 生成 plan、TPR 或运行模拟；
-- 写管理目录或直接向用户提问。
+- 修改 spec 或源文件；
+- 补充 run units、MDP overrides 或 thresholds；
+- 解释无法确定解析的开放式自然语言；
+- 选择 backend/resources；
+- 生成 plan/TPR/attempt；
+- 写管理目录。
 
 # 输入
 
-作为 `OPERATION_WITH_VALIDATOR` 的 validator 部分接收：
+作为 protocol specification 的专属 Validator，接收：
 
-- 同一 task 的 Operation result；
+- 同一 task Operation result/report；
+- protocol candidate；
 - VALIDATED SYSTEM records；
-- resolved route scope；
-- 当前有效 resolved decisions；
-- MDP/template files；
-- protocol spec candidate 和 specification report；
-- 旧 spec，如为 revision；
-- allowed read/write、forbidden paths 和 report目标。
+- structured protocol input；
+-完整 decision records，而非仅 summary；
+- referenced MDP/template files；
+- old protocol，如为 revision；
+- allowed read/write 与 forbidden paths；
+- validation report/result data 路径。
 
 # Preflight
 
 确认：
 
-- task、Workstream、scope IDs 一致；
-- Operation status 为 DONE；
-- spec 可通过 Workflow 本地 schema；
-- SYSTEM 为 VALIDATED；
-- decisions 和 files 可读且 hashes 一致；
-- Validator 不以被验证对象为写入目标；
-- 管理目录不可写。
+1. Operation status 为 DONE；
+2. protocol schema v2 有效；
+3. task/workstream IDs 一致；
+4. SYSTEM artifacts 已 VALIDATED；
+5. source records/files 可读且 hashes 一致；
+6. Validator 不写 protocol/SYSTEM/source files；
+7. 管理目录禁止写入。
 
-# 独立核验
+# 独立检查
 
-## 来源覆盖
+## Scientific field reconstruction
 
-对 spec 每个 run unit 和科学字段，必须找到明确 decision/file/artifact/scope 来源。无来源字段视为隐式添加。
+从权威输入独立计算 expected：
 
-## Decision 状态
+- run unit IDs 和 roles；
+- dependencies；
+- MDP source kind/source/typed overrides；
+- start-state source；
+- maxwarn/index/reference requirements；
+- expected output roles；
+- completion mode、targets 和 checks。
 
-- 仅 RESOLVED 且未被 superseded 的 decisions 可作为当前来源；
-- PROJECT scope decision 只有明确适用于本 Workstream 才可使用；
-- decision resolution 与 spec 值必须一致；
-- 未使用但会影响协议的 blocking decision 必须解释。
+不得信任 Operation report 自报列表。
 
-## Run unit 与依赖
+## Role and dependency
 
-- spec 中 run unit set 与明确决定一致；
-- 不因 production 目标自动加入 EM/NVT/NPT；
-- IDs、roles、sequence 和 dependencies 有来源；
-- start-state source 唯一；
-- MDP identity 有来源且 hash 正确。
+- role 只允许 EM/EQUILIBRATION/PRODUCTION/CUSTOM；
+- CONTINUATION 出现即不通过；
+- IDs 唯一；
+- dependencies 全部存在、无 self/cycle；
+- PRIOR_RUN_OUTPUT source 位于 dependency closure；
+- SYSTEM start-state 的 checkpoint 必须为 null。
 
-## 未决项
+## MDP specification
 
-- PLAN_VALIDATION 项存在时 spec 不通过；
-- INPUT_PREPARATION 项只包含可延迟到 grompp 前解决的问题；
-- EXECUTION 项只包含不改变科学输入的 backend/resource/restart execution 决定；
-- 温度、压力、nsteps、time step、coupling、constraints、MDP selection 等不得误分类为 execution-only。
+FINAL_FILE：
 
-## 修订
+- final MDP identity/hash 有效；
+- overrides 为空；
+- rendering policy 为 USE_FILE_UNCHANGED。
 
-- 新 spec 不覆盖旧 spec；
-- `supersedes_spec_id` 正确；
-- old spec hash 不变；
-- revision 来源 decision 可追溯。
+TEMPLATE_WITH_TYPED_OVERRIDES：
+
+- template identity/hash 有效；
+- overrides parameter 唯一、类型和值一致；
+- rendering policy 为 EXACT_PARAMETER_REPLACEMENT；
+- 每个 override value 有 provenance；
+- 不包含自由文本 replacement。
+
+## Completion criteria
+
+- TARGET_STEP_OR_TIME 至少有 target_nsteps 或 target_time_ps；
+- ROLE_SPECIFIC 至少有一个显式 check；
+- metric IDs 只能在 registry capability 明确时进入可执行 hard gate；
+- 不增加隐式科学 threshold。
+
+## Field provenance
+
+- 所有非派生科学字段有覆盖；
+- field paths 指向真实字段；
+- source IDs 可追溯；
+- 相同 field path 不存在无法解释的冲突来源；
+- runtime field 不得通过 provenance 合法化后混入 scientific protocol。
+
+## Unresolved barriers
+
+- PROTOCOL_VALIDATION item 存在时不通过；
+- INPUT_PREPARATION/ATTEMPT_SPECIFICATION items 必须绑定受影响 fields/runs；
+- 科学字段不得误分类为 attempt-only unresolved。
+
+## Runtime separation
+
+protocol 不得包含：
+
+- GROMACS executable/version path；
+- execution mode/backend/host/session/queue；
+- MPI/OMP/GPU/memory/walltime；
+- append/noappend；
+- prepared submission identity。
+
+## Revision
+
+新版本需新 identity/path、有效 supersedes/revision reason，旧 protocol 和下游 artifacts 不得覆盖。
 
 # Outcome codes
 
 - `SIMULATION_PROTOCOL_VALIDATED`；
-- `SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS`；
-- `SIMULATION_PROTOCOL_SPEC_MISMATCH`；
-- `SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED`；
-- `SIMULATION_PROTOCOL_DECISION_PROVENANCE_MISMATCH`；
-- `SIMULATION_PROTOCOL_SOURCE_HASH_MISMATCH`；
-- `SIMULATION_PROTOCOL_RUN_UNIT_OR_DEPENDENCY_INVALID`；
-- `SIMULATION_PROTOCOL_UNRESOLVED_ITEM_MISCLASSIFIED`；
-- `SIMULATION_PROTOCOL_REVISION_INVALID`；
-- `SIMULATION_PROTOCOL_VALIDATOR_INPUT_INCOMPLETE`；
-- `SIMULATION_PROTOCOL_VALIDATOR_INTERNAL_FAILURE`。
+- `SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_GATES`；
+- `PROTOCOL_VALIDATOR_INPUT_INCOMPLETE`；
+- `PROTOCOL_SPEC_SOURCE_MISMATCH`；
+- `PROTOCOL_FIELD_PROVENANCE_INVALID`；
+- `PROTOCOL_IMPLICIT_DEFAULT_DETECTED`；
+- `PROTOCOL_RUN_UNIT_OR_DAG_INVALID`；
+- `PROTOCOL_MDP_SPEC_INVALID`；
+- `PROTOCOL_START_STATE_INVALID`；
+- `PROTOCOL_COMPLETION_CRITERIA_INVALID`；
+- `PROTOCOL_UNRESOLVED_ITEM_MISCLASSIFIED`；
+- `PROTOCOL_RUNTIME_FIELD_MISPLACED`；
+- `PROTOCOL_REVISION_CHAIN_INVALID`；
+- `PROTOCOL_VALIDATOR_INTERNAL_FAILURE`。
 
-只有前两个 outcome 可以建议接受 spec；前者允许进入 plan materialization，后者仅在没有 PLAN_VALIDATION 未决项时允许进入。
+只有前两个 outcome 可进入 plan materialization。
 
 # 输出
 
 ```text
 04_md_simulation/00_plan/
-├── md_simulation_protocol_validation_report.yaml
-└── md_simulation_protocol_validation_result.yaml
+├── simulation_protocol_validation_report*.yaml
+└── simulation_protocol_validation*.log
 ```
 
-report 至少记录：
+不返回 MD artifact candidate。
 
-- task/workstream/spec IDs；
-- SYSTEM、decision 和 file identities；
-- run unit/field provenance coverage；
-- implicit-field findings；
-- unresolved-item classification；
-- revision findings；
-- warnings、outcome 和 gate recommendation。
+# 自检
 
-# 返回与自检
-
-返回共享 `subagent_result` 的独立 validation_result，不创建 plan/artifact candidate。
-
-- [ ] expected protocol 从 decisions/files 独立重建；
-- [ ] 未信任 Operation report 自报；
-- [ ] 每个科学字段有来源；
-- [ ] 未检测到隐式默认流程或参数；
-- [ ] MDP/template hashes 一致；
-- [ ] 未决项分类正确；
-- [ ] revision 未覆盖旧 spec；
-- [ ] 未修改被验证对象；
-- [ ] 未生成 plan/TPR 或执行模拟；
-- [ ] 未写管理目录。
+- [ ] expected protocol 已独立重建；
+- [ ] CONTINUATION role 已拒绝；
+- [ ] MDP final/template override 条件已检查；
+- [ ] completion mode cross-field 条件已检查；
+- [ ] field provenance 完整无冲突；
+- [ ] runtime/backend/resource 未混入 protocol；
+- [ ] unresolved barriers 分类正确；
+- [ ] revision 未覆盖旧版本；
+- [ ] 未修改被验证对象或管理目录。
