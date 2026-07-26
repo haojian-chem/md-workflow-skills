@@ -1,155 +1,139 @@
-schema_version: 2
+schema_version: 3
 skill_name: md_run_execution
 cases:
-  - case_id: local_sync_em
-    purpose: positive_synchronous_execution
+  - case_id: valid_local_fresh_attempt
     input:
-      plan_validated: true
-      run_unit_matches_plan: true
+      attempt_spec_validated: true
+      attempt_id: attempt.001
+      attempt_kind: FRESH
       md_input_validated: true
-      input_manifest_matches_tpr: true
-      engine: GROMACS
-      mode: SYNCHRONOUS
       backend: LOCAL
-      restart_mode: FRESH
-      output_conflict: false
+      mode: SYNCHRONOUS
       process_exit_code: 0
     expected:
       status: DONE
-      outcome_code: PROCESS_FINISHED_UNVERIFIED
+      outcome_code: ATTEMPT_PROCESS_FINISHED_UNVERIFIED
       artifact_candidates: []
 
-  - case_id: tmux_async_submission
-    purpose: positive_tmux_submission
+  - case_id: valid_tmux_async_attempt
     input:
-      plan_validated: true
-      md_input_validated: true
-      mode: ASYNCHRONOUS
+      attempt_spec_validated: true
+      attempt_id: attempt.001
       backend: TMUX
-      session_name: md_ws1_md1
+      mode: ASYNCHRONOUS
+      prepared_submission_id: prepared-1
       session_unique: true
       submission_accepted: true
     expected:
       status: DONE
-      outcome_code: SUBMISSION_ACCEPTED
-      submission_evidence_contains: [session_name]
+      outcome_code: ATTEMPT_SUBMISSION_ACCEPTED
 
-  - case_id: lsf_submission
-    purpose: positive_scheduler_submission
+  - case_id: scheduler_attempt_accepted
     input:
-      plan_validated: true
-      md_input_validated: true
-      mode: ASYNCHRONOUS
-      backend: LSF
-      submission_script_hash_valid: true
+      attempt_spec_validated: true
+      backend: SLURM
+      prepared_submission_id: prepared-2
+      script_hash_valid: true
       job_id: '12345'
-      submission_accepted: true
-    expected: {status: DONE, outcome_code: SUBMISSION_ACCEPTED}
-
-  - case_id: stale_plan
-    purpose: plan_gate
-    input: {plan_validated: true, plan_superseded: true}
     expected:
-      status: BLOCKED
-      outcome_code: SIMULATION_PLAN_INVALID_OR_STALE
-      process_started: false
+      outcome_code: ATTEMPT_SUBMISSION_ACCEPTED
 
-  - case_id: run_unit_differs_from_plan
-    purpose: plan_run_identity
-    input: {execution_run_unit_id: md.2, plan_run_unit_id: md.1}
-    expected: {status: BLOCKED, outcome_code: SIMULATION_PLAN_INVALID_OR_STALE}
-
-  - case_id: md_input_candidate_not_validated
-    purpose: input_validation_gate
-    input: {md_input_present: true, md_input_validated: false}
-    expected:
-      status: BLOCKED
-      outcome_code: MD_INPUT_NOT_VALIDATED
-      process_started: false
-
-  - case_id: input_manifest_tpr_mismatch
-    purpose: input_provenance
-    input: {input_manifest_tpr_hash_matches: false}
-    expected: {status: BLOCKED, outcome_code: INPUT_MANIFEST_OR_TPR_MISMATCH}
-
-  - case_id: missing_tpr
-    purpose: blocking_input
-    input: {tpr_present: false}
-    expected:
-      status: BLOCKED
-      outcome_code: INPUT_MANIFEST_OR_TPR_MISMATCH
-      process_started: false
-
-  - case_id: continuation_without_checkpoint
-    purpose: blocking_restart
+  - case_id: attempt_spec_not_validated
     input:
-      restart_mode: CONTINUE_FROM_CHECKPOINT
+      attempt_spec_present: true
+      attempt_spec_validated: false
+    expected:
+      status: BLOCKED
+      outcome_code: EXECUTION_ATTEMPT_NOT_VALIDATED
+      process_started: false
+
+  - case_id: attempt_identity_mismatch
+    input:
+      task_attempt_id: attempt.002
+      spec_attempt_id: attempt.001
+    expected:
+      status: BLOCKED
+      outcome_code: EXECUTION_ATTEMPT_SPEC_MISSING_OR_INVALID
+
+  - case_id: tpr_hash_mismatch
+    input:
+      spec_tpr_hash_matches_validated_input: false
+    expected:
+      status: BLOCKED
+      outcome_code: ATTEMPT_INPUT_ARTIFACT_MISMATCH
+
+  - case_id: continuation_checkpoint_missing
+    input:
+      attempt_kind: CONTINUE_NOAPPEND
       checkpoint_present: false
-      append_mode: APPEND
-    expected: {status: BLOCKED, outcome_code: CHECKPOINT_MISSING_OR_MISMATCH}
+    expected:
+      status: BLOCKED
+      outcome_code: ATTEMPT_CHECKPOINT_MISSING_OR_MISMATCH
 
-  - case_id: continuation_without_append_policy
-    purpose: blocking_restart_policy
+  - case_id: append_flag_in_command
     input:
-      restart_mode: CONTINUE_FROM_CHECKPOINT
-      checkpoint_present: true
-      append_mode: null
-    expected: {status: BLOCKED, outcome_code: RESTART_POLICY_UNRESOLVED}
+      attempt_kind: CONTINUE_NOAPPEND
+      final_argv_contains_append: true
+    expected:
+      status: BLOCKED
+      outcome_code: EXECUTION_ATTEMPT_SPEC_MISSING_OR_INVALID
 
-  - case_id: execution_unresolved_item
-    purpose: execution_barrier
+  - case_id: writes_prior_attempt_directory
     input:
-      unresolved_item: resource_profile
-      blocking_stage: EXECUTION
-    expected: {status: BLOCKED, process_started: false}
+      attempt_id: attempt.002
+      output_path: 04_md_simulation/md.1/attempts/attempt.001/md.xtc
+    expected:
+      status: BLOCKED
+      outcome_code: ATTEMPT_OUTPUT_CONFLICT
 
-  - case_id: output_directory_conflict
-    purpose: no_overwrite
+  - case_id: async_missing_prepared_submission
     input:
-      output_files_exist: true
-      same_task_hashes_match: false
-    expected: {status: BLOCKED, outcome_code: OUTPUT_CONFLICT}
+      mode: ASYNCHRONOUS
+      prepared_submission_id: null
+    expected:
+      status: BLOCKED
+      outcome_code: EXECUTION_ATTEMPT_SPEC_MISSING_OR_INVALID
 
   - case_id: unsupported_backend
-    purpose: backend_boundary
-    input: {backend: OTHER}
-    expected: {status: BLOCKED, outcome_code: BACKEND_UNSUPPORTED_OR_UNAVAILABLE}
-
-  - case_id: scheduler_rejects_submission
-    purpose: rejected_submission
-    input: {backend: SLURM, submission_exit_code: 1, job_id: null}
-    expected: {status: FAILED, outcome_code: SUBMISSION_REJECTED}
-
-  - case_id: submission_identity_unresolved
-    purpose: ambiguous_submission
-    input: {backend: PBS, submission_exit_code: 0, job_id: null}
+    input:
+      backend: OTHER
     expected:
       status: BLOCKED
-      outcome_code: SUBMISSION_ID_UNRESOLVED
+      outcome_code: ATTEMPT_BACKEND_UNSUPPORTED_OR_UNAVAILABLE
+
+  - case_id: scheduler_rejects_attempt
+    input:
+      backend: PBS
+      submission_exit_code: 1
+      job_id: null
+    expected:
+      status: FAILED
+      outcome_code: ATTEMPT_SUBMISSION_REJECTED
+
+  - case_id: submission_identity_unresolved
+    input:
+      backend: LSF
+      submission_exit_code: 0
+      job_id: null
+    expected:
+      status: BLOCKED
+      outcome_code: ATTEMPT_SUBMISSION_ID_UNRESOLVED
       automatic_resubmit_allowed: false
 
   - case_id: synchronous_nonzero_exit
-    purpose: process_failure
-    input: {mode: SYNCHRONOUS, process_exit_code: 1, fatal_evidence_present: true}
-    expected: {status: FAILED, outcome_code: PROCESS_EXITED_NONZERO}
-
-  - case_id: shell_control_operator_in_argument
-    purpose: command_safety
-    input: {extra_argv: ['-deffnm', 'md; rm -rf /']}
-    expected: {status: BLOCKED, outcome_code: EXECUTION_SPEC_MISSING_OR_INVALID}
-
-  - case_id: operation_does_not_regenerate_tpr
-    purpose: layer_boundary
-    input: {tpr_missing: true}
-    expected: {grompp_invoked: false, process_started: false}
-
-  - case_id: interrupted_after_possible_submit
-    purpose: recovery_boundary
     input:
-      operation_result_missing: true
-      submission_evidence_partial: true
-      job_or_session_may_exist: true
+      mode: SYNCHRONOUS
+      process_exit_code: 1
+      fatal_evidence_present: true
     expected:
-      status: BLOCKED
+      status: FAILED
+      outcome_code: ATTEMPT_PROCESS_EXITED_NONZERO
+
+  - case_id: possible_submit_after_interruption
+    input:
+      result_missing: true
+      partial_submission_evidence: true
+      backend_object_may_exist: true
+    expected:
       automatic_resubmit_allowed: false
-      next_step: recovery_or_status_check
+      next_step: recovery_or_attempt_status_check
