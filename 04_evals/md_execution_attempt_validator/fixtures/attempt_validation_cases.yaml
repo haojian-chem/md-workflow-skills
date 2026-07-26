@@ -1,0 +1,74 @@
+schema_version: 1
+skill_name: md_execution_attempt_validator
+cases:
+  - case_id: valid_fresh_attempt
+    input:
+      spec_schema_valid: true
+      attempt_kind: FRESH
+      parent_attempt_id: null
+      checkpoint: null
+      md_input_matches: true
+      runtime_provenance_valid: true
+    expected:
+      status: DONE
+      outcome_code: EXECUTION_ATTEMPT_VALIDATED
+
+  - case_id: task_id_used_as_attempt_id
+    input:
+      attempt_id_equals_task_id: true
+      stable_attempt_identity_present: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_IDENTITY_MISMATCH
+
+  - case_id: duplicate_attempt_id
+    input:
+      attempt_id_unique: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_IDENTITY_MISMATCH
+
+  - case_id: continuation_parent_tpr_mismatch
+    input:
+      attempt_kind: CONTINUE_NOAPPEND
+      parent_present: true
+      tpr_matches_parent: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_PARENT_INVALID
+
+  - case_id: continuation_checkpoint_not_parent
+    input:
+      attempt_kind: CONTINUE_NOAPPEND
+      checkpoint_belongs_to_parent_chain: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_CHECKPOINT_INVALID
+
+  - case_id: backend_without_provenance
+    input:
+      backend_provenance_valid: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_RUNTIME_PROVENANCE_INVALID
+
+  - case_id: async_missing_recovery_anchor
+    input:
+      runtime_mode: ASYNCHRONOUS
+      prepared_submission_present: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_PREPARED_SUBMISSION_MISSING
+
+  - case_id: output_path_in_prior_attempt
+    input:
+      output_paths_isolated: false
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_PATH_OR_MUTATION_INVALID
+
+  - case_id: append_policy_enabled
+    input:
+      append_existing_outputs: true
+    expected:
+      outcome_code: EXECUTION_ATTEMPT_PATH_OR_MUTATION_INVALID
+
+  - case_id: possible_prior_submission_unresolved
+    input:
+      possible_prior_submission_unresolved: true
+      new_attempt_requested: true
+    expected:
+      gate_recommendation: BLOCK_FOR_RECOVERY
