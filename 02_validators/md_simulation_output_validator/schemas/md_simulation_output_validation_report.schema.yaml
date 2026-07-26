@@ -1,0 +1,109 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_simulation_output_validation_report.schema.yaml
+title: MD Simulation Output Validation Report
+type: object
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - protocol_spec_id
+  - plan_id
+  - route_id
+  - manifest
+  - scope_findings
+  - artifact_findings
+  - ordering_findings
+  - final_state_findings
+  - mutation_findings
+  - warnings
+  - outcome_code
+  - gate_recommendation
+properties:
+  schema_version: {type: integer, const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  protocol_spec_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
+  route_id: {type: string, minLength: 1}
+  manifest: {$ref: '#/$defs/file_identity'}
+  scope_findings:
+    type: object
+    required: [required_run_units, included_run_units, exact_match]
+    properties:
+      required_run_units:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      included_run_units:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      exact_match: {type: boolean}
+    additionalProperties: false
+  artifact_findings:
+    type: array
+    items:
+      type: object
+      required: [run_unit_id, artifact_set_id, validated, current, manifest_matches]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        artifact_set_id: {type: string, minLength: 1}
+        validated: {type: boolean}
+        current: {type: boolean}
+        manifest_matches: {type: boolean}
+      additionalProperties: false
+  ordering_findings:
+    type: object
+    required: [topological_order_valid, required_segments_complete, duplicate_or_unknown_segments]
+    properties:
+      topological_order_valid: {type: boolean}
+      required_segments_complete: {type: boolean}
+      duplicate_or_unknown_segments:
+        type: array
+        items: {type: string}
+    additionalProperties: false
+  final_state_findings:
+    type: object
+    required: [source_included, artifact_valid, selection_unique, decision_required, decision_present]
+    properties:
+      source_included: {type: boolean}
+      artifact_valid: {type: boolean}
+      selection_unique: {type: boolean}
+      decision_required: {type: boolean}
+      decision_present: {type: boolean}
+    additionalProperties: false
+  mutation_findings:
+    type: object
+    required: [engine_hashes_unchanged, manifest_only_reference]
+    properties:
+      engine_hashes_unchanged: {type: boolean}
+      manifest_only_reference: {type: boolean}
+    additionalProperties: false
+  warnings:
+    type: array
+    items: {type: string}
+  outcome_code:
+    enum:
+      - SIMULATION_OUTPUT_VALIDATED
+      - SIMULATION_OUTPUT_VALIDATED_WITH_WARNINGS
+      - SIMULATION_OUTPUT_VALIDATOR_INPUT_INCOMPLETE
+      - SIMULATION_OUTPUT_SCOPE_MISMATCH
+      - SIMULATION_OUTPUT_ARTIFACT_INVALID
+      - SIMULATION_OUTPUT_SEGMENT_ORDER_INVALID
+      - SIMULATION_OUTPUT_FINAL_STATE_INVALID
+      - SIMULATION_OUTPUT_LINEAGE_INVALID
+      - SIMULATION_OUTPUT_DATA_MUTATION_DETECTED
+      - SIMULATION_OUTPUT_VALIDATOR_INTERNAL_FAILURE
+  gate_recommendation:
+    enum: [ACCEPT_STAGE_MD_OUTPUT, REJECT_STAGE_MD_OUTPUT, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
