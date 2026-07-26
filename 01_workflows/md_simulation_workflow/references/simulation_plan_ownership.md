@@ -1,205 +1,216 @@
 # MD Simulation Protocol and Plan Ownership
 
-## 1. 唯一 owner
-
-以下阶段内对象的唯一领域 owner 均为：
-
-```text
-01_workflows/md_simulation_workflow/
-```
-
-- `simulation_protocol_spec`；
-- `md_simulation_plan`。
-
-它们不属于 `md_preparation_workflow`，也不属于 Manager route record。
-
-权威边界：
+## 1. 阶段边界
 
 ```text
 md_preparation_workflow
 → VALIDATED SYSTEM
 → md_simulation_workflow
-→ validated simulation protocol
-→ immutable md_simulation_plan
+→ validated scientific protocol
+→ validated task-projection plan
 → per-run VALIDATED MD_INPUT
-→ execution / status / output validation
-→ VALIDATED MD_OUTPUT
+→ validated execution attempts
+→ per-run VALIDATED MD_OUTPUT
+→ stage-level VALIDATED MD_OUTPUT collection
 ```
 
-`md_preparation_workflow` 负责结构、拓扑、盒子、溶剂和离子后的完整 SYSTEM；protocol、`.mdp`、`grompp`、`.tpr`、run units 和执行计划属于 `md_simulation_workflow`。
+只有 SYSTEM 的结构、拓扑、盒子、溶剂或离子变化时才返回 `md_preparation_workflow`。
 
-## 2. Protocol spec
+## 2. 对象 owner
 
-protocol spec 是已解决用户决定、显式文件和 artifact facts 的结构化阶段输入，由：
+| 对象 | 唯一 owner | 内容 |
+|---|---|---|
+| scientific simulation protocol | `md_simulation_workflow` | 科学 run units、MDP specification、start states、completion criteria、field provenance |
+| simulation task-projection plan | `md_simulation_workflow` | run-unit DAG projection、业务路径、input/attempt gates、revision lineage |
+| Workstream route | Manager | 当前请求的 task-unit start/end/order/stop conditions |
+| execution-attempt spec | `md_execution_attempt_specification` | attempt identity、backend、resources、runtime、restart 和 prepared submission identity |
+| run-level MD_OUTPUT | `md_run_output_validator` | accepted attempt chain 的有效输出集合 |
+| stage-level MDOUTPUT | `md_simulation_output_assembly` + Validator | scope 内 required run outputs 的唯一 collection |
+| runtime state/records | Manager | task、submission、artifact、route、Workstream state |
+
+这些对象不得互相替代。
+
+## 3. Scientific protocol
+
+由：
 
 ```text
 md_simulation_protocol_specification
 → md_simulation_protocol_validator
 ```
 
-生成和验证。
+生成/验证。
 
-它描述：
+protocol 是科学字段唯一 owner，描述：
 
-- run units、roles、sequence 和 dependencies；
-- MDP/template identities；
-- SYSTEM 或 prior-run start states；
-- grompp settings；
-- execution policy 中已解决或 deferred 的字段；
-- expected outputs/completion criteria；
+- run-unit IDs 和科学 roles；
+- dependencies；
+- MDP final file 或 template+typed overrides；
+- SYSTEM/prior-run start states；
+- preprocessing policy；
+- expected output roles；
+- completion mode/targets/checks；
 - field provenance；
-- resolved decisions 和分层 unresolved items。
+- unresolved items。
 
-每个科学字段必须有明确来源。不得把“按标准流程”“使用默认设置”等模糊表述直接物化为科学参数。
+protocol 不描述：
 
-## 3. Plan
+- GROMACS executable path/version；
+- execution mode/backend/host/session/queue；
+- MPI/OMP/GPU/memory/walltime；
+- attempt ID；
+- retry/continuation parent；
+- append/noappend；
+- submission ID。
 
-validated protocol spec 由：
+runtime 环境变化不应自动制造 scientific protocol revision。
+
+## 4. Task-projection plan
+
+由：
 
 ```text
 md_simulation_plan_materialization
 → md_simulation_plan_validator
 ```
 
-保真物化为 immutable plan。
+从 validated protocol 派生。
 
-plan 描述当前科学模拟方案，但不直接授权执行。它不得新增 protocol 未声明的 run unit 或参数。
+plan 只描述：
 
-## 4. 与 Workstream route 的区别
+- protocol identity；
+- run-unit projection；
+- dependency/start-state logical projection；
+- run/input/attempts business directories；
+- INPUT_PREPARATION/ATTEMPT_SPECIFICATION gate projection；
+- plan revision lineage。
 
-### Workstream route
+plan 不复制拥有 MDP、completion criteria 或 runtime configuration，也不保存 `RUNNING/VALIDATED` 等状态。实际进度属于 Workstream/task/artifact records。
 
-由 Manager 根据 Workflow fragments 拼接并持久化，描述：
+## 5. Workstream route
 
-- 本轮预计 task units；
+Manager 根据 Workflow fragment 和 validated plan 持久化 route：
+
 - start/end/stop conditions；
-- Workflow/Operation/Validator 调用路径；
-- route version 和 revision lineage。
+- 预计 task units；
+- 当前 attempt steps；
+- route revision lineage。
 
-### Simulation protocol/plan
+plan 是静态 projection，route 是当前请求的执行路径。retry/continuation attempt 出现时可修订 route，而不必修改 scientific protocol/plan。
 
-由本 Workflow 局部拥有，描述科学方案和 run DAG。
+## 6. MDP 与 MD_INPUT
 
-```text
-validated protocol/plan
-→ Workflow route fragment
-→ Manager Workstream route
-```
-
-Manager 使用 plan 投影或修订 route；plan 不替代 route record，route 也不得反向发明 plan 内容。
-
-## 5. 动态而非硬锁定
-
-protocol/plan 生成后仍可因新 evidence 或用户决定修订。以下变化创建新 protocol 和/或 plan version：
-
-- 新增、删除或重排 run unit；
-- 修改 MDP、温度、压力、约束、步数或其他科学参数；
-- 延长 production 并需要新 TPR；
-- 新增 continuation/production segment；
-- 改变 SYSTEM、上游 MD_OUTPUT 或 start checkpoint；
-- 改变 completion criteria；
-- 用户改变阶段终点或比较方案。
-
-新 version 使用 `supersedes_spec_id` 或 `supersedes_plan_id` 指向旧版本，并触发 route revision。旧 protocol、plan、MD_INPUT 和 MD_OUTPUT 不得覆盖。
-
-仅 backend/resource 变化：
-
-- 不改变 TPR 和科学方案：通常只生成新 execution spec；
-- 改变科学输入：修订 protocol/plan 并重新准备 MD_INPUT。
-
-## 6. 阶段入口
-
-标准 Workflow entry artifact：
+protocol 中 MDP source：
 
 ```text
-VALIDATED SYSTEM
+FINAL_FILE
+TEMPLATE_WITH_TYPED_OVERRIDES
 ```
 
-SYSTEM 至少提供 run input preparation 所需的：
+`md_run_input_preparation`：
 
-- coordinates/structure；
-- topology root 和 include closure；
-- box、solvent 和 ions 后的完整体系 identity；
-- upstream validation/lineage。
+- FINAL_FILE：原样复制/引用；
+- TEMPLATE：执行 exact parameter replacement；
+- 运行一次 grompp；
+- 生成 rendered `run.mdp`、TPR、manifest 和 evidence。
 
-若 route 从已有后续 substep 开始，可以使用仍有效的 validated protocol、plan、MD_INPUT、submission 或 MD_OUTPUT evidence。不得因为存在 TPR 或目录而跳过 provenance gate。
+`md_run_input_validator` 独立核验 rendered MDP、TPR 和 source provenance。
 
-## 7. Protocol 生成输入
+GROMACS executable 是 runtime evidence，不写回 protocol。
 
-protocol specification 必须基于：
-
-- resolved route scope；
-- VALIDATED SYSTEM IDs；
-- 当前有效 RESOLVED decision records；
-- explicit MDP/template identities；
-- 明确 prior-run MD_OUTPUT/checkpoint identities，如适用。
-
-协议字段与来源通过 `field_provenance` 关联。
-
-未决项分层：
-
-- `PLAN_VALIDATION`：阻止 protocol/plan gate；
-- `INPUT_PREPARATION`：允许 protocol/plan 存在，但阻止相应 grompp task；
-- `EXECUTION`：不改变科学输入时可 deferred，阻止 execution task。
-
-## 8. Plan 与 MD_INPUT
+## 7. Execution attempt
 
 ```text
-VALIDATED SYSTEM or upstream VALIDATED MD_OUTPUT
-+ validated protocol and plan
-+ selected run unit
-→ md_run_input_preparation
-→ MD_INPUT candidate
-→ md_run_input_validator
-→ VALIDATED MD_INPUT
+VALIDATED MD_INPUT
+→ md_execution_attempt_specification
+→ md_execution_attempt_validator
+→ md_run_execution
 ```
 
-MD_INPUT 至少包含：
+attempt 表示一次具体运行/提交：
 
-- TPR；
-- actual MDP identity/controlled copy；
-- coordinates/topology/include/checkpoint provenance；
-- grompp command/version/warning evidence；
-- run input manifest；
-- input validation report。
+```text
+FRESH
+RETRY_SAME_INPUT
+CONTINUE_NOAPPEND
+```
 
-## 9. 默认目录
+v1 不启用 APPEND。
+
+same-TPR continuation 产生新 attempt，不产生 `CONTINUATION` scientific role。改变 MDP/TPR/科学目标时产生新的或 superseding run unit。
+
+## 8. Output ownership
+
+### Run-level MDOUTPUT
+
+`md_run_output_validator` 重建 accepted attempt chain，生成 run output manifest 和 run-level MDOUTPUT artifact candidate。
+
+失败、取消、superseded attempts 保留审计 evidence，但不进入有效 artifact。
+
+### Stage-level MDOUTPUT
+
+`md_simulation_output_assembly` 组装 collection manifest；专属 Validator 返回唯一 stage-level MDOUTPUT artifact candidate。
+
+collection 引用所有 required run-level artifact IDs，不复制或拼接 trajectory/energy 文件。segmented production 不得只保留最后一个 segment。
+
+completion Validator 只核验闭环，不承担 output assembly。
+
+## 9. 修订规则
+
+### 新 scientific protocol/plan
+
+- run-unit set/dependencies 变化；
+- MDP source/override/科学参数变化；
+- start-state 变化；
+- completion criteria 变化；
+- 新 TPR 所代表的科学片段变化。
+
+### 只需新 execution attempt spec
+
+- backend/host/queue/resource 变化；
+- runtime executable/profile 变化；
+- same-input retry；
+- same-TPR NOAPPEND continuation。
+
+### 返回 md_preparation
+
+仅 SYSTEM structure/topology/box/solvent/ions 变化。
+
+## 10. 默认目录
 
 ```text
 04_md_simulation/
 ├── 00_plan/
-│   ├── simulation_protocol_spec.yaml
-│   ├── md_simulation_protocol_validation_report.yaml
-│   ├── md_simulation_plan.yaml
-│   └── md_simulation_plan_validation_report.yaml
+│   ├── simulation_protocol_spec*.yaml
+│   ├── md_simulation_plan*.yaml
+│   └── validation reports
 ├── <run_unit_id>/
 │   ├── input/
 │   │   ├── run.mdp
 │   │   ├── run.tpr
-│   │   ├── md_run_input_manifest.yaml
-│   │   └── md_run_input_validation_report.yaml
-│   ├── md_run_execution_spec.yaml
-│   └── <execution and output files>
+│   │   └── input manifests/reports
+│   ├── attempts/
+│   │   ├── attempt.001/
+│   │   ├── attempt.002/
+│   │   └── ...
+│   ├── md_run_output_manifest.yaml
+│   └── md_run_output_validation_report.yaml
 └── 99_validation/
+    ├── md_simulation_output_manifest.yaml
+    ├── md_simulation_output_validation_report.yaml
+    └── md_simulation_completion_report.yaml
 ```
 
-目录名称不构成完成证据。
-
-## 10. 修复边界
-
-output/input validation 发现问题后：
-
-- 仅 command/backend/resources 变化且 TPR 不变：新 execution spec；
-- 需要新 TPR 但 protocol 不变：重新执行 run input preparation；
-- MDP、run units、start state 或 completion criteria 变化：新 protocol/plan version，再生成 MD_INPUT；
-- SYSTEM 的结构、拓扑、盒子、溶剂或离子变化：返回 `md_preparation_workflow` 或创建新 Workstream；
-- 不得把所有 MD_INPUT 变化笼统归回 `md_preparation_workflow`。
+目录存在不构成完成证据。
 
 ## 11. 本地接口
 
 ```text
 01_workflows/md_simulation_workflow/schemas/md_simulation_protocol_spec.schema.yaml
 01_workflows/md_simulation_workflow/schemas/md_simulation_plan.schema.yaml
+02_operations/md_execution_attempt_specification/schemas/md_execution_attempt_spec.schema.yaml
+02_validators/md_run_output_validator/schemas/md_run_output_manifest.schema.yaml
+02_operations/md_simulation_output_assembly/schemas/md_simulation_output_manifest.schema.yaml
 ```
 
-它们是阶段内接口，不替代 `03_contracts/` runtime contracts。
+这些是阶段局部接口，不替代共享 runtime contracts。
