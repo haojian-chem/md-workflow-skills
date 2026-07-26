@@ -1,12 +1,15 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: md_run_status_report.schema.yaml
-title: MD Run Status Report
+title: MD Execution Attempt Status Report
 type: object
 required:
   - schema_version
   - task_id
   - workstream_id
+  - plan_id
   - run_unit_id
+  - attempt_id
+  - execution_spec_id
   - submission_id
   - checked_at
   - backend
@@ -20,17 +23,21 @@ properties:
   schema_version: {type: integer, const: 1}
   task_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
   run_unit_id: {type: string, minLength: 1}
+  attempt_id: {type: string, minLength: 1}
+  execution_spec_id: {type: string, minLength: 1}
   submission_id: {type: string, minLength: 1}
   checked_at: {type: string, format: date-time}
   backend:
     type: object
-    required: [type, host, session_name, job_id]
+    required: [type, host, session_name, job_id, pid]
     properties:
       type: {enum: [LOCAL, TMUX, LSF, SLURM, PBS]}
       host: {type: [string, 'null']}
       session_name: {type: [string, 'null']}
       job_id: {type: [string, 'null']}
+      pid: {type: [integer, 'null'], minimum: 1}
     additionalProperties: false
   previous_status:
     enum: [SUBMITTED, RUNNING, UNKNOWN]
@@ -59,15 +66,15 @@ properties:
     enum: [RUNNING, FINISHED_UNVERIFIED, FAILED, CANCELLED, UNKNOWN]
   outcome_code:
     enum:
-      - RUN_STILL_ACTIVE
-      - RUN_FINISHED_UNVERIFIED
-      - RUN_FAILED_WITH_EVIDENCE
-      - RUN_CANCELLED_WITH_EVIDENCE
-      - RUN_STATUS_UNKNOWN
-      - SUBMISSION_RECORD_MISMATCH
-      - STATUS_INPUT_INCOMPLETE
-      - BACKEND_STATUS_CHECK_UNAVAILABLE
-      - STATUS_VALIDATOR_INTERNAL_FAILURE
+      - ATTEMPT_STILL_ACTIVE
+      - ATTEMPT_FINISHED_UNVERIFIED
+      - ATTEMPT_FAILED_WITH_EVIDENCE
+      - ATTEMPT_CANCELLED_WITH_EVIDENCE
+      - ATTEMPT_STATUS_UNKNOWN
+      - ATTEMPT_SUBMISSION_RECORD_MISMATCH
+      - ATTEMPT_STATUS_INPUT_INCOMPLETE
+      - ATTEMPT_BACKEND_STATUS_CHECK_UNAVAILABLE
+      - ATTEMPT_STATUS_VALIDATOR_INTERNAL_FAILURE
   warnings:
     type: array
     items: {type: string}
