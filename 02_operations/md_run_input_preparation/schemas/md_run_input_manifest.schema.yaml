@@ -48,16 +48,38 @@ properties:
           properties:
             parameter: {type: string, minLength: 1}
             value_type: {enum: [STRING, INTEGER, NUMBER, BOOLEAN, STRING_LIST]}
-            value:
-              oneOf:
-                - type: string
-                - type: integer
-                - type: number
-                - type: boolean
-                - type: array
-                  items: {type: string}
+            value: {}
             unit: {type: [string, 'null']}
             provenance_source_id: {type: string, minLength: 1}
+          allOf:
+            - if:
+                properties: {value_type: {const: STRING}}
+                required: [value_type]
+              then:
+                properties: {value: {type: string}}
+            - if:
+                properties: {value_type: {const: INTEGER}}
+                required: [value_type]
+              then:
+                properties: {value: {type: integer}}
+            - if:
+                properties: {value_type: {const: NUMBER}}
+                required: [value_type]
+              then:
+                properties: {value: {type: number}}
+            - if:
+                properties: {value_type: {const: BOOLEAN}}
+                required: [value_type]
+              then:
+                properties: {value: {type: boolean}}
+            - if:
+                properties: {value_type: {const: STRING_LIST}}
+                required: [value_type]
+              then:
+                properties:
+                  value:
+                    type: array
+                    items: {type: string}
           additionalProperties: false
     additionalProperties: false
   input_files:
