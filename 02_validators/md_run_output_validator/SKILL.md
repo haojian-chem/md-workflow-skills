@@ -1,270 +1,202 @@
 ---
 name: md_run_output_validator
-description: 核验一个已经结束的 GROMACS run unit 是否与 validated simulation plan、VALIDATED MDINPUT、execution spec、command 和 submission provenance 一致，检查 required outputs、正常终止、目标步数/时间、checkpoint 和显式 acceptance checks，并生成 MDOUTPUT artifact candidate。该 Validator 不修改输出、不补跑模拟，也不把技术完成夸大为科学收敛。
+description: 核验一个 GROMACS run unit 的 accepted execution-attempt chain，检查 validated MD_INPUT、attempt specs、command/submission/status provenance、required attempt outputs、checkpoint continuity、目标步数/时间和显式 acceptance checks，并生成唯一 run-level MD_OUTPUT manifest 与 artifact candidate。该 Validator 不修改或拼接 engine outputs。
 ---
 
 # 目标
 
-验证一个 FINISHED_UNVERIFIED 或同步结束的 run unit：
+验证一个 run unit，而不是单个 process：
 
-- plan、MDINPUT、命令和 execution provenance 可追溯；
-- required outputs 完整且可解析；
-- GROMACS 运行达到显式完成标准；
-- continuation 链与 checkpoint identity 一致；
-- explicit blocking acceptance checks 通过；
-- 输出可以成为当前 run unit 的 MDOUTPUT candidate。
+```text
+validated protocol/plan/run unit
++ VALIDATED MD_INPUT
++ terminal execution attempts
+→ accepted attempt chain
+→ run-level output manifest
+→ MD_OUTPUT artifact candidate
+```
+
+一个 run unit 可以由一个 FRESH attempt 完成，也可以由 FRESH + 一个或多个 CONTINUE_NOAPPEND attempts 完成。
 
 # 职责边界
 
 负责：
 
-- 读取 validated plan、MDINPUT/input manifest、execution spec、command、submission evidence 和 engine outputs；
-- 独立核验 plan/run unit/input hashes 和 work directory；
-- 解析必要的 log、energy、trajectory、structure 和 checkpoint metadata；
-- 核验 termination、target steps/time 和 required outputs；
-- 执行 spec 中显式 role-specific checks；
-- 核验 continuation/append provenance；
-- 写详细 report；
-- 返回 Validation result 和 MDOUTPUT candidate。
+- 读取 protocol/plan、run unit、VALIDATED MD_INPUT；
+- 读取该 run unit 的全部相关 attempt specs/validation/results/submissions/status evidence；
+- 独立重建 attempt parent graph 和 accepted chain；
+- 核验每个 accepted attempt 的输入、命令、terminal 和 required outputs；
+- 核验 TPR identity、checkpoint continuity、step/time continuity 和 output isolation；
+- 执行 protocol 中显式注册的 blocking/nonblocking checks；
+- 写 run output validation report 和 manifest；
+- 返回 run-level MD_OUTPUT artifact candidate。
 
-不负责：
+不得：
 
-- 修改、截断、拼接、修复或重命名 outputs；
-- 继续或重跑模拟；
-- 重新生成 `.tpr`；
-- 自行定义 EM force、温度、压力、密度等阈值；
-- 在 spec 未要求时将波动/漂移/采样设为 hard gate；
-- 执行完整科学分析；
-- 修改 submission/artifact records；
-- 选择下一 run unit；
-- 写管理目录；
-- 创建子 Agent 或直接向用户提问。
+- 修改、拼接、截断、重命名或修复 engine outputs；
+- 自动选择未解决的 attempt 分支；
+- 将失败/取消/superseded attempt 文件加入 accepted output；
+- 创建 continuation/retry attempt；
+- 修改 protocol、plan、MD_INPUT、execution spec 或 submission records；
+- 新增科学阈值；
+- 判断采样充分或科学收敛；
+- 写管理目录。
 
 # 输入
 
-必须接收共享 VALIDATOR task unit，并提供：
+必须接收 VALIDATOR task unit，并提供：
 
-- validated simulation plan 和 plan validation evidence；
-- target run unit；
-- `md_run_execution_spec.yaml`；
-- 对应 VALIDATED MDINPUT artifact records；
-- `md_run_input_manifest.yaml` 和 input validation report；
-- execution Operation report；
-- command record；
-- submission evidence/latest submission record，如异步；
-- 当前 run unit engine outputs；
-- allowed read/write、forbidden paths 和 report目标。
+- validated protocol/plan 和唯一目标 run unit；
+- 当前 VALIDATED MD_INPUT/input manifest/TPR；
+- 当前 run unit 的所有相关 execution-attempt specs 与 validation reports；
+- execution Operation results、commands、submission/status records；
+- attempt engine outputs；
+- resolved attempt acceptance/supersede decisions，如存在分支；
+- allowed read/write、forbidden paths；
+- run output manifest/report/log 路径。
 
-异步运行必须已有：
-
-```text
-submission status: FINISHED_UNVERIFIED
-```
-
-同步运行必须有可信 process terminal evidence。
+任何相关 attempt 为活动或 UNKNOWN 且未排除时，返回 BLOCKED。
 
 # Preflight
 
 确认：
 
-1. task/Workstream/plan/run unit IDs 一致；
-2. plan 有效且 target run unit 未被 superseded；
-3. execution spec 与 Operation 使用版本一致；
-4. MDINPUT 为 VALIDATED；
-5. input manifest、`.tpr`、checkpoint 和其他 input hashes 未改变；
-6. execution spec 与 plan/MDINPUT 一致；
-7. command record 可由 execution spec 重建；
-8. 异步 submission terminal 且不再写 output；
-9. 不存在同一 run unit 活动进程；
-10. engine outputs 位于授权目录且非未授权 symlink；
-11. Validator output path 受授权；
-12. 管理目录位于 forbidden paths。
+1. task/workstream/plan/run-unit IDs 一致；
+2. protocol/plan 和 MD_INPUT 已验证且未失效；
+3. attempt IDs/spec IDs 唯一；
+4. attempt parent graph 可解析且无环；
+5. 每个 attempt spec 已通过专属 Validator；
+6. submission/status/command/working directory 可按 attempt 对齐；
+7. 不存在未闭合相关 attempt；
+8. engine outputs 仅位于对应 attempt directory；
+9. output manifest/report 路径受授权；
+10. 被验证文件只读。
 
-活动进程仍存在时 BLOCKED，不验证动态文件并宣布完成。
+# Accepted attempt chain
 
-# 核验规则
+独立分类：
 
-## 1. Provenance
+- `ACCEPTED`：构成当前有效执行链；
+- `FAILED`：有明确失败 evidence；
+- `CANCELLED`：有明确取消 evidence；
+- `SUPERSEDED`：被明确 replacement attempt 取代；
+- `UNRESOLVED`：身份、parent 或 terminal evidence 不足。
 
-核验完整链：
+只有 ACCEPTED chain 进入 run-level MD_OUTPUT。
+
+规则：
+
+- chain 必须从 FRESH 或明确 accepted retry root 开始；
+- CONTINUE_NOAPPEND 的 parent 必须是 chain 中前一个 accepted attempt；
+- continuation checkpoint 必须来自 parent attempt；
+- RETRY_SAME_INPUT 不能与被替代 root 同时进入 accepted chain；
+- 存在两个可行 terminal branches 且无 resolved selection 时 PAUSE；
+- UNRESOLVED attempt 阻止通过。
+
+# Attempt output checks
+
+对每个 accepted attempt：
+
+- spec/input/TPR/command hashes 一致；
+- process/submission 已 terminal；
+- required attempt outputs 存在、非空且可解析；
+- normal/fatal/nonzero evidence 无冲突；
+- atom/system identity 与 TPR 一致；
+- trajectory/energy/log/checkpoint metadata 可对齐；
+- output 文件属于当前 attempt，不是其他 attempt 遗留。
+
+# Chain continuity
+
+核验：
+
+- 所有 accepted attempts 使用相同 TPR；
+- continuation checkpoint 与 parent final checkpoint identity 对齐；
+- step/time 单调连续；
+- noappend segment 没有覆盖 prior files；
+- final accepted attempt 的 step/time 满足 run-unit target；
+- run-level final structure/checkpoint 唯一。
+
+checkpoint 存在不能单独证明 attempt 或 run unit 完成。
+
+# Role-specific checks
+
+只执行 protocol 中显式列出的、metric registry 已支持的 checks。
+
+- blocking check FAIL/UNRESOLVED：run output 不通过或 PAUSE；
+- nonblocking check unresolved：warning；
+- Validator 不增加隐式 EM force、temperature、pressure、density 或 convergence threshold。
+
+# Run output manifest
+
+默认写：
 
 ```text
-validated plan
-→ validated MDINPUT/input manifest/TPR
-→ execution spec
-→ command/submission
-→ engine outputs
+04_md_simulation/<run_unit_id>/
+├── md_run_output_manifest.yaml
+├── md_run_output_validation_report.yaml
+└── md_run_output_validation.log
 ```
 
-至少检查：
+manifest 至少记录：
 
-- plan/run unit identity；
-- execution spec hash；
-- MDINPUT artifact ID；
-- input manifest 和 `.tpr` identities；
-- checkpoint identity；
-- command argv；
-- executable/version；
-- work directory/deffnm；
-- PID/session/job identity；
-- restart/append policy。
+- workstream/plan/protocol/run-unit IDs；
+- MD_INPUT artifact identity；
+- accepted/excluded/unresolved attempt IDs；
+- accepted attempt order；
+- execution spec/submission/status references；
+- included output files 及所属 attempt；
+- final step/time/structure/checkpoint；
+- completion check results；
+- source and derived artifact IDs。
 
-无法解释的输入或命令变化阻止通过。
-
-## 2. Required outputs
-
-以 execution spec `expected_outputs` 为唯一 required/optional 来源。
-
-required files 必须：
-
-- 存在且为常规文件；
-- 非空，除非格式明确允许；
-- 可由适用 parser/engine tool 读取；
-- 属于当前 execution attempt；
-- hash、size 和必要 metadata 已记录。
-
-不得只按扩展名或修改时间判断归属。
-
-## 3. GROMACS termination
-
-当 `require_normal_termination: true`：
-
-- 核验正常终止 evidence；
-- 同时检查 fatal error、segfault、scheduler kill、resource termination、nonzero exit 和 log truncation；
-- normal marker 与 failure evidence 冲突时不得通过。
-
-## 4. Step/time
-
-若提供 target_nsteps/target_time_ps：
-
-- 从实际 output metadata 独立读取 final step/time；
-- 使用格式精度允许的明确 tolerance；
-- 不用 file name、MDP 或 command expectation 代替实际结果；
-- blocking target 未达到时不通过。
-
-未提供目标时不得猜测时长。
-
-## 5. Checkpoint
-
-当 require_checkpoint：
-
-- checkpoint 存在且可解析；
-- step/time 与 log/其他 outputs 一致；
-- input/output checkpoint lineage 可追溯；
-- append/noappend output set 符合 spec。
-
-checkpoint 存在不单独证明运行完成。
-
-## 6. Cross-file consistency
-
-在可行范围内核验：
-
-- log/energy/trajectory/final structure/checkpoint step-time区间一致；
-- atom count/system identity 与 `.tpr` 一致；
-- trajectory 无明显截断或不可解析 frame；
-- energy file 属于当前 run；
-- noappend part files 未被误当单一连续文件；
-- append continuation 未混入不同 `.tpr`/checkpoint chain。
-
-## 7. Role-specific checks
-
-只执行 execution spec 显式列出的 checks，例如 maximum force、potential energy、指定窗口温度/压力/密度统计等。
-
-- 不新增 threshold；
-- 不把未声明 metric 设为 failure；
-- blocking check 无法可靠计算：不通过或请求人工决定；
-- nonblocking check 无法计算：warning；
-- 不伪造数值。
-
-# 技术通过范围
-
-通过表示当前 run unit 按声明输入/命令完成，required outputs 和 explicit blocking checks 满足，可作为下游 run unit 或 analysis 的技术输入。
-
-不表示 equilibration 充分、production sampling 收敛、轨迹科学代表性或分析结论成立。
+manifest 不复制或拼接 engine outputs。
 
 # Outcome codes
 
 - `MD_RUN_OUTPUT_VALIDATED`；
 - `MD_RUN_OUTPUT_VALIDATED_WITH_WARNINGS`；
-- `OUTPUT_VALIDATION_INPUT_INCOMPLETE`；
-- `SIMULATION_PLAN_OR_RUN_UNIT_MISMATCH`；
-- `MD_INPUT_NOT_VALIDATED_OR_MISMATCHED`；
-- `INPUT_OR_COMMAND_PROVENANCE_MISMATCH`；
-- `RUN_STILL_ACTIVE`；
-- `REQUIRED_OUTPUT_MISSING`；
-- `OUTPUT_UNREADABLE_OR_TRUNCATED`；
-- `NORMAL_TERMINATION_NOT_CONFIRMED`；
-- `FATAL_OR_NONZERO_EXIT_DETECTED`；
-- `TARGET_STEP_OR_TIME_NOT_REACHED`；
-- `CHECKPOINT_INVALID_OR_INCONSISTENT`；
-- `OUTPUT_CROSS_FILE_INCONSISTENCY`；
-- `ROLE_SPECIFIC_CHECK_FAILED`；
-- `ROLE_SPECIFIC_CHECK_UNRESOLVED`；
-- `OUTPUT_VALIDATOR_INTERNAL_FAILURE`。
+- `RUN_OUTPUT_VALIDATOR_INPUT_INCOMPLETE`；
+- `RUN_OUTPUT_ATTEMPT_GRAPH_INVALID`；
+- `RUN_OUTPUT_ATTEMPT_BRANCH_UNRESOLVED`；
+- `RUN_OUTPUT_ACTIVE_OR_UNKNOWN_ATTEMPT`；
+- `RUN_OUTPUT_INPUT_OR_COMMAND_MISMATCH`；
+- `RUN_OUTPUT_REQUIRED_ATTEMPT_FILE_MISSING`；
+- `RUN_OUTPUT_FILE_UNREADABLE_OR_TRUNCATED`；
+- `RUN_OUTPUT_FATAL_OR_NONZERO_EXIT`；
+- `RUN_OUTPUT_CHECKPOINT_CHAIN_INVALID`；
+- `RUN_OUTPUT_STEP_OR_TIME_CONTINUITY_INVALID`；
+- `RUN_OUTPUT_TARGET_NOT_REACHED`；
+- `RUN_OUTPUT_CROSS_FILE_INCONSISTENCY`；
+- `RUN_OUTPUT_ROLE_SPECIFIC_CHECK_FAILED`；
+- `RUN_OUTPUT_ROLE_SPECIFIC_CHECK_UNRESOLVED`；
+- `RUN_OUTPUT_VALIDATOR_INTERNAL_FAILURE`。
 
-只有前两个 outcome 可以建议 Manager 接受 MDOUTPUT candidate。
-
-对象不通过但 Validator 成功执行时可 `status: DONE` + 具体不通过 outcome，不返回 artifact candidate。
+只有前两个 outcome 可返回 MD_OUTPUT candidate。
 
 # Artifact candidate
 
-通过时返回 MDOUTPUT candidate，至少包含：
+通过时返回一个 run-level `MD_OUTPUT` candidate：
 
-- spec 声明 required engine outputs；
-- output validation report；
--必要 command/submission provenance files；
-- `derived_from_artifact_set_ids` 指向当前 MDINPUT 和前置 MDOUTPUT。
+- files 包含 accepted attempts 的 required outputs；
+- 包含 run output manifest 和 validation report；
+- `derived_from_artifact_set_ids` 指向当前 MD_INPUT 和上游 run-level MD_OUTPUT；
+- failed/cancelled/superseded attempt files 不进入 candidate。
 
-候选在 Manager 接受前保持 present_unvalidated；完成 runtime validation 和 records commit 后登记为 VALIDATED。
+Manager 完成 runtime validation 和记录后才登记 VALIDATED。
 
-# 输出
+# 技术范围
 
-```text
-04_md_simulation/<run_unit_id>/
-├── md_run_output_validation_report.yaml
-└── md_run_output_validation.log
-```
-
-report 至少记录：
-
-- task/workstream/plan/run unit IDs；
-- MDINPUT/source artifact IDs 和 hashes；
-- input manifest/TPR identity；
-- execution spec/command/submission identity；
-- output inventory/parser findings；
-- actual final step/time；
-- termination/failure evidence；
-- checkpoint/continuation findings；
-- role-specific results；
-- warnings/outcome/gate recommendation。
-
-# 返回
-
-返回共享 `subagent_result` 的独立 validation_result，不修改 Operation result、submission record、outputs 或管理记录。
-
-# 失败与恢复建议
-
-- input/records conflict：BLOCKED，要求恢复；
-- run active：BLOCKED；
-- output technical gate 不通过：DONE + 不通过 outcome；
-- Validator implementation error：FAILED；
-- 相同 `.tpr` continuation：建议 Workflow 解析明确 checkpoint/append 和新 execution spec；
-- 需要新 `.tpr`/MDP/科学参数：建议 route revision 到本 Workflow 的 plan revision 或 run input preparation；
-- 只有 SYSTEM 结构/拓扑/盒子/溶剂/离子变化时建议返回 `md_preparation_workflow`；
-- 不自动修复、续跑或重提。
+通过只证明 accepted attempt chain 与显式 completion gate 技术闭合，不证明 equilibration 充分、sampling 收敛或科学结论成立。
 
 # 自检
 
-- [ ] plan/run unit/MDINPUT/execution provenance 已独立核验；
-- [ ] 活动进程未被验证为完成；
-- [ ] required outputs 来自 spec；
-- [ ] 文件可读性/cross-file consistency 已检查；
-- [ ] target step/time 来自实际 output；
-- [ ] checkpoint 未作为单独完成证据；
-- [ ] role-specific thresholds 均来自 spec；
-- [ ] 技术通过未描述为科学收敛；
-- [ ] 不通过未混同 Validator execution failure；
-- [ ] 未修改 output；
-- [ ] 通过时才返回 MDOUTPUT candidate；
-- [ ] 新 TPR 问题未错误归回 md_preparation；
+- [ ] 验证对象是 run unit attempt chain，不是单一 process；
+- [ ] active/UNKNOWN attempts 已阻断；
+- [ ] accepted/excluded/superseded attempts 已区分；
+- [ ] continuation parent/checkpoint/TPR continuity 已检查；
+- [ ] failed attempts 未进入 artifact candidate；
+- [ ] required files 来自显式 spec/protocol；
+- [ ] target step/time 来自实际 outputs；
+- [ ] 未修改或拼接 engine outputs；
+- [ ] 未新增科学阈值；
 - [ ] 未写管理目录。
