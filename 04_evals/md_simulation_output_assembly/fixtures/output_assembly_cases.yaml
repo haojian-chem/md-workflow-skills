@@ -1,0 +1,86 @@
+schema_version: 1
+skill_name: md_simulation_output_assembly
+cases:
+  - case_id: segmented_production_all_runs_included
+    input:
+      required_run_units: [em.1, eq.1, md.1, md.2]
+      validated_run_outputs: [em.1, eq.1, md.1, md.2]
+      final_state_source: md.2
+    expected:
+      status: DONE
+      outcome_code: SIMULATION_OUTPUT_ASSEMBLED
+      included_run_units: [em.1, eq.1, md.1, md.2]
+
+  - case_id: early_production_segment_missing
+    input:
+      required_run_units: [md.1, md.2]
+      validated_run_outputs: [md.2]
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_OUTPUT_RUN_ARTIFACT_MISSING_OR_INVALID
+
+  - case_id: extra_old_run_not_in_scope
+    input:
+      required_run_units: [md.1]
+      directory_run_units: [old.md.0, md.1]
+      validated_run_outputs: [old.md.0, md.1]
+    expected:
+      included_run_units: [md.1]
+      old_run_auto_included: false
+
+  - case_id: invalidated_run_output
+    input:
+      required_run_units: [md.1]
+      run_output_validation_status: INVALIDATED
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_OUTPUT_RUN_ARTIFACT_MISSING_OR_INVALID
+
+  - case_id: duplicate_run_output_artifacts
+    input:
+      required_run_units: [md.1]
+      current_artifact_ids: [artifact-md1-a, artifact-md1-b]
+      resolved_selection: null
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_OUTPUT_RUN_ARTIFACT_MISSING_OR_INVALID
+
+  - case_id: final_state_ambiguous
+    input:
+      required_run_units: [branch.a, branch.b]
+      valid_final_state_sources: [branch.a, branch.b]
+      resolved_selection: null
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_OUTPUT_FINAL_STATE_UNRESOLVED
+
+  - case_id: final_state_resolved_by_decision
+    input:
+      valid_final_state_sources: [branch.a, branch.b]
+      resolved_selection: branch.b
+    expected:
+      status: DONE
+      final_state_source: branch.b
+
+  - case_id: segment_order_from_plan_dag
+    input:
+      plan_order: [eq.1, md.1, md.2]
+      supplied_order: [eq.1, md.1, md.2]
+    expected:
+      status: DONE
+      segment_order_preserved: true
+
+  - case_id: stage_manifest_does_not_copy_data
+    input:
+      engine_hashes_before_equal_after: true
+      copied_engine_files: []
+    expected:
+      status: DONE
+      manifest_only_reference: true
+
+  - case_id: output_path_conflict
+    input:
+      manifest_path_exists_with_different_hash: true
+    expected:
+      status: BLOCKED
+      outcome_code: SIMULATION_OUTPUT_PATH_CONFLICT
