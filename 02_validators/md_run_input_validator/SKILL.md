@@ -1,196 +1,159 @@
 ---
 name: md_run_input_validator
-description: 独立核验 md_run_input_preparation 生成的 .tpr、MDP identity、输入来源、grompp command/warnings 和 run input manifest，确认该候选准确对应 validated simulation plan 中的目标 run unit。该 Validator 不修改输入、不重新运行 grompp，也不执行模拟。
+description: 独立核验 md_run_input_preparation 生成的 rendered/copied MDP、TPR、SYSTEM或上游 run-output来源、topology include closure、grompp command/warnings 和 input manifest，确认候选准确实现 validated scientific protocol 中的目标 run unit。该 Validator 不修改输入、不重跑 grompp，也不执行模拟。
 ---
 
 # 目标
 
-验证一个 run unit 的 MD_INPUT candidate 是否可安全交给 `md_run_execution`。
+验证一个 run unit 的 MD_INPUT candidate：
 
-通过表示：
+- protocol/plan/run-unit identities 一致；
+- MDP final file 或 template+typed overrides 被准确物化；
+- TPR 可解析且与 rendered MDP/input files 一致；
+- grompp runtime evidence、maxwarn 和 warnings 可追踪；
+- candidate 可登记为 VALIDATED MD_INPUT。
 
-- `.tpr` 可解析；
-- `.tpr`、MDP、坐标、拓扑和 checkpoint provenance 与 plan 一致；
-- grompp command、版本、warning 和 `maxwarn` 可追踪；
-- 输入文件没有被 Operation 非预期修改；
-- 候选可以登记为 VALIDATED MD_INPUT。
-
-不表示：
-
-- 模拟一定稳定；
-- 科学参数一定适合研究目标；
-- run unit 已执行或完成。
+通过不表示 MDP 科学方案最佳或模拟一定稳定。
 
 # 职责边界
 
 负责：
 
-- 读取 validated plan、目标 run unit、source artifacts；
-- 读取 Operation result、`.tpr`、manifest、command record 和 logs；
-- 独立解析 `.tpr` 和实际 MDP；
-- 核验输入 identities、topology/include closure 和 start-state provenance；
-- 核验 grompp warning policy 和关键参数一致性；
-- 输出 Validation result、详细 report 和 artifact gate 建议。
+- 读取 validated protocol/plan、Operation result、input manifest、rendered MDP、TPR 和 source files；
+- 独立核验 MDP source/rendering/override provenance；
+- 解析 MDP 与 TPR 必要 metadata；
+- 核验 coordinates/topology/include/index/reference/input checkpoint；
+- 核验 grompp command/version/maxwarn/warnings；
+- 检查 source files 未改变；
+- 写 validation report并返回 MD_INPUT gate。
 
-不负责：
+不得：
 
-- 修改 `.tpr`、MDP、topology、coordinates 或 checkpoint；
-- 重新运行 grompp；
-- 自动提高 `maxwarn`；
-- 根据常规经验改参数；
-- 执行 `mdrun`；
-- 写管理目录；
-- 自动重试 Operation。
+- 修改 MDP/TPR/topology/coordinates/checkpoint；
+- 修复或重跑 grompp；
+- 添加/调整参数或 maxwarn；
+- 执行 mdrun；
+- 判断采样或科学收敛；
+- 写管理目录。
 
 # 输入
 
-作为 `OPERATION_WITH_VALIDATOR` task unit 的 validator 部分，必须接收：
+作为 input preparation 的专属 Validator，接收：
 
-- 同一 task 的 Operation result；
-- validated simulation plan 和 plan validation evidence；
-- 目标 run unit；
-- source SYSTEM/MD_OUTPUT artifact records；
-- candidate `.tpr`；
-- MDP source/used file；
-- run input manifest；
-- grompp command record、stdout/stderr 和 Operation report；
-- topology root/include files、coordinates 和可选 index/reference/checkpoint；
+- Operation result/report；
+- validated protocol/plan 和目标 run projection；
+- input manifest；
+- MDP source/template、rendered MDP 和 typed override provenance；
+- TPR；
+- source SYSTEM/upstream run-output records；
+- coordinates/topology/includes/index/reference/input checkpoint；
+- grompp command/stdout/stderr；
 - allowed read/write 与 forbidden paths；
-- Validator report/result data 路径。
+- report/result data路径。
 
 # Preflight
 
 确认：
 
-- task/workstream/run unit IDs 一致；
-- Operation status 为 DONE；
-- plan 仍有效且目标 run unit 存在；
-- candidate files 存在、可读、非 symlink；
-- manifest 可通过本地 schema；
-- source artifact 为 VALIDATED；
-- Validator 不以被验证文件为写入目标；
-- 管理目录位于 forbidden paths。
+1. Operation status 为 DONE；
+2. protocol/plan schema v2 有效且已验证；
+3. task/workstream/protocol/plan/run-unit IDs 一致；
+4. manifest schema v2 有效；
+5. TPR/rendered MDP/source files 可读且 hashes 一致；
+6. source artifact 已 VALIDATED；
+7. Validator 不写被验证对象；
+8. 管理目录禁止写入。
 
-# 独立核验
+# 独立检查
 
-## 1. Plan 与 manifest
+## MDP materialization
 
-从 plan 独立提取 expected：
+### FINAL_FILE
 
-- run unit ID 和 role；
-- MDP identity；
-- start-state source；
-- grompp executable/version、`maxwarn` 和 extra argv；
-- expected SYSTEM 或 prior-run artifact lineage。
+- source kind 与 protocol 一致；
+- overrides 为空；
+- rendered/copy content 与 source 语义和 hash 一致；
+- rendering policy 为 USE_FILE_UNCHANGED。
 
-不得信任 manifest 自报 expected 值。
+### TEMPLATE_WITH_TYPED_OVERRIDES
 
-## 2. 文件身份
+- template hash 与 protocol 一致；
+- override parameter set/value type/value/unit 与 protocol 一致；
+- 每个 parameter 在 template 语义中唯一；
+- rendered MDP 只改变声明参数；
+- 未声明参数保持模板值；
+- rendering policy 为 EXACT_PARAMETER_REPLACEMENT；
+- 不存在自由文本注入或额外参数改变。
 
-核验：
+## Source files
 
-- plan、MDP、coordinates、topology root、includes、index/reference/checkpoint hashes；
-- source MDP 与 used MDP 内容相同，除非 plan 明确允许经过可追踪转换；v1 默认要求相同；
-- source artifacts 在 Operation 前后 hash 不变；
-- `.tpr` identity 与 manifest 一致；
-- manifest 中不存在未实际使用的输入文件。
+- coordinates/topology/include closure 与 source artifact 一致；
+- required index/reference files 存在；
+- SYSTEM start-state 的 input checkpoint 为 null；
+- PRIOR_RUN_OUTPUT source artifact/run unit 与 dependency closure 一致；
+- input checkpoint 如存在，属于声明上游 output；
+- 所有 source hashes 在 Operation 前后不变。
 
-## 3. Topology closure
+## grompp
 
-- topology root 可解析；
--所有 required include 文件可定位；
-- include identities 与 manifest 一致；
-- 不存在执行期间临时替换后未记录的 include；
-- topology 与 coordinate atom count/ordering 满足 grompp 输出事实。
+- command 可由 manifest 重建；
+- executable实际版本有记录，且满足 task/profile constraint；
+- `maxwarn` 等于 protocol preprocessing policy；
+- return code 符合成功条件；
+- warnings 数量/内容与 stdout/stderr 一致；
+- warning 超过允许值不得通过；
+- 不因 executable路径变化要求 scientific protocol revision。
 
-## 4. `.tpr` 解析
+## TPR
 
-使用可重复的 GROMACS inspection 路径读取至少：
+核验可用 inspector 读取的：
 
-- run input 可解析性；
-- step/time integration settings；
-- integrator；
-- temperature/pressure coupling presence；
-- constraints；
-- continuation/checkpoint相关设置；
-- system atom count；
-- output control settings。
+- atom count/system identity；
+- run input source identity；
+- integrator/ensemble/step/time等与 rendered MDP一致的可验证字段；
+- topology/coordinates/checkpoint linkage；
+- TPR 未截断、非旧 task 遗留。
 
-这些字段与实际 MDP、plan 和 role-specific explicit requirements 比较。Validator 不因 role 名称自行创造额外科学标准。
+无法可靠解析 blocking metadata 时不伪造通过。
 
-## 5. Command 与 warnings
-
-- argv 与 manifest/command record 一致；
-- `maxwarn` 与 plan 一致；
-- return code 为成功；
-- warnings 数量不超过显式允许值；
-- 所有 warning 均被记录；
-- 出现未被允许的 blocking warning 时不通过；
-- executable/version 与计划策略一致。
-
-## 6. Start-state provenance
-
-### SYSTEM
-
-候选必须追溯到 plan 声明的 VALIDATED SYSTEM。
-
-### PRIOR_RUN_OUTPUT
-
-候选必须追溯到明确的上游 VALIDATED MD_OUTPUT；若使用 checkpoint，identity 必须与 plan 和 manifest 一致。不得使用未验证或“最新”的 checkpoint 替代。
-
-# Gate outcomes
+# Outcome codes
 
 - `MD_RUN_INPUT_VALIDATED`；
-- `MD_RUN_INPUT_VALIDATED_WITH_NONBLOCKING_WARNINGS`；
-- `RUN_INPUT_PLAN_MISMATCH`；
-- `RUN_INPUT_SOURCE_PROVENANCE_MISMATCH`；
-- `RUN_INPUT_FILE_HASH_MISMATCH`；
-- `RUN_INPUT_TOPOLOGY_CLOSURE_INVALID`；
-- `RUN_INPUT_TPR_UNREADABLE`；
-- `RUN_INPUT_TPR_PARAMETER_MISMATCH`；
-- `RUN_INPUT_GROMPP_COMMAND_MISMATCH`；
-- `RUN_INPUT_WARNING_POLICY_VIOLATION`；
-- `RUN_INPUT_MANIFEST_MISMATCH`；
+- `MD_RUN_INPUT_VALIDATED_WITH_WARNINGS`；
 - `RUN_INPUT_VALIDATOR_INPUT_INCOMPLETE`；
+- `RUN_INPUT_PROTOCOL_OR_PLAN_MISMATCH`；
+- `RUN_INPUT_MANIFEST_OR_SOURCE_MISMATCH`；
+- `RUN_INPUT_MDP_RENDERING_MISMATCH`；
+- `RUN_INPUT_UNDECLARED_MDP_CHANGE`；
+- `RUN_INPUT_TOPOLOGY_OR_SOURCE_INVALID`；
+- `RUN_INPUT_GROMPP_COMMAND_OR_WARNING_INVALID`；
+- `RUN_INPUT_TPR_UNREADABLE_OR_INCONSISTENT`；
+- `RUN_INPUT_SOURCE_FILE_MUTATION_DETECTED`；
 - `RUN_INPUT_VALIDATOR_INTERNAL_FAILURE`。
 
-只有前两个 outcome 可以建议 Manager 接受 MD_INPUT candidate。
+只有前两个 outcome 可返回 MD_INPUT artifact candidate。
 
-# 输出
+# Artifact candidate
 
-默认：
+通过时引用 Operation 已生成的 MD_INPUT candidate files，并确保包含：
 
-```text
-04_md_simulation/<run_unit_id>/input/
-├── md_run_input_validation_report.yaml
-└── md_run_input_validation_result.yaml
-```
+- rendered/copied run.mdp；
+- run.tpr；
+- input manifest；
+- grompp command/report；
+- input validation report。
 
-通过时：
-
-- `validated_files` 包含 `.tpr`、MDP、manifest 和必要 command evidence；
-- top-level artifact candidate 保持 Operation 创建的 MD_INPUT 文件集合；
-- Manager 可将其登记为 VALIDATED MD_INPUT；
-- 不修改 Operation result。
-
-# 失败处理
-
-- 输入缺失：BLOCKED；
-- 对象可检查但不符合 gate：Validator 执行 DONE，outcome 不通过；
-- 解析器或 inspection 失败：FAILED；
-- 不修改候选，不自动重跑；
-- 保留详细差异 report。
+`derived_from_artifact_set_ids` 指向 SYSTEM 或上游 run-level MDOUTPUT。
 
 # 自检
 
-- [ ] expected inputs 从 plan 独立提取；
-- [ ] 未信任 manifest 自报；
-- [ ] `.tpr` 已实际解析；
-- [ ] MDP、topology、coordinates 和 checkpoint provenance 一致；
-- [ ] topology include closure 已核验；
-- [ ] grompp argv/version/maxwarn/warnings 已核验；
-- [ ] role 名称未被用于隐式增加科学标准；
+- [ ] protocol 是科学字段 owner；
+- [ ] FINAL_FILE/template rendering 已独立核验；
+- [ ] 未声明 MDP 参数没有变化；
+- [ ] source/topology/include/checkpoint provenance 连续；
+- [ ] runtime executable 仅作为 evidence；
+- [ ] maxwarn 与 protocol 一致；
+- [ ] TPR metadata 与 rendered MDP/input一致；
 - [ ] source files 未改变；
-- [ ] 未修改候选或重跑 grompp；
-- [ ] 未执行 mdrun；
+- [ ] 未修改对象、重跑 grompp或执行模拟；
 - [ ] 未写管理目录。
