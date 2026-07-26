@@ -1,20 +1,23 @@
 # MD Simulation Skills Draft Validation
 
-## Status
+## Current status
 
 ```yaml
 status: REVIEW_REQUIRED
 branch: draft/md-simulation-skills
 architecture_version: 2
-scope: md_simulation contract and behavior draft
 runtime_ready: false
+stage_registry_connection: planned
 skills: 15
-files_added: 49
+files_added: 50
 local_schemas: 14
+fixture_files: 15
 behavior_cases: 214
+validation_runner_created: true
+validation_runner_executed: false
 ```
 
-本记录确认 MD 模拟阶段已完成细节审计后的 contract v2 重构。尚未执行 schema runner、静态检查、Manager 集成、真实 GROMACS 或 backend 测试，因此不得标记为可运行或 connected。
+本记录确认 MD 模拟阶段已完成细节审计后的 contract v2 重构。尚未执行仓库级 schema/static/fixture tests、Manager 集成、真实 GROMACS 或 backend 测试，因此不得标记为可运行或 connected。
 
 详细审计：
 
@@ -22,7 +25,13 @@ behavior_cases: 214
 04_evals/md_simulation_workflow/MD_SIMULATION_DETAIL_AUDIT.md
 ```
 
-## 权威阶段链
+本地校验器：
+
+```text
+04_evals/md_simulation_workflow/scripts/validate_md_simulation_contracts.py
+```
+
+## Frozen stage boundary
 
 ```text
 md_preparation_workflow
@@ -40,13 +49,13 @@ md_preparation_workflow
 
 只有 SYSTEM structure/topology/box/solvent/ions 改变时返回 `md_preparation_workflow`。
 
-## v2 对象模型
+## v2 object model
 
 ### Scientific protocol
 
 唯一拥有：
 
-- run units 和科学 roles；
+- run units 和 scientific roles；
 - dependencies；
 - FINAL_FILE 或 TEMPLATE_WITH_TYPED_OVERRIDES MDP specification；
 - start states；
@@ -54,7 +63,7 @@ md_preparation_workflow
 - expected output roles；
 - completion criteria；
 - field provenance；
-- unresolved scientific/input/attempt gates。
+- unresolved gates。
 
 不拥有 backend、resources、runtime executable、attempt 或 submission identities。
 
@@ -64,11 +73,11 @@ md_preparation_workflow
 
 - validated protocol identity；
 - run-unit DAG projection；
-- run/input/attempts business paths；
+- run/input/attempts paths；
 - input/attempt gate projection；
 - revision lineage。
 
-plan 不复制科学参数，也不嵌入 runtime status。
+plan 不复制 scientific values，也不嵌入 runtime status。
 
 ### Execution attempt
 
@@ -87,14 +96,14 @@ CONTINUE_NOAPPEND
 
 `CONTINUATION` 已从 scientific role 删除。APPEND 明确禁用。
 
-### Outputs
+### Output layers
 
-- run-level MDOUTPUT：accepted attempt chain；
-- stage-level MDOUTPUT：scope 内全部 required run outputs 的 collection；
-- segmented production 不得只保留最后一个 segment；
-- stage assembly 不复制或拼接 engine data。
+- run-level MDOUTPUT：一个 run unit 的 accepted attempt chain；
+- stage-level MDOUTPUT：scope 内全部 required run outputs 的唯一 collection；
+- segmented production 不得遗漏早期 segment；
+- assembly 不复制或拼接 engine data。
 
-## 15 个 Skills
+## Skills
 
 ```text
 01_workflows/md_simulation_workflow
@@ -139,38 +148,38 @@ Workflow exit:
 8. workflow_completion_validation
 ```
 
-Protocol 未验证时 route 只能到 0；plan 未验证时只能到 1。初始 route 只生成 FRESH attempt。retry/continuation 由新 evidence 触发 route revision。
+Protocol 未验证时 route 只能到 0；plan 未验证时只能到 1。初始 route 只包含 FRESH attempt。retry/continuation 由新 evidence 触发 route revision。
 
-## 已修正的细节问题
-
-### P0
+## Corrected P0 findings
 
 - execution spec 已有专属 Operation/Validator；
-- attempt/spec identity 独立于 task ID；
+- execution spec/attempt identity 独立于 task ID；
 - retry/continuation 使用独立 attempt directory；
 - APPEND 与旧文件 mutation 被禁止；
-- run output Validator 核验 accepted attempt chain；
-- 新增 stage-level output assembly/validation；
-- completion 不再隐式选择“唯一最后 run output”。
+- run-output Validator 核验 accepted attempt chain；
+- stage-level output assembly/validation 已建立；
+- completion 不再选择“唯一最后 run output”。
 
-### P1
+## Corrected P1 findings
 
-- `CONTINUATION` 从 role 删除；
+- `CONTINUATION` 从 scientific role 删除；
 - scientific protocol 与 runtime/backend/resource 分离；
 - MDP 支持 final file 或 template+typed overrides；
-- plan 不再复制 protocol 科学字段；
+- plan 不再复制 protocol scientific fields；
 - immutable plan 不再保存 runtime status；
 -开放式自然语言不能直接生成 typed scientific values；
-- expected-output role 改为受控枚举。
+- expected-output role 使用受控枚举。
 
-### Schema cross-field
+## Schema details corrected
 
 - SYSTEM start 强制 checkpoint 为 null；
+- completion criteria 使用显式 completion mode；
 - TARGET_STEP_OR_TIME 至少有 step/time target；
 - ROLE_SPECIFIC 至少有一个 check；
 - async attempt 要求 prepared submission identity；
 - CONTINUE_NOAPPEND 要求 parent+checkpoint；
 - FRESH/RETRY/CONTINUE 条件互斥；
+- integer/number typed override 不再使用重叠 oneOf；
 - stage output derived IDs 必须覆盖 included run outputs。
 
 ## Behavior coverage
@@ -194,13 +203,12 @@ md_simulation_completion_validator: 18
 total: 214
 ```
 
-覆盖：
+Coverage includes：
 
-- VALIDATED SYSTEM entry；
 - scientific/runtime owner separation；
-- field provenance and ambiguity；
+- field provenance and ambiguous language；
 - FINAL_FILE/template+typed override；
-- plan projection and no embedded status；
+- projection plan without embedded status；
 - FRESH/RETRY/CONTINUE_NOAPPEND；
 - prepared submission identity；
 - attempt directory isolation；
@@ -209,14 +217,13 @@ total: 214
 - failed/superseded attempt exclusion；
 - target-not-reached continuation recommendation；
 - segmented production collection；
-- early segment preservation；
-- stage manifest data non-mutation；
+- stage manifest non-mutation；
 - scope completion versus Workflow completion；
 - no scientific convergence claim。
 
-## Contract-level architecture findings
+## Contract-level findings
 
-### PASS pending executable validation
+### Pass pending executable validation
 
 - Workflow planning/execution interfaces remain separate；
 - each decision selects one task unit；
@@ -227,85 +234,36 @@ total: 214
 - status checks are ON_DEMAND；
 - FINISHED_UNVERIFIED remains distinct from COMPLETED；
 - APPEND mutation is excluded from v1；
-- SYSTEM→protocol→plan→MDINPUT→attempts→run output→stage output lineage is expressible；
-- technical completion is distinct from scientific convergence；
-- this window has not modified shared contracts or Manager files。
+- full SYSTEM→stage-output lineage is expressible；
+- technical completion remains distinct from scientific convergence；
+- shared contracts and Manager files were not modified。
 
-### REVIEW REQUIRED
+### Review required
 
-1. Protocol/plan/attempt/stage-manifest business objects are not represented by shared artifact types. Main window must decide reference/record strategy.
-2. Shared submission record lacks explicit attempt/spec IDs; current mapping relies on task ID, working directory and command record.
-3. Manager artifact closure must freeze how Validator artifact candidates become registered VALIDATED MDINPUT/run-level MDOUTPUT/stage-level MDOUTPUT.
-4. Project-relative path normalization requires an authoritative rule.
-5. Same-Workstream independent run-unit concurrency remains unfrozen; separate Workstreams are the conservative default.
-6. Metric IDs require an ACTIVE registry before role-specific checks become hard gates.
-7. Hard gates requiring parsers or submission adapters need ACTIVE Tools or tested built-in implementations.
+1. Protocol/plan/attempt/stage-manifest business objects are not represented by shared artifact types.
+2. Shared submission record lacks explicit attempt/spec IDs.
+3. Manager artifact closure must freeze candidate registration for MDINPUT/run-output/stage-output.
+4. Project-relative path normalization needs an authoritative rule.
+5. Same-Workstream independent run-unit concurrency remains unfrozen.
+6. Metric IDs require an ACTIVE registry before becoming hard gates.
+7. Parser/submission hard gates require ACTIVE Tools or tested built-in implementations.
 
-## Tool requests
+## Validation runner
 
-### External submission adapter
+The runner checks：
 
-Callers:
+- 15 Skill frontmatter/name/path pairs；
+- 14 YAML/JSON Schemas using Draft 2020-12 meta-validation；
+- v2 invariants and removal of the old execution schema；
+- no scientific `CONTINUATION` role or APPEND-enabled attempt schema；
+- no runtime/scientific owner leakage into protocol/plan；
+- 15 fixture files, local duplicate IDs, expected counts and total 214 cases。
 
-```text
-md_run_execution
-md_run_status_validator
-```
+It has not been executed because this environment cannot authenticate a private-repository checkout. This is an environment limitation, not a test pass.
 
-Responsibilities:
-
-- submit exactly one LOCAL/TMUX/scheduler attempt；
-- return PID/session/job identity；
-- retain raw evidence；
-- perform exactly one status query；
-- normalize non-decisional backend status data。
-
-### GROMACS artifact inspector and MDP renderer
-
-Callers:
-
-```text
-md_run_input_preparation
-md_run_input_validator
-md_run_output_validator
-```
-
-Responsibilities:
-
-- parse MDP and perform exact typed overrides；
-- inspect topology include closure and TPR metadata；
-- parse log/EDR/trajectory/structure/checkpoint metadata；
-- compare identities, steps, time and atom count；
-- compute registered metrics only。
-
-Tools must not choose scientific thresholds, route, Focus or user decisions.
-
-## Shared-file handoff requests
+## Shared-file handoff
 
 Main window should review and, only after executable validation, add content maps/inventory/ownership for all 15 Skills.
-
-Requested ownership paths include：
-
-```text
-01_workflows/md_simulation_workflow/**
-02_operations/md_simulation_protocol_specification/**
-02_validators/md_simulation_protocol_validator/**
-02_operations/md_simulation_plan_materialization/**
-02_validators/md_simulation_plan_validator/**
-02_operations/md_run_input_preparation/**
-02_validators/md_run_input_validator/**
-02_operations/md_execution_attempt_specification/**
-02_validators/md_execution_attempt_validator/**
-02_operations/md_run_execution/**
-02_validators/md_run_status_validator/**
-02_validators/md_run_output_validator/**
-02_operations/md_simulation_output_assembly/**
-02_validators/md_simulation_output_validator/**
-02_validators/md_simulation_completion_validator/**
-04_evals/md_simulation_*/**
-04_evals/md_execution_attempt_*/**
-04_evals/md_run_*/**
-```
 
 This window did not modify：
 
@@ -321,12 +279,11 @@ AGENTS.md
 design_records/**
 ```
 
-## Validation not executed
+## Validation still required
 
 ```text
-JSON Schema meta-validation
-positive/negative schema instance tests
-fixture runner
+run validate_md_simulation_contracts.py
+JSON Schema positive/negative instance tests
 validate_md_skill.py
 validate_architecture_separation.py
 validate_content_maps.py
@@ -349,10 +306,10 @@ stage_registry_connection: planned
 
 ```yaml
 next_action:
-  - execute local JSON Schema meta-validation
-  - build positive and negative schema instances
-  - run fixture consistency checks
-  - run authoring and architecture static validation
-  - report all failures before designing Tools
+  - run the local contract validator in an authenticated checkout
+  - fix all schema/static/fixture failures
+  - add positive and negative schema instances
+  - run authoring and architecture validation
+  - report failures before designing Tools
   - only after these pass, submit shared-contract and Tool requests to main window
 ```
