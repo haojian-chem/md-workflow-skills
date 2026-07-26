@@ -1,0 +1,105 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_simulation_output_manifest.schema.yaml
+title: MD Simulation Stage Output Manifest
+type: object
+required:
+  - schema_version
+  - workstream_id
+  - protocol_spec_id
+  - plan_id
+  - route_id
+  - scope
+  - included_run_units
+  - run_output_artifacts
+  - segment_order
+  - final_state
+  - excluded_artifacts
+  - resolved_decision_ids
+  - derived_from_artifact_set_ids
+properties:
+  schema_version: {type: integer, const: 1}
+  workstream_id: {type: string, minLength: 1}
+  protocol_spec_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
+  route_id: {type: string, minLength: 1}
+  scope:
+    type: object
+    required: [start_substep, end_substep, workflow_exit_required]
+    properties:
+      start_substep: {type: [string, 'null']}
+      end_substep: {type: [string, 'null']}
+      workflow_exit_required: {type: boolean}
+    additionalProperties: false
+  included_run_units:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  run_output_artifacts:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [run_unit_id, artifact_set_id, manifest]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        artifact_set_id: {type: string, minLength: 1}
+        manifest: {$ref: '#/$defs/file_identity'}
+      additionalProperties: false
+  segment_order:
+    type: array
+    items:
+      type: object
+      required: [sequence, run_unit_id, artifact_set_id, segment_roles]
+      properties:
+        sequence: {type: integer, minimum: 1}
+        run_unit_id: {type: string, minLength: 1}
+        artifact_set_id: {type: string, minLength: 1}
+        segment_roles:
+          type: array
+          items: {type: string, minLength: 1}
+      additionalProperties: false
+  final_state:
+    type: object
+    required: [source_run_unit_id, source_artifact_set_id, final_structure, final_checkpoint]
+    properties:
+      source_run_unit_id: {type: string, minLength: 1}
+      source_artifact_set_id: {type: string, minLength: 1}
+      final_structure:
+        oneOf:
+          - type: 'null'
+          - $ref: '#/$defs/file_identity'
+      final_checkpoint:
+        oneOf:
+          - type: 'null'
+          - $ref: '#/$defs/file_identity'
+    additionalProperties: false
+  excluded_artifacts:
+    type: array
+    items:
+      type: object
+      required: [artifact_set_id, reason]
+      properties:
+        artifact_set_id: {type: string, minLength: 1}
+        reason: {type: string}
+      additionalProperties: false
+  resolved_decision_ids:
+    type: array
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  derived_from_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
