@@ -6,17 +6,17 @@ required:
   - schema_version
   - task_id
   - workstream_id
-  - plan_identity
+  - protocol_spec_id
+  - plan_id
   - run_unit_id
-  - md_input_identity
-  - source_artifact_set_ids
-  - execution_identity
+  - md_input_artifact_set_id
+  - attempt_results
+  - accepted_attempt_order
   - output_files
   - actual_completion
-  - termination_findings
-  - checkpoint_findings
-  - cross_file_findings
+  - chain_findings
   - role_specific_checks
+  - run_output_manifest
   - warnings
   - outcome_code
   - gate_recommendation
@@ -24,53 +24,45 @@ properties:
   schema_version: {type: integer, const: 1}
   task_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
-  plan_identity:
-    type: object
-    required: [plan_id, path, sha256]
-    properties:
-      plan_id: {type: string, minLength: 1}
-      path: {type: string, minLength: 1}
-      sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-    additionalProperties: false
+  protocol_spec_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
   run_unit_id: {type: string, minLength: 1}
-  md_input_identity:
-    type: object
-    required: [artifact_set_id, input_manifest_sha256, tpr_sha256, validator_task_id]
-    properties:
-      artifact_set_id: {type: string, minLength: 1}
-      input_manifest_sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-      tpr_sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-      validator_task_id: {type: string, minLength: 1}
-    additionalProperties: false
-  source_artifact_set_ids:
+  md_input_artifact_set_id: {type: string, minLength: 1}
+  attempt_results:
     type: array
     minItems: 1
+    items:
+      type: object
+      required:
+        - attempt_id
+        - execution_spec_id
+        - attempt_kind
+        - parent_attempt_id
+        - classification
+        - terminal_status
+        - accepted
+        - reason
+      properties:
+        attempt_id: {type: string, minLength: 1}
+        execution_spec_id: {type: string, minLength: 1}
+        attempt_kind: {enum: [FRESH, RETRY_SAME_INPUT, CONTINUE_NOAPPEND]}
+        parent_attempt_id: {type: [string, 'null']}
+        classification: {enum: [ACCEPTED, FAILED, CANCELLED, SUPERSEDED, UNRESOLVED]}
+        terminal_status: {enum: [FINISHED_UNVERIFIED, FAILED, CANCELLED, UNKNOWN]}
+        accepted: {type: boolean}
+        reason: {type: string}
+      additionalProperties: false
+  accepted_attempt_order:
+    type: array
     uniqueItems: true
     items: {type: string, minLength: 1}
-  execution_identity:
-    type: object
-    required: [execution_spec_sha256, command_record_sha256, submission_id]
-    properties:
-      execution_spec_sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-      command_record_sha256:
-        type: string
-        pattern: '^[A-Fa-f0-9]{64}$'
-      submission_id: {type: [string, 'null']}
-    additionalProperties: false
   output_files:
     type: array
     items:
       type: object
-      required: [path, role, required, exists, readable, sha256, size_bytes]
+      required: [attempt_id, path, role, required, exists, readable, sha256, size_bytes, included_in_candidate]
       properties:
+        attempt_id: {type: string, minLength: 1}
         path: {type: string, minLength: 1}
         role: {type: string, minLength: 1}
         required: {type: boolean}
@@ -80,54 +72,47 @@ properties:
           type: [string, 'null']
           pattern: '^[A-Fa-f0-9]{64}$'
         size_bytes: {type: [integer, 'null'], minimum: 0}
+        included_in_candidate: {type: boolean}
       additionalProperties: false
   actual_completion:
     type: object
-    required: [final_step, final_time_ps, target_step_met, target_time_met]
+    required: [final_attempt_id, final_step, final_time_ps, target_step_met, target_time_met]
     properties:
+      final_attempt_id: {type: [string, 'null']}
       final_step: {type: [integer, 'null'], minimum: 0}
       final_time_ps: {type: [number, 'null'], minimum: 0}
       target_step_met: {type: [boolean, 'null']}
       target_time_met: {type: [boolean, 'null']}
     additionalProperties: false
-  termination_findings:
+  chain_findings:
     type: object
-    required: [normal_termination_confirmed, fatal_evidence, nonzero_exit_evidence]
+    required:
+      - graph_acyclic
+      - branch_unique
+      - tpr_identity_consistent
+      - checkpoint_continuity
+      - step_time_continuity
+      - output_isolation
+      - final_structure_unique
+      - final_checkpoint_unique
     properties:
-      normal_termination_confirmed: {type: boolean}
-      fatal_evidence:
-        type: array
-        items: {type: string}
-      nonzero_exit_evidence:
-        type: array
-        items: {type: string}
+      graph_acyclic: {type: boolean}
+      branch_unique: {type: boolean}
+      tpr_identity_consistent: {type: boolean}
+      checkpoint_continuity: {type: boolean}
+      step_time_continuity: {type: boolean}
+      output_isolation: {type: boolean}
+      final_structure_unique: {type: boolean}
+      final_checkpoint_unique: {type: boolean}
     additionalProperties: false
-  checkpoint_findings:
-    type: object
-    required: [required, present, readable, consistent]
-    properties:
-      required: {type: boolean}
-      present: {type: boolean}
-      readable: {type: boolean}
-      consistent: {type: [boolean, 'null']}
-    additionalProperties: false
-  cross_file_findings:
-    type: array
-    items:
-      type: object
-      required: [check_id, passed, details]
-      properties:
-        check_id: {type: string, minLength: 1}
-        passed: {type: boolean}
-        details: {type: string}
-      additionalProperties: false
   role_specific_checks:
     type: array
     items:
       type: object
-      required: [check_id, blocking, status, measured_value, unit, details]
+      required: [check_id, metric_id, blocking, status, measured_value, unit, details]
       properties:
         check_id: {type: string, minLength: 1}
+        metric_id: {type: string, minLength: 1}
         blocking: {type: boolean}
         status: {enum: [PASS, FAIL, UNRESOLVED, NOT_APPLICABLE]}
         measured_value:
@@ -139,6 +124,7 @@ properties:
         unit: {type: [string, 'null']}
         details: {type: string}
       additionalProperties: false
+  run_output_manifest: {$ref: '#/$defs/file_identity'}
   warnings:
     type: array
     items: {type: string}
@@ -146,21 +132,32 @@ properties:
     enum:
       - MD_RUN_OUTPUT_VALIDATED
       - MD_RUN_OUTPUT_VALIDATED_WITH_WARNINGS
-      - OUTPUT_VALIDATION_INPUT_INCOMPLETE
-      - SIMULATION_PLAN_OR_RUN_UNIT_MISMATCH
-      - MD_INPUT_NOT_VALIDATED_OR_MISMATCHED
-      - INPUT_OR_COMMAND_PROVENANCE_MISMATCH
-      - RUN_STILL_ACTIVE
-      - REQUIRED_OUTPUT_MISSING
-      - OUTPUT_UNREADABLE_OR_TRUNCATED
-      - NORMAL_TERMINATION_NOT_CONFIRMED
-      - FATAL_OR_NONZERO_EXIT_DETECTED
-      - TARGET_STEP_OR_TIME_NOT_REACHED
-      - CHECKPOINT_INVALID_OR_INCONSISTENT
-      - OUTPUT_CROSS_FILE_INCONSISTENCY
-      - ROLE_SPECIFIC_CHECK_FAILED
-      - ROLE_SPECIFIC_CHECK_UNRESOLVED
-      - OUTPUT_VALIDATOR_INTERNAL_FAILURE
+      - RUN_OUTPUT_VALIDATOR_INPUT_INCOMPLETE
+      - RUN_OUTPUT_ATTEMPT_GRAPH_INVALID
+      - RUN_OUTPUT_ATTEMPT_BRANCH_UNRESOLVED
+      - RUN_OUTPUT_ACTIVE_OR_UNKNOWN_ATTEMPT
+      - RUN_OUTPUT_INPUT_OR_COMMAND_MISMATCH
+      - RUN_OUTPUT_REQUIRED_ATTEMPT_FILE_MISSING
+      - RUN_OUTPUT_FILE_UNREADABLE_OR_TRUNCATED
+      - RUN_OUTPUT_FATAL_OR_NONZERO_EXIT
+      - RUN_OUTPUT_CHECKPOINT_CHAIN_INVALID
+      - RUN_OUTPUT_STEP_OR_TIME_CONTINUITY_INVALID
+      - RUN_OUTPUT_TARGET_NOT_REACHED
+      - RUN_OUTPUT_CROSS_FILE_INCONSISTENCY
+      - RUN_OUTPUT_ROLE_SPECIFIC_CHECK_FAILED
+      - RUN_OUTPUT_ROLE_SPECIFIC_CHECK_UNRESOLVED
+      - RUN_OUTPUT_VALIDATOR_INTERNAL_FAILURE
   gate_recommendation:
-    enum: [ACCEPT_MD_OUTPUT, REJECT_MD_OUTPUT, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
+    enum: [ACCEPT_RUN_MD_OUTPUT, REJECT_RUN_MD_OUTPUT, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
 additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      artifact_set_id: {type: [string, 'null']}
+    additionalProperties: false
