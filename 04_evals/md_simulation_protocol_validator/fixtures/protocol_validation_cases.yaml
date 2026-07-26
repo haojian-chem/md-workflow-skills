@@ -1,124 +1,127 @@
-schema_version: 1
+schema_version: 2
 skill_name: md_simulation_protocol_validator
 cases:
-  - case_id: fully_explicit_protocol_validates
-    purpose: positive_validation
+  - case_id: valid_final_file_protocol
     input:
-      system_validated: true
-      all_fields_have_provenance: true
-      run_units_explicitly_supported: true
-      plan_validation_unresolved_items: []
-    expected: {status: DONE, outcome_code: SIMULATION_PROTOCOL_VALIDATED}
+      schema_v2_valid: true
+      all_scientific_fields_match_sources: true
+      field_provenance_complete: true
+      runtime_fields_present: false
+    expected:
+      status: DONE
+      outcome_code: SIMULATION_PROTOCOL_VALIDATED
 
-  - case_id: deferred_execution_items_validate
-    purpose: deferred_execution
+  - case_id: valid_template_override_protocol
     input:
-      all_scientific_fields_complete: true
-      unresolved_items:
-        - {item_id: backend.1, blocking_stage: EXECUTION, classification_valid: true}
-    expected: {outcome_code: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS}
-
-  - case_id: deferred_input_item_validates
-    purpose: deferred_input_preparation
-    input:
-      all_scientific_fields_complete: true
-      unresolved_items:
-        - {item_id: index.1, blocking_stage: INPUT_PREPARATION, classification_valid: true}
-    expected: {outcome_code: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS}
+      source_kind: TEMPLATE_WITH_TYPED_OVERRIDES
+      template_hash_valid: true
+      overrides_typed_and_unique: true
+      rendered_policy_exact: true
+    expected:
+      outcome_code: SIMULATION_PROTOCOL_VALIDATED
 
   - case_id: operation_report_not_trusted
-    purpose: independent_reconstruction
     input:
       operation_report_says_complete: true
       actual_field_provenance_missing: true
-    expected: {outcome_code: SIMULATION_PROTOCOL_SPEC_MISMATCH}
+    expected:
+      outcome_code: PROTOCOL_FIELD_PROVENANCE_INVALID
 
   - case_id: implicit_nvt_npt_detected
-    purpose: implicit_default_detection
     input:
-      decisions_support_run_units: [md.1]
-      spec_run_units: [nvt.1, npt.1, md.1]
-    expected: {outcome_code: SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED}
-
-  - case_id: unsupported_default_temperature
-    purpose: implicit_parameter_detection
-    input:
-      spec_temperature: 300
-      supporting_decision_or_file: null
-    expected: {outcome_code: SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED}
-
-  - case_id: superseded_decision_used
-    purpose: decision_provenance
-    input:
-      used_decision_id: old
-      used_decision_status: SUPERSEDED
-    expected: {outcome_code: SIMULATION_PROTOCOL_DECISION_PROVENANCE_MISMATCH}
-
-  - case_id: resolution_value_differs_from_spec
-    purpose: decision_value_mismatch
-    input:
-      decision_value: 310
-      spec_value: 300
-    expected: {outcome_code: SIMULATION_PROTOCOL_DECISION_PROVENANCE_MISMATCH}
-
-  - case_id: mdp_hash_changed
-    purpose: source_hash
-    input: {mdp_hash_matches: false}
-    expected: {outcome_code: SIMULATION_PROTOCOL_SOURCE_HASH_MISMATCH}
-
-  - case_id: duplicate_run_unit_id
-    purpose: invalid_identity
-    input: {run_unit_ids: [md.1, md.1]}
-    expected: {outcome_code: SIMULATION_PROTOCOL_RUN_UNIT_OR_DEPENDENCY_INVALID}
-
-  - case_id: dependency_cycle
-    purpose: invalid_dependency
-    input: {dependencies: {a: [b], b: [a]}}
-    expected: {outcome_code: SIMULATION_PROTOCOL_RUN_UNIT_OR_DEPENDENCY_INVALID}
-
-  - case_id: scientific_field_misclassified_as_execution
-    purpose: unresolved_classification
-    input:
-      unresolved_field: run_units.md.1.completion_criteria.target_time_ps
-      declared_blocking_stage: EXECUTION
-    expected: {outcome_code: SIMULATION_PROTOCOL_UNRESOLVED_ITEM_MISCLASSIFIED}
-
-  - case_id: plan_validation_item_present
-    purpose: validation_barrier
-    input:
-      unresolved_items:
-        - {item_id: pressure.target, blocking_stage: PLAN_VALIDATION, classification_valid: true}
+      authoritative_run_units: [md.1]
+      protocol_run_units: [nvt.1, npt.1, md.1]
     expected:
-      gate_recommendation: PAUSE_FOR_DECISION
-      accepted_for_plan_materialization: false
+      outcome_code: PROTOCOL_IMPLICIT_DEFAULT_DETECTED
+
+  - case_id: continuation_role_detected
+    input:
+      role: CONTINUATION
+    expected:
+      outcome_code: PROTOCOL_RUN_UNIT_OR_DAG_INVALID
+
+  - case_id: system_checkpoint_detected
+    input:
+      start_state_source: SYSTEM
+      input_checkpoint_present: true
+    expected:
+      outcome_code: PROTOCOL_START_STATE_INVALID
+
+  - case_id: final_file_contains_overrides
+    input:
+      source_kind: FINAL_FILE
+      typed_overrides_count: 1
+    expected:
+      outcome_code: PROTOCOL_MDP_SPEC_INVALID
+
+  - case_id: template_override_not_typed
+    input:
+      source_kind: TEMPLATE_WITH_TYPED_OVERRIDES
+      override_value_type: null
+    expected:
+      outcome_code: PROTOCOL_MDP_SPEC_INVALID
+
+  - case_id: target_mode_without_target
+    input:
+      completion_mode: TARGET_STEP_OR_TIME
+      target_nsteps: null
+      target_time_ps: null
+    expected:
+      outcome_code: PROTOCOL_COMPLETION_CRITERIA_INVALID
+
+  - case_id: role_specific_mode_without_check
+    input:
+      completion_mode: ROLE_SPECIFIC
+      checks: []
+    expected:
+      outcome_code: PROTOCOL_COMPLETION_CRITERIA_INVALID
+
+  - case_id: backend_field_misplaced
+    input:
+      protocol_contains_backend_type: SLURM
+    expected:
+      outcome_code: PROTOCOL_RUNTIME_FIELD_MISPLACED
+
+  - case_id: resource_field_misplaced
+    input:
+      protocol_contains_gpu_ids: ['0']
+    expected:
+      outcome_code: PROTOCOL_RUNTIME_FIELD_MISPLACED
+
+  - case_id: deferred_input_gate_valid
+    input:
+      unresolved_item:
+        blocking_stage: INPUT_PREPARATION
+        affected_run_unit_ids: [md.1]
+        affected_field_paths: [run_units[0].preprocessing_policy.require_index]
+    expected:
+      outcome_code: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_GATES
+
+  - case_id: scientific_field_misclassified_as_attempt
+    input:
+      unresolved_item:
+        field: run_units[0].completion_criteria.target_time_ps
+        blocking_stage: ATTEMPT_SPECIFICATION
+    expected:
+      outcome_code: PROTOCOL_UNRESOLVED_ITEM_MISCLASSIFIED
+
+  - case_id: provenance_source_missing
+    input:
+      field_provenance_source_exists: false
+    expected:
+      outcome_code: PROTOCOL_FIELD_PROVENANCE_INVALID
 
   - case_id: valid_revision
-    purpose: immutable_revision
     input:
-      old_spec_id: protocol.v1
-      new_supersedes_spec_id: protocol.v1
-      old_spec_hash_unchanged: true
-    expected: {outcome_code: SIMULATION_PROTOCOL_VALIDATED}
+      supersedes_spec_id: protocol.v1
+      revision_reason_present: true
+      old_spec_unchanged: true
+      new_path_unique: true
+    expected:
+      outcome_code: SIMULATION_PROTOCOL_VALIDATED
 
   - case_id: revision_overwrites_old_spec
-    purpose: invalid_revision
     input:
       new_path_equals_old_path: true
-      old_spec_hash_unchanged: false
-    expected: {outcome_code: SIMULATION_PROTOCOL_REVISION_INVALID}
-
-  - case_id: field_provenance_source_missing
-    purpose: provenance_reference
-    input:
-      provenance_source_type: DECISION_RECORD
-      provenance_source_id_exists: false
-    expected: {outcome_code: SIMULATION_PROTOCOL_DECISION_PROVENANCE_MISMATCH}
-
-  - case_id: no_scientific_judgment_added_by_validator
-    purpose: validator_boundary
-    input:
-      explicit_checks: []
-      validator_preferred_temperature: 300
     expected:
-      invented_acceptance_checks: []
-      spec_modified: false
+      outcome_code: PROTOCOL_REVISION_CHAIN_INVALID
