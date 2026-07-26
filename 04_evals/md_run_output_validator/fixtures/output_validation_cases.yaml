@@ -1,149 +1,156 @@
-schema_version: 2
+schema_version: 3
 skill_name: md_run_output_validator
 cases:
-  - case_id: valid_production_segment
+  - case_id: single_fresh_attempt_validates
     input:
-      plan_validated: true
-      run_unit_matches_plan: true
-      md_input_validated: true
-      input_manifest_tpr_match: true
-      process_active: false
-      required_outputs_present: true
-      outputs_readable: true
-      normal_termination: true
-      final_step: 5000000
-      target_nsteps: 5000000
-      cross_file_consistent: true
+      protocol_plan_input_valid: true
+      attempts:
+        - {attempt_id: attempt.001, kind: FRESH, status: FINISHED_UNVERIFIED, parent: null}
+      required_attempt_outputs_valid: true
+      final_step: 1000000
+      target_nsteps: 1000000
       blocking_checks_pass: true
     expected:
-      component_status: DONE
       outcome_code: MD_RUN_OUTPUT_VALIDATED
+      accepted_attempt_order: [attempt.001]
       artifact_candidate_type: MD_OUTPUT
 
-  - case_id: valid_with_nonblocking_warning
+  - case_id: fresh_plus_noappend_continuation
     input:
-      plan_validated: true
-      md_input_validated: true
-      all_blocking_checks_pass: true
-      nonblocking_check_unresolved: true
+      attempts:
+        - {attempt_id: attempt.001, kind: FRESH, status: FINISHED_UNVERIFIED, parent: null, final_step: 600000}
+        - {attempt_id: attempt.002, kind: CONTINUE_NOAPPEND, status: FINISHED_UNVERIFIED, parent: attempt.001, final_step: 1000000}
+      same_tpr: true
+      checkpoint_continuity: true
+      step_time_continuity: true
+      target_nsteps: 1000000
     expected:
-      outcome_code: MD_RUN_OUTPUT_VALIDATED_WITH_WARNINGS
-      artifact_candidate_type: MD_OUTPUT
+      outcome_code: MD_RUN_OUTPUT_VALIDATED
+      accepted_attempt_order: [attempt.001, attempt.002]
+      both_attempt_segments_in_candidate: true
 
-  - case_id: stale_plan
-    input: {plan_superseded: true}
-    expected: {outcome_code: SIMULATION_PLAN_OR_RUN_UNIT_MISMATCH}
-
-  - case_id: run_unit_not_in_plan
-    input: {execution_run_unit_id: md.2, plan_run_units: [md.1]}
-    expected: {outcome_code: SIMULATION_PLAN_OR_RUN_UNIT_MISMATCH}
-
-  - case_id: md_input_not_validated
-    input: {md_input_present: true, md_input_validated: false}
-    expected: {outcome_code: MD_INPUT_NOT_VALIDATED_OR_MISMATCHED}
-
-  - case_id: md_input_from_old_plan
-    input: {current_plan_id: plan.v2, md_input_plan_id: plan.v1}
-    expected: {outcome_code: MD_INPUT_NOT_VALIDATED_OR_MISMATCHED}
-
-  - case_id: run_still_active
-    input: {process_active: true}
+  - case_id: active_attempt_blocks
+    input:
+      attempts:
+        - {attempt_id: attempt.001, status: RUNNING}
     expected:
       component_status: BLOCKED
-      outcome_code: RUN_STILL_ACTIVE
-      artifact_candidates: []
+      outcome_code: RUN_OUTPUT_ACTIVE_OR_UNKNOWN_ATTEMPT
 
-  - case_id: input_tpr_hash_changed
-    input: {input_manifest_tpr_hash_matches_actual: false}
-    expected:
-      component_status: BLOCKED
-      outcome_code: INPUT_OR_COMMAND_PROVENANCE_MISMATCH
-
-  - case_id: required_trajectory_missing
+  - case_id: unknown_attempt_blocks
     input:
-      expected_outputs:
-        - {path: md.xtc, required: true, exists: false}
+      attempts:
+        - {attempt_id: attempt.001, status: UNKNOWN}
     expected:
-      component_status: DONE
-      outcome_code: REQUIRED_OUTPUT_MISSING
-      artifact_candidates: []
+      outcome_code: RUN_OUTPUT_ACTIVE_OR_UNKNOWN_ATTEMPT
+
+  - case_id: retry_supersedes_failed_root
+    input:
+      attempts:
+        - {attempt_id: attempt.001, kind: FRESH, status: FAILED}
+        - {attempt_id: attempt.002, kind: RETRY_SAME_INPUT, status: FINISHED_UNVERIFIED, parent: attempt.001}
+      replacement_decision_present: true
+      attempt_002_outputs_valid: true
+    expected:
+      accepted_attempt_order: [attempt.002]
+      excluded_attempts: [attempt.001]
+
+  - case_id: two_successful_retry_branches_unresolved
+    input:
+      attempts:
+        - {attempt_id: attempt.001, kind: FRESH, status: FAILED}
+        - {attempt_id: attempt.002, kind: RETRY_SAME_INPUT, status: FINISHED_UNVERIFIED, parent: attempt.001}
+        - {attempt_id: attempt.003, kind: RETRY_SAME_INPUT, status: FINISHED_UNVERIFIED, parent: attempt.001}
+      branch_selection_decision: null
+    expected:
+      outcome_code: RUN_OUTPUT_ATTEMPT_BRANCH_UNRESOLVED
+      gate_recommendation: PAUSE_FOR_DECISION
+
+  - case_id: continuation_checkpoint_not_parent
+    input:
+      attempt_002_kind: CONTINUE_NOAPPEND
+      attempt_002_parent: attempt.001
+      checkpoint_belongs_to_attempt: attempt.000
+    expected:
+      outcome_code: RUN_OUTPUT_CHECKPOINT_CHAIN_INVALID
+
+  - case_id: tpr_changes_between_continuation_attempts
+    input:
+      attempt_001_tpr_hash: aaa
+      attempt_002_tpr_hash: bbb
+    expected:
+      outcome_code: RUN_OUTPUT_INPUT_OR_COMMAND_MISMATCH
+
+  - case_id: noappend_output_overwrites_parent
+    input:
+      attempt_002_output_path_inside_attempt_001: true
+    expected:
+      outcome_code: RUN_OUTPUT_CROSS_FILE_INCONSISTENCY
+
+  - case_id: step_time_not_continuous
+    input:
+      attempt_001_final_step: 600000
+      attempt_002_first_step: 500000
+    expected:
+      outcome_code: RUN_OUTPUT_STEP_OR_TIME_CONTINUITY_INVALID
+
+  - case_id: target_not_reached_continuation_possible
+    input:
+      accepted_final_step: 900000
+      target_nsteps: 1000000
+      valid_final_checkpoint: true
+      same_tpr_continuation_possible: true
+    expected:
+      outcome_code: RUN_OUTPUT_TARGET_NOT_REACHED
+      route_revision_recommendation: CONTINUE_NOAPPEND
+
+  - case_id: required_attempt_trajectory_missing
+    input:
+      required_output_role: TRAJECTORY_COMPRESSED
+      required_output_exists: false
+    expected:
+      outcome_code: RUN_OUTPUT_REQUIRED_ATTEMPT_FILE_MISSING
 
   - case_id: trajectory_truncated
-    input: {required_outputs_present: true, trajectory_readable: false}
-    expected: {outcome_code: OUTPUT_UNREADABLE_OR_TRUNCATED}
-
-  - case_id: normal_marker_missing
     input:
-      require_normal_termination: true
-      normal_termination: false
-      fatal_evidence: false
-    expected: {outcome_code: NORMAL_TERMINATION_NOT_CONFIRMED}
+      trajectory_readable: false
+    expected:
+      outcome_code: RUN_OUTPUT_FILE_UNREADABLE_OR_TRUNCATED
 
-  - case_id: fatal_error_conflicts_with_normal_marker
-    input: {normal_termination: true, fatal_evidence: true}
-    expected: {outcome_code: FATAL_OR_NONZERO_EXIT_DETECTED}
-
-  - case_id: target_steps_not_reached
-    input: {final_step: 900000, target_nsteps: 1000000}
-    expected: {outcome_code: TARGET_STEP_OR_TIME_NOT_REACHED}
-
-  - case_id: checkpoint_required_but_invalid
+  - case_id: fatal_marker_detected
     input:
-      require_checkpoint: true
-      checkpoint_present: true
-      checkpoint_readable: false
-    expected: {outcome_code: CHECKPOINT_INVALID_OR_INCONSISTENT}
+      normal_marker_present: true
+      fatal_marker_present: true
+    expected:
+      outcome_code: RUN_OUTPUT_FATAL_OR_NONZERO_EXIT
 
-  - case_id: cross_file_step_mismatch
+  - case_id: explicit_metric_fails
     input:
-      log_final_step: 1000000
-      checkpoint_final_step: 900000
-      trajectory_final_step: 1000000
-    expected: {outcome_code: OUTPUT_CROSS_FILE_INCONSISTENCY}
+      metric_registered: true
+      blocking_check_status: FAIL
+    expected:
+      outcome_code: RUN_OUTPUT_ROLE_SPECIFIC_CHECK_FAILED
 
-  - case_id: explicit_em_force_check_fails
+  - case_id: no_implicit_metric
     input:
-      run_role: ENERGY_MINIMIZATION
-      role_specific_checks:
-        - {check_id: max_force, blocking: true, threshold: 1000, measured: 1200}
-    expected: {outcome_code: ROLE_SPECIFIC_CHECK_FAILED}
-
-  - case_id: no_implicit_em_threshold
-    input:
-      run_role: ENERGY_MINIMIZATION
-      role_specific_checks: []
+      explicit_checks: []
       measured_max_force: 1200
     expected:
-      implicit_threshold_added: false
-      max_force_alone_causes_failure: false
+      implicit_check_added: false
 
-  - case_id: blocking_check_uncomputable
+  - case_id: failed_attempt_files_excluded
     input:
-      role_specific_checks:
-        - {check_id: density_window, blocking: true, parser_available: false}
+      attempts:
+        - {attempt_id: attempt.001, classification: FAILED}
+        - {attempt_id: attempt.002, classification: ACCEPTED}
     expected:
-      outcome_code: ROLE_SPECIFIC_CHECK_UNRESOLVED
-      artifact_candidates: []
+      candidate_includes_attempts: [attempt.002]
+      candidate_excludes_attempts: [attempt.001]
 
-  - case_id: checkpoint_exists_only
+  - case_id: new_tpr_required_stays_in_simulation
     input:
-      checkpoint_present: true
-      normal_termination: false
-      required_outputs_present: false
-    expected:
-      validation_passed: false
-      checkpoint_used_as_sole_completion_evidence: false
-
-  - case_id: new_tpr_required_stays_in_md_simulation
-    input:
-      technical_failure_requires_new_tpr: true
+      new_tpr_required: true
       system_change_required: false
     expected:
       route_revision_target_workflow: md_simulation_workflow
-      route_revision_target_substep: materialize_and_validate_simulation_plan
-
-  - case_id: system_topology_change_returns_md_preparation
-    input:
-      system_change_required: true
-      changed_dimension: topology
-    expected: {route_revision_target_workflow: md_preparation_workflow}
+      route_revision_target_substep: specify_and_validate_simulation_protocol
