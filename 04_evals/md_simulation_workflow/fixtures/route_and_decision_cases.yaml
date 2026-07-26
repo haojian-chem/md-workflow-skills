@@ -1,218 +1,159 @@
-schema_version: 2
+schema_version: 3
 skill_name: md_simulation_workflow
 cases:
-  - case_id: workflow_entry_plans_only_to_plan_gate_without_plan
-    purpose: partial_route_before_plan
+  - case_id: missing_protocol_limits_route_to_protocol_gate
     input:
-      scope: {start: WORKFLOW_ENTRY, end: WORKFLOW_EXIT}
       system_validated: true
-      protocol_spec_present: true
-      validated_plan_present: false
+      protocol_validated: false
+      scope: {start: WORKFLOW_ENTRY, end: WORKFLOW_EXIT}
     expected:
       fragment_status: PARTIAL
-      step_ids: [materialize_and_validate_simulation_plan]
+      step_ids: [specify_and_validate_simulation_protocol]
       invented_run_units: []
 
-  - case_id: system_missing_at_workflow_entry
-    purpose: entry_artifact_gate
+  - case_id: validated_protocol_without_plan
     input:
-      scope: {start: WORKFLOW_ENTRY, end: WORKFLOW_EXIT}
-      system_validated: false
-    expected: {fragment_status: BLOCKED, blocker_code: VALIDATED_SYSTEM_MISSING}
-
-  - case_id: unresolved_scientific_protocol_pauses
-    purpose: protocol_decision_gate
-    input:
-      plan_validation_unresolved_items: [temperature.target]
-    expected:
-      decision: PAUSE
-      confirmation_category: MD_SIMULATION_PROTOCOL
-
-  - case_id: validated_plan_expands_single_em_route
-    purpose: full_dynamic_route
-    input:
-      system_validated: true
-      plan_validated: true
-      scope: {start: WORKFLOW_ENTRY, end: validate_run_unit_output:em.1}
-      run_units:
-        - {run_unit_id: em.1, role: ENERGY_MINIMIZATION, depends_on: [], md_input_validated: false}
-    expected:
-      fragment_status: COMPLETE
-      step_ids:
-        - materialize_and_validate_simulation_plan
-        - prepare_and_validate_run_input:em.1
-        - execute_run_unit:em.1
-        - check_run_unit_status:em.1
-        - validate_run_unit_output:em.1
-      completion_validator_included: false
-
-  - case_id: existing_validated_plan_skipped
-    purpose: plan_skip
-    input:
-      plan_validated: true
-      plan_equivalent: true
-      plan_not_invalidated: true
-    expected:
-      decision: SKIP
-      skipped_substep: materialize_and_validate_simulation_plan
-
-  - case_id: existing_validated_md_input_skipped
-    purpose: input_skip
-    input:
-      current_run_unit: md.1
-      md_input_validated: true
-      md_input_matches_current_plan: true
-    expected:
-      decision: SKIP
-      skipped_substep: prepare_and_validate_run_input:md.1
-
-  - case_id: prepare_input_before_execution
-    purpose: input_gate_order
-    input:
-      current_run_unit: md.1
-      plan_validated: true
-      md_input_validated: false
-      input_gate_ready: true
+      protocol_validated: true
+      plan_validated: false
     expected:
       decision: EXECUTE
-      task_unit_mode: OPERATION_WITH_VALIDATOR
+      operation: md_simulation_plan_materialization
+      validator: md_simulation_plan_validator
+
+  - case_id: input_preparation_before_attempt
+    input:
+      plan_validated: true
+      current_run_unit: md.1
+      input_gate: READY
+      md_input_validated: false
+    expected:
+      decision: EXECUTE
       operation: md_run_input_preparation
       validator: md_run_input_validator
 
-  - case_id: input_preparation_unresolved_item
-    purpose: input_decision_gate
+  - case_id: validated_input_requires_attempt_spec
     input:
       current_run_unit: md.1
-      unresolved_item_blocking_stage: INPUT_PREPARATION
-    expected: {decision: PAUSE, next_task_unit: null}
+      md_input_validated: true
+      current_attempt_spec_present: false
+    expected:
+      decision: EXECUTE
+      operation: md_execution_attempt_specification
+      validator: md_execution_attempt_validator
+      attempt_kind: FRESH
 
-  - case_id: execution_requires_validated_md_input
-    purpose: execution_gate
+  - case_id: execute_validated_attempt
     input:
       current_run_unit: md.1
-      md_input_candidate_present: true
-      md_input_validated: false
+      attempt_id: attempt.001
+      attempt_spec_validated: true
+      execution_not_started: true
     expected:
-      decision: BLOCKED
-      next_task_unit: null
+      decision: EXECUTE
+      operation: md_run_execution
+      validator: null
 
-  - case_id: segmented_production_to_workflow_exit
-    purpose: positive_dynamic_route
+  - case_id: async_attempt_running_pauses
     input:
-      scope: {start: prepare_and_validate_run_input:md.1, end: WORKFLOW_EXIT}
-      plan_validated: true
-      run_units:
-        - {run_unit_id: md.1, role: PRODUCTION, depends_on: [], md_input_validated: false}
-        - {run_unit_id: md.2, role: PRODUCTION, depends_on: [md.1], md_input_validated: false}
-    expected:
-      fragment_status: COMPLETE
-      ordered_run_units: [md.1, md.2]
-      input_steps_included: true
-      completion_validator_included: true
-
-  - case_id: nonstandard_equilibration_sequence
-    purpose: no_fixed_nvt_npt_assumption
-    input:
-      plan_validated: true
-      run_units:
-        - {run_unit_id: eq.restraint.1, role: EQUILIBRATION, depends_on: []}
-        - {run_unit_id: eq.release.1, role: EQUILIBRATION, depends_on: [eq.restraint.1]}
-        - {run_unit_id: prod.a, role: PRODUCTION, depends_on: [eq.release.1]}
-    expected:
-      ordered_run_units: [eq.restraint.1, eq.release.1, prod.a]
-      invented_default_steps: []
-
-  - case_id: circular_plan_dependencies
-    purpose: dependency_cycle
-    input:
-      plan_validated: false
-      dependencies: {md.1: [md.2], md.2: [md.1]}
-    expected: {decision: BLOCKED, reason_contains: dependency}
-
-  - case_id: asynchronous_submission_running
-    purpose: external_wait
-    input:
-      current_run_unit: md.1
+      attempt_id: attempt.001
       submission_status: RUNNING
       status_evidence_fresh: true
-      status_check_requested: false
-    expected: {decision: PAUSE, next_task_unit: null}
+      status_refresh_required: false
+    expected:
+      decision: PAUSE
+      next_task_unit: null
 
-  - case_id: async_status_refresh_required
-    purpose: on_demand_status
+  - case_id: async_attempt_status_refresh
     input:
-      current_run_unit: md.1
+      attempt_id: attempt.001
       submission_status: UNKNOWN
-      status_check_requested: true
+      status_refresh_required: true
     expected:
       decision: EXECUTE
-      task_unit_mode: VALIDATOR
       validator: md_run_status_validator
 
-  - case_id: finished_unverified_requires_output_validation
-    purpose: output_gate
+  - case_id: terminal_attempt_requires_run_output_validation
     input:
       current_run_unit: md.1
-      submission_status: FINISHED_UNVERIFIED
-      md_input_validated: true
+      attempts:
+        - {attempt_id: attempt.001, status: FINISHED_UNVERIFIED}
+      run_output_validated: false
     expected:
       decision: EXECUTE
-      task_unit_mode: VALIDATOR
       validator: md_run_output_validator
 
-  - case_id: continuation_same_tpr_new_execution_spec
-    purpose: execution_only_revision
+  - case_id: incomplete_same_tpr_requests_new_attempt
     input:
-      same_tpr: true
-      checkpoint_explicit: true
-      append_policy_explicit: true
-      backend_changed: true
-      scientific_parameters_changed: false
-    expected:
-      plan_revision_required: false
-      new_execution_spec_required: true
-
-  - case_id: nsteps_change_requires_new_input
-    purpose: plan_input_revision
-    input:
-      nsteps_changed: true
-      tpr_changed: true
+      current_run_unit: md.1
+      run_output_outcome: RUN_OUTPUT_TARGET_NOT_REACHED
+      same_tpr_continuation_possible: true
+      checkpoint_valid: true
     expected:
       route_revision_required: true
-      target_substep: materialize_and_validate_simulation_plan
+      next_attempt_id: attempt.002
+      next_attempt_kind: CONTINUE_NOAPPEND
+      protocol_revision_required: false
 
-  - case_id: topology_change_returns_md_preparation
-    purpose: cross_workflow_boundary
+  - case_id: append_continuation_rejected
     input:
-      system_topology_changed: true
+      requested_attempt_kind: CONTINUE_APPEND
+    expected:
+      decision: BLOCKED
+      reason_contains: APPEND unsupported in v1
+
+  - case_id: new_tpr_stays_in_md_simulation
+    input:
+      mdp_or_tpr_changed: true
+      system_changed: false
+    expected:
+      route_revision_required: true
+      target_workflow: md_simulation_workflow
+      target_substep: specify_and_validate_simulation_protocol
+
+  - case_id: system_change_returns_md_preparation
+    input:
+      system_topology_or_box_changed: true
     expected:
       route_revision_required: true
       target_workflow: md_preparation_workflow
 
-  - case_id: new_tpr_does_not_automatically_return_md_preparation
-    purpose: corrected_boundary
+  - case_id: workflow_exit_requires_stage_output_assembly
     input:
-      mdp_changed: true
-      system_changed: false
+      all_required_run_outputs_validated: true
+      stage_output_validated: false
+      scope_end: WORKFLOW_EXIT
     expected:
-      target_workflow: md_simulation_workflow
-      target_substep: materialize_and_validate_simulation_plan
+      decision: EXECUTE
+      operation: md_simulation_output_assembly
+      validator: md_simulation_output_validator
 
-  - case_id: directory_exists_without_records
-    purpose: negative_directory_inference
+  - case_id: segmented_production_stage_output_includes_all
     input:
-      directory_exists: true
-      plan_record_present: false
-      artifact_evidence_present: false
-    expected: {decision: BLOCKED, reason_contains: recovery}
+      required_run_units: [md.1, md.2, md.3]
+      validated_run_outputs: [md.1, md.2, md.3]
+      stage_output_included_runs: [md.1, md.2, md.3]
+    expected:
+      early_segments_omitted: false
+      stage_output_scope_matches: true
 
-  - case_id: workflow_exit_ready
-    purpose: completion_gate
+  - case_id: validated_stage_output_requires_completion_gate
     input:
+      stage_output_validated: true
+      completion_validator_passed: false
+      scope_end: WORKFLOW_EXIT
+    expected:
+      decision: EXECUTE
+      validator: md_simulation_completion_validator
+
+  - case_id: workflow_complete
+    input:
+      protocol_validated: true
       plan_validated: true
-      all_required_md_inputs_validated: true
-      all_required_md_outputs_validated: true
-      unresolved_submission_count: 0
+      all_required_inputs_validated: true
+      all_attempts_closed: true
+      all_run_outputs_validated: true
+      stage_output_validated: true
       completion_validator_passed: true
-      final_md_output_validated: true
-    expected: {decision: COMPLETE, workflow_status: DONE}
+    expected:
+      decision: COMPLETE
+      workflow_status: DONE
