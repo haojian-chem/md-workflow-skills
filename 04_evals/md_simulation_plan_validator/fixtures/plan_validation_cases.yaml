@@ -1,145 +1,127 @@
-schema_version: 2
+schema_version: 3
 skill_name: md_simulation_plan_validator
 cases:
-  - case_id: exact_protocol_to_plan_match
-    purpose: positive_validation
-    input:
-      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
-      protocol_plan_fields_match: true
-      field_provenance_complete: true
-      dag_valid: true
-      sources_valid: true
-    expected: {status: DONE, outcome_code: SIMULATION_PLAN_VALIDATED}
-
-  - case_id: valid_plan_with_execution_unresolved
-    purpose: deferred_execution_gate
-    input:
-      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
-      unresolved_items:
-        - {item_id: backend.1, blocking_stage: EXECUTION, affected_field_paths: [run_units.md.1.execution_policy.backend_type]}
-    expected: {status: DONE, outcome_code: SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED}
-
-  - case_id: protocol_validation_missing
-    purpose: protocol_gate
-    input: {protocol_validation_result_present: false}
-    expected: {outcome_code: PLAN_PROTOCOL_NOT_VALIDATED}
-
-  - case_id: protocol_rejected
-    purpose: protocol_outcome
-    input: {protocol_validation_outcome: SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED}
-    expected: {outcome_code: PLAN_PROTOCOL_NOT_VALIDATED}
-
-  - case_id: protocol_superseded
-    purpose: protocol_lifecycle
-    input: {protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED, protocol_superseded: true}
-    expected: {outcome_code: PLAN_PROTOCOL_NOT_VALIDATED}
-
-  - case_id: operation_report_not_trusted
-    purpose: independent_recalculation
-    input:
-      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
-      operation_report_says_valid: true
-      actual_plan_missing_run_unit: true
-    expected: {status: DONE, outcome_code: PLAN_SPEC_MISMATCH}
-
-  - case_id: extra_implicit_run_unit
-    purpose: prevent_default_invention
+  - case_id: exact_projection_valid
     input:
       protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
       protocol_run_units: [em.1, md.1]
-      plan_run_units: [em.1, nvt.1, npt.1, md.1]
-    expected: {outcome_code: PLAN_SPEC_MISMATCH}
+      plan_projection_run_units: [em.1, md.1]
+      dag_valid: true
+      paths_valid: true
+      gates_valid: true
+    expected:
+      status: DONE
+      outcome_code: SIMULATION_PLAN_VALIDATED
 
-  - case_id: field_provenance_missing
-    purpose: provenance_coverage
+  - case_id: deferred_attempt_gate_valid
     input:
-      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED
-      required_field_count: 20
-      covered_field_count: 19
-      uncovered_field_paths: [run_units.md.1.completion_criteria.target_time_ps]
-    expected: {outcome_code: PLAN_FIELD_PROVENANCE_INCOMPLETE}
+      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_GATES
+      unresolved_item:
+        item_id: backend.1
+        blocking_stage: ATTEMPT_SPECIFICATION
+        affected_run_unit_ids: [md.1]
+      plan_attempt_gate: BLOCKED_BY_UNRESOLVED_ITEM
+    expected:
+      outcome_code: SIMULATION_PLAN_VALIDATED_WITH_DEFERRED_GATES
 
-  - case_id: plan_invents_materialization_as_scientific_source
-    purpose: invalid_provenance_source
+  - case_id: missing_protocol_validation
     input:
-      field_source_type: PLAN_MATERIALIZATION_TASK
-    expected: {outcome_code: PLAN_FIELD_PROVENANCE_INCOMPLETE}
+      protocol_validation_result_present: false
+    expected:
+      outcome_code: PLAN_PROTOCOL_OR_SYSTEM_MISMATCH
 
-  - case_id: dag_cycle_detected_independently
-    purpose: invalid_dag
-    input: {dependencies: {a: [b], b: [a]}}
-    expected: {outcome_code: PLAN_DAG_INVALID}
+  - case_id: extra_default_run_unit
+    input:
+      protocol_run_units: [md.1]
+      plan_projection_run_units: [nvt.1, npt.1, md.1]
+    expected:
+      outcome_code: PLAN_PROJECTION_SET_MISMATCH
 
-  - case_id: start_state_source_missing
-    purpose: invalid_start_state
-    input: {source_type: PRIOR_RUN_OUTPUT, source_run_unit_id: missing}
-    expected: {outcome_code: PLAN_START_STATE_INVALID}
+  - case_id: missing_run_projection
+    input:
+      protocol_run_units: [eq.1, md.1]
+      plan_projection_run_units: [md.1]
+    expected:
+      outcome_code: PLAN_PROJECTION_SET_MISMATCH
 
-  - case_id: start_state_not_in_dependency_closure
-    purpose: invalid_start_state_dependency
+  - case_id: dependency_cycle
+    input:
+      dependencies: {a: [b], b: [a]}
+    expected:
+      outcome_code: PLAN_DAG_OR_START_STATE_INVALID
+
+  - case_id: prior_source_not_dependency
     input:
       run_unit_id: md.2
       source_run_unit_id: md.1
       dependency_closure: []
-    expected: {outcome_code: PLAN_START_STATE_INVALID}
+    expected:
+      outcome_code: PLAN_DAG_OR_START_STATE_INVALID
 
-  - case_id: mdp_hash_changed
-    purpose: source_hash
-    input: {mdp_hash_matches: false}
-    expected: {outcome_code: PLAN_SOURCE_OR_HASH_MISMATCH}
-
-  - case_id: system_artifact_mismatch
-    purpose: system_provenance
-    input: {task_system_ids_equal_plan: false}
-    expected: {outcome_code: PLAN_SOURCE_OR_HASH_MISMATCH}
-
-  - case_id: decision_id_not_traceable
-    purpose: decision_provenance
-    input: {all_decision_ids_traceable: false}
-    expected: {outcome_code: PLAN_DECISION_PROVENANCE_MISMATCH}
-
-  - case_id: scientific_parameter_misclassified_as_execution
-    purpose: barrier_classification
+  - case_id: invalid_attempts_directory
     input:
-      unresolved_item: temperature_target
-      affected_field_paths: [run_units.eq.1.mdp]
-      declared_blocking_stage: EXECUTION
-    expected: {outcome_code: PLAN_UNRESOLVED_ITEM_MISCLASSIFIED}
+      run_unit_id: md.1
+      attempts_directory: 04_md_simulation/md.2/attempts
+    expected:
+      outcome_code: PLAN_PATH_CONFLICT
 
-  - case_id: input_item_without_affected_fields
-    purpose: unresolved_item_integrity
+  - case_id: management_path_used
     input:
-      unresolved_item: index_selection
-      declared_blocking_stage: INPUT_PREPARATION
-      affected_field_paths: []
-    expected: {outcome_code: PLAN_UNRESOLVED_ITEM_MISCLASSIFIED}
+      run_directory: 00_project_records/md.1
+    expected:
+      outcome_code: PLAN_PATH_CONFLICT
 
-  - case_id: valid_revision_chain
-    purpose: immutable_revision
+  - case_id: wrong_input_gate_projection
+    input:
+      protocol_item:
+        blocking_stage: INPUT_PREPARATION
+        affected_run_unit_ids: [md.1]
+      plan_input_gate: READY
+    expected:
+      outcome_code: PLAN_GATE_PROJECTION_INVALID
+
+  - case_id: plan_copies_mdp_spec
+    input:
+      plan_contains_field: run_unit_projection[0].mdp_spec
+    expected:
+      outcome_code: PLAN_OWNER_SEPARATION_VIOLATION
+
+  - case_id: plan_copies_completion_target
+    input:
+      plan_contains_field: run_unit_projection[0].completion_criteria.target_time_ps
+    expected:
+      outcome_code: PLAN_OWNER_SEPARATION_VIOLATION
+
+  - case_id: plan_embeds_backend
+    input:
+      plan_contains_backend_type: SLURM
+    expected:
+      outcome_code: PLAN_OWNER_SEPARATION_VIOLATION
+
+  - case_id: plan_embeds_input_status
+    input:
+      plan_contains_input_preparation_status: VALIDATED
+    expected:
+      outcome_code: PLAN_RUNTIME_STATUS_EMBEDDED
+
+  - case_id: plan_embeds_running_attempt
+    input:
+      plan_contains_attempt_status: RUNNING
+    expected:
+      outcome_code: PLAN_RUNTIME_STATUS_EMBEDDED
+
+  - case_id: valid_revision
     input:
       old_plan_id: plan.v1
-      new_supersedes: plan.v1
+      new_supersedes_plan_id: plan.v1
       revision_reason_present: true
-      old_hash_unchanged: true
-    expected: {outcome_code: SIMULATION_PLAN_VALIDATED}
+      old_plan_unchanged: true
+      new_path_unique: true
+    expected:
+      outcome_code: SIMULATION_PLAN_VALIDATED
 
   - case_id: revision_overwrites_old_path
-    purpose: invalid_revision
-    input: {new_path_equals_old_path: true}
-    expected: {outcome_code: PLAN_REVISION_CHAIN_INVALID}
-
-  - case_id: work_directory_collision
-    purpose: path_conflict
     input:
-      run_work_directories: [04_md_simulation/md.1, 04_md_simulation/md.1]
-    expected: {outcome_code: PLAN_PATH_CONFLICT}
-
-  - case_id: management_path_used_as_run_directory
-    purpose: forbidden_path
-    input: {work_directory: 00_project_records/tasks/md.1}
-    expected: {outcome_code: PLAN_PATH_CONFLICT}
-
-  - case_id: source_files_unchanged
-    purpose: source_protection
-    input: {source_hashes_unchanged: true}
-    expected: {source_files_modified: false}
+      new_path_equals_old_path: true
+    expected:
+      outcome_code: PLAN_REVISION_CHAIN_INVALID
