@@ -1,141 +1,127 @@
-schema_version: 2
+schema_version: 3
 skill_name: md_simulation_plan_materialization
 cases:
-  - case_id: single_em_from_validated_protocol
-    purpose: positive_first_plan
+  - case_id: single_run_projection
     input:
       protocol_validated: true
-      system_validated: true
-      field_provenance_complete: true
-      run_units:
-        - {run_unit_id: em.1, role: ENERGY_MINIMIZATION, depends_on: [], start_state: SYSTEM}
-      plan_validation_unresolved: []
-    expected: {status: DONE, outcome_code: SIMULATION_PLAN_MATERIALIZED}
+      protocol_run_units:
+        - {run_unit_id: em.1, role: ENERGY_MINIMIZATION, depends_on: [], source_type: SYSTEM}
+    expected:
+      status: DONE
+      outcome_code: SIMULATION_PLAN_MATERIALIZED
+      projected_run_units: [em.1]
 
-  - case_id: validated_protocol_with_execution_deferred
-    purpose: deferred_execution_decision
+  - case_id: segmented_production_projection
     input:
-      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
-      unresolved_items:
-        - {item_id: backend.1, blocking_stage: EXECUTION, affected_field_paths: [run_units.md.1.execution_policy.backend_type]}
-    expected: {status: DONE, outcome_code: SIMULATION_PLAN_MATERIALIZED_WITH_EXECUTION_UNRESOLVED}
+      protocol_validated: true
+      protocol_run_units:
+        - {run_unit_id: md.1, role: PRODUCTION, depends_on: [], source_type: SYSTEM}
+        - {run_unit_id: md.2, role: PRODUCTION, depends_on: [md.1], source_type: PRIOR_RUN_OUTPUT}
+    expected:
+      dependency_order: [md.1, md.2]
+      invented_run_units: []
 
   - case_id: protocol_not_validated
-    purpose: protocol_gate
-    input: {protocol_validation_result_present: false}
-    expected: {status: BLOCKED, outcome_code: PROTOCOL_SPEC_NOT_VALIDATED}
-
-  - case_id: rejected_protocol_cannot_materialize
-    purpose: protocol_outcome_gate
-    input: {protocol_validation_outcome: SIMULATION_PROTOCOL_IMPLICIT_DEFAULT_DETECTED}
-    expected: {status: BLOCKED, outcome_code: PROTOCOL_SPEC_NOT_VALIDATED}
+    input:
+      protocol_validation_outcome: PROTOCOL_IMPLICIT_DEFAULT_DETECTED
+    expected:
+      status: BLOCKED
+      outcome_code: VALIDATED_PROTOCOL_MISSING_OR_INVALID
 
   - case_id: stale_protocol
-    purpose: protocol_lifecycle
-    input: {protocol_validated: true, protocol_superseded: true}
-    expected: {status: BLOCKED, outcome_code: PROTOCOL_SPEC_NOT_VALIDATED}
-
-  - case_id: protocol_field_provenance_incomplete
-    purpose: provenance_gate
-    input: {protocol_validated: true, field_provenance_complete: false}
-    expected: {status: BLOCKED, outcome_code: PROTOCOL_FIELD_PROVENANCE_INCOMPLETE}
-
-  - case_id: nonstandard_equilibration_sequence_preserved
-    purpose: no_default_protocol
     input:
       protocol_validated: true
-      run_units:
-        - {run_unit_id: eq.restraint, role: EQUILIBRATION, depends_on: [], start_state: SYSTEM}
-        - {run_unit_id: eq.release, role: EQUILIBRATION, depends_on: [eq.restraint], start_state: PRIOR_RUN_OUTPUT}
+      protocol_superseded: true
     expected:
-      invented_run_units: []
-      actual_run_units: [eq.restraint, eq.release]
+      status: BLOCKED
+      outcome_code: VALIDATED_PROTOCOL_MISSING_OR_INVALID
 
-  - case_id: segmented_production_dag
-    purpose: positive_dependencies
+  - case_id: deferred_input_gate_projection
     input:
-      protocol_validated: true
-      run_units:
-        - {run_unit_id: md.1, role: PRODUCTION, depends_on: [], start_state: SYSTEM}
-        - {run_unit_id: md.2, role: PRODUCTION, depends_on: [md.1], start_state: PRIOR_RUN_OUTPUT}
-    expected: {status: DONE, dependency_order: [md.1, md.2]}
+      protocol_unresolved_items:
+        - {item_id: index.1, blocking_stage: INPUT_PREPARATION, affected_run_unit_ids: [md.1]}
+    expected:
+      run_unit_id: md.1
+      input_gate_status: BLOCKED_BY_UNRESOLVED_ITEM
+      attempt_gate_status: READY
 
-  - case_id: input_source_unresolved_deferred
-    purpose: deferred_input_gate
+  - case_id: deferred_attempt_gate_projection
     input:
-      protocol_validated: true
-      unresolved_items:
-        - {item_id: index.selection, blocking_stage: INPUT_PREPARATION, affected_field_paths: [run_units.md.1.start_state]}
-    expected: {status: DONE, plan_created: true, input_preparation_allowed: false}
+      protocol_unresolved_items:
+        - {item_id: backend.1, blocking_stage: ATTEMPT_SPECIFICATION, affected_run_unit_ids: [md.1]}
+    expected:
+      run_unit_id: md.1
+      input_gate_status: READY
+      attempt_gate_status: BLOCKED_BY_UNRESOLVED_ITEM
 
-  - case_id: scientific_parameter_unresolved_blocks_plan
-    purpose: plan_barrier
+  - case_id: plan_does_not_copy_mdp_fields
     input:
-      protocol_validation_outcome: SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
-      unresolved_items:
-        - {item_id: temperature.target, blocking_stage: PLAN_VALIDATION, affected_field_paths: [run_units.eq.1.mdp]}
-    expected: {status: BLOCKED, outcome_code: PLAN_VALIDATION_ITEM_UNRESOLVED}
+      protocol_contains_mdp_spec: true
+    expected:
+      plan_contains_mdp_spec: false
+      protocol_is_scientific_owner: true
 
-  - case_id: system_not_validated
-    purpose: invalid_entry_artifact
-    input: {protocol_validated: true, system_validated: false}
-    expected: {status: BLOCKED, outcome_code: SYSTEM_ARTIFACT_INVALID}
+  - case_id: plan_does_not_embed_runtime
+    input:
+      runtime_profile_available: true
+      backend_available: SLURM
+    expected:
+      plan_contains_backend: false
+      plan_contains_resources: false
 
-  - case_id: mdp_hash_mismatch
-    purpose: source_identity
-    input: {protocol_validated: true, mdp_declared_hash_matches: false}
-    expected: {status: BLOCKED, outcome_code: PROTOCOL_SOURCE_HASH_MISMATCH}
+  - case_id: plan_does_not_store_progress
+    input:
+      existing_md_input_validated: true
+      existing_attempt_running: true
+    expected:
+      plan_contains_input_status: false
+      plan_contains_attempt_status: false
 
   - case_id: duplicate_run_unit_id
-    purpose: identifier_collision
-    input: {protocol_validated: true, run_unit_ids: [md.1, md.1]}
-    expected: {status: BLOCKED, outcome_code: RUN_UNIT_ID_OR_DEPENDENCY_INVALID}
+    input:
+      protocol_run_unit_ids: [md.1, md.1]
+    expected:
+      status: BLOCKED
+      outcome_code: PLAN_RUN_UNIT_OR_DAG_INVALID
 
   - case_id: dependency_cycle
-    purpose: invalid_dag
     input:
-      protocol_validated: true
       dependencies: {md.1: [md.2], md.2: [md.1]}
-    expected: {status: BLOCKED, outcome_code: RUN_UNIT_ID_OR_DEPENDENCY_INVALID}
+    expected:
+      status: BLOCKED
+      outcome_code: PLAN_RUN_UNIT_OR_DAG_INVALID
 
-  - case_id: prior_output_not_in_dependency_closure
-    purpose: invalid_start_state
+  - case_id: prior_output_not_dependency
     input:
-      protocol_validated: true
       run_unit_id: md.2
       depends_on: []
       source_run_unit_id: md.1
-    expected: {status: BLOCKED, outcome_code: START_STATE_REFERENCE_INVALID}
+    expected:
+      status: BLOCKED
+      outcome_code: PLAN_RUN_UNIT_OR_DAG_INVALID
 
-  - case_id: plan_revision_preserves_old_plan
-    purpose: immutable_revision
+  - case_id: path_collision
     input:
-      protocol_validated: true
+      run_directories: [04_md_simulation/md.1, 04_md_simulation/md.1]
+    expected:
+      status: BLOCKED
+      outcome_code: PLAN_PATH_CONFLICT
+
+  - case_id: plan_revision_preserves_old
+    input:
       old_plan_id: plan.v1
-      old_plan_exists: true
-      output_path_is_new: true
-      revision_reason: extend_production
+      new_output_path: 04_md_simulation/00_plan/plan.v2.yaml
+      revision_reason_present: true
     expected:
       status: DONE
       supersedes_plan_id: plan.v1
       old_plan_modified: false
 
-  - case_id: revision_attempts_overwrite
-    purpose: output_conflict
-    input: {protocol_validated: true, output_path_already_exists_with_different_hash: true}
-    expected: {status: BLOCKED, outcome_code: PLAN_OUTPUT_CONFLICT}
-
-  - case_id: run_name_does_not_infer_parameters
-    purpose: no_name_semantics
+  - case_id: backend_change_does_not_require_plan_revision
     input:
-      protocol_validated: true
-      run_unit_id: npt.1
-      pressure_coupling_specified: false
+      protocol_unchanged: true
+      run_projection_unchanged: true
+      backend_changed: true
     expected:
-      inferred_pressure_coupling: false
-      status: BLOCKED
-
-  - case_id: source_files_preserved
-    purpose: input_protection
-    input: {protocol_validated: true, source_hashes_before_equal_after: true}
-    expected: {source_files_modified: false}
+      new_plan_required: false
+      new_attempt_spec_required: true
