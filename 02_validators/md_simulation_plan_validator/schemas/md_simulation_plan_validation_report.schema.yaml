@@ -1,6 +1,6 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: md_simulation_plan_validation_report.schema.yaml
-title: MD Simulation Plan Validation Report
+title: MD Simulation Plan Projection Validation Report
 type: object
 required:
   - schema_version
@@ -9,16 +9,17 @@ required:
   - protocol_spec
   - plan
   - system_artifact_set_ids
-  - field_provenance_coverage
-  - run_unit_findings
+  - projection_findings
   - dependency_findings
-  - unresolved_item_findings
+  - path_findings
+  - gate_findings
+  - owner_separation_findings
   - revision_findings
   - warnings
   - outcome_code
   - gate_recommendation
 properties:
-  schema_version: {type: integer, const: 1}
+  schema_version: {type: integer, const: 2}
   task_id: {type: string, minLength: 1}
   workstream_id: {type: string, minLength: 1}
   protocol_spec:
@@ -34,7 +35,7 @@ properties:
       validation_outcome:
         enum:
           - SIMULATION_PROTOCOL_VALIDATED
-          - SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_ITEMS
+          - SIMULATION_PROTOCOL_VALIDATED_WITH_DEFERRED_GATES
     additionalProperties: false
   plan:
     type: object
@@ -51,34 +52,24 @@ properties:
     minItems: 1
     uniqueItems: true
     items: {type: string, minLength: 1}
-  field_provenance_coverage:
-    type: object
-    required: [required_field_count, covered_field_count, uncovered_field_paths, complete]
-    properties:
-      required_field_count: {type: integer, minimum: 0}
-      covered_field_count: {type: integer, minimum: 0}
-      uncovered_field_paths:
-        type: array
-        uniqueItems: true
-        items: {type: string, minLength: 1}
-      complete: {type: boolean}
-    additionalProperties: false
-  run_unit_findings:
+  projection_findings:
     type: array
     items:
       type: object
       required:
         - run_unit_id
-        - protocol_match
-        - source_valid
-        - path_valid
-        - input_preparation_allowed
+        - protocol_field_path_valid
+        - role_matches
+        - dependency_set_matches
+        - start_state_matches
+        - projection_complete
       properties:
         run_unit_id: {type: string, minLength: 1}
-        protocol_match: {type: boolean}
-        source_valid: {type: boolean}
-        path_valid: {type: boolean}
-        input_preparation_allowed: {type: boolean}
+        protocol_field_path_valid: {type: boolean}
+        role_matches: {type: boolean}
+        dependency_set_matches: {type: boolean}
+        start_state_matches: {type: boolean}
+        projection_complete: {type: boolean}
       additionalProperties: false
   dependency_findings:
     type: object
@@ -89,20 +80,42 @@ properties:
       acyclic: {type: boolean}
       start_state_references_valid: {type: boolean}
     additionalProperties: false
-  unresolved_item_findings:
+  path_findings:
     type: array
     items:
       type: object
-      required: [item_id, blocking_stage, affected_field_paths, classification_valid]
+      required: [run_unit_id, run_path_valid, input_path_valid, attempts_path_valid, collision_free]
+      properties:
+        run_unit_id: {type: string, minLength: 1}
+        run_path_valid: {type: boolean}
+        input_path_valid: {type: boolean}
+        attempts_path_valid: {type: boolean}
+        collision_free: {type: boolean}
+      additionalProperties: false
+  gate_findings:
+    type: array
+    items:
+      type: object
+      required: [item_id, blocking_stage, affected_run_unit_ids, projection_valid]
       properties:
         item_id: {type: string, minLength: 1}
-        blocking_stage: {enum: [PLAN_VALIDATION, INPUT_PREPARATION, EXECUTION]}
-        affected_field_paths:
+        blocking_stage: {enum: [INPUT_PREPARATION, ATTEMPT_SPECIFICATION]}
+        affected_run_unit_ids:
           type: array
-          minItems: 1
           items: {type: string, minLength: 1}
-        classification_valid: {type: boolean}
+        projection_valid: {type: boolean}
       additionalProperties: false
+  owner_separation_findings:
+    type: object
+    required: [scientific_fields_copied, runtime_fields_embedded, runtime_status_embedded, violating_paths]
+    properties:
+      scientific_fields_copied: {type: boolean}
+      runtime_fields_embedded: {type: boolean}
+      runtime_status_embedded: {type: boolean}
+      violating_paths:
+        type: array
+        items: {type: string, minLength: 1}
+    additionalProperties: false
   revision_findings:
     type: object
     required: [is_revision, supersedes_valid, revision_reason_present, old_plan_unchanged]
@@ -118,18 +131,16 @@ properties:
   outcome_code:
     enum:
       - SIMULATION_PLAN_VALIDATED
-      - SIMULATION_PLAN_VALIDATED_WITH_EXECUTION_UNRESOLVED
-      - PLAN_PROTOCOL_NOT_VALIDATED
-      - PLAN_SPEC_MISMATCH
-      - PLAN_FIELD_PROVENANCE_INCOMPLETE
-      - PLAN_DAG_INVALID
-      - PLAN_START_STATE_INVALID
-      - PLAN_SOURCE_OR_HASH_MISMATCH
-      - PLAN_DECISION_PROVENANCE_MISMATCH
-      - PLAN_UNRESOLVED_ITEM_MISCLASSIFIED
-      - PLAN_REVISION_CHAIN_INVALID
-      - PLAN_PATH_CONFLICT
+      - SIMULATION_PLAN_VALIDATED_WITH_DEFERRED_GATES
       - PLAN_VALIDATOR_INPUT_INCOMPLETE
+      - PLAN_PROTOCOL_OR_SYSTEM_MISMATCH
+      - PLAN_PROJECTION_SET_MISMATCH
+      - PLAN_DAG_OR_START_STATE_INVALID
+      - PLAN_GATE_PROJECTION_INVALID
+      - PLAN_PATH_CONFLICT
+      - PLAN_OWNER_SEPARATION_VIOLATION
+      - PLAN_RUNTIME_STATUS_EMBEDDED
+      - PLAN_REVISION_CHAIN_INVALID
       - PLAN_VALIDATOR_INTERNAL_FAILURE
   gate_recommendation:
     enum: [ACCEPT_PLAN, REJECT_PLAN, PAUSE_FOR_DECISION, BLOCK_FOR_RECOVERY]
