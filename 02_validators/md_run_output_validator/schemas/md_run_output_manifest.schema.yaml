@@ -1,0 +1,94 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: md_run_output_manifest.schema.yaml
+title: MD Run Output Manifest
+type: object
+required:
+  - schema_version
+  - workstream_id
+  - protocol_spec_id
+  - plan_id
+  - run_unit_id
+  - md_input_artifact_set_id
+  - accepted_attempt_ids
+  - excluded_attempts
+  - output_files
+  - final_state
+  - completion
+  - derived_from_artifact_set_ids
+properties:
+  schema_version: {type: integer, const: 1}
+  workstream_id: {type: string, minLength: 1}
+  protocol_spec_id: {type: string, minLength: 1}
+  plan_id: {type: string, minLength: 1}
+  run_unit_id: {type: string, minLength: 1}
+  md_input_artifact_set_id: {type: string, minLength: 1}
+  accepted_attempt_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  excluded_attempts:
+    type: array
+    items:
+      type: object
+      required: [attempt_id, classification, reason]
+      properties:
+        attempt_id: {type: string, minLength: 1}
+        classification: {enum: [FAILED, CANCELLED, SUPERSEDED]}
+        reason: {type: string}
+      additionalProperties: false
+  output_files:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [attempt_id, path, role, sha256, size_bytes]
+      properties:
+        attempt_id: {type: string, minLength: 1}
+        path: {type: string, minLength: 1}
+        role: {type: string, minLength: 1}
+        sha256:
+          type: string
+          pattern: '^[A-Fa-f0-9]{64}$'
+        size_bytes: {type: integer, minimum: 0}
+      additionalProperties: false
+  final_state:
+    type: object
+    required: [attempt_id, final_structure, final_checkpoint]
+    properties:
+      attempt_id: {type: string, minLength: 1}
+      final_structure:
+        oneOf:
+          - type: 'null'
+          - $ref: '#/$defs/file_identity'
+      final_checkpoint:
+        oneOf:
+          - type: 'null'
+          - $ref: '#/$defs/file_identity'
+    additionalProperties: false
+  completion:
+    type: object
+    required: [final_step, final_time_ps, target_step_met, target_time_met, blocking_checks_passed]
+    properties:
+      final_step: {type: [integer, 'null'], minimum: 0}
+      final_time_ps: {type: [number, 'null'], minimum: 0}
+      target_step_met: {type: [boolean, 'null']}
+      target_time_met: {type: [boolean, 'null']}
+      blocking_checks_passed: {type: boolean}
+    additionalProperties: false
+  derived_from_artifact_set_ids:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+additionalProperties: false
+$defs:
+  file_identity:
+    type: object
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+    additionalProperties: false
