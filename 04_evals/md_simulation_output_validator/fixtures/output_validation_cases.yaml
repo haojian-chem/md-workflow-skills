@@ -1,0 +1,90 @@
+schema_version: 1
+skill_name: md_simulation_output_validator
+cases:
+  - case_id: valid_segmented_stage_output
+    input:
+      required_run_units: [em.1, eq.1, md.1, md.2]
+      included_run_units: [em.1, eq.1, md.1, md.2]
+      all_run_artifacts_validated: true
+      segment_order_valid: true
+      final_state_unique: true
+      engine_hashes_unchanged: true
+    expected:
+      status: DONE
+      outcome_code: SIMULATION_OUTPUT_VALIDATED
+      artifact_candidate_type: MD_OUTPUT
+
+  - case_id: required_run_missing_from_manifest
+    input:
+      required_run_units: [md.1, md.2]
+      included_run_units: [md.2]
+    expected:
+      outcome_code: SIMULATION_OUTPUT_SCOPE_MISMATCH
+      artifact_candidates: []
+
+  - case_id: extra_out_of_scope_run
+    input:
+      required_run_units: [md.1]
+      included_run_units: [old.md.0, md.1]
+    expected:
+      outcome_code: SIMULATION_OUTPUT_SCOPE_MISMATCH
+
+  - case_id: included_artifact_invalidated
+    input:
+      included_artifact_validated: false
+    expected:
+      outcome_code: SIMULATION_OUTPUT_ARTIFACT_INVALID
+
+  - case_id: run_manifest_hash_mismatch
+    input:
+      run_manifest_hash_matches_artifact: false
+    expected:
+      outcome_code: SIMULATION_OUTPUT_ARTIFACT_INVALID
+
+  - case_id: production_segment_order_reversed
+    input:
+      plan_order: [md.1, md.2]
+      manifest_order: [md.2, md.1]
+    expected:
+      outcome_code: SIMULATION_OUTPUT_SEGMENT_ORDER_INVALID
+
+  - case_id: early_segment_reference_omitted
+    input:
+      required_production_segments: [md.1, md.2]
+      manifest_segment_refs: [md.2]
+    expected:
+      outcome_code: SIMULATION_OUTPUT_SEGMENT_ORDER_INVALID
+
+  - case_id: final_state_from_excluded_artifact
+    input:
+      final_state_artifact_included: false
+    expected:
+      outcome_code: SIMULATION_OUTPUT_FINAL_STATE_INVALID
+
+  - case_id: multiple_final_states_without_decision
+    input:
+      valid_final_state_count: 2
+      resolved_decision_present: false
+    expected:
+      outcome_code: SIMULATION_OUTPUT_FINAL_STATE_INVALID
+      gate_recommendation: PAUSE_FOR_DECISION
+
+  - case_id: derived_artifact_ids_not_exact
+    input:
+      included_artifact_ids: [artifact-md1, artifact-md2]
+      derived_ids: [artifact-md2]
+    expected:
+      outcome_code: SIMULATION_OUTPUT_LINEAGE_INVALID
+
+  - case_id: assembly_mutated_trajectory
+    input:
+      engine_hashes_unchanged: false
+    expected:
+      outcome_code: SIMULATION_OUTPUT_DATA_MUTATION_DETECTED
+
+  - case_id: manifest_only_reference
+    input:
+      engine_hashes_unchanged: true
+      manifest_only_reference: true
+    expected:
+      outcome_code: SIMULATION_OUTPUT_VALIDATED
