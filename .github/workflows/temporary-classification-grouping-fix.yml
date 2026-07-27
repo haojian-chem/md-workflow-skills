@@ -1,0 +1,166 @@
+name: temporary-classification-grouping-fix
+
+on:
+  push:
+    paths:
+      - ".github/workflows/temporary-classification-grouping-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
+          python -m pip install pytest
+
+      - name: Patch grouping logic and add regression test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          engine_path = Path("02_validators/component_and_residue_classification_validator/scripts/classification_engine.py")
+          engine = engine_path.read_text(encoding="utf-8")
+          old = '''    by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
+              for analysis in analyses:
+                  classification = analysis.classification
+                  if classification.polymer_class in {"POLYMER", "BRANCHED"}:
+                      key = (
+                          analysis.residue.source_chain_id,
+                          analysis.residue.entity_id,
+                          classification.polymer_class,
+                      )
+                      by_chain[key].append(analysis)
+          '''
+          new = '''    by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
+              for analysis in analyses:
+                  structural_class = _entity_polymer_class(analysis.residue)
+                  if structural_class in {"POLYMER", "BRANCHED"}:
+                      grouping_class = structural_class
+                  elif structural_class is None and analysis.classification.resolution_status == "RESOLVED":
+                      grouping_class = analysis.classification.polymer_class
+                  else:
+                      grouping_class = None
+                  if grouping_class in {"POLYMER", "BRANCHED"}:
+                      key = (
+                          analysis.residue.source_chain_id,
+                          analysis.residue.entity_id,
+                          grouping_class,
+                      )
+                      by_chain[key].append(analysis)
+          '''
+          if old not in engine:
+              raise SystemExit("expected grouping block not found; refusing non-deterministic patch")
+          engine_path.write_text(engine.replace(old, new, 1), encoding="utf-8")
+
+          test_path = Path("04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py")
+          tests = test_path.read_text(encoding="utf-8")
+          marker = "def test_polymer_chain_grouping_uses_structure_context_when_classification_conflicts"
+          if marker not in tests:
+              tests += r'''
+
+
+def test_polymer_chain_grouping_uses_structure_context_when_classification_conflicts(
+    tmp_path: Path,
+) -> None:
+    structure = tmp_path / "polymer_conflict.pdb"
+    structure.write_text(
+        """ATOM      1  N   ALA A   1       0.000   0.000   0.000  1.00 20.00           N
+ATOM      2  CA  ALA A   1       1.400   0.000   0.000  1.00 20.00           C
+ATOM      3  C   ALA A   1       2.800   0.000   0.000  1.00 20.00           C
+ATOM      4  O   ALA A   1       3.800   0.000   0.000  1.00 20.00           O
+ATOM      5  CB  ALA A   1       1.400   1.500   0.000  1.00 20.00           C
+END
+""",
+        encoding="utf-8",
+    )
+    project = tmp_path / "project_residue_definitions.yaml"
+    write_yaml(
+        project,
+        {
+            "schema_version": "1.0",
+            "residue_definitions": [
+                {
+                    "residue_name": "ALA",
+                    "polymer_class": "NONPOLYMER",
+                    "topology_class": "INDEPENDENT_NONSTANDARD",
+                    "ccd_id": "ALA",
+                }
+            ],
+        },
+    )
+    observations_path = tmp_path / "classification_observations.yaml"
+    manifest_path = tmp_path / "reference_manifest.yaml"
+    config = {
+        "structure": {
+            "path": str(structure),
+            "sha256": digest(structure),
+            "source_format": "PDB",
+            "selected_model_id": "1",
+        },
+        "classification": {"mode": "REGISTRY"},
+        "project_residue_definitions": {
+            "path": str(project),
+            "sha256": digest(project),
+        },
+        "ccd": {"retrieval_policy": "CACHE_ONLY"},
+        "output": {
+            "observations_path": str(observations_path),
+            "reference_manifest_path": str(manifest_path),
+        },
+    }
+
+    observations, _manifest, *_ = execute_classification(config, SCRIPTS)
+    record = observations["residue_records"][0]
+    assert record["classification_observation"]["resolution_status"] == "CONFLICT"
+
+    polymer_group = next(
+        group
+        for group in observations["chain_groups"]
+        if group["group_type"] == "POLYMER_CHAIN"
+    )
+    assert polymer_group["source_chain_id"] == "A"
+    assert record["chain_index"] == polymer_group["chain_index"]
+    assert not any(
+        group["group_type"] == "INDEPENDENT_COMPONENT"
+        for group in observations["chain_groups"]
+    )
+'''
+              test_path.write_text(tests, encoding="utf-8")
+          PY
+
+      - name: Run v1.2 tests
+        run: |
+          pytest -q \
+            04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py \
+            04_evals/component_and_residue_classification_validator/test_classify_structure.py \
+            04_evals/component_and_residue_classification_validator/test_build_subagent_result.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
+
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            02_validators/component_and_residue_classification_validator/scripts/classification_engine.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
+          git diff --cached --check
+          git commit -m "Keep polymer grouping stable across classification conflicts"
+          git push
