@@ -53,13 +53,20 @@ Internal module boundary:
 
 ```text
 classification_engine.py
-→ runtime facade and chain-grouping invariant
+→ runtime facade, chain-grouping invariant and cross-stage output normalization
 
 classification_engine_core.py
 → baseline classification implementation
 ```
 
 The facade keeps structural entity/polymer facts authoritative while constructing baseline `chain_groups`. If residue topology classification is unresolved or conflicting, a structurally identified polymer or branched residue still remains in its structural chain. The original `ClassificationValue`, including null labels, `CONFLICT` status and evidence, is restored before observations are emitted. Conversely, an explicit structural nonpolymer entity is not promoted into a polymer chain solely because a project classification label says `POLYMER`.
+
+For missing-residue evidence, the facade also normalizes cross-stage results:
+
+- repeated reports with the same `issue_type`, `subject` and `resolution_status` are merged, preserving all distinct evidence;
+- a missing residue without a resolvable author `source_resid` is not emitted as a formal `MISSING_EXPECTED` residue record;
+- a missing-residue record whose target chain cannot be mapped to a `chain_index` is not counted as resolved;
+- both cases use `MAPPING_UNRESOLVED` with an explicit reason in `missing_residue_checks`.
 
 The YAML configuration supplies:
 
