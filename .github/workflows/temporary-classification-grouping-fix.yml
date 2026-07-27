@@ -1,9 +1,11 @@
 name: temporary-classification-grouping-fix
 
 on:
-  push:
+  pull_request:
     paths:
-      - ".github/workflows/temporary-classification-grouping-fix.yml"
+      - ".github/classification-grouping-fix-request.md"
+      - "02_validators/component_and_residue_classification_validator/scripts/classification_engine.py"
+      - "04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py"
   workflow_dispatch:
 
 permissions:
@@ -11,12 +13,14 @@ permissions:
 
 jobs:
   patch-test-commit:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - uses: actions/setup-python@v5
         with:
@@ -75,11 +79,16 @@ jobs:
                   "",
               ]
           )
-          if engine.count(old) != 1:
+          old_count = engine.count(old)
+          new_count = engine.count(new)
+          if old_count == 1 and new_count == 0:
+              engine_path.write_text(engine.replace(old, new, 1), encoding="utf-8")
+          elif old_count == 0 and new_count == 1:
+              pass
+          else:
               raise SystemExit(
-                  f"expected grouping block exactly once, observed {engine.count(old)}"
+                  f"unexpected grouping blocks: old={old_count}, new={new_count}"
               )
-          engine_path.write_text(engine.replace(old, new, 1), encoding="utf-8")
 
           test_path = Path("04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py")
           tests = test_path.read_text(encoding="utf-8")
@@ -155,6 +164,10 @@ END
     )
 '''
               test_path.write_text(tests, encoding="utf-8")
+
+          request_path = Path(".github/classification-grouping-fix-request.md")
+          if request_path.exists():
+              request_path.unlink()
           PY
 
       - name: Run v1.2 tests
@@ -172,9 +185,11 @@ END
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            02_validators/component_and_residue_classification_validator/scripts/classification_engine.py \
-            04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
+          git add -A
           git diff --cached --check
-          git commit -m "Keep polymer grouping stable across classification conflicts"
-          git push
+          if git diff --cached --quiet; then
+            echo "Verified fix already present; no commit required."
+          else
+            git commit -m "Keep polymer grouping stable across classification conflicts"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
