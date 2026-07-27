@@ -32,6 +32,7 @@ jobs:
         run: |
           pytest -q \
             04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py \
+            04_evals/component_and_residue_classification_validator/test_classify_structure.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py \
