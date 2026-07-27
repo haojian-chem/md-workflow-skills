@@ -1,0 +1,63 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: possible_connections.schema.yaml
+title: Possible covalent connection definitions
+schema_version: "1.0"
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - possible_connections
+properties:
+  schema_version:
+    const: "1.0"
+  possible_connections:
+    type: array
+    items:
+      $ref: "#/$defs/connection_definition"
+$defs:
+  partner:
+    type: object
+    additionalProperties: false
+    required:
+      - residue_name
+      - atom_name
+    properties:
+      residue_name:
+        type: string
+        minLength: 1
+        maxLength: 32
+      atom_name:
+        type: string
+        minLength: 1
+        maxLength: 32
+  distance_range:
+    type: object
+    additionalProperties: false
+    required:
+      - minimum
+      - maximum
+    properties:
+      minimum:
+        type: number
+        minimum: 0
+      maximum:
+        type: number
+        exclusiveMinimum: 0
+  connection_definition:
+    type: object
+    additionalProperties: false
+    required:
+      - partner_1
+      - partner_2
+      - distance_range_angstrom
+    properties:
+      label:
+        type: string
+        minLength: 1
+        maxLength: 128
+      partner_1:
+        $ref: "#/$defs/partner"
+      partner_2:
+        $ref: "#/$defs/partner"
+      distance_range_angstrom:
+        $ref: "#/$defs/distance_range"
