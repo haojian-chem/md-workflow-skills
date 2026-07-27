@@ -8,7 +8,7 @@
 REDESIGN_IMPLEMENTATION_COMPLETE_REAL_VALIDATION_PENDING
 ```
 
-新版确定性流水线已经接管 1.2 的公开脚本入口、最终结果整合和共享 `subagent_result v2` 包装路径，并通过当前基线合成测试套件的 GitHub Actions 验证。实现和合成测试通过不等于最终验收通过；真实结构、真实力场和 Manager closure 尚未完成，因此 `validator v1.2 overall` 仍保持 `NOT_PASSED`。
+新版确定性流水线已经接管 1.2 的公开脚本入口、最终结果整合和共享 `subagent_result v2` 包装路径，并通过当前完整合成测试套件的 GitHub Actions 验证。实现和合成测试通过不等于最终验收通过；真实结构、真实力场和 Manager closure 尚未完成，因此 `validator v1.2 overall` 仍保持 `NOT_PASSED`。
 
 ## 当前运行路径
 
@@ -42,6 +42,8 @@ build_subagent_result.py
 - 科学歧义统一写入 `confirmation_requests.yaml`，不在第一项歧义处提前退出；
 - structural entity/polymer 事实决定 baseline chain grouping，不因 residue classification 为 `CONFLICT` 或未解决而丢失 polymer/branched chain 身份；
 - grouping 结束后恢复原 `ClassificationValue`，最终输出仍保留原分类标签、resolution status 和证据；
+- 缺失残基无法建立 author `source_resid` 或目标 chain 归属时，检查状态为 `MAPPING_UNRESOLVED`，不得伪装成已经生成正式缺失残基记录；
+- 同一 `issue_type + subject + resolution_status` 在不同阶段重复出现时合并为一个 unresolved observation，并保留全部证据；
 - wrapper 以 `classification_result.result_status` 和 `confirmation_requests.status` 为权威状态来源；
 - Manager 仍是共享项目状态和记录的唯一提交者。
 
@@ -97,6 +99,8 @@ scripts/build_subagent_result.py
 - 精确、区分大小写的项目定义、Skill registry 和 RTP 解析；
 - 显式 terminal-template mapping；
 - PDB/mmCIF 缺失残基证据和 AF3 显式序列参考路径；
+- 缺失残基 author 编号与 chain 归属无法映射时的统一 unresolved 输出；
+- 跨阶段重复 unresolved observation 合并与证据保留；
 - CCD 项目 snapshot、本地目录、共享 cache 和按策略下载；
 - 单构象残基的 CCD/RTP 重原子核验；
 - 多 altLoc 残基跳过重原子比较；
@@ -124,6 +128,7 @@ scripts/build_subagent_result.py
 04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py
 04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
+04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
 04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
 ```
 
@@ -141,24 +146,25 @@ FORCE_FIELD_ANALYSIS RTP 重原子缺失
 N/C terminal RTP template selection
 polymer entity + classification conflict 仍保持 POLYMER_CHAIN
 explicit nonpolymer entity 不被错误 polymer 标签提升
+PDB SEQRES + REMARK 465 缺失残基记录
+mmCIF unobserved residue + author source_resid 映射
+mmCIF 缺少 auth_seq_id 时 source_resid unresolved
+PDB 缺失记录指向不存在 chain 时 chain unresolved
+AF3 CIF + FASTA 精确序列参考
+AF3 CIF + AF3 input JSON 精确序列参考
+AF3 更长序列导致 author source_resid unresolved
+AF3 sequence reference chain ID 严格匹配
 ```
 
-基线正式合成测试证据：
+最新完整合成测试证据：
 
 ```text
-GitHub Actions run: 30259226282
-job: 89954939918
+GitHub Actions run: 30263658123
+job: 89969186277
 conclusion: success
 ```
 
-polymer grouping 边界修正后的定向回归证据：
-
-```text
-isolated pytest: 2 passed
-full post-change GitHub Actions result: pending observable run
-```
-
-基线 CI 证明变更前主分支的全部 v1.2 合成测试步骤成功；新增定向测试证明本次 grouping invariant 的两个方向均符合设计。由于当前 connector 提交未产生可读取的 post-change Actions run，不把本次修改表述为新的完整 CI 通过。上述证据均不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
+该运行覆盖当前主分支前的完整 v1.2 测试集合，包括 polymer grouping 修正和新增缺失残基/AF3 序列参考矩阵。它证明合成 fixtures、schema meta-validation 与既有回归在同一次 Actions 运行中全部通过，但不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
 
 ### 文档迁移
 
@@ -191,30 +197,29 @@ alias/模糊名称匹配
 ## 尚需完成的正式验收
 
 ```text
-1. 扩展 PDB/mmCIF 缺失残基、AF3 输入序列与 source_resid/chain unresolved fixtures；
-2. 扩展 altLoc、重复 RTP、水模型例外和 CCD 多来源 fixtures；
-3. 扩展 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的关系测试；
-4. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
-5. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
-6. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
-7. 验证真实 GROMACS force field，包括内部和端基 RTP；
-8. 运行 authoring 静态检查；
-9. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
-10. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
+1. 扩展 altLoc、重复 RTP、水模型例外和 CCD 多来源 fixtures；
+2. 扩展 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的关系测试；
+3. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
+4. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
+5. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
+6. 验证真实 GROMACS force field，包括内部和端基 RTP；
+7. 运行 authoring 静态检查；
+8. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
+9. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
 ```
 
 ## 当前验收结论
 
 ```text
-model scope entry: IMPLEMENTED, BASELINE SYNTHETIC CI PASSED
-new schemas: AUTHORED_AND_REFERENCED, META-VALIDATION PASSED IN BASELINE CI
-classification parser: MIGRATED_TO_V1_2, GROUPING CONFLICT REGRESSION PASSED
-relation checkers: IMPLEMENTED, BASELINE SYNTHETIC CI PASSED
-final result builder: IMPLEMENTED, BASELINE SYNTHETIC CI PASSED
-subagent result wrapper: MIGRATED_TO_V1_2, BASELINE SYNTHETIC CI PASSED
+model scope entry: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
+new schemas: AUTHORED_AND_REFERENCED, META-VALIDATION PASSED IN LATEST CI
+classification parser: MIGRATED_TO_V1_2, GROUPING AND MISSING-RESIDUE REGRESSIONS PASSED
+relation checkers: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
+final result builder: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
+subagent result wrapper: MIGRATED_TO_V1_2, LATEST SYNTHETIC CI PASSED
 documentation: MIGRATED_TO_V1_2
 legacy runtime path: REMOVED
-full post-change CI: NOT OBSERVED
+latest full synthetic CI: PASSED
 real-file acceptance: NOT COMPLETE
 Manager closure: NOT COMPLETE
 validator v1.2 overall: NOT_PASSED
