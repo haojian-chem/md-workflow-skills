@@ -545,6 +545,27 @@ def _source_associations(
     ]
 
 
+
+def _baseline_chain_polymer_class(analysis: ResidueAnalysis) -> str | None:
+    """Determine chain-level polymer grouping independently of resolved labels.
+
+    Reliable structure entity/polymer metadata must keep a residue in its
+    source polymer or branched chain even when project/registry/force-field
+    classification labels conflict and remain pending confirmation.
+    """
+
+    residue = analysis.residue
+    if (
+        residue.entity_type == gemmi.EntityType.Polymer
+        or residue.polymer_type != gemmi.PolymerType.Unknown
+    ):
+        return "POLYMER"
+    if residue.entity_type == gemmi.EntityType.Branched:
+        return "BRANCHED"
+    if analysis.classification.polymer_class in {"POLYMER", "BRANCHED"}:
+        return analysis.classification.polymer_class
+    return None
+
 def _build_chain_groups(
     analyses: list[ResidueAnalysis],
 ) -> tuple[list[dict[str, Any]], dict[tuple, int]]:
@@ -555,12 +576,12 @@ def _build_chain_groups(
 
     by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
     for analysis in analyses:
-        classification = analysis.classification
-        if classification.polymer_class in {"POLYMER", "BRANCHED"}:
+        baseline_polymer_class = _baseline_chain_polymer_class(analysis)
+        if baseline_polymer_class is not None:
             key = (
                 analysis.residue.source_chain_id,
                 analysis.residue.entity_id,
-                classification.polymer_class,
+                baseline_polymer_class,
             )
             by_chain[key].append(analysis)
     chain_order = sorted(
