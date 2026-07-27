@@ -1,6 +1,6 @@
 # Authoring 文件同步状态
 
-更新日期：2026-07-23
+更新日期：2026-07-27
 
 ## 当前基线
 
@@ -14,7 +14,7 @@
 - `runtime_schema_validator` 0.1.0：ACTIVE；
 - NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
 - `source_recognition` draft；
-- 1.2 classification parser + shared result wrapper draft；
+- 1.2 component/residue classification v1 deterministic pipeline draft；
 - 1.3 chain/component selection Operation/Validator contract draft。
 
 Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
@@ -64,43 +64,62 @@ FULL warm median: 4.181 ms
 
 ## 1.2 Component and residue classification
 
-已建立：
+当前 feature implementation 已建立：
 
 ```text
 SKILL.md
+scripts/inspect_model_scope.py
 scripts/classify_structure.py
+scripts/check_possible_connections.py
+scripts/check_possible_coordination.py
+scripts/build_classification_result.py
 scripts/build_subagent_result.py
-scripts/requirements.txt
-scripts/README.md
+scripts/classification_common.py
+scripts/ccd_reference.py
+scripts/rtp_reference.py
+scripts/relation_common.py
 references/classification_rules.md
-references/standard_residue_alias_registry.yaml
+references/standard_residue_registry.yaml
 references/covalently_linked_nonstandard_residue_registry.yaml
-references/coordination_detection_registry.yaml
-schemas/classification_outputs.schema.yaml
-04_evals/.../test_classify_structure.py
-04_evals/.../test_build_subagent_result.py
+schemas/model_scope.schema.yaml
+schemas/project_residue_definitions.schema.yaml
+schemas/possible_connections.schema.yaml
+schemas/possible_coordination.schema.yaml
+schemas/classification_observations.schema.yaml
+schemas/reference_manifest.schema.yaml
+schemas/possible_connections_result.schema.yaml
+schemas/possible_coordination_result.schema.yaml
+schemas/confirmation_requests.schema.yaml
+schemas/classification_result.schema.yaml
+04_evals/.../test_classification_v1.py
 04_evals/.../VALIDATOR_DRAFT_VALIDATION.md
 ```
 
 核心语义：
 
-- 显式共价、geometry-only covalent candidate 和 metal coordination 分离；
-- 距离 alone 不确认共价；
-- coordination 不改变 covalent topology class；
-- metadata/residue chemistry 冲突返回 `METADATA_CONFLICT`；
-- 科学歧义可以是 DONE + blocking confirmation；
-- 输入 STRUCTURE 保持 `present_unvalidated`；
-- 不创建 STRUCTURE artifact candidate；
+- model scope 与正式分类分离；单 model 自动选择，多 model 先请求用户选择；
+- residue/atom 名称严格区分大小写，不做 alias、自动转大写或模糊匹配；
+- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS` 使用不同、确定的分类来源顺序；
+- PDB/mmCIF 可检查缺失残基；AF3 缺失残基检查需要输入 JSON、FASTA 或等价序列文件；
+- altLoc 残基只标记多构象，不执行重原子检查或无明确构象的关系几何判定；
+- CCD 使用 project snapshot → 指定本地目录 → shared cache → remote policy；
+- FORCE_FIELD_ANALYSIS 使用 RTP exact block，并支持明确 terminal RTP template 的重原子检查；
+- possible covalent connection 与 metal coordination 使用独立项目输入、独立检查工具；
+- topology-forming HEM–CYS/HIE 等 metal coordination 可将非标准组分提升为 linked route；
+- water、ion 和可整体处理的重复小分子使用 `chain_groups` 汇总；
+- 完整扫描后统一生成 confirmation requests；
+- 输入 STRUCTURE 保持 `present_unvalidated`，不创建 STRUCTURE artifact candidate；
 - wrapper 生成共享 `subagent_result v2`，Manager 再 FAST-validate candidate result。
 
 已执行：
 
 ```text
-parser synthetic tests: 10 passed in 5.59s
-wrapper synthetic-contract tests: 4 passed in 8.08s
+python -m py_compile scripts/*.py
+pytest -q 04_evals/component_and_residue_classification_validator/test_classification_v1.py
+8 passed
 ```
 
-仓库已编写 actual shared-contract + ACTIVE FAST integration test，但尚未在测试主机运行。真实 PDB、RCSB mmCIF、AF3 CIF 和完整 Manager closure 仍未验收。
+feature branch 的 bundle apply 与 cleanup GitHub Actions 均只有在同一测试通过后才提交结果。仍待：真实 RCSB PDB/mmCIF、真实 AF3 CIF + 输入、remote CCD retrieval、large-pair compression benchmark、ACTIVE FAST validation、Manager closure 和 1.3 compatibility review。
 
 ## 1.3 Chain and component selection
 
@@ -148,7 +167,7 @@ Validator: 17 cases
 - `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
 - `runtime_schema_validator`：ACTIVE；
 - `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
-- `component_and_residue_classification_validator`：parser + result wrapper draft，待 actual FAST、真实结构与 Manager 集成；
+- `component_and_residue_classification_validator`：v1 deterministic pipeline + 8 synthetic tests，待真实结构、ACTIVE FAST 与 Manager 集成；
 - `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
 - `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
@@ -156,7 +175,7 @@ Validator: 17 cases
 ## 尚未冻结
 
 - content map 的 `load_when` / `applicable_to` 扩展；
-- 1.2 registries、真实结构接受性和 Manager 集成；
+- 1.2 真实结构接受性、remote CCD、FAST/Manager 集成及 1.3 compatibility；
 - 1.3 selection schemas/rules、确定性实现和 combined task；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
 - Manager 真实项目端到端集成。
