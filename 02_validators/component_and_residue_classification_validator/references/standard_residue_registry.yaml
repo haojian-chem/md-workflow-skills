@@ -1,10 +1,4 @@
 schema_version: "1.0"
-status: draft
-matching:
-  case_sensitive: true
-  aliases: false
-  regular_expressions: false
-  duplicate_exact_names_allowed: false
 residue_definitions:
   - {residue_name: ALA, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ALA}
   - {residue_name: ARG, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ARG}
@@ -26,7 +20,6 @@ residue_definitions:
   - {residue_name: TRP, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: TRP}
   - {residue_name: TYR, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: TYR}
   - {residue_name: VAL, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: VAL}
-
   - {residue_name: HID, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
   - {residue_name: HIE, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
   - {residue_name: HIP, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
@@ -38,7 +31,6 @@ residue_definitions:
   - {residue_name: LYN, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: LYS}
   - {residue_name: CYM, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: CYS}
   - {residue_name: CYX, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: CYS}
-
   - {residue_name: DA, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DA}
   - {residue_name: DC, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DC}
   - {residue_name: DG, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DG}
@@ -47,14 +39,12 @@ residue_definitions:
   - {residue_name: C, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: C}
   - {residue_name: G, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: G}
   - {residue_name: U, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: U}
-
   - {residue_name: HOH, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
   - {residue_name: WAT, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
   - {residue_name: SOL, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
   - {residue_name: TIP3, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
   - {residue_name: TIP4, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
   - {residue_name: TIP5, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
-
   - {residue_name: NA, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: NA}
   - {residue_name: K, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: K}
   - {residue_name: CL, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CL}
