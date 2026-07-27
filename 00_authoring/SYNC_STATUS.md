@@ -1,6 +1,6 @@
 # Authoring 文件同步状态
 
-更新日期：2026-07-23
+更新日期：2026-07-27
 
 ## 当前基线
 
@@ -14,7 +14,7 @@
 - `runtime_schema_validator` 0.1.0：ACTIVE；
 - NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
 - `source_recognition` draft；
-- 1.2 classification parser + shared result wrapper draft；
+- 1.2 component/residue classification v1.2 实现完成，正式验收待完成；
 - 1.3 chain/component selection Operation/Validator contract draft。
 
 Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
@@ -64,43 +64,100 @@ FULL warm median: 4.181 ms
 
 ## 1.2 Component and residue classification
 
-已建立：
+### 当前确定性运行路径
+
+```text
+scripts/inspect_model_scope.py
+→ model_scope.yaml
+
+scripts/classify_structure.py
+→ classification_observations.yaml
+→ reference_manifest.yaml
+
+scripts/check_possible_connections.py
+→ relation_checks/possible_connections_result.yaml
+
+scripts/check_possible_coordination.py
+→ relation_checks/possible_coordination_result.yaml
+
+scripts/build_classification_result.py
+→ confirmation_requests.yaml
+→ classification_result.yaml
+→ classification_report.md
+
+scripts/build_subagent_result.py
+→ shared subagent_result v2 candidate
+```
+
+### 当前主要文件
 
 ```text
 SKILL.md
-scripts/classify_structure.py
-scripts/build_subagent_result.py
-scripts/requirements.txt
-scripts/README.md
 references/classification_rules.md
-references/standard_residue_alias_registry.yaml
+references/standard_residue_registry.yaml
 references/covalently_linked_nonstandard_residue_registry.yaml
-references/coordination_detection_registry.yaml
-schemas/classification_outputs.schema.yaml
-04_evals/.../test_classify_structure.py
-04_evals/.../test_build_subagent_result.py
-04_evals/.../VALIDATOR_DRAFT_VALIDATION.md
+scripts/README.md
+scripts/classification_common.py
+scripts/classification_engine.py
+scripts/structure_records.py
+scripts/explicit_relations.py
+scripts/rtp_reference.py
+scripts/ccd_reference.py
+scripts/sequence_missing.py
+schemas/project_residue_definitions.schema.yaml
+schemas/possible_connections.schema.yaml
+schemas/possible_coordination.schema.yaml
+schemas/model_scope.schema.yaml
+schemas/classification_observations.schema.yaml
+schemas/reference_manifest.schema.yaml
+schemas/possible_connections_result.schema.yaml
+schemas/possible_coordination_result.schema.yaml
+schemas/confirmation_requests.schema.yaml
+schemas/classification_result.schema.yaml
 ```
 
-核心语义：
+### 已冻结语义
 
-- 显式共价、geometry-only covalent candidate 和 metal coordination 分离；
-- 距离 alone 不确认共价；
-- coordination 不改变 covalent topology class；
-- metadata/residue chemistry 冲突返回 `METADATA_CONFLICT`；
-- 科学歧义可以是 DONE + blocking confirmation；
-- 输入 STRUCTURE 保持 `present_unvalidated`；
-- 不创建 STRUCTURE artifact candidate；
-- wrapper 生成共享 `subagent_result v2`，Manager 再 FAST-validate candidate result。
+- 单 model 自动选择，多 model 在完整分类前形成用户选择 barrier；
+- 残基名和原子名严格区分大小写，不执行 `.upper()`、alias、正则或模糊匹配；
+- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS` 使用不同且明确的分类来源顺序；
+- 标准残基在 registry 模式使用 CCD、力场模式使用所选 RTP 做重原子检查；
+- 端基 RTP 必须由显式 terminal-template mapping 选择；
+- PDB/mmCIF 检查缺失残基；AF3 只有提供输入 JSON、FASTA 或等价序列参考时才检查；
+- 多 altLoc 残基记录为 `MULTIPLE_CONFORMATIONS`，不执行重原子比较；
+- 可能共价连接和金属配位仅按项目明确提供的定义检查；
+- 几何候选不自动确认关系；
+- 金属配位只有定义允许且关系已确认时才能产生 topology promotion；
+- selected model 完整扫描后统一生成 confirmation requests；
+- 科学歧义可对应 `DONE + blocking confirmation_items`，不得伪装成技术失败；
+- 输入 STRUCTURE 保持原 validation state，不创建新的 STRUCTURE artifact candidate；
+- Manager 是共享项目状态和记录的唯一提交者。
 
-已执行：
+### 已退出并删除的旧路径
 
 ```text
-parser synthetic tests: 10 passed in 5.59s
-wrapper synthetic-contract tests: 4 passed in 8.08s
+references/standard_residue_alias_registry.yaml
+references/coordination_detection_registry.yaml
+schemas/classification_outputs.schema.yaml
 ```
 
-仓库已编写 actual shared-contract + ACTIVE FAST integration test，但尚未在测试主机运行。真实 PDB、RCSB mmCIF、AF3 CIF 和完整 Manager closure 仍未验收。
+旧版单脚本分类、内置 coordination 扫描、alias 解释和旧 `ambiguities/outcome_code` wrapper 均不再属于正式运行路径。
+
+### 测试状态
+
+已编写并纳入 `.github/workflows/component-classification-v1-2.yml`：
+
+```text
+04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py
+04_evals/component_and_residue_classification_validator/test_classify_structure.py
+04_evals/component_and_residue_classification_validator/test_build_subagent_result.py
+04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py
+04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py
+04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
+04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
+```
+
+仓库当前尚未附加一份可追溯的完整新测试运行结果。旧版 parser/wrapper 测试数字不得作为 v1.2 最终通过证据。真实 PDB、RCSB mmCIF、AF3 CIF 和完整 Manager closure 仍未验收。
 
 ## 1.3 Chain and component selection
 
@@ -148,15 +205,15 @@ Validator: 17 cases
 - `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
 - `runtime_schema_validator`：ACTIVE；
 - `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
-- `component_and_residue_classification_validator`：parser + result wrapper draft，待 actual FAST、真实结构与 Manager 集成；
+- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，待正式测试证据、真实结构与 Manager closure；
 - `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
 - `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
 
-## 尚未冻结
+## 尚未冻结或尚未验收
 
 - content map 的 `load_when` / `applicable_to` 扩展；
-- 1.2 registries、真实结构接受性和 Manager 集成；
+- 1.2 真实结构接受性、正式测试证据和 Manager 集成；
 - 1.3 selection schemas/rules、确定性实现和 combined task；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
 - Manager 真实项目端到端集成。
@@ -172,6 +229,7 @@ Validator: 17 cases
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`；
 - `05_tools/tool_registry.yaml`；
 - `04_evals/runtime_schema_validator/VALIDATION.md`；
+- `04_evals/component_and_residue_classification_validator/V1_2_REDESIGN_IMPLEMENTATION.md`；
 - `04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md`；
 - `04_evals/chain_and_component_selection/SELECTION_DRAFT_VALIDATION.md`；
 - `03_contracts/README.md`；
