@@ -91,21 +91,32 @@ removed_migration_sources:
   - path: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
     status: removed_after_split_output_pipeline_and_wrapper_migration
 validation_evidence:
-  synthetic_ci:
+  latest_synthetic_ci:
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30259226282
-    job_id: 89954939918
+    run_id: 30263658123
+    job_id: 89969186277
     conclusion: success
+    includes:
+      - polymer_grouping_conflict_regression
+      - pdb_remark_465_missing_residue
+      - mmcif_unobserved_residue
+      - source_resid_unresolved
+      - chain_unresolved
+      - af3_fasta_sequence_reference
+      - af3_input_json_sequence_reference
   polymer_grouping_conflict_regression:
     test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
-    result: 2 passed in isolated pytest
-    full_post_change_ci: pending_observable_run
+    result: passed_in_latest_synthetic_ci
+  missing_residue_path_regression:
+    test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
+    result: passed_in_latest_synthetic_ci
   real_file_acceptance: pending
   manager_closure: pending
 notes:
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
   - Structural entity/polymer facts are authoritative for chain grouping; unresolved or conflicting topology classification remains unchanged in residue output.
+  - Missing-residue checks use MAPPING_UNRESOLVED when the author residue identifier or target chain cannot be mapped; duplicate cross-stage reports of the same issue and subject are merged while preserving evidence.
   - Project-defined possible covalent connections and coordination are separate deterministic checks after baseline classification.
   - Metal coordination may promote a nonstandard component to the linked topology route only when the project definition explicitly enables that effect and the relation is confirmed.
-  - The v1.2 implementation and baseline synthetic CI are complete; real PDB/mmCIF/AF3 validation, real GROMACS force-field validation and Manager closure remain required before overall PASS.
+  - The v1.2 implementation and current synthetic CI are complete; real PDB/mmCIF/AF3 validation, real GROMACS force-field validation and Manager closure remain required before overall PASS.
