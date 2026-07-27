@@ -6,7 +6,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import gemmi
 
@@ -127,13 +127,13 @@ def explicit_missing_residues(
 
 def _alignment_missing_positions(
     full_sequence: list[str],
+    polymer_span: gemmi.ResidueSpan,
     observed: list[ResidueRecord],
     polymer_type: gemmi.PolymerType,
 ) -> tuple[list[tuple[int, str]], dict[int, int]]:
-    if not full_sequence or not observed:
+    if not full_sequence or not observed or len(polymer_span) == 0:
         return [], {}
-    span = gemmi.ResidueSpan([item.residue for item in observed])
-    alignment = gemmi.align_sequence_to_polymer(full_sequence, span, polymer_type)
+    alignment = gemmi.align_sequence_to_polymer(full_sequence, polymer_span, polymer_type)
     cigar = alignment.cigar_str()
     expected_index = 0
     observed_index = 0
@@ -203,7 +203,9 @@ def sequence_based_missing_residues(
     for source_chain_id, chain_residues in by_chain.items():
         chain_residues.sort(key=lambda item: item.residue_position)
         entity = _entity_for_chain(structure, model, chain_residues)
-        if entity is None or not entity.full_sequence:
+        chain = model.find_chain(source_chain_id)
+        polymer_span = chain.get_polymer() if chain is not None else None
+        if entity is None or not entity.full_sequence or polymer_span is None or len(polymer_span) == 0:
             chain_checks.append(
                 {
                     "source_chain_id": source_chain_id,
@@ -216,6 +218,7 @@ def sequence_based_missing_residues(
             continue
         missing_positions, observed_map = _alignment_missing_positions(
             list(entity.full_sequence),
+            polymer_span,
             chain_residues,
             entity.polymer_type,
         )
@@ -315,8 +318,7 @@ def sequence_based_missing_residues(
             }
         )
 
-    unresolved_chain_records = explicit_by_chain.get(None, [])
-    for item in unresolved_chain_records:
+    for item in explicit_by_chain.get(None, []):
         unresolved.append(
             {
                 "issue_type": "MISSING_RESIDUE_CHAIN_UNRESOLVED",
@@ -340,8 +342,8 @@ def parse_af3_sequence_references(sequence_references: list[dict[str, Any]]) -> 
     """Read AF3 JSON or FASTA references into exact chain-ID sequences.
 
     FASTA headers use the first whitespace-delimited token as the exact source
-    chain ID. Ambiguous or duplicate IDs are rejected by the caller as a
-    sequence-reference conflict.
+    chain ID. Ambiguous or duplicate IDs are rejected as sequence-reference
+    conflicts by the caller.
     """
 
     sequences: dict[str, list[str]] = {}
@@ -362,9 +364,10 @@ def parse_af3_sequence_references(sequence_references: list[dict[str, Any]]) -> 
                     continue
                 monomers = list(sequence.strip())
                 for identifier in identifiers:
+                    identifier = str(identifier)
                     if identifier in sequences and sequences[identifier] != monomers:
                         raise ClassificationToolError(f"conflicting AF3 sequences for chain {identifier}")
-                    sequences[str(identifier)] = monomers
+                    sequences[identifier] = monomers
         elif reference_type == "FASTA":
             current_id: str | None = None
             chunks: list[str] = []
