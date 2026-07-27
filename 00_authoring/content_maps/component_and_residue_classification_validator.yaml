@@ -2,21 +2,35 @@ schema_version: 3
 skill_name: component_and_residue_classification_validator
 skill_type: validator
 skill_path: 02_validators/component_and_residue_classification_validator
-contract_status: redesign_implementation_in_progress
-content_ownership_status: migration_in_progress
+contract_status: v1_2_implementation_complete_validation_pending
+content_ownership_status: migrated_and_aligned
 owned_content:
   local_execution_flow_and_model_branching:
     owner: 02_validators/component_and_residue_classification_validator/SKILL.md
   deterministic_model_scope_inspection:
     owner: 02_validators/component_and_residue_classification_validator/scripts/inspect_model_scope.py
-  deterministic_classification_parser:
+  deterministic_classification_entry_point:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
+  deterministic_classification_engine:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/classification_engine.py
   deterministic_classification_helpers:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classification_common.py
+  selected_model_structure_records:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/structure_records.py
+  explicit_structure_relations:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/explicit_relations.py
   deterministic_rtp_reference_parser:
     owner: 02_validators/component_and_residue_classification_validator/scripts/rtp_reference.py
   deterministic_ccd_reference_handler:
     owner: 02_validators/component_and_residue_classification_validator/scripts/ccd_reference.py
+  deterministic_missing_residue_evidence:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/sequence_missing.py
+  deterministic_possible_connection_checker:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/check_possible_connections.py
+  deterministic_possible_coordination_checker:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/check_possible_coordination.py
+  deterministic_final_result_builder:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/build_classification_result.py
   deterministic_shared_result_wrapper:
     owner: 02_validators/component_and_residue_classification_validator/scripts/build_subagent_result.py
   classification_semantics:
@@ -45,7 +59,7 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/schemas/confirmation_requests.schema.yaml
   final_classification_result_contract:
     owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result.schema.yaml
-  executable_tests_and_behavior_fixtures:
+  executable_tests_and_validation_records:
     owner: 04_evals/component_and_residue_classification_validator/
 external_references:
   - purpose: layer_boundary
@@ -67,16 +81,16 @@ external_references:
   - purpose: structure_preparation_workflow
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
     access: reference_only
-migration_sources:
+removed_migration_sources:
   - path: 02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml
-    status: retained_until_new_parser_and_tests_replace_old_runtime_path
+    status: removed_after_v1_2_entry_points_and_tests_replaced_old_runtime_path
   - path: 02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml
-    status: remove_from_runtime_path_then_retain_only_as_fixture_or_example
+    status: removed_after_project_defined_coordination_checker_replaced_internal_scanning
   - path: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
-    status: retained_until_new_output_pipeline_and_wrapper_are migrated
+    status: removed_after_split_output_pipeline_and_wrapper_migration
 notes:
-  - Residue and atom names in the redesign are exact and case-sensitive; uppercase normalization and alias matching are being removed.
+  - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
-  - Project-defined covalent and coordination checks are separate from baseline classification and will be implemented as separate deterministic entry points.
+  - Project-defined possible covalent connections and coordination are separate deterministic checks after baseline classification.
   - Metal coordination may promote a nonstandard component to the linked topology route only when the project definition explicitly enables that effect and the relation is confirmed.
-  - The legacy parser and wrapper remain the current executable draft until the full redesigned pipeline and tests are complete; redesign files must not yet be treated as a production-complete validator.
+  - The v1.2 implementation, public entry points, result builder and shared wrapper are present; formal test evidence, real PDB/mmCIF/AF3 validation and Manager closure remain required before overall PASS.
