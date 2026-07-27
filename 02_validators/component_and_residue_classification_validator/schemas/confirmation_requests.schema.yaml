@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: confirmation_requests.schema.yaml
+title: Component and residue classification confirmation requests
+schema_version: "1.0"
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - status
+  - requests
+properties:
+  schema_version:
+    const: "1.0"
+  status:
+    enum: [NO_CONFIRMATION_REQUIRED, USER_CONFIRMATION_REQUIRED]
+  requests:
+    type: array
+    items:
+      $ref: "#/$defs/request"
+$defs:
+  request:
+    type: object
+    additionalProperties: false
+    required:
+      - request_index
+      - request_type
+      - subject
+      - evidence
+      - reason
+      - allowed_decisions
+    properties:
+      request_index:
+        type: integer
+        minimum: 1
+      request_type:
+        enum:
+          - PROJECT_REGISTRY_CLASSIFICATION_CONFLICT
+          - PROJECT_FORCE_FIELD_CLASSIFICATION_CONFLICT
+          - DUPLICATE_FORCE_FIELD_RESIDUE_TEMPLATE
+          - GEOMETRY_SUPPORTED_COVALENT_CANDIDATE
+          - CONNECTION_DEFINITION_CONFLICT
+          - GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE
+          - COORDINATION_DEFINITION_CONFLICT
+          - MISSING_RESIDUE_SOURCE_RESID_UNAVAILABLE
+          - MISSING_RESIDUE_CHAIN_UNRESOLVED
+          - SEQUENCE_REFERENCE_CONFLICT
+          - MULTIPLE_LOCAL_CCD_CANDIDATES
+      subject:
+        type: object
+      evidence:
+        type: object
+      reason:
+        type: string
+        minLength: 1
+      allowed_decisions:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
