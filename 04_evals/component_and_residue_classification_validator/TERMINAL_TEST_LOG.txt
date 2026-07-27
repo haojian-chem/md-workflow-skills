@@ -1,9 +1,0 @@
-============================= test session starts ==============================
-platform linux -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.11.15/x64/bin/python
-cachedir: .pytest_cache
-rootdir: /home/runner/work/md-workflow-skills/md-workflow-skills
-collecting ... collected 1 item
-
-04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py::test_terminal_residues_use_explicit_terminal_rtp_templates PASSED [100%]
-
-============================== 1 passed in 0.28s ===============================
