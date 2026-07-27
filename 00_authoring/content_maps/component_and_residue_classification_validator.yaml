@@ -2,27 +2,51 @@ schema_version: 3
 skill_name: component_and_residue_classification_validator
 skill_type: validator
 skill_path: 02_validators/component_and_residue_classification_validator
-contract_status: draft
-content_ownership_status: draft
+contract_status: redesign_implementation_in_progress
+content_ownership_status: migration_in_progress
 owned_content:
   local_execution_flow_and_model_branching:
     owner: 02_validators/component_and_residue_classification_validator/SKILL.md
-  deterministic_structure_parser:
+  deterministic_model_scope_inspection:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/inspect_model_scope.py
+  deterministic_classification_parser:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
+  deterministic_classification_helpers:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/classification_common.py
+  deterministic_rtp_reference_parser:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/rtp_reference.py
+  deterministic_ccd_reference_handler:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/ccd_reference.py
   deterministic_shared_result_wrapper:
     owner: 02_validators/component_and_residue_classification_validator/scripts/build_subagent_result.py
-  parser_wrapper_dependencies_and_invocation:
-    owner: 02_validators/component_and_residue_classification_validator/scripts/
   classification_semantics:
     owner: 02_validators/component_and_residue_classification_validator/references/classification_rules.md
-  standard_residue_aliases:
-    owner: 02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml
-  standard_residue_nonstandard_residue_covalent_patterns:
+  strict_residue_classification_registry:
+    owner: 02_validators/component_and_residue_classification_validator/references/standard_residue_registry.yaml
+  linked_nonstandard_fallback_registry:
     owner: 02_validators/component_and_residue_classification_validator/references/covalently_linked_nonstandard_residue_registry.yaml
-  coordination_candidate_thresholds:
-    owner: 02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml
-  classification_output_structure:
-    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+  project_residue_definition_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/project_residue_definitions.schema.yaml
+  possible_connection_definition_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/possible_connections.schema.yaml
+  possible_coordination_definition_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/possible_coordination.schema.yaml
+  model_scope_output_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/model_scope.schema.yaml
+  classification_observations_output_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_observations.schema.yaml
+  reference_manifest_output_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/reference_manifest.schema.yaml
+  possible_connection_result_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/possible_connections_result.schema.yaml
+  possible_coordination_result_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/possible_coordination_result.schema.yaml
+  confirmation_request_output_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/confirmation_requests.schema.yaml
+  final_classification_result_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result.schema.yaml
+  executable_tests_and_behavior_fixtures:
+    owner: 04_evals/component_and_residue_classification_validator/
 external_references:
   - purpose: layer_boundary
     owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
@@ -43,12 +67,16 @@ external_references:
   - purpose: structure_preparation_workflow
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
     access: reference_only
-  - purpose: executable_tests_and_behavior_fixtures
-    owner: 04_evals/component_and_residue_classification_validator/
-    access: reference_only
-    status: present
+migration_sources:
+  - path: 02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml
+    status: retained_until_new_parser_and_tests_replace_old_runtime_path
+  - path: 02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml
+    status: remove_from_runtime_path_then_retain_only_as_fixture_or_example
+  - path: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+    status: retained_until_new_output_pipeline_and_wrapper_are migrated
 notes:
-  - Shared task/result fields are not redefined locally; build_subagent_result.py produces subagent_result v2.
-  - Classification explicitly separates confirmed covalent links, geometric covalent candidates and metal coordination candidates.
-  - The input STRUCTURE remains unchanged, stays present_unvalidated and is not promoted to a VALIDATED artifact.
-  - Synthetic parser and result-wrapper tests exist; real PDB/mmCIF/AF3 acceptance and Manager end-to-end execution remain required before freezing.
+  - Residue and atom names in the redesign are exact and case-sensitive; uppercase normalization and alias matching are being removed.
+  - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
+  - Project-defined covalent and coordination checks are separate from baseline classification and will be implemented as separate deterministic entry points.
+  - Metal coordination may promote a nonstandard component to the linked topology route only when the project definition explicitly enables that effect and the relation is confirmed.
+  - The legacy parser and wrapper remain the current executable draft until the full redesigned pipeline and tests are complete; redesign files must not yet be treated as a production-complete validator.
