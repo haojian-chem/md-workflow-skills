@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.11.15/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/md-workflow-skills/md-workflow-skills
+collecting ... collected 1 item
+
+04_evals/component_and_residue_classification_validator/test_v1_2_chain_grouping.py::test_polymer_entity_keeps_polymer_chain_index_when_classification_conflicts PASSED [100%]
+
+============================== 1 passed in 0.35s ===============================
