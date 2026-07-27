@@ -70,6 +70,7 @@ properties:
         enum:
           - AUTO_SELECTED
           - USER_SELECTION_REQUIRED
+          - USER_SELECTED
       selected_model_id:
         type:
           - string
@@ -99,11 +100,20 @@ allOf:
     then:
       properties:
         selection:
-          properties:
-            status:
-              const: USER_SELECTION_REQUIRED
-            selected_model_id:
-              type: "null"
-          required:
-            - status
-            - selected_model_id
+          oneOf:
+            - properties:
+                status:
+                  const: USER_SELECTION_REQUIRED
+                selected_model_id:
+                  type: "null"
+              required:
+                - status
+                - selected_model_id
+            - properties:
+                status:
+                  const: USER_SELECTED
+                selected_model_id:
+                  type: string
+              required:
+                - status
+                - selected_model_id
