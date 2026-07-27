@@ -1,0 +1,244 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: possible_connections_result.schema.yaml
+title: Possible covalent connection check results
+schema_version: "1.0"
+type: object
+additionalProperties: false
+required: [schema_version, status, input, definition_results]
+properties:
+  schema_version: {const: "1.0"}
+  status:
+    enum: [COMPLETED, NOT_PERFORMED]
+  reason:
+    type: [string, "null"]
+  input:
+    $ref: "#/$defs/input"
+  definition_results:
+    type: array
+    items:
+      $ref: "#/$defs/definition_result"
+$defs:
+  sha256:
+    type: string
+    pattern: "^[0-9a-f]{64}$"
+  nullable_string:
+    type: [string, "null"]
+  source_resid:
+    type: object
+    additionalProperties: false
+    required: [number, insertion_code]
+    properties:
+      number: {type: string, minLength: 1}
+      insertion_code:
+        $ref: "#/$defs/nullable_string"
+  endpoint:
+    type: object
+    additionalProperties: false
+    required:
+      - chain_index
+      - source_chain_id
+      - source_resid
+      - residue_name
+      - atom_name
+      - altloc_id
+    properties:
+      chain_index: {type: integer, minimum: 1}
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      source_resid:
+        $ref: "#/$defs/source_resid"
+      residue_name: {type: string, minLength: 1}
+      atom_name: {type: string, minLength: 1}
+      altloc_id:
+        $ref: "#/$defs/nullable_string"
+  partner_definition:
+    type: object
+    additionalProperties: false
+    required: [residue_name, atom_name]
+    properties:
+      residue_name: {type: string, minLength: 1}
+      atom_name: {type: string, minLength: 1}
+  distance_range:
+    type: object
+    additionalProperties: false
+    required: [minimum, maximum]
+    properties:
+      minimum: {type: number, minimum: 0}
+      maximum: {type: number, exclusiveMinimum: 0}
+  input:
+    type: object
+    additionalProperties: false
+    required:
+      - structure_path
+      - structure_sha256
+      - selected_model_id
+      - definition_path
+      - definition_sha256
+      - observations_path
+      - observations_sha256
+    properties:
+      structure_path: {type: string, minLength: 1}
+      structure_sha256:
+        $ref: "#/$defs/sha256"
+      selected_model_id: {type: string, minLength: 1}
+      definition_path:
+        type: [string, "null"]
+      definition_sha256:
+        type: [string, "null"]
+        pattern: "^[0-9a-f]{64}$"
+      observations_path: {type: string, minLength: 1}
+      observations_sha256:
+        $ref: "#/$defs/sha256"
+  matching_summary:
+    type: object
+    additionalProperties: false
+    required:
+      - partner_1_residue_count
+      - partner_1_atom_count
+      - partner_2_residue_count
+      - partner_2_atom_count
+      - considered_pair_count
+      - recorded_pair_count
+      - omitted_above_maximum_pair_count
+    properties:
+      partner_1_residue_count: {type: integer, minimum: 0}
+      partner_1_atom_count: {type: integer, minimum: 0}
+      partner_2_residue_count: {type: integer, minimum: 0}
+      partner_2_atom_count: {type: integer, minimum: 0}
+      considered_pair_count: {type: integer, minimum: 0}
+      recorded_pair_count: {type: integer, minimum: 0}
+      omitted_above_maximum_pair_count: {type: integer, minimum: 0}
+  missing_atom_instance:
+    type: object
+    additionalProperties: false
+    required:
+      - chain_index
+      - source_chain_id
+      - source_resid
+      - residue_name
+      - missing_atom_name
+    properties:
+      chain_index: {type: integer, minimum: 1}
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      source_resid:
+        $ref: "#/$defs/source_resid"
+      residue_name: {type: string, minLength: 1}
+      missing_atom_name: {type: string, minLength: 1}
+  explicit_connection:
+    type: object
+    additionalProperties: false
+    required: [status, source_type, relation_type]
+    properties:
+      status: {enum: [PRESENT, ABSENT]}
+      source_type:
+        type: [string, "null"]
+      relation_type:
+        type: [string, "null"]
+  geometry:
+    oneOf:
+      - type: "null"
+      - type: object
+        additionalProperties: false
+        required: [distance_angstrom, configured_range, range_status]
+        properties:
+          distance_angstrom: {type: number, minimum: 0}
+          configured_range:
+            $ref: "#/$defs/distance_range"
+          range_status:
+            enum: [BELOW_MINIMUM, WITHIN_RANGE, ABOVE_MAXIMUM]
+  pair_result:
+    type: object
+    additionalProperties: false
+    required:
+      - partner_1
+      - partner_2
+      - explicit_connection
+      - geometry
+      - status
+      - detail
+      - confirmation_required
+      - topology_effect_candidate
+    properties:
+      partner_1:
+        $ref: "#/$defs/endpoint"
+      partner_2:
+        $ref: "#/$defs/endpoint"
+      explicit_connection:
+        $ref: "#/$defs/explicit_connection"
+      geometry:
+        $ref: "#/$defs/geometry"
+      status:
+        enum:
+          - CONFIRMED_BY_STRUCTURE
+          - GEOMETRY_SUPPORTED_CANDIDATE
+          - NOT_GEOMETRICALLY_SUPPORTED
+          - CONNECTION_DEFINITION_CONFLICT
+          - GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS
+      detail:
+        type: [string, "null"]
+      confirmation_required: {type: boolean}
+      topology_effect_candidate:
+        type: object
+        additionalProperties: false
+        required: [relation_type, applicable]
+        properties:
+          relation_type: {const: COVALENT_CONNECTION}
+          applicable: {type: boolean}
+  omitted_pairs:
+    type: object
+    additionalProperties: false
+    required: [count, minimum_distance_angstrom, maximum_distance_angstrom]
+    properties:
+      count: {type: integer, minimum: 0}
+      minimum_distance_angstrom:
+        type: [number, "null"]
+        minimum: 0
+      maximum_distance_angstrom:
+        type: [number, "null"]
+        minimum: 0
+  definition_result:
+    type: object
+    additionalProperties: false
+    required:
+      - definition_index
+      - label
+      - definition
+      - definition_status
+      - missing_partner
+      - matching_summary
+      - atom_not_found_instances
+      - pair_results
+      - omitted_above_maximum_pairs
+    properties:
+      definition_index: {type: integer, minimum: 1}
+      label:
+        $ref: "#/$defs/nullable_string"
+      definition:
+        type: object
+        additionalProperties: false
+        required: [partner_1, partner_2, distance_range_angstrom]
+        properties:
+          partner_1:
+            $ref: "#/$defs/partner_definition"
+          partner_2:
+            $ref: "#/$defs/partner_definition"
+          distance_range_angstrom:
+            $ref: "#/$defs/distance_range"
+      definition_status:
+        enum: [EVALUATED, PARTNER_NOT_FOUND, ATOM_NOT_FOUND]
+      missing_partner:
+        type: [string, "null"]
+        enum: [PARTNER_1, PARTNER_2, BOTH, null]
+      matching_summary:
+        $ref: "#/$defs/matching_summary"
+      atom_not_found_instances:
+        type: array
+        items:
+          $ref: "#/$defs/missing_atom_instance"
+      pair_results:
+        type: array
+        items:
+          $ref: "#/$defs/pair_result"
+      omitted_above_maximum_pairs:
+        $ref: "#/$defs/omitted_pairs"
