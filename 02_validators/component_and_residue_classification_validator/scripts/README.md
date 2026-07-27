@@ -49,6 +49,18 @@ python scripts/classify_structure.py \
   --config <classification_config.yaml>
 ```
 
+Internal module boundary:
+
+```text
+classification_engine.py
+→ runtime facade and chain-grouping invariant
+
+classification_engine_core.py
+→ baseline classification implementation
+```
+
+The facade keeps structural entity/polymer facts authoritative while constructing baseline `chain_groups`. If residue topology classification is unresolved or conflicting, a structurally identified polymer or branched residue still remains in its structural chain. The original `ClassificationValue`, including null labels, `CONFLICT` status and evidence, is restored before observations are emitted. Conversely, an explicit structural nonpolymer entity is not promoted into a polymer chain solely because a project classification label says `POLYMER`.
+
 The YAML configuration supplies:
 
 ```text
