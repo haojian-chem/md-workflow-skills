@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/temporary-classification-grouping-fix.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -35,36 +36,49 @@ jobs:
 
           engine_path = Path("02_validators/component_and_residue_classification_validator/scripts/classification_engine.py")
           engine = engine_path.read_text(encoding="utf-8")
-          old = '''    by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
-              for analysis in analyses:
-                  classification = analysis.classification
-                  if classification.polymer_class in {"POLYMER", "BRANCHED"}:
-                      key = (
-                          analysis.residue.source_chain_id,
-                          analysis.residue.entity_id,
-                          classification.polymer_class,
-                      )
-                      by_chain[key].append(analysis)
-          '''
-          new = '''    by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
-              for analysis in analyses:
-                  structural_class = _entity_polymer_class(analysis.residue)
-                  if structural_class in {"POLYMER", "BRANCHED"}:
-                      grouping_class = structural_class
-                  elif structural_class is None and analysis.classification.resolution_status == "RESOLVED":
-                      grouping_class = analysis.classification.polymer_class
-                  else:
-                      grouping_class = None
-                  if grouping_class in {"POLYMER", "BRANCHED"}:
-                      key = (
-                          analysis.residue.source_chain_id,
-                          analysis.residue.entity_id,
-                          grouping_class,
-                      )
-                      by_chain[key].append(analysis)
-          '''
-          if old not in engine:
-              raise SystemExit("expected grouping block not found; refusing non-deterministic patch")
+          old = "\n".join(
+              [
+                  "    by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)",
+                  "    for analysis in analyses:",
+                  "        classification = analysis.classification",
+                  "        if classification.polymer_class in {\"POLYMER\", \"BRANCHED\"}:",
+                  "            key = (",
+                  "                analysis.residue.source_chain_id,",
+                  "                analysis.residue.entity_id,",
+                  "                classification.polymer_class,",
+                  "            )",
+                  "            by_chain[key].append(analysis)",
+                  "",
+              ]
+          )
+          new = "\n".join(
+              [
+                  "    by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)",
+                  "    for analysis in analyses:",
+                  "        structural_class = _entity_polymer_class(analysis.residue)",
+                  "        if structural_class in {\"POLYMER\", \"BRANCHED\"}:",
+                  "            grouping_class = structural_class",
+                  "        elif (",
+                  "            structural_class is None",
+                  "            and analysis.classification.resolution_status == \"RESOLVED\"",
+                  "        ):",
+                  "            grouping_class = analysis.classification.polymer_class",
+                  "        else:",
+                  "            grouping_class = None",
+                  "        if grouping_class in {\"POLYMER\", \"BRANCHED\"}:",
+                  "            key = (",
+                  "                analysis.residue.source_chain_id,",
+                  "                analysis.residue.entity_id,",
+                  "                grouping_class,",
+                  "            )",
+                  "            by_chain[key].append(analysis)",
+                  "",
+              ]
+          )
+          if engine.count(old) != 1:
+              raise SystemExit(
+                  f"expected grouping block exactly once, observed {engine.count(old)}"
+              )
           engine_path.write_text(engine.replace(old, new, 1), encoding="utf-8")
 
           test_path = Path("04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py")
