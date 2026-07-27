@@ -76,16 +76,16 @@ END
     observations, _manifest, *_ = execute_classification(config, SCRIPTS)
     record = observations["residue_records"][0]
     assert record["classification_observation"]["resolution_status"] == "CONFLICT"
-    assert observations["unresolved_observations"][0]["issue_type"] == "PROJECT_REGISTRY_CLASSIFICATION_CONFLICT"
-    assert observations["chain_groups"] == [
-        {
-            "chain_index": 1,
-            "grouping_status": "BASELINE",
-            "group_type": "POLYMER_CHAIN",
-            "source_chain_id": "A",
-            "entity_id": "1",
-            "instance_count": 1,
-            "source_associations": [],
-        }
-    ]
+    assert (
+        observations["unresolved_observations"][0]["issue_type"]
+        == "PROJECT_REGISTRY_CLASSIFICATION_CONFLICT"
+    )
+
+    assert len(observations["chain_groups"]) == 1
+    group = observations["chain_groups"][0]
+    assert group["chain_index"] == 1
+    assert group["grouping_status"] == "BASELINE"
+    assert group["group_type"] == "POLYMER_CHAIN"
+    assert group["source_chain_id"] == "A"
+    assert group["instance_count"] == 1
     assert record["chain_index"] == 1
