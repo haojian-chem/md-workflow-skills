@@ -151,6 +151,18 @@ END
  CA C
  C O
  CA CB
+[ NALA ]
+ [ atoms ]
+ N   N   -0.3  1
+ CA  CT   0.1  2
+ C   C    0.5  3
+ O   O   -0.3  4
+ CB  CT   0.0  5
+ [ bonds ]
+ N CA
+ CA C
+ C O
+ CA CB
 """,
         encoding="utf-8",
     )
@@ -164,7 +176,16 @@ END
             "selected_model_id": "1",
         },
         "classification": {"mode": "FORCE_FIELD_ANALYSIS"},
-        "force_field": {"root_path": str(force_field)},
+        "force_field": {
+            "root_path": str(force_field),
+            "terminal_template_mappings": [
+                {
+                    "terminal_role": "N_TERMINUS",
+                    "source_residue_name": "ALA",
+                    "rtp_residue_name": "NALA",
+                }
+            ],
+        },
         "ccd": {"retrieval_policy": "CACHE_ONLY"},
         "output": {
             "observations_path": str(observations_path),
@@ -176,6 +197,7 @@ END
     assert record["classification_observation"]["primary_source"] == "FORCE_FIELD"
     assert record["classification_observation"]["topology_class"] == "STANDARD_RESIDUE"
     assert record["heavy_atom_check"]["reference_type"] == "RTP"
+    assert record["heavy_atom_check"]["reference_name"] == "NALA"
     assert record["heavy_atom_check"]["status"] == "MISSING_EXPECTED_HEAVY_ATOMS"
     assert record["heavy_atom_check"]["missing_atoms"] == ["CB"]
     assert manifest["force_field"]["status"] == "LOADED"
