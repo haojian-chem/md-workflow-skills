@@ -1,5 +1,5 @@
 schema_version: 3
-status: classification_wrapper_and_selection_contracts_draft
+status: classification_v1_2_implementation_complete_validation_pending
 runtime_architecture:
   project_model: workstream
   workflow_interfaces:
@@ -62,7 +62,7 @@ skills:
   - name: component_and_residue_classification_validator
     layer: validator
     path: 02_validators/component_and_residue_classification_validator
-    status: draft_parser_and_wrapper_tested_actual_fast_and_real_files_required
+    status: v1_2_implementation_complete_formal_validation_and_real_files_required
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
   - name: chain_and_component_selection
     layer: operation
