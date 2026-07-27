@@ -14,7 +14,7 @@
 - `runtime_schema_validator` 0.1.0：ACTIVE；
 - NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
 - `source_recognition` draft；
-- 1.2 component/residue classification v1.2 实现完成，正式验收待完成；
+- 1.2 component/residue classification v1.2 实现完成且合成 CI 已通过，真实验收待完成；
 - 1.3 chain/component selection Operation/Validator contract draft。
 
 Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
@@ -145,7 +145,7 @@ schemas/classification_outputs.schema.yaml
 
 ### 测试状态
 
-已编写并纳入 `.github/workflows/component-classification-v1-2.yml`：
+已纳入 `.github/workflows/component-classification-v1-2.yml`：
 
 ```text
 04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py
@@ -157,7 +157,15 @@ schemas/classification_outputs.schema.yaml
 04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
 ```
 
-仓库当前尚未附加一份可追溯的完整新测试运行结果。旧版 parser/wrapper 测试数字不得作为 v1.2 最终通过证据。真实 PDB、RCSB mmCIF、AF3 CIF 和完整 Manager closure 仍未验收。
+正式合成测试证据：
+
+```text
+GitHub Actions run: 30259226282
+job: 89954939918
+conclusion: success
+```
+
+该次运行证明当时主分支的 v1.2 合成测试和 schema meta-validation 步骤成功。它不替代真实 PDB、RCSB mmCIF、AF3 CIF、真实 GROMACS force field 和完整 Manager closure 验收。
 
 ## 1.3 Chain and component selection
 
@@ -205,7 +213,7 @@ Validator: 17 cases
 - `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
 - `runtime_schema_validator`：ACTIVE；
 - `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
-- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，待正式测试证据、真实结构与 Manager closure；
+- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，合成 CI 已通过，待真实结构、真实力场与 Manager closure；
 - `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
 - `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
@@ -213,7 +221,7 @@ Validator: 17 cases
 ## 尚未冻结或尚未验收
 
 - content map 的 `load_when` / `applicable_to` 扩展；
-- 1.2 真实结构接受性、正式测试证据和 Manager 集成；
+- 1.2 真实结构接受性、真实力场和 Manager 集成；
 - 1.3 selection schemas/rules、确定性实现和 combined task；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
 - Manager 真实项目端到端集成。
@@ -230,7 +238,6 @@ Validator: 17 cases
 - `05_tools/tool_registry.yaml`；
 - `04_evals/runtime_schema_validator/VALIDATION.md`；
 - `04_evals/component_and_residue_classification_validator/V1_2_REDESIGN_IMPLEMENTATION.md`；
-- `04_evals/component_and_residue_classification_validator/VALIDATOR_DRAFT_VALIDATION.md`；
 - `04_evals/chain_and_component_selection/SELECTION_DRAFT_VALIDATION.md`；
 - `03_contracts/README.md`；
 - 本文件。
