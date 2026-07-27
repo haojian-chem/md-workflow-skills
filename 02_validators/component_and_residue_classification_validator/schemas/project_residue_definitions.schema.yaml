@@ -1,0 +1,101 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: project_residue_definitions.schema.yaml
+title: Project residue definitions
+schema_version: "1.0"
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - residue_definitions
+properties:
+  schema_version:
+    const: "1.0"
+  residue_definitions:
+    type: array
+    items:
+      $ref: "#/$defs/residue_definition"
+$defs:
+  residue_name:
+    type: string
+    minLength: 1
+    maxLength: 32
+  ccd_id:
+    type: string
+    minLength: 1
+    maxLength: 32
+    pattern: "^[^/\\\\]+$"
+  polymer_class:
+    enum:
+      - POLYMER
+      - BRANCHED
+      - NONPOLYMER
+      - WATER
+  topology_class:
+    enum:
+      - STANDARD_RESIDUE
+      - COVALENTLY_LINKED_NONSTANDARD
+      - INDEPENDENT_NONSTANDARD
+      - SOLVENT_COMPONENT
+      - ION_COMPONENT
+  residue_definition:
+    type: object
+    additionalProperties: false
+    required:
+      - residue_name
+      - polymer_class
+      - topology_class
+    properties:
+      residue_name:
+        $ref: "#/$defs/residue_name"
+      polymer_class:
+        $ref: "#/$defs/polymer_class"
+      topology_class:
+        $ref: "#/$defs/topology_class"
+      ccd_id:
+        $ref: "#/$defs/ccd_id"
+    allOf:
+      - if:
+          properties:
+            polymer_class:
+              const: POLYMER
+          required: [polymer_class]
+        then:
+          properties:
+            topology_class:
+              enum:
+                - STANDARD_RESIDUE
+                - COVALENTLY_LINKED_NONSTANDARD
+      - if:
+          properties:
+            polymer_class:
+              const: BRANCHED
+          required: [polymer_class]
+        then:
+          properties:
+            topology_class:
+              enum:
+                - STANDARD_RESIDUE
+                - COVALENTLY_LINKED_NONSTANDARD
+                - INDEPENDENT_NONSTANDARD
+      - if:
+          properties:
+            polymer_class:
+              const: NONPOLYMER
+          required: [polymer_class]
+        then:
+          properties:
+            topology_class:
+              enum:
+                - COVALENTLY_LINKED_NONSTANDARD
+                - INDEPENDENT_NONSTANDARD
+                - SOLVENT_COMPONENT
+                - ION_COMPONENT
+      - if:
+          properties:
+            polymer_class:
+              const: WATER
+          required: [polymer_class]
+        then:
+          properties:
+            topology_class:
+              const: SOLVENT_COMPONENT
