@@ -1,0 +1,35 @@
+name: apply-chain-grouping-patch
+
+on:
+  push:
+    branches:
+      - fix/classification-polymer-chain-grouping
+    paths:
+      - "04_evals/component_and_residue_classification_validator/apply_chain_grouping_patch.py"
+      - ".github/workflows/apply-chain-grouping-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/classification-polymer-chain-grouping
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Apply patch
+        run: python 04_evals/component_and_residue_classification_validator/apply_chain_grouping_patch.py
+      - name: Commit patched engine
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 02_validators/component_and_residue_classification_validator/scripts/classification_engine.py
+          git commit -m "Preserve polymer chain grouping across classification conflicts"
+          git push origin HEAD:fix/classification-polymer-chain-grouping
