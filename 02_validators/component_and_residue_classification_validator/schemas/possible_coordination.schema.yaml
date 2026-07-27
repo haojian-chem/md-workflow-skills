@@ -1,0 +1,41 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: possible_coordination.schema.yaml
+title: Possible metal coordination definitions
+type: object
+additionalProperties: false
+required: [schema_version, possible_coordination]
+properties:
+  schema_version: {const: '1.0'}
+  possible_coordination:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [metal, donor, distance_range_angstrom, topology_effect]
+      properties:
+        label: {type: string, minLength: 1}
+        metal: {$ref: '#/$defs/endpoint'}
+        donor: {$ref: '#/$defs/endpoint'}
+        distance_range_angstrom: {$ref: '#/$defs/range'}
+        topology_effect:
+          type: object
+          additionalProperties: false
+          required: [promote_nonstandard_to_linked]
+          properties:
+            promote_nonstandard_to_linked: {type: boolean}
+$defs:
+  endpoint:
+    type: object
+    additionalProperties: false
+    required: [residue_name, atom_name, element]
+    properties:
+      residue_name: {type: string, minLength: 1}
+      atom_name: {type: string, minLength: 1}
+      element: {type: string, pattern: '^[A-Z][a-z]{0,2}$'}
+  range:
+    type: object
+    additionalProperties: false
+    required: [minimum, maximum]
+    properties:
+      minimum: {type: number, minimum: 0}
+      maximum: {type: number, exclusiveMinimum: 0}

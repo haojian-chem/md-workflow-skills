@@ -1,0 +1,138 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: possible_connections_result.schema.yaml
+title: Possible covalent connections result
+type: object
+additionalProperties: false
+required: [schema_version, tool, status, reason, input, definition_results, summary]
+properties:
+  schema_version: {const: '1.0'}
+  tool:
+    type: object
+    additionalProperties: false
+    required: [name, version]
+    properties:
+      name: {const: check_possible_connections}
+      version: {type: string}
+  status: {enum: [COMPLETED, NOT_PERFORMED]}
+  reason: {type: [string, 'null']}
+  input: {$ref: '#/$defs/input'}
+  definition_results:
+    type: array
+    items: {$ref: '#/$defs/definition_result'}
+  summary:
+    type: object
+    additionalProperties: false
+    required: [definition_count, confirmation_required_count]
+    properties:
+      definition_count: {type: integer, minimum: 0}
+      confirmation_required_count: {type: integer, minimum: 0}
+$defs:
+  source_resid:
+    type: object
+    additionalProperties: false
+    required: [number, insertion_code]
+    properties:
+      number: {type: [string, 'null']}
+      insertion_code: {type: [string, 'null']}
+  endpoint:
+    type: object
+    required: [chain_index, source_chain_id, source_resid, residue_name, atom_name, element, source_order]
+    properties:
+      chain_index: {type: [integer, 'null'], minimum: 1}
+      source_chain_id: {type: [string, 'null']}
+      source_resid: {$ref: '#/$defs/source_resid'}
+      residue_name: {type: string}
+      atom_name: {type: string}
+      element: {type: [string, 'null']}
+      altloc: {type: string}
+      source_order: {type: [integer, 'null'], minimum: 1}
+    additionalProperties: false
+  input:
+    type: object
+    additionalProperties: false
+    required: [structure_path, structure_sha256, selected_model_id, definition_path, definition_sha256, observations_path, observations_sha256]
+    properties:
+      structure_path: {type: string}
+      structure_sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+      selected_model_id: {type: string}
+      definition_path: {type: [string, 'null']}
+      definition_sha256: {type: [string, 'null']}
+      observations_path: {type: string}
+      observations_sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+  atom_not_found:
+    type: object
+    additionalProperties: false
+    required: [chain_index, source_chain_id, source_resid, residue_name, missing_atom_name]
+    properties:
+      chain_index: {type: [integer, 'null'], minimum: 1}
+      source_chain_id: {type: [string, 'null']}
+      source_resid: {$ref: '#/$defs/source_resid'}
+      residue_name: {type: string}
+      missing_atom_name: {type: string}
+  pair_result:
+    type: object
+    required: [partner_1, partner_2, explicit_connection, geometry, status, confirmation_required, topology_effect_candidate]
+    properties:
+      partner_1: {$ref: '#/$defs/endpoint'}
+      partner_2: {$ref: '#/$defs/endpoint'}
+      explicit_connection:
+        type: object
+        additionalProperties: false
+        required: [status, records]
+        properties:
+          status: {enum: [PRESENT, ABSENT]}
+          records:
+            type: array
+            items: {type: object, additionalProperties: true}
+      geometry:
+        type: object
+        additionalProperties: false
+        required: [distance_angstrom, configured_range, range_status]
+        properties:
+          distance_angstrom: {type: [number, 'null']}
+          configured_range:
+            type: object
+            additionalProperties: false
+            required: [minimum, maximum]
+            properties:
+              minimum: {type: number}
+              maximum: {type: number}
+          range_status: {enum: [BELOW_MINIMUM, WITHIN_RANGE, ABOVE_MAXIMUM, NOT_EVALUATED]}
+      status:
+        enum: [CONFIRMED_BY_STRUCTURE, GEOMETRY_SUPPORTED_CANDIDATE, NOT_GEOMETRICALLY_SUPPORTED, CONNECTION_DEFINITION_CONFLICT, GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS]
+      detail: {type: [string, 'null']}
+      confirmation_required: {type: boolean}
+      topology_effect_candidate:
+        type: object
+        additionalProperties: false
+        required: [relation_type, applicable]
+        properties:
+          relation_type: {const: COVALENT_CONNECTION}
+          applicable: {type: boolean}
+    additionalProperties: false
+  definition_result:
+    type: object
+    required: [definition_index, label, definition, matching_summary, atom_not_found_instances, pair_results, omitted_above_maximum_pairs, status, confirmation_required]
+    properties:
+      definition_index: {type: integer, minimum: 1}
+      label: {type: [string, 'null']}
+      definition: {type: object}
+      matching_summary: {type: object, additionalProperties: true}
+      atom_not_found_instances:
+        type: array
+        items: {$ref: '#/$defs/atom_not_found'}
+      pair_results:
+        type: array
+        items: {$ref: '#/$defs/pair_result'}
+      omitted_above_maximum_pairs:
+        type: object
+        additionalProperties: false
+        required: [count, minimum_distance_angstrom, maximum_distance_angstrom]
+        properties:
+          count: {type: integer, minimum: 0}
+          minimum_distance_angstrom: {type: [number, 'null']}
+          maximum_distance_angstrom: {type: [number, 'null']}
+      status: {enum: [CHECKED, PARTNER_NOT_FOUND, ATOM_NOT_FOUND]}
+      missing_partner: {enum: [PARTNER_1, PARTNER_2, BOTH]}
+      confirmation_required: {type: boolean}
+    additionalProperties: false

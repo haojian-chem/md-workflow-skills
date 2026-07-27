@@ -1,0 +1,78 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: reference_manifest.schema.yaml
+title: Classification reference manifest
+type: object
+additionalProperties: false
+required: [schema_version, tool, classification_mode, project_files, skill_references, force_field, ccd_components, sequence_references, relation_definition_files]
+properties:
+  schema_version: {const: '1.0'}
+  tool:
+    type: object
+    additionalProperties: false
+    required: [name, version]
+    properties:
+      name: {const: classify_structure}
+      version: {type: string}
+  classification_mode: {enum: [REGISTRY, FORCE_FIELD_ANALYSIS]}
+  project_files:
+    type: object
+    additionalProperties: false
+    required: [residue_definitions]
+    properties:
+      residue_definitions: {$ref: '#/$defs/file_status'}
+  skill_references:
+    type: array
+    items: {$ref: '#/$defs/file_status'}
+  force_field:
+    oneOf:
+      - {type: 'null'}
+      - type: object
+        additionalProperties: false
+        required: [root_path, files, terminal_template_mapping_count]
+        properties:
+          root_path: {type: string}
+          files:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+              required: [path, sha256, role, status, template_count]
+          terminal_template_mapping_count: {type: integer, minimum: 0}
+  ccd_components:
+    type: array
+    items:
+      type: object
+      required: [component_id, mapped_residue_names, retrieval, project_snapshot, validation]
+      properties:
+        component_id: {type: string}
+        mapped_residue_names:
+          type: array
+          items: {type: string}
+        retrieval: {type: object, additionalProperties: true}
+        project_snapshot: {type: object, additionalProperties: true}
+        validation: {type: object, additionalProperties: true}
+      additionalProperties: false
+  sequence_references:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [type, path, sha256, status]
+      properties:
+        type: {enum: [FASTA, AF3_INPUT_JSON]}
+        path: {type: string}
+        sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        status: {const: LOADED}
+  relation_definition_files:
+    type: object
+    additionalProperties:
+      $ref: '#/$defs/file_status'
+$defs:
+  file_status:
+    type: object
+    required: [path, sha256, status]
+    properties:
+      path: {type: [string, 'null']}
+      sha256: {type: [string, 'null']}
+      status: {enum: [LOADED, NOT_PROVIDED]}
+    additionalProperties: false

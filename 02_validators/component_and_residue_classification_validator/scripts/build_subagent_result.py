@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Build and validate subagent_result v2 from classification output and task.yaml."""
+"""Build shared subagent_result v2 for the 1.2 classification Validator."""
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -15,49 +14,37 @@ from typing import Any
 import yaml
 from jsonschema import RefResolver, validators
 
+from classification_common import ClassificationError, load_yaml, sha256, validate_document
+
 SKILL_NAME = "component_and_residue_classification_validator"
 WORKFLOW_NAME = "structure_preparation_workflow"
 
 
-class ResultBuildError(RuntimeError):
+class ResultBuildError(ClassificationError):
     pass
 
 
-def load_yaml(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
-
-
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def iso_mtime(path: Path) -> str:
-    return datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
-
-
-def atomic_yaml(path: Path, payload: Any) -> None:
+def _atomic_yaml(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(path.suffix + ".tmp")
-    temp.write_text(
-        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
-        encoding="utf-8",
-    )
-    os.replace(temp, path)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    os.replace(temporary, path)
 
 
-def resolve_project_path(project_root: Path, value: str) -> Path:
+def _resolve(project_root: Path, value: str) -> Path:
     path = Path(value)
-    if not path.is_absolute():
-        path = project_root / path
-    return path.resolve()
+    return (project_root / path).resolve() if not path.is_absolute() else path.resolve()
 
 
-def path_is_within(path: Path, root: Path) -> bool:
+def _permission_root(project_root: Path, value: str) -> Path:
+    cleaned = value.strip()
+    for suffix in ("/**", "/*"):
+        if cleaned.endswith(suffix):
+            cleaned = cleaned[: -len(suffix)]
+    return _resolve(project_root, cleaned)
+
+
+def _within(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
         return True
@@ -65,504 +52,302 @@ def path_is_within(path: Path, root: Path) -> bool:
         return False
 
 
-def permission_base(project_root: Path, value: str) -> Path:
-    cleaned = value.strip()
-    for suffix in ("/**", "/*"):
-        if cleaned.endswith(suffix):
-            cleaned = cleaned[: -len(suffix)]
-            break
-    return resolve_project_path(project_root, cleaned)
-
-
-def path_allowed(path: Path, entries: list[Any], project_root: Path) -> bool:
+def _matches_permission(path: Path, entries: list[Any], project_root: Path) -> bool:
     for entry in entries:
-        if not isinstance(entry, str) or not entry.strip():
-            continue
-        base = permission_base(project_root, entry)
-        if path.resolve() == base or path_is_within(path, base):
-            return True
+        if isinstance(entry, str) and entry.strip():
+            root = _permission_root(project_root, entry)
+            if path.resolve() == root or _within(path, root):
+                return True
     return False
 
 
-def enforce_task_permissions(
-    task: dict[str, Any],
-    project_root: Path,
-    input_path: Path,
-    write_paths: list[Path],
-) -> None:
-    permissions = task.get("permissions")
-    if not isinstance(permissions, dict):
-        raise ResultBuildError("task.permissions is missing")
-    allowed_read = permissions.get("allowed_read_paths", [])
+def _validate_task(task: dict[str, Any]) -> None:
+    if task.get("workflow_name") != WORKFLOW_NAME:
+        raise ResultBuildError(f"unexpected workflow_name: {task.get('workflow_name')!r}")
+    task_unit = task.get("task_unit") or {}
+    if task_unit.get("mode") != "VALIDATOR" or task_unit.get("operation") is not None:
+        raise ResultBuildError("task_unit must be VALIDATOR with operation: null")
+    validator = task_unit.get("validator") or {}
+    if validator.get("skill_name") != SKILL_NAME or validator.get("skill_layer") != "validator":
+        raise ResultBuildError("task validator ref does not identify this Validator")
+    if task.get("result_contract") != "03_contracts/subagent_result.schema.yaml":
+        raise ResultBuildError("unexpected result_contract")
+
+
+def _enforce_permissions(task: dict[str, Any], paths: list[Path], output_path: Path | None = None) -> None:
+    project_root = Path(task["project_root"]).resolve()
+    permissions = task.get("permissions") or {}
     allowed_write = permissions.get("allowed_write_paths", [])
     forbidden = permissions.get("forbidden_paths", [])
-    if not path_allowed(input_path, allowed_read, project_root):
-        raise ResultBuildError("input structure is outside task allowed_read_paths")
-    for path in [input_path, *write_paths]:
-        if path_allowed(path, forbidden, project_root):
-            raise ResultBuildError(f"path is inside task forbidden_paths: {path}")
-    for path in write_paths:
-        if not path_allowed(path, allowed_write, project_root):
-            raise ResultBuildError(f"output path is outside task allowed_write_paths: {path}")
+    for path in [*paths, *([output_path] if output_path is not None else [])]:
+        if _matches_permission(path, forbidden, project_root):
+            raise ResultBuildError(f"path is inside task forbidden paths: {path}")
+    for path in paths:
+        if not _matches_permission(path, allowed_write, project_root):
+            raise ResultBuildError(f"classification output is outside allowed_write_paths: {path}")
 
 
-def ensure_regular_file(path: Path, label: str) -> None:
-    if path.is_symlink():
-        raise ResultBuildError(f"{label} must not be a symlink: {path}")
-    if not path.is_file():
-        raise ResultBuildError(f"{label} is not a regular file: {path}")
+def _file_record(path: Path, task_id: str, role: str, *, state: str = "present_validated") -> dict[str, Any]:
+    if path.is_symlink() or not path.is_file():
+        raise ResultBuildError(f"expected regular output file: {path}")
+    return {
+        "path": str(path),
+        "state": state,
+        "role": role,
+        "source_task": task_id,
+        "size_bytes": path.stat().st_size,
+        "modified_at": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(),
+        "sha256": sha256(path),
+    }
 
 
-def load_schema_bundle(contracts_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def _input_structure_record(task: dict[str, Any], model_scope: dict[str, Any]) -> dict[str, Any]:
+    project_root = Path(task["project_root"]).resolve()
+    source = model_scope["input_structure"]
+    path = _resolve(project_root, source["path"])
+    if not path.is_file() or path.is_symlink():
+        raise ResultBuildError("model_scope input structure is not a regular file")
+    actual_hash = sha256(path)
+    if actual_hash != source["sha256"]:
+        raise ResultBuildError("input structure hash no longer matches model_scope")
+    matches = [
+        record
+        for record in task.get("current_valid_files", [])
+        if isinstance(record, dict)
+        and isinstance(record.get("path"), str)
+        and _resolve(project_root, record["path"]) == path
+    ]
+    if len(matches) != 1:
+        raise ResultBuildError(f"input structure must match one current_valid_files record; found {len(matches)}")
+    record = dict(matches[0])
+    record.update(
+        path=str(path),
+        sha256=actual_hash,
+        size_bytes=path.stat().st_size,
+        modified_at=datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(),
+    )
+    record["notes"] = "classification evidence generated; STRUCTURE scientific validation status unchanged"
+    return record
+
+
+def _safe_id(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("_")
+    return cleaned or "item"
+
+
+def _subject_locations(subject: dict[str, Any]) -> list[str]:
+    locations: list[str] = []
+    for key in ("partner_1", "partner_2", "metal", "donor", "endpoint"):
+        item = subject.get(key)
+        if not isinstance(item, dict):
+            continue
+        resid = item.get("source_resid") or {}
+        locations.append(
+            f"chain_index={item.get('chain_index')};source_chain_id={item.get('source_chain_id')!r};"
+            f"residue={item.get('residue_name')}:{resid.get('number')}{resid.get('insertion_code') or ''};"
+            f"atom={item.get('atom_name')}"
+        )
+    if not locations:
+        locations.append(yaml.safe_dump(subject, sort_keys=True, allow_unicode=True).strip())
+    return locations
+
+
+def _confirmation_items(
+    requests: dict[str, Any], task_id: str, workstream_id: str
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for request in requests.get("requests", []):
+        index = int(request["request_index"])
+        request_type = str(request["request_type"])
+        subject = request.get("subject") or {}
+        items.append(
+            {
+                "schema_version": 2,
+                "decision_id": f"decision_{_safe_id(task_id)}_classification_{index:04d}",
+                "scope": "WORKSTREAM",
+                "workstream_id": workstream_id,
+                "source_task_id": task_id,
+                "category": request_type,
+                "question": f"How should classification request {index} ({request_type}) be resolved?",
+                "reason": f"The completed 1.2 scan found an unresolved item from {request.get('source')}",
+                "affected_records": _subject_locations(subject),
+                "available_options": [str(value) for value in request.get("allowed_decisions", [])],
+                "recommended_option": None,
+                "blocking": True,
+            }
+        )
+    return items
+
+
+def _load_schema_bundle(contracts_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     schemas: dict[str, Any] = {}
     store: dict[str, Any] = {}
     for path in sorted(contracts_dir.glob("*.schema.yaml")):
         schema = load_yaml(path)
         if not isinstance(schema, dict):
-            raise ResultBuildError(f"schema is not a mapping: {path}")
+            raise ResultBuildError(f"invalid shared schema: {path}")
         schemas[path.name] = schema
         store[path.name] = schema
         store[path.resolve().as_uri()] = schema
-        schema_id = schema.get("$id")
-        if isinstance(schema_id, str) and schema_id:
-            store[schema_id] = schema
-    if not schemas:
-        raise ResultBuildError(f"no shared schemas found: {contracts_dir}")
+        if isinstance(schema.get("$id"), str):
+            store[schema["$id"]] = schema
     return schemas, store
 
 
-def validate_document(
-    document: Any,
-    schema_name: str,
-    schemas: dict[str, Any],
-    store: dict[str, Any],
-) -> None:
-    schema = schemas.get(schema_name)
+def _validate_shared(document: dict[str, Any], contracts_dir: Path) -> None:
+    schemas, store = _load_schema_bundle(contracts_dir)
+    schema = schemas.get("subagent_result.schema.yaml")
     if schema is None:
-        raise ResultBuildError(f"missing schema: {schema_name}")
-    validator_class = validators.validator_for(schema)
-    validator_class.check_schema(schema)
-    resolver = RefResolver.from_schema(schema, store=store)
-    validator = validator_class(schema, resolver=resolver)
+        raise ResultBuildError("subagent_result.schema.yaml is missing")
+    cls = validators.validator_for(schema)
+    cls.check_schema(schema)
+    validator = cls(schema, resolver=RefResolver.from_schema(schema, store=store))
     errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))
     if errors:
-        messages = []
-        for error in errors[:20]:
-            location = ".".join(str(item) for item in error.absolute_path) or "$"
-            messages.append(f"{location}: {error.message}")
-        raise ResultBuildError(f"{schema_name} validation failed: {'; '.join(messages)}")
-
-
-def validate_local_classification(document: Any, schema_path: Path) -> None:
-    schema = load_yaml(schema_path)
-    if not isinstance(schema, dict):
-        raise ResultBuildError(f"classification schema is not a mapping: {schema_path}")
-    validator_class = validators.validator_for(schema)
-    validator_class.check_schema(schema)
-    validator = validator_class(schema)
-    errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))
-    if errors:
-        messages = []
-        for error in errors[:20]:
-            location = ".".join(str(item) for item in error.absolute_path) or "$"
-            messages.append(f"{location}: {error.message}")
-        raise ResultBuildError(f"classification output validation failed: {'; '.join(messages)}")
-
-
-def validate_task_semantics(task: dict[str, Any]) -> None:
-    if task.get("workflow_name") != WORKFLOW_NAME:
-        raise ResultBuildError(
-            f"unexpected workflow_name: {task.get('workflow_name')!r}; expected {WORKFLOW_NAME}"
+        details = "; ".join(
+            f"{'.'.join(str(part) for part in error.absolute_path) or '$'}: {error.message}"
+            for error in errors[:20]
         )
-    task_unit = task.get("task_unit")
-    if not isinstance(task_unit, dict) or task_unit.get("mode") != "VALIDATOR":
-        raise ResultBuildError("task_unit.mode must be VALIDATOR")
-    if task_unit.get("operation") is not None:
-        raise ResultBuildError("VALIDATOR task must have operation: null")
-    validator_ref = task_unit.get("validator")
-    if not isinstance(validator_ref, dict):
-        raise ResultBuildError("VALIDATOR task is missing validator ref")
-    if validator_ref.get("skill_name") != SKILL_NAME:
-        raise ResultBuildError(
-            f"validator skill mismatch: {validator_ref.get('skill_name')!r}"
-        )
-    if validator_ref.get("skill_layer") != "validator":
-        raise ResultBuildError("validator skill_layer must be validator")
-    if task.get("result_contract") != "03_contracts/subagent_result.schema.yaml":
-        raise ResultBuildError("unexpected result_contract")
-
-
-def find_input_record(
-    task: dict[str, Any],
-    project_root: Path,
-    classification: dict[str, Any],
-) -> dict[str, Any]:
-    input_structure = classification.get("input_structure")
-    if not isinstance(input_structure, dict):
-        raise ResultBuildError("classification input_structure is missing")
-    raw_path = input_structure.get("path")
-    expected_hash = input_structure.get("sha256")
-    if not isinstance(raw_path, str) or not isinstance(expected_hash, str):
-        raise ResultBuildError("classification input_structure path/sha256 is invalid")
-    actual_path = resolve_project_path(project_root, raw_path)
-    ensure_regular_file(actual_path, "input structure")
-    actual_hash = sha256(actual_path)
-    if actual_hash.lower() != expected_hash.lower():
-        raise ResultBuildError("input structure SHA-256 no longer matches classification output")
-
-    matches = []
-    for record in task.get("current_valid_files", []):
-        if not isinstance(record, dict) or not isinstance(record.get("path"), str):
-            continue
-        if resolve_project_path(project_root, record["path"]) == actual_path:
-            matches.append(record)
-    if len(matches) != 1:
-        raise ResultBuildError(
-            f"classification input must match exactly one task.current_valid_files record; found {len(matches)}"
-        )
-
-    record = dict(matches[0])
-    record["sha256"] = actual_hash
-    record["size_bytes"] = actual_path.stat().st_size
-    record["modified_at"] = iso_mtime(actual_path)
-    note = "classified by component_and_residue_classification_validator; structure scientific status unchanged"
-    existing_note = record.get("notes")
-    record["notes"] = f"{existing_note}; {note}" if existing_note else note
-    return record
-
-
-def check_detail_paths(
-    task: dict[str, Any],
-    project_root: Path,
-    classification_path: Path,
-    report_path: Path,
-) -> dict[str, str | None]:
-    details = task.get("detail_output_paths")
-    if not isinstance(details, dict):
-        raise ResultBuildError("task.detail_output_paths is missing")
-    raw_report = details.get("report_file")
-    raw_data = details.get("result_data_file")
-    if not isinstance(raw_report, str) or not isinstance(raw_data, str):
-        raise ResultBuildError("task report_file and result_data_file must be non-null strings")
-    if resolve_project_path(project_root, raw_report) != report_path.resolve():
-        raise ResultBuildError("report path does not match task.detail_output_paths.report_file")
-    if resolve_project_path(project_root, raw_data) != classification_path.resolve():
-        raise ResultBuildError(
-            "classification path does not match task.detail_output_paths.result_data_file"
-        )
-    ensure_regular_file(report_path, "classification report")
-    ensure_regular_file(classification_path, "classification result data")
-    log_file = details.get("log_file")
-    if log_file is not None and not isinstance(log_file, str):
-        raise ResultBuildError("task.detail_output_paths.log_file must be string or null")
-    return {
-        "log_file": log_file,
-        "report_file": raw_report,
-        "result_data_file": raw_data,
-    }
-
-
-def file_record(path: Path, display_path: str, task_id: str, role: str) -> dict[str, Any]:
-    return {
-        "path": display_path,
-        "state": "present_validated",
-        "role": role,
-        "source_task": task_id,
-        "size_bytes": path.stat().st_size,
-        "modified_at": iso_mtime(path),
-        "sha256": sha256(path),
-    }
-
-
-def warning_objects(messages: list[Any], affected_paths: list[str]) -> list[dict[str, Any]]:
-    result = []
-    for index, message in enumerate(messages, start=1):
-        if not isinstance(message, str) or not message.strip():
-            continue
-        result.append(
-            {
-                "code": f"CLASSIFICATION_WARNING_{index:03d}",
-                "message": message.strip(),
-                "affected_paths": affected_paths,
-            }
-        )
-    return result
-
-
-def safe_id(value: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("_")
-    return cleaned or "item"
-
-
-def confirmation_items(
-    ambiguities: list[Any],
-    task_id: str,
-    workstream_id: str,
-) -> list[dict[str, Any]]:
-    result = []
-    used: set[str] = set()
-    for index, item in enumerate(ambiguities, start=1):
-        if not isinstance(item, dict):
-            raise ResultBuildError(f"ambiguity {index} is not a mapping")
-        source_id = str(item.get("ambiguity_id") or f"ambiguity_{index:04d}")
-        decision_id = f"decision_{safe_id(task_id)}_{safe_id(source_id)}"
-        if decision_id in used:
-            decision_id = f"{decision_id}_{index}"
-        used.add(decision_id)
-        question = item.get("question")
-        reason = item.get("reason")
-        if not isinstance(question, str) or not question.strip():
-            raise ResultBuildError(f"ambiguity {source_id} has no question")
-        if not isinstance(reason, str) or not reason.strip():
-            raise ResultBuildError(f"ambiguity {source_id} has no reason")
-        affected = item.get("affected_object_ids", [])
-        options = item.get("options", [])
-        if not isinstance(affected, list) or not all(isinstance(v, str) for v in affected):
-            raise ResultBuildError(f"ambiguity {source_id} affected_object_ids is invalid")
-        if not isinstance(options, list) or not all(isinstance(v, str) for v in options):
-            raise ResultBuildError(f"ambiguity {source_id} options is invalid")
-        result.append(
-            {
-                "schema_version": 2,
-                "decision_id": decision_id,
-                "scope": "WORKSTREAM",
-                "workstream_id": workstream_id,
-                "source_task_id": task_id,
-                "category": str(item.get("category") or "CLASSIFICATION"),
-                "question": question.strip(),
-                "reason": reason.strip(),
-                "affected_records": affected,
-                "available_options": options,
-                "recommended_option": item.get("recommended_option"),
-                "blocking": bool(item.get("blocking", True)),
-            }
-        )
-    return result
-
-
-def build_summary(classification: dict[str, Any]) -> tuple[str, list[str]]:
-    summary = classification.get("summary")
-    if not isinstance(summary, dict):
-        raise ResultBuildError("classification summary is missing")
-    execution_summary = (
-        f"完成组分与残基分类：{summary.get('model_count', 0)} 个模型、"
-        f"{summary.get('chain_count', 0)} 条链、{summary.get('component_count', 0)} 个组分、"
-        f"{summary.get('residue_count', 0)} 个残基；"
-        f"blocking 歧义 {summary.get('blocking_ambiguity_count', 0)} 项。"
-    )
-    key_findings = [
-        (
-            "残基分类："
-            f"标准 {summary.get('standard_residue_count', 0)}，"
-            f"相连非标准 {summary.get('covalently_linked_nonstandard_count', 0)}，"
-            f"独立非标准 {summary.get('independent_nonstandard_count', 0)}，"
-            f"溶剂 {summary.get('solvent_count', 0)}，"
-            f"离子 {summary.get('ion_count', 0)}，"
-            f"未知 {summary.get('unknown_count', 0)}。"
-        ),
-        (
-            "连接证据："
-            f"显式连接 {len(classification.get('explicit_connections', []))}，"
-            f"几何共价候选 {len(classification.get('covalent_candidates', []))}，"
-            f"配位候选 {len(classification.get('coordination_candidates', []))}。"
-        ),
-        f"分类 outcome：{classification.get('outcome_code')}",
-    ]
-    return execution_summary, key_findings
-
-
-def output_conflict(path: Path, task_id: str) -> None:
-    if not path.exists():
-        return
-    if path.is_symlink() or not path.is_file():
-        raise ResultBuildError(f"output path is not a regular file: {path}")
-    old = load_yaml(path)
-    if not isinstance(old, dict) or old.get("task_id") != task_id:
-        raise ResultBuildError(f"output belongs to another task and will not be overwritten: {path}")
+        raise ResultBuildError(f"subagent_result validation failed: {details}")
 
 
 def build_result(
     task_path: Path,
     classification_path: Path,
+    confirmation_path: Path,
     report_path: Path,
+    model_scope_path: Path,
+    detail_paths: list[Path],
     contracts_dir: Path,
     classification_schema: Path,
+    confirmation_schema: Path,
+    output_path: Path | None = None,
 ) -> dict[str, Any]:
-    ensure_regular_file(task_path, "task")
-    ensure_regular_file(classification_path, "classification result data")
-    ensure_regular_file(report_path, "classification report")
-
-    schemas, store = load_schema_bundle(contracts_dir)
     task = load_yaml(task_path)
-    if not isinstance(task, dict):
-        raise ResultBuildError("task.yaml is not a mapping")
-    validate_document(task, "subagent_task.schema.yaml", schemas, store)
-    validate_task_semantics(task)
-
+    _validate_task(task)
     classification = load_yaml(classification_path)
-    if not isinstance(classification, dict):
-        raise ResultBuildError("classification result data is not a mapping")
-    validate_local_classification(classification, classification_schema)
+    confirmations = load_yaml(confirmation_path)
+    model_scope = load_yaml(model_scope_path)
+    validate_document(classification, classification_schema)
+    validate_document(confirmations, confirmation_schema)
 
-    if classification.get("task_id") != task.get("task_id"):
-        raise ResultBuildError("classification task_id does not match task.yaml")
-    if classification.get("workstream_id") != task.get("workstream_id"):
-        raise ResultBuildError("classification workstream_id does not match task.yaml")
+    all_business_paths = [classification_path, confirmation_path, report_path, model_scope_path, *detail_paths]
+    _enforce_permissions(task, all_business_paths, output_path)
+    task_id = str(task["task_id"])
+    workstream_id = str(task["workstream_id"])
+    input_record = _input_structure_record(task, model_scope)
 
-    project_root = Path(task["project_root"]).resolve()
-    if not project_root.is_dir():
-        raise ResultBuildError(f"project_root is not a directory: {project_root}")
-
-    details = check_detail_paths(
-        task,
-        project_root,
-        classification_path,
-        report_path,
-    )
-    input_record = find_input_record(task, project_root, classification)
-    input_actual = resolve_project_path(project_root, input_record["path"])
-    enforce_task_permissions(
-        task,
-        project_root,
-        input_actual,
-        [classification_path.resolve(), report_path.resolve()],
-    )
-
-    report_record = file_record(
-        report_path,
-        str(details["report_file"]),
-        task["task_id"],
-        "component_and_residue_classification_report",
-    )
-    data_record = file_record(
-        classification_path,
-        str(details["result_data_file"]),
-        task["task_id"],
-        "component_and_residue_classification_result_data",
-    )
-
-    warnings = warning_objects(
-        classification.get("warnings", []),
-        [str(details["report_file"]), str(details["result_data_file"])],
-    )
-    decisions = confirmation_items(
-        classification.get("ambiguities", []),
-        task["task_id"],
-        task["workstream_id"],
-    )
-    execution_summary, key_findings = build_summary(classification)
-    outcome = classification.get("outcome_code")
-    allowed_success = {
-        "CLASSIFIED_CLEAR",
-        "CLASSIFIED_WITH_WARNINGS",
-        "CLASSIFICATION_DECISION_REQUIRED",
+    role_by_name = {
+        "model_scope.yaml": "classification_model_scope",
+        "classification_observations.yaml": "classification_observations",
+        "reference_manifest.yaml": "classification_reference_manifest",
+        "possible_connections_result.yaml": "possible_connections_result",
+        "possible_coordination_result.yaml": "possible_coordination_result",
+        "confirmation_requests.yaml": "classification_confirmation_requests",
+        "classification_result.yaml": "classification_result",
+        "classification_report.md": "classification_report",
     }
-    if outcome not in allowed_success:
-        raise ResultBuildError(
-            f"classification outcome cannot be wrapped as successful result: {outcome}"
-        )
-    blocking_decisions = [item for item in decisions if item["blocking"]]
-    if outcome == "CLASSIFICATION_DECISION_REQUIRED" and not blocking_decisions:
-        raise ResultBuildError(
-            "CLASSIFICATION_DECISION_REQUIRED requires at least one blocking confirmation item"
-        )
-    if outcome != "CLASSIFICATION_DECISION_REQUIRED" and blocking_decisions:
-        raise ResultBuildError(
-            f"outcome {outcome} is inconsistent with blocking classification decisions"
-        )
+    unique_paths: list[Path] = []
+    seen: set[Path] = set()
+    for path in all_business_paths:
+        resolved = path.resolve()
+        if resolved not in seen:
+            unique_paths.append(resolved)
+            seen.add(resolved)
+    output_records = [
+        _file_record(path, task_id, role_by_name.get(path.name, "classification_detail"))
+        for path in unique_paths
+    ]
 
-    recommendation = (
-        "暂停并解析 blocking classification decisions；完成后重新请求 structure_preparation_workflow。"
-        if blocking_decisions
-        else "进入 1.3 chain_and_component_selection。"
-    )
+    decision_items = _confirmation_items(confirmations, task_id, workstream_id)
+    pending = classification["result_status"] == "PENDING_USER_CONFIRMATION"
+    if pending != bool(decision_items):
+        raise ResultBuildError("classification_result and confirmation_requests are inconsistent")
+    outcome = "CLASSIFICATION_DECISION_REQUIRED" if pending else "CLASSIFIED_CLEAR"
+    summary_counts = classification.get("summary", {})
+    relations = classification.get("confirmed_relations", [])
+    key_findings = [
+        f"selected model: {classification['selected_model_id']}",
+        f"chain groups: {summary_counts.get('chain_group_count', len(classification.get('chain_groups', [])))}",
+        f"confirmed covalent connections: {sum(1 for relation in relations if relation.get('relation_type') == 'COVALENT_CONNECTION')}",
+        f"confirmed metal coordination relations: {sum(1 for relation in relations if relation.get('relation_type') == 'METAL_COORDINATION')}",
+        f"pending confirmations: {len(decision_items)}",
+    ]
     component_result = {
         "skill_name": SKILL_NAME,
         "status": "DONE",
-        "summary": execution_summary,
+        "summary": "Completed the full 1.2 model/component/residue classification scan."
+        if not pending
+        else "Completed the full 1.2 scan and accumulated unresolved items for Manager confirmation.",
         "outcome_code": outcome,
         "key_findings": key_findings,
-        "created_files": [report_record, data_record],
+        "created_files": output_records,
         "modified_files": [],
-        "validated_files": [input_record],
-        "warnings": warnings,
+        "validated_files": [input_record, *output_records],
+        "warnings": [],
         "failure": None,
-        "detail_files": details,
+        "detail_files": {
+            "log_file": task.get("detail_output_paths", {}).get("log_file"),
+            "report_file": str(report_path),
+            "result_data_file": str(classification_path),
+        },
     }
     result = {
         "schema_version": 2,
-        "task_id": task["task_id"],
-        "workstream_id": task["workstream_id"],
+        "task_id": task_id,
+        "workstream_id": workstream_id,
         "task_unit_mode": "VALIDATOR",
         "status": "DONE",
-        "execution_summary": execution_summary,
+        "execution_summary": component_result["summary"],
         "operation_result": None,
         "validation_result": component_result,
         "artifact_candidates": [],
-        "confirmation_items": decisions,
-        "warnings": warnings,
+        "confirmation_items": decision_items,
+        "warnings": [],
         "failure": None,
-        "next_step_recommendation": recommendation,
+        "next_step_recommendation": "Pause the Workstream and resolve all classification confirmation items."
+        if pending
+        else "Return to structure_preparation_workflow for the next execution decision.",
     }
-    validate_document(result, "subagent_result.schema.yaml", schemas, store)
+    _validate_shared(result, contracts_dir)
     return result
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    skill_root = Path(__file__).resolve().parents[1]
-    parser.add_argument("--task", required=True, type=Path)
-    parser.add_argument("--classification", required=True, type=Path)
-    parser.add_argument("--report", required=True, type=Path)
-    parser.add_argument("--contracts-dir", required=True, type=Path)
-    parser.add_argument(
-        "--classification-schema",
-        type=Path,
-        default=skill_root / "schemas/classification_outputs.schema.yaml",
-    )
-    parser.add_argument("--output", type=Path)
+    parser.add_argument("--task", type=Path, required=True)
+    parser.add_argument("--classification", type=Path, required=True)
+    parser.add_argument("--confirmations", type=Path, required=True)
+    parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--model-scope", type=Path, required=True)
+    parser.add_argument("--detail", type=Path, action="append", default=[])
+    parser.add_argument("--contracts-dir", type=Path, required=True)
+    parser.add_argument("--classification-schema", type=Path, required=True)
+    parser.add_argument("--confirmation-schema", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
     return parser
 
 
-def main() -> int:
-    args = build_parser().parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     try:
         result = build_result(
-            args.task.resolve(),
-            args.classification.resolve(),
-            args.report.resolve(),
-            args.contracts_dir.resolve(),
-            args.classification_schema.resolve(),
+            args.task,
+            args.classification,
+            args.confirmations,
+            args.report,
+            args.model_scope,
+            args.detail,
+            args.contracts_dir,
+            args.classification_schema,
+            args.confirmation_schema,
+            args.output,
         )
-        if args.output:
-            output = args.output.resolve()
-            task = load_yaml(args.task.resolve())
-            project_root = Path(task["project_root"]).resolve()
-            permissions = task.get("permissions", {})
-            if path_allowed(output, permissions.get("forbidden_paths", []), project_root):
-                raise ResultBuildError(
-                    "subagent wrapper must not write shared result into task forbidden paths"
-                )
-            if not path_allowed(output, permissions.get("allowed_write_paths", []), project_root):
-                raise ResultBuildError(
-                    "subagent wrapper output is outside task allowed_write_paths"
-                )
-            output_conflict(output, result["task_id"])
-            atomic_yaml(output, result)
-        print(json.dumps(result, ensure_ascii=False))
-        return 0
-    except ResultBuildError as error:
-        print(json.dumps({"status": "FAILED", "error": str(error)}, ensure_ascii=False), file=sys.stderr)
+        _atomic_yaml(args.output, result)
+    except (ResultBuildError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
-    except Exception as error:
-        print(
-            json.dumps(
-                {"status": "FAILED", "error": f"internal failure: {error}"},
-                ensure_ascii=False,
-            ),
-            file=sys.stderr,
-        )
-        return 2
+    return 0
 
 
 if __name__ == "__main__":

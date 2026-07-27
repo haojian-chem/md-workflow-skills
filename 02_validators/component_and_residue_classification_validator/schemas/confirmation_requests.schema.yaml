@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: confirmation_requests.schema.yaml
+title: Classification confirmation requests
+type: object
+additionalProperties: false
+required: [schema_version, status, requests]
+properties:
+  schema_version: {const: '1.0'}
+  status: {enum: [NO_CONFIRMATION_REQUIRED, USER_CONFIRMATION_REQUIRED]}
+  requests:
+    type: array
+    items:
+      type: object
+      required: [request_index, request_type, source, subject, allowed_decisions]
+      properties:
+        request_index: {type: integer, minimum: 1}
+        request_type: {type: string, minLength: 1}
+        source: {type: string, minLength: 1}
+        definition_index: {type: integer, minimum: 1}
+        label: {type: [string, 'null']}
+        subject: {type: object, additionalProperties: true}
+        allowed_decisions:
+          type: array
+          minItems: 1
+          items: {type: string, minLength: 1}
+      additionalProperties: false

@@ -1,0 +1,186 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: classification_observations.schema.yaml
+title: Classification observations
+type: object
+additionalProperties: false
+required: [schema_version, tool, run_context, entities, chain_groups, residue_records, missing_residue_checks, unresolved_observations, summary]
+properties:
+  schema_version: {const: '1.0'}
+  tool: {$ref: '#/$defs/tool'}
+  run_context:
+    type: object
+    additionalProperties: false
+    required: [input_structure_path, input_structure_sha256, source_format, selected_model_id, classification_mode]
+    properties:
+      input_structure_path: {type: string, minLength: 1}
+      input_structure_sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+      source_format: {enum: [PDB, MMCIF, AF3_CIF]}
+      selected_model_id: {type: string, minLength: 1}
+      classification_mode: {enum: [REGISTRY, FORCE_FIELD_ANALYSIS]}
+  entities:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [entity_id, entity_type, polymer_type, source_chain_ids]
+      properties:
+        entity_id: {type: [string, 'null']}
+        entity_type: {enum: [POLYMER, BRANCHED, NONPOLYMER, WATER, UNKNOWN]}
+        polymer_type: {type: [string, 'null']}
+        source_chain_ids:
+          type: array
+          items: {type: [string, 'null']}
+  chain_groups:
+    type: array
+    items: {$ref: '#/$defs/chain_group'}
+  residue_records:
+    type: array
+    items: {$ref: '#/$defs/residue_record'}
+  missing_residue_checks:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [chain_index, source_chain_id, status, reason, evidence_types, missing_residue_count, unresolved_count]
+      properties:
+        chain_index: {type: [integer, 'null'], minimum: 1}
+        source_chain_id: {type: [string, 'null']}
+        status: {enum: [MISSING_RESIDUES_FOUND, MISSING_RESIDUES_UNRESOLVED, NO_MISSING_RESIDUES, NOT_PERFORMED]}
+        reason: {type: [string, 'null']}
+        evidence_types:
+          type: array
+          items: {type: string}
+        missing_residue_count: {type: integer, minimum: 0}
+        unresolved_count: {type: integer, minimum: 0}
+  unresolved_observations:
+    type: array
+    items:
+      type: object
+      required: [issue_type, resolution_status]
+      properties:
+        issue_type: {type: string, minLength: 1}
+        resolution_status: {const: PENDING_CONFIRMATION}
+      additionalProperties: true
+  summary:
+    type: object
+    additionalProperties: true
+    required: [entity_count, chain_group_count, observed_residue_count, recorded_residue_count, missing_residue_count, unresolved_observation_count, classification_counts, conformation_counts, heavy_atom_check_counts]
+$defs:
+  tool:
+    type: object
+    additionalProperties: false
+    required: [name, version]
+    properties:
+      name: {const: classify_structure}
+      version: {type: string, minLength: 1}
+  source_resid:
+    type: object
+    additionalProperties: false
+    required: [number, insertion_code]
+    properties:
+      number: {type: [string, 'null']}
+      insertion_code: {type: [string, 'null']}
+  classification:
+    type: object
+    required: [polymer_class, topology_class, resolution_status, primary_source, ccd_id, evidence]
+    properties:
+      polymer_class: {enum: [POLYMER, BRANCHED, NONPOLYMER, WATER, null]}
+      topology_class: {enum: [STANDARD_RESIDUE, COVALENTLY_LINKED_NONSTANDARD, INDEPENDENT_NONSTANDARD, SOLVENT_COMPONENT, ION_COMPONENT, null]}
+      resolution_status: {enum: [RESOLVED, CONFLICT, UNRESOLVED, PENDING_CONFIRMATION]}
+      primary_source: {type: [string, 'null']}
+      ccd_id: {type: [string, 'null']}
+      evidence:
+        type: array
+        items: {type: string}
+      force_field_recognized: {type: boolean}
+      matching_rtp_files:
+        type: array
+        items: {type: string}
+      topology_relations:
+        type: array
+        items: {type: object}
+      warnings:
+        type: array
+        items: {type: string}
+    additionalProperties: true
+  conformation:
+    type: object
+    additionalProperties: false
+    required: [status, altloc_ids]
+    properties:
+      status: {enum: [SINGLE_CONFORMATION, MULTIPLE_CONFORMATIONS, NOT_APPLICABLE]}
+      altloc_ids:
+        type: array
+        items: {type: string}
+  heavy_atom_check:
+    type: object
+    required: [status, reference_type, reference_name, missing_atoms, unexpected_atoms]
+    properties:
+      status:
+        enum: [HEAVY_ATOMS_COMPLETE, MISSING_EXPECTED_HEAVY_ATOMS, UNEXPECTED_HEAVY_ATOMS, MISSING_AND_UNEXPECTED_HEAVY_ATOMS, ATOM_NAME_MAPPING_REQUIRED, REFERENCE_TEMPLATE_UNAVAILABLE, NOT_PERFORMED, NOT_APPLICABLE]
+      reference_type: {type: [string, 'null']}
+      reference_name: {type: [string, 'null']}
+      reference_path: {type: string}
+      reference_sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+      missing_atoms:
+        type: array
+        items: {type: string}
+      unexpected_atoms:
+        type: array
+        items: {type: string}
+      candidate_mappings:
+        type: array
+        items: {type: object, additionalProperties: true}
+      reason: {type: string}
+    additionalProperties: false
+  residue_record:
+    type: object
+    additionalProperties: false
+    required: [chain_index, source_chain_id, source_resid, residue_name, presence_status, source_order, entity_id, classification_observation, conformation_observation, heavy_atom_check]
+    properties:
+      chain_index: {type: [integer, 'null'], minimum: 1}
+      source_chain_id: {type: [string, 'null']}
+      source_resid: {$ref: '#/$defs/source_resid'}
+      residue_name: {type: string, minLength: 1}
+      presence_status: {enum: [OBSERVED, MISSING_EXPECTED]}
+      source_order: {type: [integer, 'null'], minimum: 1}
+      entity_id: {type: [string, 'null']}
+      sequence_position: {type: [integer, string, 'null']}
+      classification_observation: {$ref: '#/$defs/classification'}
+      conformation_observation: {$ref: '#/$defs/conformation'}
+      heavy_atom_check: {$ref: '#/$defs/heavy_atom_check'}
+  chain_group:
+    type: object
+    required: [chain_index, group_type, grouping_status, instance_count, first_source_order]
+    properties:
+      chain_index: {type: integer, minimum: 1}
+      group_type: {enum: [POLYMER_CHAIN, BRANCHED_CHAIN, PROVISIONAL_COMPONENT_GROUP, REPEATED_SMALL_MOLECULE_GROUP, SOLVENT_GROUP, ION_GROUP, MULTICHAIN_LINKED_COMPONENT, LINKED_NONSTANDARD_GROUP]}
+      grouping_status: {enum: [BASELINE, FINAL]}
+      source_chain_id: {type: [string, 'null']}
+      entity_ids:
+        type: array
+        items: {type: string}
+      polymer_types:
+        type: array
+        items: {type: string}
+      residue_name: {type: string}
+      polymer_class: {enum: [POLYMER, BRANCHED, NONPOLYMER, WATER, null]}
+      topology_class: {enum: [STANDARD_RESIDUE, COVALENTLY_LINKED_NONSTANDARD, INDEPENDENT_NONSTANDARD, SOLVENT_COMPONENT, ION_COMPONENT, null]}
+      instance_count: {type: integer, minimum: 0}
+      first_source_order: {type: integer, minimum: 1}
+      source_associations:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [polymer_chain_index, instance_count]
+          properties:
+            polymer_chain_index: {type: integer, minimum: 1}
+            instance_count: {type: integer, minimum: 1}
+      linked_polymer_chain_indices:
+        type: array
+        items: {type: integer, minimum: 1}
+      member_residues:
+        type: array
+        items: {type: object}
+    additionalProperties: false

@@ -1,0 +1,43 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: model_scope.schema.yaml
+title: Model scope result
+type: object
+additionalProperties: false
+required: [schema_version, tool, input_structure, model_count, models, selection]
+properties:
+  schema_version: {const: '1.0'}
+  tool:
+    type: object
+    additionalProperties: false
+    required: [name, version]
+    properties:
+      name: {const: inspect_model_scope}
+      version: {type: string, minLength: 1}
+  input_structure:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, source_format]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+      source_format: {enum: [PDB, MMCIF, AF3_CIF]}
+  model_count: {type: integer, minimum: 1}
+  models:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [model_id, chain_count, residue_count, atom_count]
+      properties:
+        model_id: {type: string, minLength: 1}
+        chain_count: {type: integer, minimum: 0}
+        residue_count: {type: integer, minimum: 1}
+        atom_count: {type: integer, minimum: 1}
+  selection:
+    type: object
+    additionalProperties: false
+    required: [status, selected_model_id]
+    properties:
+      status: {enum: [AUTO_SELECTED, USER_SELECTION_REQUIRED, USER_SELECTED]}
+      selected_model_id: {type: [string, 'null']}

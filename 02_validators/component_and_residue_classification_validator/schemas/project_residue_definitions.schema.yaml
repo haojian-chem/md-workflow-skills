@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: project_residue_definitions.schema.yaml
+title: Project residue definitions
+type: object
+additionalProperties: false
+required: [schema_version, residue_definitions]
+properties:
+  schema_version: {const: '1.0'}
+  residue_definitions:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [residue_name, polymer_class, topology_class]
+      properties:
+        residue_name: {type: string, minLength: 1}
+        polymer_class: {enum: [POLYMER, BRANCHED, NONPOLYMER, WATER]}
+        topology_class:
+          enum: [STANDARD_RESIDUE, COVALENTLY_LINKED_NONSTANDARD, INDEPENDENT_NONSTANDARD, SOLVENT_COMPONENT, ION_COMPONENT]
+        ccd_id: {type: string, minLength: 1}

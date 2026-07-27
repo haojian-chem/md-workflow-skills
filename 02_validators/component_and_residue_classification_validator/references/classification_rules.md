@@ -1,207 +1,191 @@
-# 组分与残基分类规则
+# 1.2 组分与残基分类规则
 
-## 1. 分类目标
+## 1. 适用范围
 
-分类服务于后续链/组分选择和拓扑路线分流，不等同于完整结构质量验证。
+本文件只定义 `component_and_residue_classification_validator` 的局部科学与数据语义。它不定义后续链选择、altLoc 处理、结构完整性 gate、补全、质子化或拓扑生成。
 
-每个 residue/component 同时记录：
+## 2. 名称与身份
 
-- 结构身份：model、entity、chain、residue ID；
-- `polymer_class`；
-- `topology_class`；
-- `component_role`；
-- 连接证据；
-- 置信度；
-- 是否需要人工决定。
+- `residue_name`、`atom_name` 严格区分大小写并原样保留；
+- 不进行 alias、大小写归一化、正则或模糊匹配；
+- 作者残基编号保存为：
 
-不得仅用 residue name 生成最终结论。
-
-## 2. Polymer class
-
-允许：
-
-```text
-PROTEIN
-DNA
-RNA
-CARBOHYDRATE
-OTHER_POLYMER
-NONPOLYMER
-WATER
-ION
-UNKNOWN
+```yaml
+source_resid:
+  number: "145"
+  insertion_code: A
 ```
 
-优先级：
+- `source_chain_id` 保留作者链 ID；
+- `chain_index` 是 selected model 内部组分归属编号；
+- 不为 residue、atom、relation 额外生成 UUID。
 
-1. mmCIF entity/polymer 类型；
-2. PDB SEQRES 与标准主链模式；
-3. 坐标中的主链连续性；
-4. residue registry；
-5. 名称启发式。
+## 3. 分类值
 
-低优先级证据不得覆盖冲突的高优先级证据。
-
-## 3. Topology class
-
-### STANDARD_RESIDUE
-
-满足任一：
-
-- canonical registry 中的标准氨基酸、DNA 或 RNA residue；
-- alias registry 明确归入标准别名，且当前原子/聚合物上下文没有冲突。
-
-“标准”仅表示可进入标准残基路线候选，不保证任一具体力场无需额外处理。
-
-### COVALENTLY_LINKED_NONSTANDARD
-
-满足至少一种确定性证据：
-
-- mmCIF/PDB 有显式共价连接记录；
-- 非标准 residue 位于连续聚合物主链中，且两侧或一侧主链连接证据充分；
-- 已解决用户决定或上游可信记录明确确认共价连接。
-
-金属配位、氢键、盐桥和空间接触不属于此类证据。
-
-### INDEPENDENT_NONSTANDARD
-
-非标准组分没有确定共价连接到标准聚合物。它可以是配体、辅因子、游离糖、缓冲剂或其他 nonpolymer。
-
-存在金属配位时仍可保持该 topology class，并通过独立 coordination relation 表达。
-
-### SOLVENT / ION
-
-由 registry、元素组成和 entity metadata 支持。多原子离子与普通小分子存在歧义时不得仅靠名称自动分类。
-
-### UNKNOWN
-
-当前证据不足以可靠归入其他类别，或证据冲突。若影响后续选择或拓扑路线，必须生成 blocking decision。
-
-## 4. Component role
-
-允许：
+`polymer_class`：
 
 ```text
-POLYMER
-MODIFIED_POLYMER_RESIDUE
-LIGAND
-COFACTOR
-GLYCAN
-SOLVENT
-ION
-BUFFER_OR_ADDITIVE
-UNKNOWN
+POLYMER | BRANCHED | NONPOLYMER | WATER
 ```
 
-role 是功能/工作流提示，不替代 topology class。不能仅凭常见生化用途确定 role；证据不足时使用 UNKNOWN。
-
-## 5. 显式连接
-
-### mmCIF
-
-优先读取：
-
-- `_struct_conn`；
-- polymer/entity linkage；
-- branch scheme 和 glycan linkage；
-- atom/site identifiers。
-
-连接类型必须保留源字段，不把所有 `struct_conn` 行统一解释为共价键。
-
-### PDB
-
-读取：
-
-- `LINK`；
-- `SSBOND`；
-- `CONECT`；
-- SEQRES/ATOM 主链上下文。
-
-`CONECT` 对金属中心可能表示配位或软件输出习惯，必须结合元素和连接类型解释。
-
-## 6. 几何共价候选
-
-几何候选只用于发现可能缺失的连接记录。
-
-至少记录：
-
-- 两端原子和 residue；
-- 距离；
-- 使用的元素阈值；
-- 是否跨 residue/component；
-- 是否与主链连续性一致；
-- altLoc/occupancy 影响；
-- candidate confidence。
-
-不得因为距离短于阈值直接将对象改为 `COVALENTLY_LINKED_NONSTANDARD`。
-
-## 7. 金属配位候选
-
-金属配位与共价拓扑分类正交。
-
-- 显式 coordination record：记录为 `EXPLICIT_COORDINATION`；
-- 仅满足距离规则：记录为 `GEOMETRIC_COORDINATION_CANDIDATE`；
-- 受 altLoc、occupancy 或边界条件影响：记录为 `AMBIGUOUS_CLOSE_CONTACT`。
-
-配位关系可以跨标准 residue、非标准 residue、离子或水，但不自动改变任何一方的 topology class。
-
-## 8. 聚合物连续性
-
-蛋白质主链连续性至少使用 C–N 连接和 residue 顺序；核酸使用糖磷酸骨架连接。只依赖 residue 编号连续不充分。
-
-以下情况需要降低置信度：
-
-- insertion code；
-- 缺失主链原子；
-- 多模型差异；
-- altLoc 覆盖连接原子；
-- 非常规环化或交联；
-- 晶体对称相关连接。
-
-## 9. 多模型
-
-- 各模型组分和分类一致：保留全部统计，给 non-blocking warning；
-- 分类不同：在未指定模型时生成 blocking decision；
-- task 已指定模型：仅对该模型作 gate 分类，其他模型可作为附录摘要。
-
-## 10. 置信度
+`topology_class`：
 
 ```text
-HIGH
-MEDIUM
-LOW
+STANDARD_RESIDUE
+COVALENTLY_LINKED_NONSTANDARD
+INDEPENDENT_NONSTANDARD
+SOLVENT_COMPONENT
+ION_COMPONENT
 ```
 
-建议：
+合法组合：
 
-- HIGH：显式 entity/connection + 一致坐标证据；
-- MEDIUM：聚合物连续性或 registry + 无冲突证据；
-- LOW：名称/距离启发式、缺失关键原子或证据冲突。
+| polymer_class | topology_class |
+|---|---|
+| POLYMER | STANDARD_RESIDUE, COVALENTLY_LINKED_NONSTANDARD |
+| BRANCHED | STANDARD_RESIDUE, COVALENTLY_LINKED_NONSTANDARD, INDEPENDENT_NONSTANDARD |
+| NONPOLYMER | COVALENTLY_LINKED_NONSTANDARD, INDEPENDENT_NONSTANDARD, SOLVENT_COMPONENT, ION_COMPONENT |
+| WATER | SOLVENT_COMPONENT |
 
-LOW 且影响后续路线时必须请求决定。
+未解决状态通过 `resolution_status: UNRESOLVED | CONFLICT | PENDING_CONFIRMATION` 表达。
 
-## 11. 阻断与非阻断
+## 4. 项目定义
 
-阻断：
+`project_residue_definitions.yaml` 使用列表。每个精确 `residue_name` 只能定义一次：
 
-- 会改变链/组分保留对象；
-- 会改变标准/相连非标准/独立非标准拓扑路线；
-- 模型选择改变分类；
-- 输入标识不足以唯一引用对象。
+```yaml
+schema_version: "1.0"
+residue_definitions:
+  - residue_name: HEM
+    polymer_class: NONPOLYMER
+    topology_class: INDEPENDENT_NONSTANDARD
+    ccd_id: HEM
+```
 
-非阻断：
+同一名称重复定义是确定性配置错误。定义适用于 selected model 中全部精确同名实例；实例差异由关系结果表达。
 
-- 仅影响注释而不影响对象选择；
-- 配位候选未改变共价分类；
-- 可在下一专门 Validator 中处理的 altLoc/occupancy 提示。
+## 5. 分类来源
 
-## 12. 禁止推断
+### REGISTRY
 
-不得：
+```text
+project exact definition
+→ Skill exact registry
+→ entity/polymer context
+```
 
-- 将 HETATM 等同于独立非标准组分；
-- 将 ATOM 等同于标准 residue；
-- 将金属近距离接触等同于共价键；
-- 将 residue name 相同等同于化学状态相同；
-- 将具体力场支持与本分类结果混为一谈；
-- 将未知对象自动删除或忽略。
+项目与 Skill 同时定义且分类标签冲突时累计人工确认，不自动覆盖。
+
+### FORCE_FIELD_ANALYSIS
+
+```text
+project exact definition
+→ exact RTP residue block
+→ unresolved-only Skill registry fallback
+→ entity/polymer context
+```
+
+RTP 文件名、`residuetypes.dat` 和名称启发式均不参与力场识别。
+
+## 6. Force field RTP
+
+- 扫描指定 root 下所有 `*.rtp`；
+- residue block 名称精确匹配；
+- 非水模板重复定义需要人工确认；
+- 多套水模型可共存，1.2 不选择水模型；
+- 标准残基重原子检查使用选定 RTP block 的 `[ atoms ]`；
+- terminal residue 使用显式 terminal mapping 指向端基 RTP block；
+- v1 不应用 `.n.tdb/.c.tdb`；
+- `specbond.dat` 不参与当前结构连接判定。
+
+## 7. CCD
+
+在 REGISTRY 模式下，标准与非标准残基均使用 CCD；在 FORCE_FIELD_ANALYSIS 下，非标准残基使用 CCD。
+
+CCD ID 只来自显式 `ccd_id` 或精确 residue name。获取顺序：项目 snapshot、本地指定目录、共享 cache、按策略下载。项目 snapshot 是本次结果的权威参考。
+
+重原子比较基于 atom identity set，排除 H/D。备用名称只产生候选映射，不自动改名。
+
+## 8. 缺失残基
+
+- PDB/mmCIF 比较预期序列与实际坐标残基；
+- residue numbering gap 不能单独证明缺失；
+- AF3 默认不检查；需要输入 JSON、FASTA 或等价序列依据；
+- 仅记录缺失残基，不标注缺失区域位置类型；
+- 缺失残基必须具有作者 `source_resid.number` 才进入正式 residue record；
+- 编号或 chain 归属无法确定时完成全扫描后统一确认。
+
+## 9. 重原子与 altLoc
+
+重原子结果只记录完整、缺失、多出、映射、模板不可用或未执行，不分类为主链/侧链。
+
+存在多个 altLoc 的 residue：
+
+```text
+MULTIPLE_CONFORMATIONS
+```
+
+并跳过重原子检查。关系几何也不从多个构象中选最短距离或平均坐标。
+
+## 10. 可能共价连接
+
+项目只定义已知精确 atom pair 与距离范围。工具枚举全部实例组合。
+
+状态：
+
+```text
+CONFIRMED_BY_STRUCTURE
+GEOMETRY_SUPPORTED_CANDIDATE
+NOT_GEOMETRICALLY_SUPPORTED
+CONNECTION_DEFINITION_CONFLICT
+PARTNER_NOT_FOUND
+ATOM_NOT_FOUND
+GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS
+```
+
+显式共价且距离符合可直接确认；仅几何支持必须人工确认。定义文件本身不创建连接。
+
+已确认关系可把非标准组分提升为 `COVALENTLY_LINKED_NONSTANDARD`。标准残基默认保持 `STANDARD_RESIDUE`。
+
+## 11. 金属配位
+
+项目定义 metal、donor、元素、距离范围和：
+
+```yaml
+topology_effect:
+  promote_nonstandard_to_linked: true | false
+```
+
+状态：
+
+```text
+CONFIRMED_BY_STRUCTURE
+GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE
+NOT_GEOMETRICALLY_SUPPORTED
+COORDINATION_DEFINITION_CONFLICT
+PARTNER_NOT_FOUND
+ATOM_NOT_FOUND
+ELEMENT_MISMATCH
+ELEMENT_UNRESOLVED
+GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS
+```
+
+多个 donor 配位同一 metal 是合法的，不自动构成冲突。关系始终为 `METAL_COORDINATION`。
+
+当 topology effect 为 true 且关系由结构显式确认或经用户确认时，非标准组分可提升为 linked。例如 HEM 的 Fe 与蛋白质 CYS:SG 或 HIE:NE2 的 topology-forming 配位。Mg、Zn 是否产生该效果由项目定义明确指定。
+
+## 12. Chain groups
+
+- polymer/branched chain 先按源结构顺序分配稳定 baseline index；
+- 普通水、离子按精确名称汇总；
+- 条件一致的重复小分子可汇总；
+- 异常或参与关系的实例单独记录；
+- 与一条 polymer chain 相连的非标准组分最终并入该 index；
+- 与多条 chain 相连时独立成组并记录 linked indices；
+- source association 只表示原文件归属，不代表 topology 归属。
+
+## 13. 扫描与确认
+
+技术错误立即失败。科学歧义、单 component 参考失败、编号/映射问题完成所有可执行检查后统一汇总。
+
+待确认项在未解决前不得产生 topology effect。存在确认项时可输出 `PENDING_USER_CONFIRMATION` 的整合结果，但 Workflow 不得把 1.2 判为已通过。
