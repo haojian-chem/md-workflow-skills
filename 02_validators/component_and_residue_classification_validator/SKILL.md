@@ -1,45 +1,55 @@
 ---
 name: component_and_residue_classification_validator
-description: 读取结构准备阶段的 PDB、mmCIF 或 AlphaFold 3 CIF，识别模型、链、组分、残基类别、显式共价连接、几何共价候选和金属配位候选，生成结构化分类报告及必要的用户决策请求。该 Validator 不修改结构，不执行链选择，也不把配位关系误判为共价连接。
+description: 对结构准备阶段的一个 PDB、mmCIF 或 AlphaFold 3 CIF 先解析 model 范围，再对已选 model 完成精确、区分大小写的 entity、chain group、残基、缺失残基、重原子、可能共价连接和金属配位检查，生成统一分类结果与待用户确认事项；不修改结构、不执行链选择，也不把金属配位伪写成普通共价键。
 ---
 
 # 目标
 
-为 `structure_preparation_workflow` 的 1.2 子步骤生成可供链与组分选择使用的分类证据：
+为 `structure_preparation_workflow` 的 1.2 子步骤生成可复现的分类证据：
 
-- 识别模型、实体、链和连续聚合物片段；
-- 区分标准残基、相连非标准残基、独立非标准组分、水、离子和未知对象；
-- 单独记录显式共价连接、几何共价候选和金属配位候选；
-- 标记会影响后续选择或拓扑路线的歧义；
-- 写入详细分类报告和机器可读结果数据；
-- 按 `subagent_result.schema.yaml` 返回精简 Validator result。
+- 先确定唯一 selected model；
+- 解析 selected model 中的 entity、源 chain、残基和原子事实；
+- 按项目定义、Skill registry、entity context 或指定力场 RTP 生成两个正交分类标签；
+- 检查 PDB/mmCIF 缺失残基，并在用户提供输入序列时检查 AF3；
+- 依据 CCD 或 RTP 核验单构象残基的重原子；
+- 按项目明确提供的原子对检查可能共价连接和金属配位；
+- 应用已经确认的 topology-forming relation，生成最终 `chain_groups`；
+- 完成所有可执行检查后统一返回待用户确认事项；
+- 按 `03_contracts/subagent_result.schema.yaml` 返回精简 Validator result。
+
+详细科学规则只由：
+
+```text
+references/classification_rules.md
+```
+
+定义。
 
 # 职责边界
 
 负责：
 
-- 读取 task 授权的一个 STRUCTURE artifact candidate；
-- 解析 PDB、PDBx/mmCIF 或 AF3 CIF 的结构层级和连接记录；
-- 按 `references/classification_rules.md` 分类链、组分和残基；
-- 按 registries 识别标准别名、共价上下文和配位候选；
-- 区分 Validator 执行状态与分类 outcome；
-- 对阻断歧义返回 `confirmation_items`；
-- 在授权业务目录写分类报告、结果数据和必要日志。
+- 读取 task 授权的一个当前 STRUCTURE 文件；
+- 核验输入路径、SHA-256、格式和 selected model；
+- 调用本 Skill 的确定性脚本，不由 LLM 逐原子模拟；
+- 写入 1.2 的机器可读输出、Markdown 报告和必要日志；
+- 将 `confirmation_requests.yaml` 转换为共享 `confirmation_items`；
+- 区分技术失败与科学决定请求。
 
 不负责：
 
-- 修改、重排、删除或补全结构；
+- 修改、重排、删除、补全或质子化结构；
 - 选择保留哪些链、配体、水或离子；
 - 处理 altLoc/occupancy；
-- 判断缺失残基或重原子完整性；
-- 分配质子化状态；
-- 生成拓扑或判断具体力场一定支持某残基；
-- 把距离接近直接升级为确定共价键；
-- 把金属配位关系归入共价相连非标准残基；
+- 判断后续结构完整性 gate；
+- 生成或整合拓扑；
+- 使用 `specbond.dat` 判断当前结构是否建键；
+- 自动应用 `.n.tdb`、`.c.tdb` 或 terminal patch；
+- 自动选择水模型；
 - 修改 `00_project_state/**` 或 `00_project_records/**`；
-- 直接向用户提问或创建其他 Agent。
+- 直接向用户提问、创建 Agent 或选择下一 Workflow task。
 
-# 输入
+# 运行输入
 
 必须接收符合：
 
@@ -49,35 +59,55 @@ description: 读取结构准备阶段的 PDB、mmCIF 或 AlphaFold 3 CIF，识�
 
 的 `VALIDATOR` task unit。
 
-任务至少应提供：
+任务至少提供：
 
 - `task_id`、`workstream_id`、`workflow_name`；
 - `task_unit.mode: VALIDATOR`；
 - validator Skill ref 指向本 Skill；
-- 项目根和工作目录；
-- 一个当前有效 STRUCTURE 文件记录；
-- 上游 `source_recognition` 摘要及报告路径；
+- 项目根与 1.2 工作目录；
+- 唯一、已登记的 STRUCTURE 文件记录；
+- `source_recognition` 的格式结论和输入 SHA-256；
 - allowed read/write paths；
-- forbidden paths，包含项目状态和记录目录；
-- 分类报告和结果数据输出路径；
-- 已解决的模型、链或特殊组分解释决定，如有。
+- forbidden paths，包括管理目录；
+- 本次运行使用的分类模式；
+- 必需的输出路径。
 
-没有唯一可定位的输入结构时返回 `BLOCKED`，不得无界扫描项目寻找结构。
-
-# 输出文件
-
-默认写入：
+条件输入：
 
 ```text
-01_structure_preparation/02_component_and_residue_classification/
-├── component_and_residue_classification_report.yaml
-├── classification_result.yaml
-└── classification.log              # 可选
+project_residue_definitions.yaml
+possible_connections.yaml
+possible_coordination.yaml
+FORCE_FIELD_ANALYSIS 的 force-field root 与 terminal-template mappings
+AF3 输入 JSON、FASTA 或其他序列参考
+CCD 本地参考目录、共享 cache 和 retrieval policy
+已记录的模型选择或上一轮 confirmation decisions
 ```
 
-- report：面向审查的详细分类证据；
-- result data：符合本 Skill 本地 schema 的机器可读分类数据；
-- log：仅记录解析器、警告和技术诊断，不复制完整结构。
+未提供项目残基定义、共价定义或配位定义不是错误；相应检查记录为未提供或未执行。
+
+# 输出目录
+
+默认业务目录：
+
+```text
+01_structure_preparation/
+└── 02_component_and_residue_classification/
+    ├── model_scope.yaml
+    ├── classification_observations.yaml
+    ├── reference_manifest.yaml
+    ├── relation_checks/
+    │   ├── possible_connections_result.yaml
+    │   └── possible_coordination_result.yaml
+    ├── confirmation_requests.yaml
+    ├── classification_result.yaml
+    ├── classification_report.md
+    ├── reference_data/
+    │   └── ccd/
+    └── logs/
+```
+
+不增加无业务含义的 `runs/` 层。已有有效结果不得无痕覆盖；需要重新整合或重跑时，由 Manager 为新 task 指定新修订文件路径或受控归档方案。
 
 本 Validator 不创建新的 STRUCTURE artifact candidate，也不改变输入 STRUCTURE 的 validation status。
 
@@ -85,230 +115,266 @@ description: 读取结构准备阶段的 PDB、mmCIF 或 AlphaFold 3 CIF，识�
 
 执行前确认：
 
-- task schema version 和 mode 正确；
-- task/workstream/workflow 标识存在；
-- 当前 Workflow 为 `structure_preparation_workflow`；
-- 输入结构是已登记的当前有效文件；
-- 输入为普通可读文件，不是 symlink、目录或空文件；
-- 格式属于 PDB、mmCIF 或 AF3 CIF；
-- 输出目录位于 allowed write paths；
-- `00_project_state/**` 和 `00_project_records/**` 位于 forbidden paths；
-- 适用 registries 和本地输出 schema 可读取；
-- `scripts/classify_structure.py` 及 `scripts/requirements.txt` 可用；
-- 不存在要求本 Validator 修改结构的 task 指令。
+1. task 通过共享 schema，mode、workflow 与 Skill ref 正确；
+2. 唯一结构输入位于 allowed read paths，且不是 symlink、目录或空文件；
+3. source format 为 `PDB | MMCIF | AF3_CIF`；
+4. 所有配置文件路径均明确，不无界扫描项目目录；
+5. 输出路径位于 allowed write paths，且管理目录在 forbidden paths；
+6. 本地 schemas、strict registries、脚本与依赖可读取；
+7. `FORCE_FIELD_ANALYSIS` 提供有效 force-field root；
+8. 配置中没有要求本 Validator 修改结构、绕过确认或降低 gate；
+9. 旧版 alias registry 和内置 coordination registry 不进入新版运行路径。
 
-Preflight 不通过时不写部分分类结果。
-
-# 确定性解析器
-
-实际结构解析、分类、候选连接检测和本地 schema 校验必须调用：
-
-```text
-scripts/classify_structure.py
-```
-
-不得由 LLM 在主上下文或子 Agent 中逐原子模拟解析器。
-
-基本调用：
-
-```bash
-python scripts/classify_structure.py \
-  --structure <input.pdb-or-cif> \
-  --task-id <task_id> \
-  --workstream-id <workstream_id> \
-  --report <component_and_residue_classification_report.yaml> \
-  --result-data <classification_result.yaml>
-```
-
-AF3 CIF 增加：
-
-```text
---source-label AF3_CIF
-```
-
-已有 resolved model decision 时增加：
-
-```text
---model-id <model_id>
-```
-
-解析器完成：
-
-- PDB/mmCIF/AF3 CIF 读取；
-- entity、polymer、chain、residue 和 atom 枚举；
-- PDB `LINK/SSBOND/CONECT` 与 mmCIF connection 读取；
-- registry 应用；
-- 几何共价候选和金属配位候选生成；
-- 输入 SHA-256 前后核验；
-- `classification_outputs.schema.yaml` 校验；
-- report/result data 原子写入和跨 task 覆盖保护。
-
-解析器只返回本地分类数据，不生成共享 `subagent_result`。Validator 必须读取其结构化输出，将 ambiguities 转换为 `confirmation_items`，再包装共享 result v2。
-
-# 分类层级
-
-## 模型
-
-记录：
-
-- model ID；
-- 每个模型的链、残基和原子计数；
-- 模型间组分集合是否一致；
-- 是否存在会影响分类的模型差异。
-
-多个模型本身不是执行失败。若 task 未指定模型且模型间分类结果不同，返回 blocking decision request；若分类完全一致，可报告为非阻断 warning。
-
-## 链与实体
-
-优先使用 mmCIF entity/polymer metadata；PDB 中结合 SEQRES、ATOM/HETATM、TER 和连接记录重建链与组分。
-
-每个链或独立实体至少记录：
-
-- chain/entity ID；
-- component class；
-- polymer class；
-- residue 范围和计数；
-- 标准与非标准残基计数；
-- 显式连接和候选连接；
-- 分类置信度与证据来源。
-
-## 残基
-
-每个残基输出两个正交字段：
-
-```text
-polymer_class
-topology_class
-```
-
-允许值由本地输出 schema 管理。
-
-核心 `topology_class`：
-
-- `STANDARD_RESIDUE`：规范残基或 registry 明确认可的标准别名；
-- `COVALENTLY_LINKED_NONSTANDARD`：非标准残基/组分有显式共价连接，或聚合物连续性证据充分；
-- `INDEPENDENT_NONSTANDARD`：未与聚合物形成确定共价连接的非标准组分；
-- `SOLVENT`；
-- `ION`；
-- `UNKNOWN`。
-
-金属配位不改变上述共价拓扑分类。
-
-# 连接证据优先级
-
-从高到低：
-
-1. mmCIF `struct_conn`、entity/polymer linkage 等显式记录；
-2. PDB `LINK`、`SSBOND`、必要的 `CONECT`；
-3. 聚合物序列与主链连续性证据；
-4. 原子距离形成的几何共价候选；
-5. 仅名称或文件位置推测。
-
-只有 1–3 级证据可以直接支持确定共价分类。第 4 级只能产生 `COVALENT_BOND_CANDIDATE`；若它会改变“相连/独立”分类，必须返回 decision request 或保持 `UNKNOWN`。
-
-# 配位候选
-
-按照 `references/coordination_detection_registry.yaml` 检查金属—供体原子距离。
-
-结果分为：
-
-- `EXPLICIT_COORDINATION`：源文件有明确 coordination/metal connection 记录；
-- `GEOMETRIC_COORDINATION_CANDIDATE`：仅满足距离与元素规则；
-- `AMBIGUOUS_CLOSE_CONTACT`：接近阈值或受 altLoc/occupancy 影响。
-
-配位候选单独输出：金属原子、供体原子、距离、来源、阈值和置信度。不得据此自动建立共价连接。
-
-# 决策请求
-
-以下情况通常为 blocking：
-
-- 多模型产生不同链/组分分类且未指定模型；
-- 非标准组分是否与聚合物共价相连只能由几何候选支持；
-- 同一 residue name 在当前上下文可能是标准别名，也可能是独立配体；
-- polymer/entity metadata 与 residue chemistry、backbone 或连接证据冲突；
-- 未知残基的分类会改变下一步链或组分选择；
-- 输入文件的链或 residue 标识不足以唯一引用对象。
-
-以下通常为 non-blocking warning：
-
-- 仅存在不影响分类的多模型重复；
-- 配位候选未影响共价 topology class；
-- 少量无法归属但后续可整体选择的独立溶剂/离子样对象。
-
-Validator 完成所有可执行检查后返回统一 `confirmation_items`，不直接提问。
+Preflight 技术失败时不写正式部分结果。
 
 # 执行流程
 
-1. 解析 task、权限和上游摘要；
-2. 完成 preflight 并定位确定性 parser；
-3. 调用 parser 读取结构、应用 registries 并生成 report/result data；
-4. 核验 parser exit code、输入 SHA-256 和本地 schema 结果；
-5. 汇总模型、链、组分、残基、显式连接、候选连接和 warning；
-6. 将 blocking/non-blocking ambiguities 转换为共享 `confirmation_items`；
-7. 返回符合共享 contract 的 Validator result。
+## 1. 模型范围
+
+调用：
+
+```bash
+python scripts/inspect_model_scope.py \
+  --structure <recognized_structure> \
+  --structure-sha256 <sha256> \
+  --source-format <PDB|MMCIF|AF3_CIF> \
+  --output <model_scope.yaml>
+```
+
+单 model：
+
+```text
+AUTO_SELECTED
+→ 继续完整分类
+```
+
+多 model 且尚无用户选择：
+
+```text
+USER_SELECTION_REQUIRED
+→ 不启动 classify_structure.py
+→ Validator DONE + blocking confirmation item
+```
+
+用户选择 model 后，使用相同结构和 `model_scope.yaml` 受控记录：
+
+```text
+--selected-model-id <model_id>
+```
+
+然后继续完整分类。
+
+## 2. 基础解析与分类
+
+调用：
+
+```bash
+python scripts/classify_structure.py \
+  --config <classification_config.yaml>
+```
+
+生成：
+
+```text
+classification_observations.yaml
+reference_manifest.yaml
+```
+
+分类模式：
+
+```text
+REGISTRY:
+  project definition
+  → exact Skill registry
+  → entity/polymer context
+
+FORCE_FIELD_ANALYSIS:
+  project definition
+  → exact RTP residue block
+  → unresolved-only Skill registry fallback
+  → entity/polymer context
+```
+
+名称严格区分大小写。不得调用旧 alias registry，也不得对 residue/atom name 执行 `.upper()`。
+
+基础解析必须完成：
+
+- selected model 的 entity、chain、residue、atom 读取；
+- baseline `chain_groups` 和 `chain_index`；
+- PDB/mmCIF 缺失残基检查；
+- AF3 缺失检查的显式输入序列条件；
+- single-conformation residue 重原子核验；
+- multiple-conformation residue 只记录多构象，不执行重原子比较；
+- CCD snapshot/local/cache/download 顺序与 provenance；
+- 项目/registry/force-field 冲突、RTP 重复、作者编号或 chain 归属问题的完整累计。
+
+## 3. 可能共价连接
+
+调用：
+
+```bash
+python scripts/check_possible_connections.py \
+  --config <possible_connections_check_config.yaml>
+```
+
+生成：
+
+```text
+relation_checks/possible_connections_result.yaml
+```
+
+工具对每条项目定义枚举所有精确实例组合，分别记录显式连接、距离、altLoc 状态和 topology effect candidate。它不创建键、不选择最近一对、不修改 observations。
+
+未提供 `possible_connections.yaml` 时仍生成合法 `NOT_PERFORMED` 结果，避免整合器猜测文件缺失语义。
+
+## 4. 金属配位
+
+调用：
+
+```bash
+python scripts/check_possible_coordination.py \
+  --config <possible_coordination_check_config.yaml>
+```
+
+生成：
+
+```text
+relation_checks/possible_coordination_result.yaml
+```
+
+工具必须：
+
+- 区分 metal 与 donor；
+- 核验定义元素与结构元素；
+- 单独记录显式 relation 和几何；
+- 保持 relation type 为 `METAL_COORDINATION`；
+- 原样记录 `promote_nonstandard_to_linked`；
+- 不因一个金属存在多个供体而自动报冲突；
+- 不直接修改 topology class 或 chain group。
+
+未提供定义文件时生成合法 `NOT_PERFORMED` 结果。
+
+## 5. 最终整合
+
+调用：
+
+```bash
+python scripts/build_classification_result.py \
+  --config <classification_result_build_config.yaml>
+```
+
+整合器必须：
+
+1. 核验 model、结构哈希、observations 哈希和 schema version 一致；
+2. 应用 `CONFIRMED_BY_STRUCTURE` 的共价关系；
+3. 对 topology-forming metal coordination 仅在显式确认或用户确认后应用 promotion；
+4. 读取与上一份 `confirmation_requests.yaml` 哈希绑定的已有决定；
+5. 重建最终 `chain_groups`；
+6. 写出剩余 confirmation requests；
+7. 写出 `COMPLETE` 或 `PENDING_USER_CONFIRMATION` 分类结果；
+8. 从机器可读结果渲染 Markdown 报告，不在报告中新增科学判断。
+
+首次整合通常不带 decisions。用户决定后的再次整合必须写入新修订文件，不覆盖上一轮结果。
+
+## 6. 共享 Validator result
+
+调用：
+
+```bash
+python scripts/build_subagent_result.py \
+  --task <task.yaml> \
+  --classification-result <classification_result.yaml> \
+  --confirmation-requests <confirmation_requests.yaml> \
+  --report <classification_report.md> \
+  --log <classification.log> \
+  --output <subagent_result.yaml>
+```
+
+wrapper 必须同时验证本地结果 schema 和共享 `subagent_result v2` contract。
+
+# 完整扫描与阻断规则
+
+模型范围是完整解析前的独立 barrier。
+
+selected model 确定后：
+
+- 不在第一项科学歧义处停止；
+- 完成所有仍可执行的 residue、CCD/RTP、missing-residue、connection 和 coordination 检查；
+- 将所有需用户处理的问题统一写入 `confirmation_requests.yaml`；
+- 科学决定请求可以对应 `status: DONE` 的 Validator execution，因为检查本身已经成功完成。
+
+立即技术失败包括：
+
+```text
+输入不可读取或哈希失配
+selected model 不存在
+配置/schema 无效
+force-field mode 缺少有效 RTP 来源
+结构或参考文件系统性不可解析
+输出路径未授权或无法一致写入
+跨文件 hash/model 引用不一致
+```
+
+累计确认事项包括：
+
+```text
+项目定义与 Skill/力场分类冲突
+非水 RTP 精确名称重复定义
+端基 RTP 映射歧义
+几何支持的共价或配位候选
+显式 relation 与项目定义冲突
+缺失残基 source_resid 或 chain_index 无法确定
+AF3/序列参考冲突
+多个不同内容的有效本地 CCD 候选
+```
+
+明确缺失重原子、单个 CCD 获取失败、partner/atom 不存在、无显式关系的元素异常、几何不支持和多构象事实只记录，不自动形成确认项。
 
 # Outcome codes
 
-- `CLASSIFIED_CLEAR`：分类完成，无 blocking 歧义；
-- `CLASSIFIED_WITH_WARNINGS`：分类完成，仅有非阻断 warning；
-- `CLASSIFICATION_DECISION_REQUIRED`：Validator 成功执行，但存在 blocking 分类决定；
-- `INPUT_SCOPE_INVALID`：输入结构不唯一、未授权或 task 不完整；
-- `UNSUPPORTED_OR_UNPARSEABLE_STRUCTURE`：格式不受支持或无法可靠解析；
-- `VALIDATOR_INTERNAL_FAILURE`：解析器或写报告发生内部错误。
+```text
+MODEL_SELECTION_REQUIRED
+CLASSIFIED_CLEAR
+CLASSIFICATION_DECISION_REQUIRED
+INPUT_SCOPE_INVALID
+UNSUPPORTED_OR_UNPARSEABLE_STRUCTURE
+REFERENCE_CONFIGURATION_INVALID
+VALIDATOR_INTERNAL_FAILURE
+```
 
-`CLASSIFICATION_DECISION_REQUIRED` 的 execution status 可以是 `DONE`，因为检查已经完成；Manager 根据 confirmation items 将 Workstream 暂停。不得把科学歧义伪装成 Validator 执行失败。
+语义：
+
+- `MODEL_SELECTION_REQUIRED`：model 枚举成功，但多 model 尚未选择；
+- `CLASSIFIED_CLEAR`：完整结果为 `COMPLETE`；
+- `CLASSIFICATION_DECISION_REQUIRED`：完整扫描完成，结果为 `PENDING_USER_CONFIRMATION`；
+- 其余代码表示技术失败，不允许伪造正式分类通过。
 
 # Gate 建议
 
-- `CLASSIFIED_CLEAR | CLASSIFIED_WITH_WARNINGS`：建议进入 1.3 `chain_and_component_selection`；
-- `CLASSIFICATION_DECISION_REQUIRED`：建议暂停并解析 blocking decisions；
-- 输入或执行失败：不允许进入 1.3。
-
-本 Validator 不自行选择下一 task，也不修改 route。
-
-# 返回
-
-返回必须符合：
-
 ```text
-03_contracts/subagent_result.schema.yaml
+CLASSIFIED_CLEAR
+→ 返回 Workflow，由 Workflow 决定下一 task
+
+MODEL_SELECTION_REQUIRED | CLASSIFICATION_DECISION_REQUIRED
+→ Manager 暂停当前 Workstream 并处理全部 confirmation items
+
+technical failure
+→ 不允许使用部分输出作为有效 1.2 结果
 ```
 
-要求：
+本 Validator 不自行修改 route、Workstream 状态或项目记录。
 
-- `task_unit_mode: VALIDATOR`；
-- `operation_result: null`；
-- `validation_result.skill_name` 为本 Skill；
-- `validation_result.status` 与执行事实一致；
-- `outcome_code` 使用本 Skill 定义值；
-- `key_findings` 只给精简摘要；
-- `validated_files` 包含实际读取并完成分类检查的输入结构；
-- `created_files` 包含 report/result data；
-- `artifact_candidates: []`；
-- `confirmation_items` 保存 blocking/non-blocking 决策请求；
-- `detail_files` 指向实际输出；
-- 不把输入 STRUCTURE 标记为 `VALIDATED`。
+# 完成条件
 
-# 失败与清理
+只有同时满足以下条件，本次 1.2 Validator task 才闭合：
 
-- 输入不唯一或越权：返回 `BLOCKED`，不创建部分报告；
-- parser 返回确定性输入/registry/schema 错误：返回 `FAILED`，保留最小技术诊断；
-- 报告写入中断：删除本次不完整临时文件后返回 `FAILED`；
-- 局部残基未知：只要整体解析可靠，返回 DONE + warning/decision，不得整项失败；
-- 不覆盖已有不同 task ID 的报告；同一 task 重试使用新 task ID 或明确的幂等复用规则。
-
-# 自检
-
-- [ ] 只读取唯一授权结构；
-- [ ] 实际调用了 `scripts/classify_structure.py`；
-- [ ] 未修改输入结构；
-- [ ] 显式共价、几何共价候选和配位候选已分离；
-- [ ] 配位未被归入共价相连非标准残基；
-- [ ] 标准别名有 registry 证据；
-- [ ] 未用距离 alone 宣告共价键；
-- [ ] blocking 歧义已生成 confirmation items；
-- [ ] Validator 执行状态与分类 outcome 已区分；
-- [ ] 报告与结果数据通过本地 schema；
-- [ ] 未写管理目录；
-- [ ] 返回符合共享 subagent result v2；
-- [ ] 未创建或验证新的 STRUCTURE artifact。
+- selected model 已明确，或已形成合法模型选择请求；
+- 所有实际执行的确定性脚本退出状态与输出 schema 一致；
+- 输入结构在执行前后 SHA-256 不变；
+- 共价和配位结果独立记录；
+- 关系导致的 topology promotion 只在确认后应用；
+- 所有待确认问题已完整汇总；
+- `classification_result.yaml`、报告与 confirmation count 一致；
+- 共享 `subagent_result v2` 校验通过；
+- 没有创建 STRUCTURE artifact candidate；
+- 没有写入 Manager 专属目录。
