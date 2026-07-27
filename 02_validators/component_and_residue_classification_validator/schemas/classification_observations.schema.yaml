@@ -1,0 +1,299 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: classification_observations.schema.yaml
+title: Baseline component and residue classification observations
+schema_version: "1.0"
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - input
+  - entities
+  - chain_groups
+  - residue_records
+  - missing_residue_checks
+  - unresolved_observations
+  - summary
+properties:
+  schema_version:
+    const: "1.0"
+  input:
+    type: object
+    additionalProperties: false
+    required:
+      - structure_path
+      - structure_sha256
+      - source_format
+      - selected_model_id
+      - classification_mode
+    properties:
+      structure_path: {type: string, minLength: 1}
+      structure_sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
+      source_format: {enum: [PDB, MMCIF, AF3_CIF]}
+      selected_model_id: {type: string, minLength: 1}
+      classification_mode: {enum: [REGISTRY, FORCE_FIELD_ANALYSIS]}
+  entities:
+    type: array
+    items:
+      $ref: "#/$defs/entity"
+  chain_groups:
+    type: array
+    items:
+      $ref: "#/$defs/chain_group"
+  residue_records:
+    type: array
+    items:
+      $ref: "#/$defs/residue_record"
+  missing_residue_checks:
+    type: array
+    items:
+      $ref: "#/$defs/missing_residue_check"
+  unresolved_observations:
+    type: array
+    items:
+      $ref: "#/$defs/unresolved_observation"
+  summary:
+    type: object
+    additionalProperties: false
+    required:
+      - entity_count
+      - chain_group_count
+      - recorded_residue_count
+      - observed_residue_count
+      - missing_expected_residue_count
+      - unresolved_observation_count
+    properties:
+      entity_count: {type: integer, minimum: 0}
+      chain_group_count: {type: integer, minimum: 0}
+      recorded_residue_count: {type: integer, minimum: 0}
+      observed_residue_count: {type: integer, minimum: 0}
+      missing_expected_residue_count: {type: integer, minimum: 0}
+      unresolved_observation_count: {type: integer, minimum: 0}
+      multiple_conformation_residue_count: {type: integer, minimum: 0}
+      heavy_atom_issue_count: {type: integer, minimum: 0}
+$defs:
+  nullable_string:
+    type: [string, "null"]
+  source_resid:
+    type: object
+    additionalProperties: false
+    required: [number, insertion_code]
+    properties:
+      number:
+        type: string
+        minLength: 1
+      insertion_code:
+        $ref: "#/$defs/nullable_string"
+  entity:
+    type: object
+    additionalProperties: false
+    required:
+      - entity_id
+      - entity_type
+      - polymer_type
+      - source_chain_ids
+    properties:
+      entity_id:
+        $ref: "#/$defs/nullable_string"
+      entity_type:
+        enum: [POLYMER, NONPOLYMER, BRANCHED, WATER, UNKNOWN]
+      polymer_type:
+        $ref: "#/$defs/nullable_string"
+      source_chain_ids:
+        type: array
+        items: {type: string}
+  source_association:
+    type: object
+    additionalProperties: false
+    required: [polymer_chain_index, instance_count]
+    properties:
+      polymer_chain_index: {type: integer, minimum: 1}
+      instance_count: {type: integer, minimum: 1}
+  chain_group:
+    type: object
+    additionalProperties: false
+    required:
+      - chain_index
+      - grouping_status
+      - group_type
+      - source_chain_id
+      - entity_id
+      - instance_count
+    properties:
+      chain_index: {type: integer, minimum: 1}
+      grouping_status: {const: BASELINE}
+      group_type:
+        enum:
+          - POLYMER_CHAIN
+          - BRANCHED_CHAIN
+          - INDEPENDENT_COMPONENT
+          - REPEATED_SMALL_MOLECULE_GROUP
+          - SOLVENT_GROUP
+          - ION_GROUP
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      entity_id:
+        $ref: "#/$defs/nullable_string"
+      residue_name:
+        type: string
+        minLength: 1
+      instance_count: {type: integer, minimum: 1}
+      source_associations:
+        type: array
+        items:
+          $ref: "#/$defs/source_association"
+  classification_observation:
+    type: object
+    additionalProperties: false
+    required:
+      - polymer_class
+      - topology_class
+      - resolution_status
+      - primary_source
+      - evidence
+    properties:
+      polymer_class:
+        type: [string, "null"]
+        enum: [POLYMER, BRANCHED, NONPOLYMER, WATER, null]
+      topology_class:
+        type: [string, "null"]
+        enum:
+          - STANDARD_RESIDUE
+          - COVALENTLY_LINKED_NONSTANDARD
+          - INDEPENDENT_NONSTANDARD
+          - SOLVENT_COMPONENT
+          - ION_COMPONENT
+          - null
+      resolution_status:
+        enum: [RESOLVED, CONFLICT, UNRESOLVED]
+      primary_source:
+        type: [string, "null"]
+        enum: [PROJECT_DEFINITION, FORCE_FIELD, SKILL_REGISTRY, ENTITY_CONTEXT, null]
+      evidence:
+        type: array
+        items: {type: string, minLength: 1}
+  conformation_observation:
+    type: object
+    additionalProperties: false
+    required: [status, altloc_ids]
+    properties:
+      status:
+        enum: [SINGLE_CONFORMATION, MULTIPLE_CONFORMATIONS, NOT_APPLICABLE]
+      altloc_ids:
+        type: array
+        items: {type: string, minLength: 1}
+  heavy_atom_check:
+    type: object
+    additionalProperties: false
+    required:
+      - status
+      - reference_type
+      - reference_name
+      - missing_atoms
+      - unexpected_atoms
+      - reason
+    properties:
+      status:
+        enum:
+          - HEAVY_ATOMS_COMPLETE
+          - MISSING_EXPECTED_HEAVY_ATOMS
+          - UNEXPECTED_HEAVY_ATOMS
+          - MISSING_AND_UNEXPECTED_HEAVY_ATOMS
+          - ATOM_NAME_MAPPING_REQUIRED
+          - REFERENCE_TEMPLATE_UNAVAILABLE
+          - NOT_PERFORMED
+          - NOT_APPLICABLE
+      reference_type:
+        type: [string, "null"]
+        enum: [CCD, RTP, null]
+      reference_name:
+        $ref: "#/$defs/nullable_string"
+      missing_atoms:
+        type: array
+        items: {type: string, minLength: 1}
+      unexpected_atoms:
+        type: array
+        items: {type: string, minLength: 1}
+      reason:
+        $ref: "#/$defs/nullable_string"
+  residue_record:
+    type: object
+    additionalProperties: false
+    required:
+      - chain_index
+      - source_chain_id
+      - source_resid
+      - residue_name
+      - presence_status
+      - sequence_position
+      - classification_observation
+      - conformation_observation
+      - heavy_atom_check
+    properties:
+      chain_index:
+        type: integer
+        minimum: 1
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      source_resid:
+        $ref: "#/$defs/source_resid"
+      residue_name:
+        type: string
+        minLength: 1
+      presence_status:
+        enum: [OBSERVED, MISSING_EXPECTED]
+      sequence_position:
+        type: [integer, "null"]
+        minimum: 1
+      classification_observation:
+        $ref: "#/$defs/classification_observation"
+      conformation_observation:
+        $ref: "#/$defs/conformation_observation"
+      heavy_atom_check:
+        $ref: "#/$defs/heavy_atom_check"
+  missing_residue_check:
+    type: object
+    additionalProperties: false
+    required:
+      - chain_index
+      - source_chain_id
+      - status
+      - evidence_types
+      - missing_residue_count
+      - reason
+    properties:
+      chain_index:
+        type: [integer, "null"]
+        minimum: 1
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      status:
+        enum:
+          - NO_MISSING_RESIDUES
+          - MISSING_RESIDUES_FOUND
+          - NOT_PERFORMED
+          - MAPPING_UNRESOLVED
+      evidence_types:
+        type: array
+        items: {type: string, minLength: 1}
+      missing_residue_count: {type: integer, minimum: 0}
+      reason:
+        $ref: "#/$defs/nullable_string"
+  unresolved_observation:
+    type: object
+    additionalProperties: false
+    required:
+      - issue_type
+      - subject
+      - evidence
+      - resolution_status
+    properties:
+      issue_type:
+        type: string
+        minLength: 1
+      subject:
+        type: object
+      evidence:
+        type: array
+        items: {type: string, minLength: 1}
+      resolution_status:
+        const: PENDING_CONFIRMATION
