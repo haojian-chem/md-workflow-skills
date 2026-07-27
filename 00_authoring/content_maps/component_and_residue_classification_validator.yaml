@@ -11,8 +11,10 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/scripts/inspect_model_scope.py
   deterministic_classification_entry_point:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
-  deterministic_classification_engine:
+  deterministic_classification_engine_facade:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classification_engine.py
+  deterministic_classification_engine_core:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/classification_engine_core.py
   deterministic_classification_helpers:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classification_common.py
   selected_model_structure_records:
@@ -94,11 +96,16 @@ validation_evidence:
     run_id: 30259226282
     job_id: 89954939918
     conclusion: success
+  polymer_grouping_conflict_regression:
+    test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
+    result: 2 passed in isolated pytest
+    full_post_change_ci: pending_observable_run
   real_file_acceptance: pending
   manager_closure: pending
 notes:
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
+  - Structural entity/polymer facts are authoritative for chain grouping; unresolved or conflicting topology classification remains unchanged in residue output.
   - Project-defined possible covalent connections and coordination are separate deterministic checks after baseline classification.
   - Metal coordination may promote a nonstandard component to the linked topology route only when the project definition explicitly enables that effect and the relation is confirmed.
-  - The v1.2 implementation and synthetic CI are complete; real PDB/mmCIF/AF3 validation, real GROMACS force-field validation and Manager closure remain required before overall PASS.
+  - The v1.2 implementation and baseline synthetic CI are complete; real PDB/mmCIF/AF3 validation, real GROMACS force-field validation and Manager closure remain required before overall PASS.
