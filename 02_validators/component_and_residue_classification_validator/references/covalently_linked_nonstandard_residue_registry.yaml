@@ -1,15 +1,4 @@
 schema_version: "1.0"
-status: draft
-purpose: Exact-name fallback classifications for commonly linked nonstandard residues.
-matching:
-  case_sensitive: true
-  aliases: false
-  regular_expressions: false
-  duplicate_exact_names_allowed: false
-principles:
-  - A registry classification does not create a structure connection.
-  - Instance-level covalent connections and topology-forming metal coordination are checked separately.
-  - A confirmed topology-forming relation may promote an instance even when its baseline registry class was independent.
 residue_definitions:
   - residue_name: MSE
     polymer_class: POLYMER
