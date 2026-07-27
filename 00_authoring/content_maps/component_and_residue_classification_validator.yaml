@@ -2,7 +2,7 @@ schema_version: 3
 skill_name: component_and_residue_classification_validator
 skill_type: validator
 skill_path: 02_validators/component_and_residue_classification_validator
-contract_status: v1_2_implementation_complete_validation_pending
+contract_status: v1_2_synthetic_ci_passed_real_validation_pending
 content_ownership_status: migrated_and_aligned
 owned_content:
   local_execution_flow_and_model_branching:
@@ -88,9 +88,17 @@ removed_migration_sources:
     status: removed_after_project_defined_coordination_checker_replaced_internal_scanning
   - path: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
     status: removed_after_split_output_pipeline_and_wrapper_migration
+validation_evidence:
+  synthetic_ci:
+    workflow: .github/workflows/component-classification-v1-2.yml
+    run_id: 30259226282
+    job_id: 89954939918
+    conclusion: success
+  real_file_acceptance: pending
+  manager_closure: pending
 notes:
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
   - Project-defined possible covalent connections and coordination are separate deterministic checks after baseline classification.
   - Metal coordination may promote a nonstandard component to the linked topology route only when the project definition explicitly enables that effect and the relation is confirmed.
-  - The v1.2 implementation, public entry points, result builder and shared wrapper are present; formal test evidence, real PDB/mmCIF/AF3 validation and Manager closure remain required before overall PASS.
+  - The v1.2 implementation and synthetic CI are complete; real PDB/mmCIF/AF3 validation, real GROMACS force-field validation and Manager closure remain required before overall PASS.
