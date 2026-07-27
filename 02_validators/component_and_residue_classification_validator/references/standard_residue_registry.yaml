@@ -1,0 +1,78 @@
+schema_version: "1.0"
+status: draft
+matching:
+  case_sensitive: true
+  aliases: false
+  regular_expressions: false
+  duplicate_exact_names_allowed: false
+residue_definitions:
+  - {residue_name: ALA, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ALA}
+  - {residue_name: ARG, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ARG}
+  - {residue_name: ASN, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ASN}
+  - {residue_name: ASP, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ASP}
+  - {residue_name: CYS, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: CYS}
+  - {residue_name: GLN, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: GLN}
+  - {residue_name: GLU, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: GLU}
+  - {residue_name: GLY, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: GLY}
+  - {residue_name: HIS, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: ILE, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ILE}
+  - {residue_name: LEU, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: LEU}
+  - {residue_name: LYS, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: LYS}
+  - {residue_name: MET, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: MET}
+  - {residue_name: PHE, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: PHE}
+  - {residue_name: PRO, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: PRO}
+  - {residue_name: SER, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: SER}
+  - {residue_name: THR, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: THR}
+  - {residue_name: TRP, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: TRP}
+  - {residue_name: TYR, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: TYR}
+  - {residue_name: VAL, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: VAL}
+
+  - {residue_name: HID, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: HIE, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: HIP, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: HSD, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: HSE, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: HSP, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: HIS}
+  - {residue_name: ASH, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: ASP}
+  - {residue_name: GLH, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: GLU}
+  - {residue_name: LYN, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: LYS}
+  - {residue_name: CYM, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: CYS}
+  - {residue_name: CYX, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: CYS}
+
+  - {residue_name: DA, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DA}
+  - {residue_name: DC, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DC}
+  - {residue_name: DG, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DG}
+  - {residue_name: DT, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: DT}
+  - {residue_name: A, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: A}
+  - {residue_name: C, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: C}
+  - {residue_name: G, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: G}
+  - {residue_name: U, polymer_class: POLYMER, topology_class: STANDARD_RESIDUE, ccd_id: U}
+
+  - {residue_name: HOH, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
+  - {residue_name: WAT, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
+  - {residue_name: SOL, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
+  - {residue_name: TIP3, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
+  - {residue_name: TIP4, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
+  - {residue_name: TIP5, polymer_class: WATER, topology_class: SOLVENT_COMPONENT}
+
+  - {residue_name: NA, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: NA}
+  - {residue_name: K, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: K}
+  - {residue_name: CL, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CL}
+  - {residue_name: BR, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: BR}
+  - {residue_name: I, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: I}
+  - {residue_name: F, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: F}
+  - {residue_name: LI, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: LI}
+  - {residue_name: MG, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: MG}
+  - {residue_name: CA, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CA}
+  - {residue_name: ZN, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: ZN}
+  - {residue_name: CU, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CU}
+  - {residue_name: FE, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: FE}
+  - {residue_name: MN, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: MN}
+  - {residue_name: CO, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CO}
+  - {residue_name: NI, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: NI}
+  - {residue_name: AL, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: AL}
+  - {residue_name: CD, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CD}
+  - {residue_name: HG, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: HG}
+  - {residue_name: CS, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: CS}
+  - {residue_name: SR, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: SR}
+  - {residue_name: BA, polymer_class: NONPOLYMER, topology_class: ION_COMPONENT, ccd_id: BA}
