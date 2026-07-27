@@ -40,13 +40,7 @@ properties:
           files:
             type: array
             items:
-              allOf:
-                - $ref: "#/$defs/file_reference"
-                - type: object
-                  properties:
-                    role:
-                      enum: [RTP_RESIDUE_RECOGNITION, RTP_HEAVY_ATOM_TEMPLATE]
-                  required: [role]
+              $ref: "#/$defs/force_field_file"
           status:
             enum: [LOADED, PARTIALLY_LOADED, INVALID]
   ccd_components:
@@ -56,13 +50,7 @@ properties:
   sequence_references:
     type: array
     items:
-      allOf:
-        - $ref: "#/$defs/file_reference"
-        - type: object
-          properties:
-            reference_type:
-              enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
-          required: [reference_type]
+      $ref: "#/$defs/sequence_reference"
   relation_definition_files:
     type: object
     additionalProperties: false
@@ -86,6 +74,30 @@ $defs:
         $ref: "#/$defs/sha256"
       status:
         enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]
+  force_field_file:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, status, role]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        $ref: "#/$defs/sha256"
+      status:
+        enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]
+      role:
+        enum: [RTP_RESIDUE_RECOGNITION, RTP_HEAVY_ATOM_TEMPLATE]
+  sequence_reference:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, status, reference_type]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        $ref: "#/$defs/sha256"
+      status:
+        enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]
+      reference_type:
+        enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
   optional_file_reference:
     type: object
     additionalProperties: false
@@ -136,6 +148,8 @@ $defs:
               - DOWNLOADED
               - RETRIEVAL_FAILED
               - MULTIPLE_LOCAL_CANDIDATES
+          retrieved_at:
+            type: [string, "null"]
       project_snapshot:
         type: object
         additionalProperties: false
