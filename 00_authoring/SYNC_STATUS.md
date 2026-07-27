@@ -14,7 +14,7 @@
 - `runtime_schema_validator` 0.1.0：ACTIVE；
 - NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
 - `source_recognition` draft；
-- 1.2 component/residue classification v1.2 实现完成且合成 CI 已通过，真实验收待完成；
+- 1.2 component/residue classification v1.2 实现完成且基线合成 CI 已通过，polymer grouping 冲突边界已修正，真实验收待完成；
 - 1.3 chain/component selection Operation/Validator contract draft。
 
 Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
@@ -71,6 +71,8 @@ scripts/inspect_model_scope.py
 → model_scope.yaml
 
 scripts/classify_structure.py
+→ scripts/classification_engine.py facade
+→ scripts/classification_engine_core.py
 → classification_observations.yaml
 → reference_manifest.yaml
 
@@ -99,6 +101,7 @@ references/covalently_linked_nonstandard_residue_registry.yaml
 scripts/README.md
 scripts/classification_common.py
 scripts/classification_engine.py
+scripts/classification_engine_core.py
 scripts/structure_records.py
 scripts/explicit_relations.py
 scripts/rtp_reference.py
@@ -125,6 +128,9 @@ schemas/classification_result.schema.yaml
 - 端基 RTP 必须由显式 terminal-template mapping 选择；
 - PDB/mmCIF 检查缺失残基；AF3 只有提供输入 JSON、FASTA 或等价序列参考时才检查；
 - 多 altLoc 残基记录为 `MULTIPLE_CONFORMATIONS`，不执行重原子比较；
+- structural entity/polymer 事实决定 baseline chain grouping，分类冲突不得把 polymer/branched residue 拆为 independent component；
+- grouping 完成后恢复原 classification，不能用结构分组事实静默解决 topology conflict；
+- 显式 nonpolymer 结构事实不能仅因错误 polymer 分类标签而升级为 polymer chain；
 - 可能共价连接和金属配位仅按项目明确提供的定义检查；
 - 几何候选不自动确认关系；
 - 金属配位只有定义允许且关系已确认时才能产生 topology promotion；
@@ -154,10 +160,11 @@ schemas/classification_outputs.schema.yaml
 04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py
 04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py
 04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
+04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
 04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
 ```
 
-正式合成测试证据：
+基线正式合成测试证据：
 
 ```text
 GitHub Actions run: 30259226282
@@ -165,7 +172,14 @@ job: 89954939918
 conclusion: success
 ```
 
-该次运行证明当时主分支的 v1.2 合成测试和 schema meta-validation 步骤成功。它不替代真实 PDB、RCSB mmCIF、AF3 CIF、真实 GROMACS force field 和完整 Manager closure 验收。
+polymer grouping 冲突边界定向回归：
+
+```text
+isolated pytest: 2 passed
+full post-change GitHub Actions result: pending observable run
+```
+
+基线 Actions 运行证明当时主分支的 v1.2 合成测试和 schema meta-validation 步骤成功。新增定向回归证明：polymer entity 在 classification conflict 下仍保持 polymer chain，显式 nonpolymer entity 也不会被错误 polymer 标签提升。当前没有可读取的完整 post-change Actions 结果，因此不得宣称本次修改后的全套 CI 已再次通过。上述证据均不替代真实 PDB、RCSB mmCIF、AF3 CIF、真实 GROMACS force field 和完整 Manager closure 验收。
 
 ## 1.3 Chain and component selection
 
@@ -213,7 +227,7 @@ Validator: 17 cases
 - `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
 - `runtime_schema_validator`：ACTIVE；
 - `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
-- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，合成 CI 已通过，待真实结构、真实力场与 Manager closure；
+- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，基线合成 CI 已通过，grouping conflict 回归通过，待完整 post-change CI、真实结构、真实力场与 Manager closure；
 - `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
 - `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
@@ -221,7 +235,7 @@ Validator: 17 cases
 ## 尚未冻结或尚未验收
 
 - content map 的 `load_when` / `applicable_to` 扩展；
-- 1.2 真实结构接受性、真实力场和 Manager 集成；
+- 1.2 完整 post-change CI、真实结构接受性、真实力场和 Manager 集成；
 - 1.3 selection schemas/rules、确定性实现和 combined task；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
 - Manager 真实项目端到端集成。
