@@ -85,18 +85,20 @@ def _strict_pdb_missing_residues(path, selected_model_id):
     residue rows. Accepting arbitrary whitespace-split lines can therefore
     fabricate residue and chain identifiers from words such as ``MISSING
     RESIDUES``. A formal row must contain a valid fixed-column residue name and
-    signed integer author sequence number.
+    signed integer author sequence number. Compact fixtures that omit trailing
+    blank columns are right-padded before fixed-column extraction.
     """
 
     results = []
     for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        if not raw.startswith("REMARK 465") or len(raw) < 26:
+        if not raw.startswith("REMARK 465") or len(raw) < 24:
             continue
-        model_field = raw[11:14].strip()
-        residue_name = raw[15:18].strip()
-        chain_id = clean_optional_text(raw[19:20] if len(raw) >= 20 else None)
-        sequence_number = raw[21:26].strip()
-        insertion_code = clean_optional_text(raw[26:27] if len(raw) >= 27 else None)
+        padded = raw.ljust(27)
+        model_field = padded[11:14].strip()
+        residue_name = padded[15:18].strip()
+        chain_id = clean_optional_text(padded[19:20])
+        sequence_number = padded[21:26].strip()
+        insertion_code = clean_optional_text(padded[26:27])
         if model_field:
             if not model_field.isdigit() or model_field != selected_model_id:
                 continue
