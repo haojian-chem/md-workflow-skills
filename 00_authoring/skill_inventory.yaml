@@ -1,5 +1,5 @@
 schema_version: 3
-status: classification_v1_2_synthetic_ci_passed_real_validation_pending
+status: classification_v1_2_repository_validation_passed_real_af3_pending
 runtime_architecture:
   project_model: workstream
   workflow_interfaces:
@@ -47,7 +47,7 @@ skills:
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: draft_runtime_validator_active_end_to_end_required
+    status: draft_runtime_validator_active_v1_2_task_closure_validated
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
   - name: structure_preparation_workflow
     layer: workflow
@@ -62,7 +62,7 @@ skills:
   - name: component_and_residue_classification_validator
     layer: validator
     path: 02_validators/component_and_residue_classification_validator
-    status: v1_2_synthetic_ci_passed_real_files_and_manager_closure_required
+    status: v1_2_repository_validation_passed_real_af3_input_required
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
   - name: chain_and_component_selection
     layer: operation

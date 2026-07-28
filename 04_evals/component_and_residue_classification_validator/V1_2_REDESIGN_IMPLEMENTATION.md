@@ -5,10 +5,20 @@
 ## 状态
 
 ```text
-REDESIGN_IMPLEMENTATION_COMPLETE_REAL_VALIDATION_PENDING
+REDESIGN_IMPLEMENTATION_COMPLETE
+CONTRACT_AND_CONTENT_OWNERSHIP_FROZEN
+ALL_REPOSITORY_CONTROLLED_VALIDATION_PASSED
+REAL_AF3_ACCEPTANCE_PENDING_INPUT
+VALIDATOR_V1_2_OVERALL_NOT_PASSED
 ```
 
-新版确定性流水线已经接管 1.2 的公开脚本入口、最终结果整合和共享 `subagent_result v2` 包装路径，并通过当前完整合成测试套件的 GitHub Actions 验证。实现和合成测试通过不等于最终验收通过；真实结构、真实力场和 Manager closure 尚未完成，因此 `validator v1.2 overall` 仍保持 `NOT_PASSED`。
+1.2 的设计、代码、schema、文档、公开入口、真实 PDB/mmCIF/GROMACS 验收、Authoring 静态检查和 Manager task closure 均已完成。当前唯一未完成项是缺少真实 AlphaFold 3 `*_model.cif` 及其对应输入序列参考，因此整体状态仍保持 `NOT_PASSED`。
+
+完整证据见：
+
+```text
+04_evals/component_and_residue_classification_validator/VALIDATION.md
+```
 
 ## 当前运行路径
 
@@ -23,10 +33,10 @@ classify_structure.py
 → reference_manifest.yaml
 
 check_possible_connections.py
-→ relation_checks/possible_connections_result.yaml
+→ possible_connections_result.yaml
 
 check_possible_coordination.py
-→ relation_checks/possible_coordination_result.yaml
+→ possible_coordination_result.yaml
 
 build_classification_result.py
 → confirmation_requests.yaml
@@ -35,153 +45,92 @@ build_classification_result.py
 
 build_subagent_result.py
 → subagent_result v2 candidate
+
+Manager
+→ one FAST validation
+→ atomic commit
+→ terminal event / Workstream state
+→ visible task closure
 ```
 
-- selected model 未解决前不执行完整分类；
-- selected model 确定后完成所有仍可执行的分类、缺失残基、重原子和关系检查；
-- 科学歧义统一写入 `confirmation_requests.yaml`，不在第一项歧义处提前退出；
-- structural entity/polymer 事实决定 baseline chain grouping，不因 residue classification 为 `CONFLICT` 或未解决而丢失 polymer/branched chain 身份；
-- grouping 结束后恢复原 `ClassificationValue`，最终输出仍保留原分类标签、resolution status 和证据；
-- 缺失残基无法建立 author `source_resid` 或目标 chain 归属时，检查状态为 `MAPPING_UNRESOLVED`，不得伪装成已经生成正式缺失残基记录；
-- 同一 `issue_type + subject + resolution_status` 在不同阶段重复出现时合并为一个 unresolved observation，并保留全部证据；
-- wrapper 以 `classification_result.result_status` 和 `confirmation_requests.status` 为权威状态来源；
-- Manager 仍是共享项目状态和记录的唯一提交者。
+## 已完成实现
 
-## 已完成的设计落地
+### 模型与精确名称
 
-### 输入与输出 schema
+- 单 model 自动选择；
+- 多 model 在正式分类前形成用户选择 barrier；
+- residue/atom names 原样、区分大小写；
+- 禁止 `.upper()`、alias、正则和模糊名称匹配；
+- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS` 使用不同且冻结的来源顺序。
+
+### 分类与分组
+
+- 项目定义、Skill registry、RTP 和 entity context 的确定性整合；
+- project/registry 或 project/RTP conflict 完整扫描后统一确认；
+- structural entity/polymer facts 决定 baseline chain grouping；
+- classification conflict 不会把 polymer/branched residue 拆成 independent component；
+- grouping 后恢复原 classification，不静默解决科学冲突。
+
+### 缺失残基
+
+- PDB `SEQRES + REMARK 465`；
+- mmCIF entity sequence + unobserved-residue metadata；
+- author `source_resid` 和 insertion code；
+- AF3 FASTA/JSON 显式序列参考；
+- author ID 或 chain 无法映射时使用 `MAPPING_UNRESOLVED`；
+- 跨阶段同一 unresolved observation 合并并保留全部 evidence；
+- PDB `REMARK 465` 固定列严格解析，不把说明文字识别为伪记录。
+
+### 重原子与参考
+
+- registry 模式使用 CCD；
+- force-field 模式标准残基使用 exact RTP；
+- 非标准残基使用 CCD；
+- 多 altLoc 标记 `MULTIPLE_CONFORMATIONS` 并跳过重原子比较；
+- 非水 exact RTP 重复定义形成确认项；
+- 普通水重复 RTP 是明确例外；
+- terminal RTP 必须通过显式 mapping；
+- 不使用 `.n.tdb/.c.tdb` 合成端基模板；
+- 项目 CCD snapshot 优先；
+- 相同哈希本地候选合并；
+- 不同有效本地 CCD 候选统一确认；
+- shared CCD cache 和按策略下载已实现。
+
+### 关系与 topology effect
+
+- possible covalent connection 与 coordination 分离检查；
+- geometry candidate 不自动确认；
+- explicit PDB/mmCIF relations 可形成 `CONFIRMED_BY_STRUCTURE`；
+- Mg/Zn `promote_nonstandard_to_linked=false` 只记录 relation；
+- HEM–CYS/HIE `promote_nonstandard_to_linked=true` 经确认后才并入 polymer chain；
+- confirmation file hash 绑定决定重放；
+- final `chain_groups` 和 topology class 确定性重建。
+
+### 共享结果与 Manager closure
+
+- `classification_result.result_status` 与 `confirmation_requests.status` 是 wrapper 权威状态源；
+- wrapper 生成 shared `subagent_result v2`；
+- Validator 不修改 `00_project_state/**` 和 `00_project_records/**`；
+- Manager 对 result/state/event candidates 执行一次 FAST；
+- schema 和直接引用检查通过后原子提交；
+- 写一个 terminal task event；
+- 更新 Workstream current position；
+- 在启动下一 task 前输出 task closure summary。
+
+## 验收证据摘要
 
 ```text
-schemas/project_residue_definitions.schema.yaml
-schemas/possible_connections.schema.yaml
-schemas/possible_coordination.schema.yaml
-schemas/model_scope.schema.yaml
-schemas/classification_observations.schema.yaml
-schemas/reference_manifest.schema.yaml
-schemas/possible_connections_result.schema.yaml
-schemas/possible_coordination_result.schema.yaml
-schemas/confirmation_requests.schema.yaml
-schemas/classification_result.schema.yaml
+synthetic: 59 passed
+real PDB: 3 passed
+real mmCIF: 3 passed
+real GROMACS force field: 1 passed
+authoring static checks: passed
+Manager closure: passed
 ```
 
-### 严格名称 registry
+详细 run/job/artifact、输入 SHA-256 和真实结构发现统一记录于 `VALIDATION.md`。
 
-```text
-references/standard_residue_registry.yaml
-references/covalently_linked_nonstandard_residue_registry.yaml
-```
-
-两个 registry 均采用严格、区分大小写、一个精确残基名一条定义的列表格式。项目级定义与 Skill registry 或 RTP 冲突时，完整扫描后统一请求确认，不执行 alias、正则或模糊名称覆盖。
-
-### 确定性脚本与内部模块
-
-```text
-scripts/inspect_model_scope.py
-scripts/classify_structure.py
-scripts/classification_engine.py
-scripts/classification_engine_core.py
-scripts/classification_common.py
-scripts/structure_records.py
-scripts/explicit_relations.py
-scripts/rtp_reference.py
-scripts/ccd_reference.py
-scripts/sequence_missing.py
-scripts/check_possible_connections.py
-scripts/check_possible_coordination.py
-scripts/build_classification_result.py
-scripts/build_subagent_result.py
-```
-
-已实现：
-
-- 单 model 自动选择、多 model 用户选择 barrier 和受控写回；
-- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS` 两种分类模式；
-- 精确、区分大小写的项目定义、Skill registry 和 RTP 解析；
-- 显式 terminal-template mapping；
-- PDB/mmCIF 缺失残基证据和 AF3 显式序列参考路径；
-- 缺失残基 author 编号与 chain 归属无法映射时的统一 unresolved 输出；
-- 跨阶段重复 unresolved observation 合并与证据保留；
-- CCD 项目 snapshot、本地目录、共享 cache 和按策略下载；
-- 相同哈希的本地 CCD 候选合并、不同有效本地候选统一确认；
-- 项目 CCD snapshot 对后续本地来源保持权威优先级；
-- 单构象残基的 CCD/RTP 重原子核验；
-- 多 altLoc 残基跳过重原子比较；
-- 非水 exact RTP 重复定义形成确认项，普通水重复 RTP 作为明确例外；
-- 项目定义驱动的可能共价连接和金属配位检查；
-- `promote_nonstandard_to_linked=false` 的确认配位仅记录 relation，不参与 topology grouping；
-- `promote_nonstandard_to_linked=true` 的确认配位可将 HEM 等非标准组分并入 polymer chain；
-- 已确认 relation 的 topology effect 与最终 `chain_groups` 重建；
-- 结构 chain grouping 与 residue topology classification 解耦；
-- 与上一份 confirmation 文件哈希绑定的决定重放；
-- 新版最终结果到共享 `subagent_result v2` 的确定性包装。
-
-### 测试与 CI
-
-已纳入：
-
-```text
-.github/workflows/component-classification-v1-2.yml
-```
-
-测试集合：
-
-```text
-04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py
-04_evals/component_and_residue_classification_validator/test_classify_structure.py
-04_evals/component_and_residue_classification_validator/test_build_subagent_result.py
-04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py
-04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py
-04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
-04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
-04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
-04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py
-04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py
-04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
-```
-
-当前覆盖：
-
-```text
-单/多 model 与输入哈希失败
-公开 classify_structure.py CLI
-shared result wrapper clear/pending 两条路径
-schema meta-validation 与 strict registry
-可能共价连接候选
-REGISTRY 大小写严格匹配与本地 CCD 优先级
-FORCE_FIELD_ANALYSIS RTP 重原子缺失
-N/C terminal RTP template selection
-polymer entity + classification conflict 仍保持 POLYMER_CHAIN
-explicit nonpolymer entity 不被错误 polymer 标签提升
-PDB/mmCIF 缺失残基与 author source_resid 映射
-AF3 FASTA/JSON 精确序列参考与 chain ID 严格匹配
-多 altLoc 残基跳过重原子比较
-非水 exact RTP 重复定义确认与普通水例外
-CCD snapshot、本地目录和 shared cache 多来源路径
-Mg–ASP、Zn–HIE 配位确认后保持 relation-only
-HEM–CYS、HEM–HIE 配位确认后执行 topology promotion
-checker → confirmation → decision → final result 两轮闭环
-```
-
-最新完整合成测试证据：
-
-```text
-GitHub Actions run: 30319696443
-job: 90152789553
-conclusion: success
-```
-
-该运行在同一次 Actions job 中覆盖当前全部 v1.2 合成测试，包括 polymer grouping、缺失残基与 AF3 序列参考、altLoc、重复 RTP、水模型例外、CCD 多来源及金属配位 topology-effect 矩阵。它证明合成 fixtures、schema meta-validation 与既有回归同时通过，但不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
-
-### 文档迁移
-
-```text
-SKILL.md
-references/classification_rules.md
-scripts/README.md
-00_authoring/content_maps/component_and_residue_classification_validator.yaml
-```
-
-### 已退出并删除的旧运行路径
+## 已退出的旧路径
 
 ```text
 references/standard_residue_alias_registry.yaml
@@ -189,42 +138,34 @@ references/coordination_detection_registry.yaml
 schemas/classification_outputs.schema.yaml
 ```
 
-已删除的旧行为包括：
+旧行为不再属于正式运行路径：
+
+- 名称统一转大写；
+- alias/模糊匹配；
+- 单脚本同时执行 model、分类、关系和最终整合；
+- 内置 coordination registry 扫描；
+- 单一旧输出 schema；
+- 旧 `ambiguities/outcome_code` wrapper。
+
+## 唯一剩余验收
 
 ```text
-残基名统一转大写
-alias/模糊名称匹配
-单脚本同时完成 model、分类、共价、配位和最终整合
-内置 coordination registry 自动扫描
-旧单一 classification_outputs.schema.yaml 作为唯一输出
-旧 ambiguities/outcome_code 驱动的 subagent wrapper
+actual AlphaFold 3 *_model.cif
++
+对应 fold_input.json / AlphaFold Server JSON / FASTA / 等价序列参考
 ```
 
-## 尚需完成的正式验收
+普通 RCSB mmCIF 不得改名后冒充 AF3 输出。收到真实文件后补充 real-AF3 workflow/test 和 SHA-256 记录即可；无需重新设计或迁移 1.2。
+
+## 当前结论
 
 ```text
-1. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
-2. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
-3. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
-4. 验证真实 GROMACS force field，包括内部和端基 RTP；
-5. 运行 authoring 静态检查；
-6. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
-7. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
-```
-
-## 当前验收结论
-
-```text
-model scope entry: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
-new schemas: AUTHORED_AND_REFERENCED, META-VALIDATION PASSED IN LATEST CI
-classification parser: MIGRATED_TO_V1_2, GROUPING/MISSING/ALTLOC/RTP/CCD REGRESSIONS PASSED
-relation checkers: IMPLEMENTED, COORDINATION TOPOLOGY MATRIX PASSED
-final result builder: IMPLEMENTED, RELATION DECISION CLOSURE PASSED
-subagent result wrapper: MIGRATED_TO_V1_2, LATEST SYNTHETIC CI PASSED
-documentation: MIGRATED_TO_V1_2
-legacy runtime path: REMOVED
-latest full synthetic CI: PASSED
-real-file acceptance: NOT COMPLETE
-Manager closure: NOT COMPLETE
+implementation: PASS
+contracts: FROZEN
+content ownership: FROZEN
+repository-controlled validation: PASS
+real PDB/mmCIF/GROMACS: PASS
+Manager closure: PASS
+real AF3: NOT_RUN — PENDING_REAL_INPUT
 validator v1.2 overall: NOT_PASSED
 ```
