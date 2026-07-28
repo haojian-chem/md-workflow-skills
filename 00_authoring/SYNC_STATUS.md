@@ -14,7 +14,7 @@
 - `runtime_schema_validator` 0.1.0：ACTIVE；
 - NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
 - `source_recognition` draft；
-- 1.2 component/residue classification v1.2 实现完成，当前完整合成 CI 已通过，polymer grouping、缺失残基/AF3 序列参考、altLoc、重复 RTP、水模型例外、CCD 多来源及金属配位 topology-effect 矩阵均已进入回归测试，真实验收待完成；
+- 1.2 component/residue classification v1.2：实现与 repository-controlled validation 完成，真实 PDB/mmCIF/GROMACS、Authoring 静态检查和 Manager closure 均通过；真实 AF3 acceptance 等待实际输入；
 - 1.3 chain/component selection Operation/Validator contract draft。
 
 Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
@@ -64,7 +64,29 @@ FULL warm median: 4.181 ms
 
 ## 1.2 Component and residue classification
 
-### 当前确定性运行路径
+### 当前状态
+
+```text
+implementation: PASS
+contract_status: frozen
+content_ownership_status: frozen
+repository-controlled validation: PASS
+real PDB: PASS
+real mmCIF: PASS
+real GROMACS force field: PASS
+authoring static validation: PASS
+Manager task closure: PASS
+real AF3: NOT_RUN — PENDING_REAL_INPUT
+validator v1.2 overall: NOT_PASSED
+```
+
+权威验收记录：
+
+```text
+04_evals/component_and_residue_classification_validator/VALIDATION.md
+```
+
+### 确定性运行路径
 
 ```text
 scripts/inspect_model_scope.py
@@ -77,10 +99,10 @@ scripts/classify_structure.py
 → reference_manifest.yaml
 
 scripts/check_possible_connections.py
-→ relation_checks/possible_connections_result.yaml
+→ possible_connections_result.yaml
 
 scripts/check_possible_coordination.py
-→ relation_checks/possible_coordination_result.yaml
+→ possible_coordination_result.yaml
 
 scripts/build_classification_result.py
 → confirmation_requests.yaml
@@ -89,60 +111,90 @@ scripts/build_classification_result.py
 
 scripts/build_subagent_result.py
 → shared subagent_result v2 candidate
+
+Manager
+→ one FAST validation
+→ atomic commit
+→ terminal event / Workstream state
+→ visible task closure
 ```
 
 ### 当前主要文件
 
 ```text
-SKILL.md
-references/classification_rules.md
-references/standard_residue_registry.yaml
-references/covalently_linked_nonstandard_residue_registry.yaml
-scripts/README.md
-scripts/classification_common.py
-scripts/classification_engine.py
-scripts/classification_engine_core.py
-scripts/structure_records.py
-scripts/explicit_relations.py
-scripts/rtp_reference.py
-scripts/ccd_reference.py
-scripts/sequence_missing.py
-schemas/project_residue_definitions.schema.yaml
-schemas/possible_connections.schema.yaml
-schemas/possible_coordination.schema.yaml
-schemas/model_scope.schema.yaml
-schemas/classification_observations.schema.yaml
-schemas/reference_manifest.schema.yaml
-schemas/possible_connections_result.schema.yaml
-schemas/possible_coordination_result.schema.yaml
-schemas/confirmation_requests.schema.yaml
-schemas/classification_result.schema.yaml
+02_validators/component_and_residue_classification_validator/SKILL.md
+02_validators/component_and_residue_classification_validator/references/classification_rules.md
+02_validators/component_and_residue_classification_validator/references/standard_residue_registry.yaml
+02_validators/component_and_residue_classification_validator/references/covalently_linked_nonstandard_residue_registry.yaml
+02_validators/component_and_residue_classification_validator/scripts/README.md
+02_validators/component_and_residue_classification_validator/scripts/classification_common.py
+02_validators/component_and_residue_classification_validator/scripts/classification_engine.py
+02_validators/component_and_residue_classification_validator/scripts/classification_engine_core.py
+02_validators/component_and_residue_classification_validator/scripts/structure_records.py
+02_validators/component_and_residue_classification_validator/scripts/explicit_relations.py
+02_validators/component_and_residue_classification_validator/scripts/rtp_reference.py
+02_validators/component_and_residue_classification_validator/scripts/ccd_reference.py
+02_validators/component_and_residue_classification_validator/scripts/sequence_missing.py
+02_validators/component_and_residue_classification_validator/schemas/*.schema.yaml
+04_evals/component_and_residue_classification_validator/VALIDATION.md
 ```
 
 ### 已冻结语义
 
 - 单 model 自动选择，多 model 在完整分类前形成用户选择 barrier；
-- 残基名和原子名严格区分大小写，不执行 `.upper()`、alias、正则或模糊匹配；
-- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS` 使用不同且明确的分类来源顺序；
-- 标准残基在 registry 模式使用 CCD、力场模式使用所选 RTP 做重原子检查；
-- 端基 RTP 必须由显式 terminal-template mapping 选择；
-- PDB/mmCIF 检查缺失残基；AF3 只有提供输入 JSON、FASTA 或等价序列参考时才检查；
-- 缺失残基无法建立 author `source_resid` 或目标 chain 归属时，必须返回 `MAPPING_UNRESOLVED`，不能伪装成已生成正式缺失残基记录；
-- 同一 `issue_type + subject + resolution_status` 在不同阶段重复报告时合并为一个 unresolved observation，同时保留全部证据；
-- 多 altLoc 残基记录为 `MULTIPLE_CONFORMATIONS`，不执行重原子比较；
-- 非水 exact RTP 名称定义多次时生成确认项；普通水允许同名 RTP 模板并跳过 RTP 重原子核验；
-- 项目 CCD snapshot 是本次运行的权威参考；相同哈希的本地候选合并，不同内容的有效本地候选进入统一确认；
-- structural entity/polymer 事实决定 baseline chain grouping，分类冲突不得把 polymer/branched residue 拆为 independent component；
-- grouping 完成后恢复原 classification，不能用结构分组事实静默解决 topology conflict；
-- 显式 nonpolymer 结构事实不能仅因错误 polymer 分类标签而升级为 polymer chain；
-- 可能共价连接和金属配位仅按项目明确提供的定义检查；
-- 几何候选不自动确认关系；
-- `promote_nonstandard_to_linked=false` 的确认配位只记录 relation，不改变 chain grouping 或 topology class；
-- `promote_nonstandard_to_linked=true` 且关系确认后，非标准组分才可并入 polymer chain；
-- selected model 完整扫描后统一生成 confirmation requests；
-- 科学歧义可对应 `DONE + blocking confirmation_items`，不得伪装成技术失败；
+- residue/atom names 原样保留并区分大小写；
+- 禁止 `.upper()`、alias、正则和模糊匹配；
+- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS` 使用不同且明确的来源顺序；
+- 标准残基在 registry 模式使用 CCD、force-field 模式使用 exact RTP；
+- 端基 RTP 必须通过显式 terminal-template mapping；
+- PDB/mmCIF 检查缺失残基；AF3 只有提供 JSON/FASTA/等价序列参考时才检查；
+- author `source_resid` 或 chain 归属无法建立时返回 `MAPPING_UNRESOLVED`；
+- 同一 unresolved subject 跨阶段重复出现时合并并保留证据；
+- 多 altLoc 残基记录 `MULTIPLE_CONFORMATIONS`，不执行重原子比较；
+- 非水 exact RTP 重复定义生成确认项；普通水是明确例外；
+- 项目 CCD snapshot 是本次运行的权威参考；相同哈希候选合并，不同有效候选进入统一确认；
+- structural entity/polymer facts 决定 baseline grouping；classification conflict 不得拆散 polymer/branched chain；
+- grouping 后恢复原 classification，不静默解决 topology conflict；
+- possible covalent connection 与 coordination 按项目定义分开检查；
+- geometry candidate 不自动确认；
+- `promote=false` 的确认配位只记录 relation；
+- `promote=true` 且关系确认后，非标准组分才可并入 polymer chain；
+- scientific ambiguity 可对应 `DONE + blocking confirmation_items`，不得伪装成技术失败；
 - 输入 STRUCTURE 保持原 validation state，不创建新的 STRUCTURE artifact candidate；
+- Validator 不写 `00_project_state/**` 或 `00_project_records/**`；
 - Manager 是共享项目状态和记录的唯一提交者。
+
+### 验收摘要
+
+```text
+synthetic CI: 59 passed
+real PDB: 3 passed
+real mmCIF: 3 passed
+real GROMACS force field: 1 passed
+authoring static checks: PASS
+Manager closure: PASS
+```
+
+真实 1VNS 的源格式记录不同：
+
+```text
+PDB REMARK 465: 35 missing residues
+mmCIF unobserved-residue metadata: 46 records
+```
+
+系统保留各源格式的权威元数据，不制造跨格式数量一致性。
+
+### AF3 剩余项
+
+真实验收需要：
+
+```text
+actual *_model.cif
++
+对应 fold_input.json / AlphaFold Server JSON / FASTA / 等价序列参考
+```
+
+普通 RCSB mmCIF 不得改名后冒充 AF3 输出。收到真实文件后只需补 real-AF3 workflow/test 和 SHA-256 记录，不再重构 1.2。
 
 ### 已退出并删除的旧路径
 
@@ -151,36 +203,6 @@ references/standard_residue_alias_registry.yaml
 references/coordination_detection_registry.yaml
 schemas/classification_outputs.schema.yaml
 ```
-
-旧版单脚本分类、内置 coordination 扫描、alias 解释和旧 `ambiguities/outcome_code` wrapper 均不再属于正式运行路径。
-
-### 测试状态
-
-已纳入 `.github/workflows/component-classification-v1-2.yml`：
-
-```text
-04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py
-04_evals/component_and_residue_classification_validator/test_classify_structure.py
-04_evals/component_and_residue_classification_validator/test_build_subagent_result.py
-04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py
-04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py
-04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
-04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
-04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
-04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py
-04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py
-04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
-```
-
-最新完整合成测试证据：
-
-```text
-GitHub Actions run: 30319696443
-job: 90152789553
-conclusion: success
-```
-
-该运行在同一次 Actions job 中通过当前 v1.2 全套测试，包括 polymer grouping、PDB/mmCIF 缺失残基、AF3 FASTA/JSON 序列参考、altLoc、非水重复 RTP、水模型重复 RTP 例外、CCD 多来源以及 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的完整 checker → confirmation → decision → final result 路径。它不替代真实 PDB、RCSB mmCIF、AF3 CIF、真实 GROMACS force field 和完整 Manager closure 验收。
 
 ## 1.3 Chain and component selection
 
@@ -225,10 +247,10 @@ Validator: 17 cases
 
 ## 当前实现状态
 
-- `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
+- `md_workflow_manager`：启动自锁已修正；1.2 task closure 已端到端验证；全项目通用 end-to-end 仍需后续阶段继续覆盖；
 - `runtime_schema_validator`：ACTIVE；
-- `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
-- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，当前完整合成 CI 已通过，待真实结构、真实力场与 Manager closure；
+- `source_recognition`：1.1 用户功能检查通过一次，待其独立 closure/FAST/minimal-record 复测；
+- `component_and_residue_classification_validator`：repository-controlled validation 已完成，真实 AF3 输入待提供；
 - `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
 - `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
@@ -236,10 +258,10 @@ Validator: 17 cases
 ## 尚未冻结或尚未验收
 
 - content map 的 `load_when` / `applicable_to` 扩展；
-- 1.2 真实结构接受性、真实力场和 Manager 集成；
+- 1.2 真实 AF3 acceptance；
 - 1.3 selection schemas/rules、确定性实现和 combined task；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
-- Manager 真实项目端到端集成。
+- Manager 在其他 task 类型和完整项目上的 end-to-end 集成。
 
 ## 当前权威文件
 
@@ -252,6 +274,7 @@ Validator: 17 cases
 - `00_authoring/md-workflow-tool-authoring/SKILL.md`；
 - `05_tools/tool_registry.yaml`；
 - `04_evals/runtime_schema_validator/VALIDATION.md`；
+- `04_evals/component_and_residue_classification_validator/VALIDATION.md`；
 - `04_evals/component_and_residue_classification_validator/V1_2_REDESIGN_IMPLEMENTATION.md`；
 - `04_evals/chain_and_component_selection/SELECTION_DRAFT_VALIDATION.md`；
 - `03_contracts/README.md`；
