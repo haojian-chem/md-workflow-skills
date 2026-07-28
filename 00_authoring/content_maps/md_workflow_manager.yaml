@@ -48,8 +48,8 @@ external_references:
     access: reference_only
   - purpose: runtime_schema_validator
     owner: 05_tools/runtime_schema_validator/
-    access: conditional_runtime_dependency
-    status: active_default
+    access: reference_only
+    status: active_default_runtime_dependency
   - purpose: shared_contract_index
     owner: 03_contracts/README.md
     access: reference_only
