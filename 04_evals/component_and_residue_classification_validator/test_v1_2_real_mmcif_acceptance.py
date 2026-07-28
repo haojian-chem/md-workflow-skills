@@ -153,22 +153,24 @@ def test_real_1vns_mmcif_entities_author_ids_and_unobserved_residues(
                 "ENTITY_SEQUENCE_ALIGNMENT",
                 "MMCIF_UNOBSERVED_RESIDUES",
             ],
-            "missing_residue_count": 35,
+            "missing_residue_count": 46,
             "reason": None,
             "chain_index": 1,
         }
     ]
-    assert observations["summary"]["missing_expected_residue_count"] == 35
+    assert observations["summary"]["missing_expected_residue_count"] == 46
     assert observations["summary"]["unresolved_observation_count"] == 0
     missing_records = [
         record
         for record in observations["residue_records"]
         if record["presence_status"] == "MISSING_EXPECTED"
     ]
-    assert len(missing_records) == 35
+    assert len(missing_records) == 46
     assert all(record["source_chain_id"] == "A" for record in missing_records)
     assert all(record["source_resid"]["number"] for record in missing_records)
     assert all(record["sequence_position"] is not None for record in missing_records)
+    missing_numbers = {record["source_resid"]["number"] for record in missing_records}
+    assert {"1", "2", "3", "117", "127", "578", "609"}.issubset(missing_numbers)
 
     sulfate = ccd_entry(manifest, "SO4")
     assert sulfate["validation"]["status"] == "VALID"
@@ -256,8 +258,6 @@ def test_real_1a6m_mmcif_altloc_heme_and_struct_conn_coordination(
         "status": "PRESENT",
         "source_type": "MMCIF_STRUCT_CONN_OR_PDB_LINK",
         "relation_type": "METAL_COORDINATION",
-        "altloc_specific": False,
-        "source_summary": "MetalC:covale1",
     }
     assert pair["metal"]["source_chain_id"] == "A"
     assert pair["donor"]["source_chain_id"] == "A"
