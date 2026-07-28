@@ -9,8 +9,6 @@ owned_content:
     owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
   tool_contract_versioning_testing_and_release:
     owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
-  tool_registry_and_lifecycle:
-    owner: 05_tools/tool_registry.yaml
 external_references:
   - purpose: deterministic_tool_runtime_boundaries
     owner: 00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md
@@ -36,5 +34,6 @@ external_references:
     status: present
 notes:
   - Tool authoring is development-time governance for deterministic utilities and does not add a runtime decision layer.
+  - The tool registry is an external shared authority and is referenced rather than claimed as local Skill-owned content.
   - runtime_schema_validator 0.1.0 has completed the IMPLEMENTED to ACTIVE lifecycle with executable tests and benchmark evidence.
   - The authoring guide remains draft pending additional Tool lifecycle and migration tests.
