@@ -30,6 +30,8 @@ jobs:
           python -m pip install pytest
       - name: Run v1.2 redesign tests
         run: |
+          set -o pipefail
+          mkdir -p ci_test_output
           pytest -q \
             04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py \
             04_evals/component_and_residue_classification_validator/test_classify_structure.py \
@@ -41,4 +43,13 @@ jobs:
             04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py \
-            04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
+            04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py \
+            2>&1 | tee ci_test_output/pytest.log
+      - name: Upload pytest diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-classification-v1-2-pytest-${{ github.run_id }}
+          path: ci_test_output/pytest.log
+          if-no-files-found: warn
+          retention-days: 14
