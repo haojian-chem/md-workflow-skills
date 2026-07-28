@@ -1,0 +1,67 @@
+name: component-classification-v1-2-authoring
+
+on:
+  pull_request:
+    paths:
+      - "02_validators/component_and_residue_classification_validator/**"
+      - "00_authoring/content_maps/component_and_residue_classification_validator.yaml"
+      - "00_authoring/md-workflow-skill-authoring/scripts/**"
+      - ".github/workflows/component-classification-v1-2-authoring.yml"
+  workflow_dispatch:
+
+jobs:
+  authoring-static-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
+      - name: Run authoring static checks
+        run: |
+          set +e
+          mkdir -p authoring_validation_output
+          overall=0
+
+          python 00_authoring/md-workflow-skill-authoring/scripts/validate_md_skill.py \
+            . 02_validators/component_and_residue_classification_validator \
+            > authoring_validation_output/validate_md_skill.log 2>&1
+          status=$?
+          echo "validate_md_skill=$status" | tee -a authoring_validation_output/statuses.txt
+          [ "$status" -eq 0 ] || overall=1
+
+          python 00_authoring/md-workflow-skill-authoring/scripts/detect_cross_file_duplication.py \
+            02_validators/component_and_residue_classification_validator \
+            > authoring_validation_output/detect_cross_file_duplication.log 2>&1
+          status=$?
+          echo "detect_cross_file_duplication=$status" | tee -a authoring_validation_output/statuses.txt
+          [ "$status" -eq 0 ] || overall=1
+
+          python 00_authoring/md-workflow-skill-authoring/scripts/validate_architecture_separation.py \
+            . > authoring_validation_output/validate_architecture_separation.log 2>&1
+          status=$?
+          echo "validate_architecture_separation=$status" | tee -a authoring_validation_output/statuses.txt
+          [ "$status" -eq 0 ] || overall=1
+
+          python 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py \
+            . > authoring_validation_output/validate_content_maps.log 2>&1
+          status=$?
+          echo "validate_content_maps=$status" | tee -a authoring_validation_output/statuses.txt
+          [ "$status" -eq 0 ] || overall=1
+
+          cat authoring_validation_output/*.log
+          exit "$overall"
+      - name: Upload authoring validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-classification-v1-2-authoring-${{ github.run_id }}
+          path: authoring_validation_output/
+          if-no-files-found: error
+          retention-days: 30
