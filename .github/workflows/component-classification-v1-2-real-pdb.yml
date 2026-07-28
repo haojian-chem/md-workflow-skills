@@ -43,9 +43,12 @@ jobs:
         env:
           V1_2_REAL_PDB_DIR: ${{ github.workspace }}/real_pdb_inputs
         run: |
+          set -o pipefail
+          mkdir -p real_pdb_outputs
           pytest -q \
             04_evals/component_and_residue_classification_validator/test_v1_2_real_pdb_acceptance.py \
-            --basetemp=real_pdb_outputs
+            --basetemp=real_pdb_outputs/pytest_tmp \
+            2>&1 | tee real_pdb_outputs/pytest.log
       - name: Upload acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
