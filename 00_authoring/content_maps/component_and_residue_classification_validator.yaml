@@ -93,8 +93,8 @@ removed_migration_sources:
 validation_evidence:
   latest_synthetic_ci:
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30263658123
-    job_id: 89969186277
+    run_id: 30319294167
+    job_id: 90151595691
     conclusion: success
     includes:
       - polymer_grouping_conflict_regression
@@ -104,11 +104,21 @@ validation_evidence:
       - chain_unresolved
       - af3_fasta_sequence_reference
       - af3_input_json_sequence_reference
+      - multiple_altloc_heavy_atom_skip
+      - duplicate_nonwater_rtp_confirmation
+      - duplicate_water_rtp_exception
+      - identical_local_ccd_hash_collapse
+      - conflicting_local_ccd_confirmation
+      - project_ccd_snapshot_precedence
+      - shared_ccd_cache_fallback
   polymer_grouping_conflict_regression:
     test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
     result: passed_in_latest_synthetic_ci
   missing_residue_path_regression:
     test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
+    result: passed_in_latest_synthetic_ci
+  altloc_rtp_ccd_regression:
+    test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py
     result: passed_in_latest_synthetic_ci
   real_file_acceptance: pending
   manager_closure: pending
@@ -117,6 +127,8 @@ notes:
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
   - Structural entity/polymer facts are authoritative for chain grouping; unresolved or conflicting topology classification remains unchanged in residue output.
   - Missing-residue checks use MAPPING_UNRESOLVED when the author residue identifier or target chain cannot be mapped; duplicate cross-stage reports of the same issue and subject are merged while preserving evidence.
+  - Multiple altLoc residues skip heavy-atom comparison; duplicate exact RTP names require confirmation except for ordinary water context.
+  - Project CCD snapshots are authoritative; identical local candidates collapse by hash and differing valid local candidates require confirmation.
   - Project-defined possible covalent connections and coordination are separate deterministic checks after baseline classification.
   - Metal coordination may promote a nonstandard component to the linked topology route only when the project definition explicitly enables that effect and the relation is confirmed.
   - The v1.2 implementation and current synthetic CI are complete; real PDB/mmCIF/AF3 validation, real GROMACS force-field validation and Manager closure remain required before overall PASS.
