@@ -14,7 +14,7 @@
 - `runtime_schema_validator` 0.1.0：ACTIVE；
 - NEW 初始化 capability 预检、内建确定性状态提交和 blocker 因果分层；
 - `source_recognition` draft；
-- 1.2 component/residue classification v1.2 实现完成，当前完整合成 CI 已通过，polymer grouping、缺失残基/AF3 序列参考、altLoc、重复 RTP、水模型例外及 CCD 多来源边界均已进入回归测试，真实验收待完成；
+- 1.2 component/residue classification v1.2 实现完成，当前完整合成 CI 已通过，polymer grouping、缺失残基/AF3 序列参考、altLoc、重复 RTP、水模型例外、CCD 多来源及金属配位 topology-effect 矩阵均已进入回归测试，真实验收待完成；
 - 1.3 chain/component selection Operation/Validator contract draft。
 
 Manager 主文件保持 311 行；详细初始化与完整自检位于 references。
@@ -137,7 +137,8 @@ schemas/classification_result.schema.yaml
 - 显式 nonpolymer 结构事实不能仅因错误 polymer 分类标签而升级为 polymer chain；
 - 可能共价连接和金属配位仅按项目明确提供的定义检查；
 - 几何候选不自动确认关系；
-- 金属配位只有定义允许且关系已确认时才能产生 topology promotion；
+- `promote_nonstandard_to_linked=false` 的确认配位只记录 relation，不改变 chain grouping 或 topology class；
+- `promote_nonstandard_to_linked=true` 且关系确认后，非标准组分才可并入 polymer chain；
 - selected model 完整扫描后统一生成 confirmation requests；
 - 科学歧义可对应 `DONE + blocking confirmation_items`，不得伪装成技术失败；
 - 输入 STRUCTURE 保持原 validation state，不创建新的 STRUCTURE artifact candidate；
@@ -167,18 +168,19 @@ schemas/classification_outputs.schema.yaml
 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
 04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
 04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py
+04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py
 04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
 ```
 
 最新完整合成测试证据：
 
 ```text
-GitHub Actions run: 30319294167
-job: 90151595691
+GitHub Actions run: 30319696443
+job: 90152789553
 conclusion: success
 ```
 
-该运行在同一次 Actions job 中通过当前 v1.2 全套测试，包括 polymer grouping、PDB/mmCIF 缺失残基、AF3 FASTA/JSON 序列参考、altLoc、非水重复 RTP、水模型重复 RTP 例外以及 CCD snapshot/本地目录/shared cache 多来源路径。它不替代真实 PDB、RCSB mmCIF、AF3 CIF、真实 GROMACS force field和完整 Manager closure 验收。
+该运行在同一次 Actions job 中通过当前 v1.2 全套测试，包括 polymer grouping、PDB/mmCIF 缺失残基、AF3 FASTA/JSON 序列参考、altLoc、非水重复 RTP、水模型重复 RTP 例外、CCD 多来源以及 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的完整 checker → confirmation → decision → final result 路径。它不替代真实 PDB、RCSB mmCIF、AF3 CIF、真实 GROMACS force field 和完整 Manager closure 验收。
 
 ## 1.3 Chain and component selection
 
@@ -226,7 +228,7 @@ Validator: 17 cases
 - `md_workflow_manager`：启动自锁已修正，待真实项目端到端验证；
 - `runtime_schema_validator`：ACTIVE；
 - `source_recognition`：1.1 用户功能检查通过一次，待 closure/FAST/minimal-record 复测；
-- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，当前完整合成 CI 已通过，待关系矩阵补测、真实结构、真实力场与 Manager closure；
+- `component_and_residue_classification_validator`：v1.2 代码、schema、文档、公开入口和 wrapper 已迁移，当前完整合成 CI 已通过，待真实结构、真实力场与 Manager closure；
 - `chain_and_component_selection`：contract/fixtures draft，待确定性实现；
 - `chain_and_component_selection_validator`：contract/fixtures draft，待确定性实现；
 - 其他 Phase 1 Skills：待编写。
@@ -234,7 +236,7 @@ Validator: 17 cases
 ## 尚未冻结或尚未验收
 
 - content map 的 `load_when` / `applicable_to` 扩展；
-- 1.2 Mg/Zn 与 HEM–CYS/HIE 关系矩阵、真实结构接受性、真实力场和 Manager 集成；
+- 1.2 真实结构接受性、真实力场和 Manager 集成；
 - 1.3 selection schemas/rules、确定性实现和 combined task；
 - `state_transaction`、`incremental_reference_checker`、`task_closure_renderer`；
 - Manager 真实项目端到端集成。
