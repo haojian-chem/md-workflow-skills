@@ -115,8 +115,7 @@ def ccd_entry(manifest: dict, component_id: str) -> dict:
 
 @pytest.fixture(scope="session")
 def shared_ccd_cache(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    path = tmp_path_factory.mktemp("real_pdb_ccd_cache")
-    return path
+    return tmp_path_factory.mktemp("real_pdb_ccd_cache")
 
 
 def test_real_1vns_missing_residues_and_so4_ccd(
@@ -140,19 +139,28 @@ def test_real_1vns_missing_residues_and_so4_ccd(
         shared_ccd_cache,
     )
     missing_checks = observations["missing_residue_checks"]
-    assert any(
-        check["status"] == "MISSING_RESIDUES_FOUND"
-        and check["missing_residue_count"] > 0
-        for check in missing_checks
-    )
-    assert observations["summary"]["missing_expected_residue_count"] > 0
+    assert missing_checks == [
+        {
+            "source_chain_id": "A",
+            "status": "MISSING_RESIDUES_FOUND",
+            "evidence_types": ["ENTITY_SEQUENCE_ALIGNMENT", "PDB_REMARK_465"],
+            "missing_residue_count": 35,
+            "reason": None,
+            "chain_index": 1,
+        }
+    ]
+    assert observations["summary"]["missing_expected_residue_count"] == 35
+    assert observations["summary"]["unresolved_observation_count"] == 0
+    assert observations["unresolved_observations"] == []
     missing_records = [
         record
         for record in observations["residue_records"]
         if record["presence_status"] == "MISSING_EXPECTED"
     ]
-    assert missing_records
+    assert len(missing_records) == 35
+    assert all(record["source_chain_id"] == "A" for record in missing_records)
     assert all(record["source_resid"]["number"] for record in missing_records)
+    assert all(record["sequence_position"] is not None for record in missing_records)
 
     sulfate = ccd_entry(manifest, "SO4")
     assert sulfate["validation"]["status"] == "VALID"
@@ -324,7 +332,12 @@ def test_real_1crn_ssbond_is_confirmed_by_structure(
     ]
     assert len(confirmed) == 3
     assert all(
-        pair["explicit_connection"]["relation_type"] == "DISULFIDE"
+        "DISULFIDE" in pair["explicit_connection"]["relation_type"]
+        for pair in confirmed
+    )
+    assert all(
+        pair["explicit_connection"]["source_type"]
+        == "MMCIF_STRUCT_CONN_OR_PDB_LINK,PDB_CONECT"
         for pair in confirmed
     )
     assert all(
