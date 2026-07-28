@@ -108,6 +108,8 @@ scripts/build_subagent_result.py
 - 多 altLoc 残基跳过重原子比较；
 - 非水 exact RTP 重复定义形成确认项，普通水重复 RTP 作为明确例外；
 - 项目定义驱动的可能共价连接和金属配位检查；
+- `promote_nonstandard_to_linked=false` 的确认配位仅记录 relation，不参与 topology grouping；
+- `promote_nonstandard_to_linked=true` 的确认配位可将 HEM 等非标准组分并入 polymer chain；
 - 已确认 relation 的 topology effect 与最终 `chain_groups` 重建；
 - 结构 chain grouping 与 residue topology classification 解耦；
 - 与上一份 confirmation 文件哈希绑定的决定重放；
@@ -133,6 +135,7 @@ scripts/build_subagent_result.py
 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
 04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
 04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py
+04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py
 04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
 ```
 
@@ -144,38 +147,30 @@ scripts/build_subagent_result.py
 shared result wrapper clear/pending 两条路径
 schema meta-validation 与 strict registry
 可能共价连接候选
-HEM–CYS 配位确认后的 topology promotion
 REGISTRY 大小写严格匹配与本地 CCD 优先级
 FORCE_FIELD_ANALYSIS RTP 重原子缺失
 N/C terminal RTP template selection
 polymer entity + classification conflict 仍保持 POLYMER_CHAIN
 explicit nonpolymer entity 不被错误 polymer 标签提升
-PDB SEQRES + REMARK 465 缺失残基记录
-mmCIF unobserved residue + author source_resid 映射
-mmCIF 缺少 auth_seq_id 时 source_resid unresolved
-PDB 缺失记录指向不存在 chain 时 chain unresolved
-AF3 CIF + FASTA 精确序列参考
-AF3 CIF + AF3 input JSON 精确序列参考
-AF3 更长序列导致 author source_resid unresolved
-AF3 sequence reference chain ID 严格匹配
+PDB/mmCIF 缺失残基与 author source_resid 映射
+AF3 FASTA/JSON 精确序列参考与 chain ID 严格匹配
 多 altLoc 残基跳过重原子比较
-非水 exact RTP 重复定义确认
-普通水重复 RTP 例外
-相同哈希本地 CCD 候选合并
-不同有效本地 CCD 候选确认
-项目 CCD snapshot 权威优先级
-shared CCD cache fallback
+非水 exact RTP 重复定义确认与普通水例外
+CCD snapshot、本地目录和 shared cache 多来源路径
+Mg–ASP、Zn–HIE 配位确认后保持 relation-only
+HEM–CYS、HEM–HIE 配位确认后执行 topology promotion
+checker → confirmation → decision → final result 两轮闭环
 ```
 
 最新完整合成测试证据：
 
 ```text
-GitHub Actions run: 30319294167
-job: 90151595691
+GitHub Actions run: 30319696443
+job: 90152789553
 conclusion: success
 ```
 
-该运行在同一次 Actions job 中覆盖当前全部 v1.2 合成测试，包括 polymer grouping、缺失残基与 AF3 序列参考、altLoc、重复 RTP、水模型例外及 CCD 多来源矩阵。它证明合成 fixtures、schema meta-validation 与既有回归同时通过，但不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
+该运行在同一次 Actions job 中覆盖当前全部 v1.2 合成测试，包括 polymer grouping、缺失残基与 AF3 序列参考、altLoc、重复 RTP、水模型例外、CCD 多来源及金属配位 topology-effect 矩阵。它证明合成 fixtures、schema meta-validation 与既有回归同时通过，但不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
 
 ### 文档迁移
 
@@ -208,14 +203,13 @@ alias/模糊名称匹配
 ## 尚需完成的正式验收
 
 ```text
-1. 扩展 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的关系测试；
-2. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
-3. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
-4. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
-5. 验证真实 GROMACS force field，包括内部和端基 RTP；
-6. 运行 authoring 静态检查；
-7. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
-8. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
+1. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
+2. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
+3. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
+4. 验证真实 GROMACS force field，包括内部和端基 RTP；
+5. 运行 authoring 静态检查；
+6. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
+7. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
 ```
 
 ## 当前验收结论
@@ -224,8 +218,8 @@ alias/模糊名称匹配
 model scope entry: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
 new schemas: AUTHORED_AND_REFERENCED, META-VALIDATION PASSED IN LATEST CI
 classification parser: MIGRATED_TO_V1_2, GROUPING/MISSING/ALTLOC/RTP/CCD REGRESSIONS PASSED
-relation checkers: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
-final result builder: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
+relation checkers: IMPLEMENTED, COORDINATION TOPOLOGY MATRIX PASSED
+final result builder: IMPLEMENTED, RELATION DECISION CLOSURE PASSED
 subagent result wrapper: MIGRATED_TO_V1_2, LATEST SYNTHETIC CI PASSED
 documentation: MIGRATED_TO_V1_2
 legacy runtime path: REMOVED
