@@ -1,6 +1,6 @@
 # Component and residue classification v1.2 redesign implementation
 
-更新日期：2026-07-27
+更新日期：2026-07-28
 
 ## 状态
 
@@ -102,8 +102,11 @@ scripts/build_subagent_result.py
 - 缺失残基 author 编号与 chain 归属无法映射时的统一 unresolved 输出；
 - 跨阶段重复 unresolved observation 合并与证据保留；
 - CCD 项目 snapshot、本地目录、共享 cache 和按策略下载；
+- 相同哈希的本地 CCD 候选合并、不同有效本地候选统一确认；
+- 项目 CCD snapshot 对后续本地来源保持权威优先级；
 - 单构象残基的 CCD/RTP 重原子核验；
 - 多 altLoc 残基跳过重原子比较；
+- 非水 exact RTP 重复定义形成确认项，普通水重复 RTP 作为明确例外；
 - 项目定义驱动的可能共价连接和金属配位检查；
 - 已确认 relation 的 topology effect 与最终 `chain_groups` 重建；
 - 结构 chain grouping 与 residue topology classification 解耦；
@@ -129,6 +132,7 @@ scripts/build_subagent_result.py
 04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py
 04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py
 04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py
+04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py
 04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py
 ```
 
@@ -154,17 +158,24 @@ AF3 CIF + FASTA 精确序列参考
 AF3 CIF + AF3 input JSON 精确序列参考
 AF3 更长序列导致 author source_resid unresolved
 AF3 sequence reference chain ID 严格匹配
+多 altLoc 残基跳过重原子比较
+非水 exact RTP 重复定义确认
+普通水重复 RTP 例外
+相同哈希本地 CCD 候选合并
+不同有效本地 CCD 候选确认
+项目 CCD snapshot 权威优先级
+shared CCD cache fallback
 ```
 
 最新完整合成测试证据：
 
 ```text
-GitHub Actions run: 30263658123
-job: 89969186277
+GitHub Actions run: 30319294167
+job: 90151595691
 conclusion: success
 ```
 
-该运行覆盖当前主分支前的完整 v1.2 测试集合，包括 polymer grouping 修正和新增缺失残基/AF3 序列参考矩阵。它证明合成 fixtures、schema meta-validation 与既有回归在同一次 Actions 运行中全部通过，但不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
+该运行在同一次 Actions job 中覆盖当前全部 v1.2 合成测试，包括 polymer grouping、缺失残基与 AF3 序列参考、altLoc、重复 RTP、水模型例外及 CCD 多来源矩阵。它证明合成 fixtures、schema meta-validation 与既有回归同时通过，但不替代真实 PDB/mmCIF/AF3、真实力场和 Manager closure 验收。
 
 ### 文档迁移
 
@@ -197,15 +208,14 @@ alias/模糊名称匹配
 ## 尚需完成的正式验收
 
 ```text
-1. 扩展 altLoc、重复 RTP、水模型例外和 CCD 多来源 fixtures；
-2. 扩展 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的关系测试；
-3. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
-4. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
-5. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
-6. 验证真实 GROMACS force field，包括内部和端基 RTP；
-7. 运行 authoring 静态检查；
-8. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
-9. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
+1. 扩展 Mg/Zn promote=false 与 HEM–CYS/HIE promote=true 的关系测试；
+2. 使用真实 PDB 验证 model、缺失残基、CCD 和连接记录路径；
+3. 使用真实 mmCIF 验证 entity、作者编号、unobserved residues 和 struct_conn 路径；
+4. 使用 AF3 CIF + AF3 input JSON/FASTA 验证显式序列参考路径；
+5. 验证真实 GROMACS force field，包括内部和端基 RTP；
+6. 运行 authoring 静态检查；
+7. 完成一次 Manager task → wrapper → FAST validation → closure 端到端测试；
+8. 更新 SYNC_STATUS、inventory 和最终 VALIDATION 记录。
 ```
 
 ## 当前验收结论
@@ -213,7 +223,7 @@ alias/模糊名称匹配
 ```text
 model scope entry: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
 new schemas: AUTHORED_AND_REFERENCED, META-VALIDATION PASSED IN LATEST CI
-classification parser: MIGRATED_TO_V1_2, GROUPING AND MISSING-RESIDUE REGRESSIONS PASSED
+classification parser: MIGRATED_TO_V1_2, GROUPING/MISSING/ALTLOC/RTP/CCD REGRESSIONS PASSED
 relation checkers: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
 final result builder: IMPLEMENTED, LATEST SYNTHETIC CI PASSED
 subagent result wrapper: MIGRATED_TO_V1_2, LATEST SYNTHETIC CI PASSED
