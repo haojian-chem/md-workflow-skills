@@ -31,8 +31,12 @@ def materialize(directory: Path, fixture: dict) -> tuple[Path, Path]:
     model = directory / fixture["model_filename"]
     job_source = FIXTURES / fixture["job_filename"]
     job = directory / fixture["job_filename"]
+    job_bytes = job_source.read_bytes()
+    if MANIFEST["job_request_transport"] == "utf8_text_remove_one_trailing_lf":
+        assert job_bytes.endswith(b"\n")
+        job_bytes = job_bytes[:-1]
     model.write_bytes(model_bytes)
-    job.write_bytes(job_source.read_bytes())
+    job.write_bytes(job_bytes)
     assert model.stat().st_size == fixture["model_size_bytes"]
     assert job.stat().st_size == fixture["job_size_bytes"]
     assert sha256(model) == fixture["model_sha256"]
