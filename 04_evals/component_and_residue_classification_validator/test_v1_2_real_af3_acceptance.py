@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import base64
-import gzip
 import hashlib
+import lzma
 import subprocess
 import sys
 from pathlib import Path
@@ -27,7 +27,7 @@ def materialize(directory: Path, fixture: dict) -> tuple[Path, Path]:
         (FIXTURES / name).read_text(encoding="ascii").strip()
         for name in fixture["model_chunks"]
     )
-    model_bytes = gzip.decompress(base64.b64decode(encoded))
+    model_bytes = lzma.decompress(base64.b64decode(encoded))
     model = directory / fixture["model_filename"]
     job_source = FIXTURES / fixture["job_filename"]
     job = directory / fixture["job_filename"]
