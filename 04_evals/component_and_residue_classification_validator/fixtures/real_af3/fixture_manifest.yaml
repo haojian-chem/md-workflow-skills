@@ -1,6 +1,7 @@
 schema_version: 1
 encoding: xz+base64
 maximum_chunk_size: 10000
+job_request_transport: utf8_text_remove_one_trailing_lf
 fixtures:
 - label: fold_1bk0_ipns_fe_template_free
   chunk_size: 10000
