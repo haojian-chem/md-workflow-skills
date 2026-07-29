@@ -126,6 +126,8 @@ def test_real_alphafold_server_model_and_job_request(
     polymer_chain = fixture["expected_polymer_chain_id"]
     nonpolymer_chain = fixture["expected_nonpolymer_chain_id"]
     nonpolymer_residue = fixture["expected_nonpolymer_residue"]
+    nonpolymer_group_type = fixture["expected_nonpolymer_group_type"]
+
     assert observations["input"]["source_format"] == "AF3_CIF"
     assert observations["input"]["selected_model_id"] == "1"
     assert observations["missing_residue_checks"] == [
@@ -143,10 +145,10 @@ def test_real_alphafold_server_model_and_job_request(
         for item in observations["unresolved_observations"]
     )
     assert any(
-        record["source_chain_id"] == nonpolymer_chain
-        and record["residue_name"] == nonpolymer_residue
-        and record["presence_status"] == "OBSERVED"
-        for record in observations["residue_records"]
+        group["source_chain_id"] == nonpolymer_chain
+        and group.get("residue_name") == nonpolymer_residue
+        and group["group_type"] == nonpolymer_group_type
+        for group in observations["chain_groups"]
     )
     assert reference_manifest["sequence_references"] == [
         {
