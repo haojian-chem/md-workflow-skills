@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import gzip
 import hashlib
 import subprocess
 import sys
@@ -12,46 +14,29 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILL_ROOT = REPO_ROOT / "02_validators/component_and_residue_classification_validator"
 SCRIPTS = SKILL_ROOT / "scripts"
 FIXTURES = Path(__file__).resolve().parent / "fixtures/real_af3"
-sys.path.insert(0, str(FIXTURES))
-
-from fold_1bk0_ipns_fe_fixture_data import (  # noqa: E402
-    JOB_FILENAME as IPNS_JOB_FILENAME,
-    JOB_SHA256 as IPNS_JOB_SHA256,
-    MODEL_FILENAME as IPNS_MODEL_FILENAME,
-    MODEL_SHA256 as IPNS_MODEL_SHA256,
-    decode_job as decode_ipns_job,
-    decode_model as decode_ipns_model,
-)
-from fold_1dz9_p450cam_hem_fixture_data import (  # noqa: E402
-    JOB_FILENAME as P450_JOB_FILENAME,
-    JOB_SHA256 as P450_JOB_SHA256,
-    MODEL_FILENAME as P450_MODEL_FILENAME,
-    MODEL_SHA256 as P450_MODEL_SHA256,
-    decode_job as decode_p450_job,
-    decode_model as decode_p450_model,
-)
+MANIFEST = yaml.safe_load((FIXTURES / "fixture_manifest.yaml").read_text(encoding="utf-8"))
 
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def materialize(
-    directory: Path,
-    model_name: str,
-    model_bytes: bytes,
-    model_hash: str,
-    job_name: str,
-    job_bytes: bytes,
-    job_hash: str,
-) -> tuple[Path, Path]:
+def materialize(directory: Path, fixture: dict) -> tuple[Path, Path]:
     directory.mkdir(parents=True, exist_ok=True)
-    model = directory / model_name
-    job = directory / job_name
+    encoded = "".join(
+        (FIXTURES / name).read_text(encoding="ascii").strip()
+        for name in fixture["model_chunks"]
+    )
+    model_bytes = gzip.decompress(base64.b64decode(encoded))
+    model = directory / fixture["model_filename"]
+    job_source = FIXTURES / fixture["job_filename"]
+    job = directory / fixture["job_filename"]
     model.write_bytes(model_bytes)
-    job.write_bytes(job_bytes)
-    assert sha256(model) == model_hash
-    assert sha256(job) == job_hash
+    job.write_bytes(job_source.read_bytes())
+    assert model.stat().st_size == fixture["model_size_bytes"]
+    assert job.stat().st_size == fixture["job_size_bytes"]
+    assert sha256(model) == fixture["model_sha256"]
+    assert sha256(job) == fixture["job_sha256"]
     assert model.read_text(encoding="utf-8").startswith(
         "# By using this file you agree to the legally binding terms of use"
     )
@@ -108,65 +93,33 @@ def classify(tmp_path: Path, model: Path, job: Path) -> tuple[dict, dict]:
     observations = yaml.safe_load(
         (output / "classification_observations.yaml").read_text(encoding="utf-8")
     )
-    manifest = yaml.safe_load(
+    reference_manifest = yaml.safe_load(
         (output / "reference_manifest.yaml").read_text(encoding="utf-8")
     )
-    return observations, manifest
+    return observations, reference_manifest
 
 
-@pytest.mark.parametrize(
-    ("label", "model_name", "model_bytes", "model_hash", "job_name", "job_bytes", "job_hash", "nonpolymer"),
-    [
-        (
-            "1BK0_IPNS_FE",
-            IPNS_MODEL_FILENAME,
-            decode_ipns_model(),
-            IPNS_MODEL_SHA256,
-            IPNS_JOB_FILENAME,
-            decode_ipns_job(),
-            IPNS_JOB_SHA256,
-            "FE",
-        ),
-        (
-            "1DZ9_P450CAM_HEM",
-            P450_MODEL_FILENAME,
-            decode_p450_model(),
-            P450_MODEL_SHA256,
-            P450_JOB_FILENAME,
-            decode_p450_job(),
-            P450_JOB_SHA256,
-            "HEM",
-        ),
-    ],
-)
+@pytest.mark.parametrize("fixture", MANIFEST["fixtures"], ids=lambda item: item["label"])
 def test_real_alphafold_server_model_and_job_request(
     tmp_path: Path,
-    label: str,
-    model_name: str,
-    model_bytes: bytes,
-    model_hash: str,
-    job_name: str,
-    job_bytes: bytes,
-    job_hash: str,
-    nonpolymer: str,
+    fixture: dict,
 ) -> None:
-    model, job = materialize(
-        tmp_path / label,
-        model_name,
-        model_bytes,
-        model_hash,
-        job_name,
-        job_bytes,
-        job_hash,
+    model, job = materialize(tmp_path / fixture["label"], fixture)
+    observations, reference_manifest = classify(
+        tmp_path / f"run_{fixture['label']}",
+        model,
+        job,
     )
-    observations, manifest = classify(tmp_path / f"run_{label}", model, job)
 
+    polymer_chain = fixture["expected_polymer_chain_id"]
+    nonpolymer_chain = fixture["expected_nonpolymer_chain_id"]
+    nonpolymer_residue = fixture["expected_nonpolymer_residue"]
     assert observations["input"]["source_format"] == "AF3_CIF"
     assert observations["input"]["selected_model_id"] == "1"
     assert observations["missing_residue_checks"] == [
         {
             "chain_index": 1,
-            "source_chain_id": "A",
+            "source_chain_id": polymer_chain,
             "status": "NO_MISSING_RESIDUES",
             "evidence_types": ["AF3_INPUT_SEQUENCE", "AF3_OUTPUT_COORDINATES"],
             "missing_residue_count": 0,
@@ -178,14 +131,14 @@ def test_real_alphafold_server_model_and_job_request(
         for item in observations["unresolved_observations"]
     )
     assert any(
-        group.get("source_chain_id") == "B"
-        and group.get("residue_name") == nonpolymer
+        group.get("source_chain_id") == nonpolymer_chain
+        and group.get("residue_name") == nonpolymer_residue
         for group in observations["chain_groups"]
     )
-    assert manifest["sequence_references"] == [
+    assert reference_manifest["sequence_references"] == [
         {
             "path": str(job.resolve()),
-            "sha256": job_hash,
+            "sha256": fixture["job_sha256"],
             "status": "LOADED",
             "reference_type": "AF3_INPUT_JSON",
         }
