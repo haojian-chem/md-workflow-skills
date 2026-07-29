@@ -27,7 +27,15 @@ def materialize(directory: Path, fixture: dict) -> tuple[Path, Path]:
         (FIXTURES / name).read_text(encoding="ascii").strip()
         for name in fixture["model_chunks"]
     )
-    model_bytes = lzma.decompress(base64.b64decode(encoded))
+    assert len(encoded) % 4 == 0, {
+        "label": fixture["label"],
+        "encoded_length": len(encoded),
+        "chunk_lengths": [
+            len((FIXTURES / name).read_text(encoding="ascii").strip())
+            for name in fixture["model_chunks"]
+        ],
+    }
+    model_bytes = lzma.decompress(base64.b64decode(encoded, validate=True))
     model = directory / fixture["model_filename"]
     job_source = FIXTURES / fixture["job_filename"]
     job = directory / fixture["job_filename"]
@@ -135,9 +143,10 @@ def test_real_alphafold_server_model_and_job_request(
         for item in observations["unresolved_observations"]
     )
     assert any(
-        group.get("source_chain_id") == nonpolymer_chain
-        and group.get("residue_name") == nonpolymer_residue
-        for group in observations["chain_groups"]
+        record["source_chain_id"] == nonpolymer_chain
+        and record["residue_name"] == nonpolymer_residue
+        and record["presence_status"] == "OBSERVED"
+        for record in observations["residue_records"]
     )
     assert reference_manifest["sequence_references"] == [
         {
