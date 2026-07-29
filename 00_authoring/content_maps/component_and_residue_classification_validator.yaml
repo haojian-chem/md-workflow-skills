@@ -7,6 +7,8 @@ content_ownership_status: frozen
 owned_content:
   local_execution_flow_and_model_branching:
     owner: 02_validators/component_and_residue_classification_validator/SKILL.md
+  local_script_interface_documentation:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/README.md
   deterministic_model_scope_inspection:
     owner: 02_validators/component_and_residue_classification_validator/scripts/inspect_model_scope.py
   deterministic_classification_entry_point:
@@ -17,6 +19,8 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classification_engine_core.py
   deterministic_classification_helpers:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classification_common.py
+  deterministic_af3_server_sequence_reference:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/af3_server_sequence_reference.py
   selected_model_structure_records:
     owner: 02_validators/component_and_residue_classification_validator/scripts/structure_records.py
   explicit_structure_relations:
@@ -96,62 +100,66 @@ validation_evidence:
   authoritative_record:
     path: 04_evals/component_and_residue_classification_validator/VALIDATION.md
     status: current
-  latest_synthetic_ci:
+  synthetic_and_integration:
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30322483146
-    job_id: 90161060899
-    artifact_id: 8674497080
+    run_id: 30452751000
+    job_id: 90578579001
     conclusion: success
-    test_count: 59
+    test_count: 62
   real_pdb_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-pdb.yml
-    run_id: 30320757292
-    job_id: 90155925129
-    artifact_id: 8673890539
+    run_id: 30452751113
+    job_id: 90578579395
     conclusion: success
     test_count: 3
     entries: [1VNS, 1A6M, 1CRN]
   real_mmcif_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-mmcif.yml
-    run_id: 30321245758
-    job_id: 90157392672
-    artifact_id: 8674075169
+    run_id: 30452751015
+    job_id: 90578578794
     conclusion: success
     test_count: 3
     entries: [1VNS, 1A6M, 1CRN]
+  real_af3_acceptance:
+    workflow: .github/workflows/component-classification-v1-2-real-af3.yml
+    run_id: 30452751038
+    job_id: 90578579075
+    conclusion: success
+    test_count: 2
+    fixtures:
+      - fold_1bk0_ipns_fe_template_free
+      - fold_1dz9_p450cam_hem_template_free
   real_gromacs_forcefield_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-gromacs-forcefield.yml
-    run_id: 30321603205
-    job_id: 90158456934
-    artifact_id: 8674204994
+    run_id: 30452750925
+    job_id: 90578579923
     conclusion: success
     test_count: 1
     distribution: Ubuntu gromacs-data 2023.3-1ubuntu3
     force_field: amber99sb-ildn.ff
   authoring_static_validation:
     workflow: .github/workflows/component-classification-v1-2-authoring.yml
-    run_id: 30321998038
-    job_id: 90159314793
-    artifact_id: 8674336259
+    run_id: 30452751343
+    job_id: 90578580094
     conclusion: success
     validated_content_maps: 18
+    duplicate_blocks: 0
+    architecture_violations: 0
+    errors: 0
+    warnings: 0
   manager_task_closure:
     test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_manager_closure.py
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30322483146
-    job_id: 90161060899
-    artifact_id: 8674497080
+    run_id: 30452751000
+    job_id: 90578579001
     conclusion: success
-  real_af3_acceptance:
-    status: pending_real_input
-    required_inputs:
-      - actual *_model.cif
-      - corresponding fold_input.json, AlphaFold Server JSON, FASTA, or equivalent sequence reference
   overall:
     implementation: passed
     repository_controlled_validation: passed
-    validator_v1_2: not_passed_pending_real_af3
+    validator_v1_2: passed
 notes:
+  - General Manager, Workflow, Operation and Validator permissions are owned only by layer_boundaries.md and must not be duplicated in local Skill documentation.
+  - Local execution flow and model branching are owned by SKILL.md; scientific classification semantics are owned by references/classification_rules.md; CLI and module interfaces are owned by scripts/README.md.
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
   - Structural entity/polymer facts are authoritative for chain grouping; unresolved or conflicting topology classification remains unchanged in residue output.
@@ -161,6 +169,6 @@ notes:
   - Project CCD snapshots are authoritative; identical local candidates collapse by hash and differing valid local candidates require confirmation.
   - Confirmed Mg/Zn coordination with promote=false remains relation-only and does not alter topology grouping.
   - Confirmed HEM-CYS/HIE coordination with promote=true moves HEM into the polymer chain and marks it covalently linked nonstandard.
+  - Real AlphaFold Server acceptance verifies source chain B FE/HEM identities separately from aggregated chain-group representation; FE is an ION_GROUP and HEM is an INDEPENDENT_COMPONENT.
   - Real GROMACS acceptance confirms internal RTP parsing and confirms that terminal residues do not silently fall back when only n.tdb/c.tdb patches exist.
   - Manager closure confirms wrapper boundaries, one FAST validation, direct-reference checking, atomic commit, terminal event and visible closure summary.
-  - Overall PASS remains blocked only by real AF3 input acceptance.

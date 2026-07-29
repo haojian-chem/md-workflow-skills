@@ -1,6 +1,22 @@
 # Component and residue classification scripts
 
-The Validator uses a selected-model, five-stage deterministic pipeline:
+本文件只说明 1.2 确定性脚本的 CLI、模块边界、配置输入、输出文件和退出码。
+
+科学判定语义由：
+
+```text
+../references/classification_rules.md
+```
+
+定义；Validator 编排、preflight 和 task completion 由：
+
+```text
+../SKILL.md
+```
+
+定义。禁止在本文件复制上述文件已经拥有的规则。
+
+# Pipeline
 
 ```text
 inspect_model_scope.py
@@ -20,11 +36,12 @@ build_classification_result.py
 → confirmation_requests.yaml
 → classification_result.yaml
 → classification_report.md
+
+build_subagent_result.py
+→ subagent_result.yaml
 ```
 
-The scripts never modify the input structure. The Agent performs preflight, supplies explicit configuration files and returns the resulting candidate records to Manager. It must not reproduce structure parsing, RTP/CCD comparison, geometry checks or result integration manually.
-
-## 1. Model scope inspection
+# 1. Model scope
 
 ```bash
 python scripts/inspect_model_scope.py \
@@ -34,138 +51,179 @@ python scripts/inspect_model_scope.py \
   --output <model_scope.yaml>
 ```
 
-A single model is selected automatically. Multiple models produce `USER_SELECTION_REQUIRED`; after Manager records the user's choice, rerun with:
+单 model 自动返回唯一 selected model。
+
+多 model 返回：
+
+```text
+USER_SELECTION_REQUIRED
+```
+
+完成已记录的用户选择后，使用：
 
 ```text
 --selected-model-id <model_id>
 ```
 
-No residue classification is performed before the selected model is resolved.
+重新执行。
 
-## 2. Baseline classification
+selected model 未解决时，禁止启动 `classify_structure.py`。
+
+# 2. Baseline classification
 
 ```bash
 python scripts/classify_structure.py \
   --config <classification_config.yaml>
 ```
 
-Internal module boundary:
+配置至少固定：
+
+```text
+structure path
+structure SHA-256
+source format
+selected_model_id
+classification mode
+reference inputs
+output paths
+```
+
+可选配置：
+
+```text
+project_residue_definitions.yaml
+force-field root
+terminal RTP mappings
+AF3 input JSON or FASTA
+CCD project snapshot
+CCD local directories
+shared CCD cache
+retrieval policy
+```
+
+输出：
+
+```text
+classification_observations.yaml
+reference_manifest.yaml
+```
+
+## 模块边界
 
 ```text
 classification_engine.py
-→ runtime facade, chain-grouping invariant and cross-stage output normalization
+→ runtime facade
+→ structural grouping invariant
+→ cross-stage normalization
 
 classification_engine_core.py
 → baseline classification implementation
+
+structure_records.py
+→ selected-model structure records
+
+sequence_missing.py
+→ sequence-reference and missing-residue evidence
+
+rtp_reference.py
+→ RTP reference parsing
+
+ccd_reference.py
+→ CCD reference handling
+
+explicit_relations.py
+→ explicit PDB/mmCIF relation evidence
 ```
 
-The facade keeps structural entity/polymer facts authoritative while constructing baseline `chain_groups`. If residue topology classification is unresolved or conflicting, a structurally identified polymer or branched residue still remains in its structural chain. The original `ClassificationValue`, including null labels, `CONFLICT` status and evidence, is restored before observations are emitted. Conversely, an explicit structural nonpolymer entity is not promoted into a polymer chain solely because a project classification label says `POLYMER`.
-
-For missing-residue evidence, the facade also normalizes cross-stage results:
-
-- repeated reports with the same `issue_type`, `subject` and `resolution_status` are merged, preserving all distinct evidence;
-- a missing residue without a resolvable author `source_resid` is not emitted as a formal `MISSING_EXPECTED` residue record;
-- a missing-residue record whose target chain cannot be mapped to a `chain_index` is not counted as resolved;
-- both cases use `MAPPING_UNRESOLVED` with an explicit reason in `missing_residue_checks`.
-
-The YAML configuration supplies:
+## AlphaFold Server JSON
 
 ```text
-structure path, hash, format and selected_model_id
-classification mode: REGISTRY or FORCE_FIELD_ANALYSIS
-optional project_residue_definitions.yaml
-optional force-field root and explicit terminal RTP mappings
-optional AF3 input/FASTA sequence references
-CCD project snapshot, local reference directories, shared cache and retrieval policy
-observations and reference-manifest output paths
+af3_server_sequence_reference.py
 ```
 
-The baseline pass:
+用于兼容 `dialect: alphafoldserver` 的单 job 顶层列表。entity 未提供显式 ID 时，按 entity 顺序和 `count` 确定性生成 `A..Z, AA..` chain IDs；ligand 和 ion 占用 chain ID，但不生成 polymer sequence。
 
-- preserves residue and atom name case exactly;
-- applies project definitions, exact Skill registries and entity context in `REGISTRY` mode;
-- applies project definitions, exact RTP blocks and only then Skill fallback in `FORCE_FIELD_ANALYSIS` mode;
-- records PDB/mmCIF missing residues from sequence/coordinate and explicit unobserved-residue evidence;
-- skips AF3 missing-residue checks unless an AF3 input or sequence reference is supplied;
-- checks standard-residue heavy atoms against CCD in `REGISTRY` mode and against the selected RTP template in force-field mode;
-- checks nonstandard-residue heavy atoms against CCD in both modes;
-- uses explicitly mapped N/C or 5′/3′ terminal RTP templates for terminal heavy-atom validation;
-- marks multi-altLoc residues as `MULTIPLE_CONFORMATIONS` and does not perform their heavy-atom comparison;
-- creates baseline `chain_groups` and only retains per-instance records for polymer/branched residues, missing residues and non-aggregated or exceptional components.
+顶层列表包含多个 job 时必须拒绝解析。
 
-## 3. Possible covalent connections
+# 3. Possible covalent connections
 
 ```bash
 python scripts/check_possible_connections.py \
   --config <possible_connections_check_config.yaml>
 ```
 
-The checker reads `possible_connections.yaml`, enumerates every exact residue/atom instance combination, resolves explicit PDB/mmCIF connections, calculates configured distance ranges and records all supported, conflicting and missing-partner outcomes. It never creates a bond or changes classification.
+输出：
 
-## 4. Possible metal coordination
+```text
+relation_checks/possible_connections_result.yaml
+```
+
+配置未提供 `possible_connections.yaml` 时，脚本必须写出 schema 合法的 `NOT_PERFORMED` 结果。
+
+# 4. Possible metal coordination
 
 ```bash
 python scripts/check_possible_coordination.py \
   --config <possible_coordination_check_config.yaml>
 ```
 
-The checker treats metal and donor endpoints as directional, validates exact elements, preserves `METAL_COORDINATION` as the relation type and records whether the project definition allows `promote_nonstandard_to_linked`. Geometry-only candidates remain pending until a user decision is recorded.
+输出：
 
-## 5. Result integration
+```text
+relation_checks/possible_coordination_result.yaml
+```
+
+配置未提供 `possible_coordination.yaml` 时，脚本必须写出 schema 合法的 `NOT_PERFORMED` 结果。
+
+# 5. Result integration
 
 ```bash
 python scripts/build_classification_result.py \
   --config <classification_result_build_config.yaml>
 ```
 
-The builder:
-
-- verifies that all source hashes and selected-model identities match;
-- applies confirmed explicit relations;
-- applies decisions tied to the exact hash of a previous confirmation file;
-- promotes nonstandard components only for confirmed topology-forming relations;
-- rebuilds final `chain_groups`;
-- writes the remaining aggregated confirmation requests;
-- writes a `COMPLETE` or `PENDING_USER_CONFIRMATION` result and a Markdown report.
-
-The first integration pass normally has no decisions. A later pass uses new output paths plus a `decision_source` that references the previous `confirmation_requests.yaml` hash; old results are not overwritten.
-
-## Exact-name and template rules
+输出：
 
 ```text
-HEM != Hem != hem
-FE atom name != Fe element symbol
+confirmation_requests.yaml
+classification_result.yaml
+classification_report.md
 ```
 
-No script uppercases residue or atom names, performs alias lookup, uses regular expressions or selects a nearest name. `ccd_id` is either explicitly provided or exactly equal to `residue_name`.
+首次整合通常不提供 decisions。
 
-In force-field mode, residue recognition is based only on exact `*.rtp` residue blocks. `residuetypes.dat`, `*.n.tdb`, `*.c.tdb` and `specbond.dat` are not applied in this version. A non-water exact RTP name defined more than once becomes a confirmation item. Multiple water-model RTP definitions are allowed, and ordinary water is not heavy-atom checked against RTP names.
+再次整合必须使用新输出路径，并提供绑定到上一份 `confirmation_requests.yaml` exact SHA-256 的 `decision_source`。禁止覆盖旧结果或应用未绑定的决定。
 
-## CCD lookup order
+# 6. Shared Validator result
 
-```text
-existing project snapshot
-→ configured local reference directories
-→ shared cache
-→ remote download when retrieval_policy is DOWNLOAD_MISSING
+```bash
+python scripts/build_subagent_result.py \
+  --task <task.yaml> \
+  --classification-result <classification_result.yaml> \
+  --confirmation-requests <confirmation_requests.yaml> \
+  --report <classification_report.md> \
+  --log <classification.log> \
+  --output <subagent_result.yaml>
 ```
 
-A valid external CCD file is copied into `reference_data/ccd/` and the project snapshot becomes the authoritative reference for the run. Files are accepted only after component-ID, atom-table, element and SHA-256 validation.
+wrapper 必须验证本地结果 schema 和共享 `subagent_result v2` contract。
 
-## Deterministic boundaries
+# I/O invariants
 
-The scripts:
+所有公开脚本必须：
 
-- reject missing, empty and symlink inputs;
-- verify input hashes and selected-model identity;
-- use strict YAML duplicate-key parsing and Draft 2020-12 schema validation;
-- finish all feasible scientific checks before returning aggregated confirmation requests;
-- stop immediately only on technical invalidity that prevents a trustworthy result;
-- use atomic output writes and refuse to overwrite different existing results;
-- do not write `00_project_state/**` or `00_project_records/**`;
-- do not choose the next Workflow task or ask the user questions directly.
+- 使用显式输入路径和输出路径；
+- 核验声明 SHA-256 与实际文件内容；
+- 核验 selected-model identity；
+- 使用严格 YAML duplicate-key parsing；
+- 使用 Draft 2020-12 schema validation；
+- 使用原子写入；
+- 拒绝覆盖已有不同内容的结果；
+- 在技术无效时停止并返回非零退出码。
 
-## Exit codes
+禁止脚本修改输入 STRUCTURE 文件或写入未声明路径。
+
+# Exit codes
 
 ```text
 0  deterministic processing completed
@@ -173,6 +231,8 @@ The scripts:
 3  unexpected internal failure
 ```
 
-## Dependencies
+退出码 `0` 只表示确定性处理完成；对象是否存在待确认问题由机器可读结果表达。
 
-Install the versions declared in `requirements.txt`.
+# Dependencies
+
+安装 `requirements.txt` 声明的版本。

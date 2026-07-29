@@ -21,6 +21,7 @@ fixtures:
   expected_polymer_chain_id: A
   expected_nonpolymer_chain_id: B
   expected_nonpolymer_residue: FE
+  expected_nonpolymer_group_type: ION_GROUP
 - label: fold_1dz9_p450cam_hem_template_free
   chunk_size: 5000
   model_filename: fold_1dz9_p450cam_hem_template_free_model_0.cif
@@ -46,3 +47,4 @@ fixtures:
   expected_polymer_chain_id: A
   expected_nonpolymer_chain_id: B
   expected_nonpolymer_residue: HEM
+  expected_nonpolymer_group_type: INDEPENDENT_COMPONENT
