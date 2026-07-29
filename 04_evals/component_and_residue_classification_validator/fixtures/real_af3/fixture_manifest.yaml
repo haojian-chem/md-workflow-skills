@@ -1,0 +1,35 @@
+schema_version: 1
+encoding: gzip+base64
+chunk_size: 20000
+fixtures:
+- label: fold_1bk0_ipns_fe_template_free
+  model_filename: fold_1bk0_ipns_fe_template_free_model_0.cif
+  model_sha256: 2a93f960885dc6bbd6c4de1b042b00e2d5afdb87b14ba0fb9a2b434528e761d6
+  model_size_bytes: 230760
+  model_chunks:
+  - fold_1bk0_ipns_fe_template_free_model_0.cif.gz.b64.part01
+  - fold_1bk0_ipns_fe_template_free_model_0.cif.gz.b64.part02
+  - fold_1bk0_ipns_fe_template_free_model_0.cif.gz.b64.part03
+  - fold_1bk0_ipns_fe_template_free_model_0.cif.gz.b64.part04
+  job_filename: fold_1bk0_ipns_fe_template_free_job_request.json
+  job_sha256: 1d97551888bb8cbe769aa4d375971b037918f892b236bb7a2f0a120b85dfdc13
+  job_size_bytes: 639
+  expected_polymer_chain_id: A
+  expected_nonpolymer_chain_id: B
+  expected_nonpolymer_residue: FE
+- label: fold_1dz9_p450cam_hem_template_free
+  model_filename: fold_1dz9_p450cam_hem_template_free_model_0.cif
+  model_sha256: 02360320a239937c1a91ee5f93717851c17a9852cdaa9a7eafa2b12844755a81
+  model_size_bytes: 287927
+  model_chunks:
+  - fold_1dz9_p450cam_hem_template_free_model_0.cif.gz.b64.part01
+  - fold_1dz9_p450cam_hem_template_free_model_0.cif.gz.b64.part02
+  - fold_1dz9_p450cam_hem_template_free_model_0.cif.gz.b64.part03
+  - fold_1dz9_p450cam_hem_template_free_model_0.cif.gz.b64.part04
+  - fold_1dz9_p450cam_hem_template_free_model_0.cif.gz.b64.part05
+  job_filename: fold_1dz9_p450cam_hem_template_free_job_request.json
+  job_sha256: d9af80a7af93d3b875d634d205718c67d6c6d12cfdf4285310b15ce6539f06cf
+  job_size_bytes: 735
+  expected_polymer_chain_id: A
+  expected_nonpolymer_chain_id: B
+  expected_nonpolymer_residue: HEM
