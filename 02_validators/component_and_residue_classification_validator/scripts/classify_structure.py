@@ -6,12 +6,15 @@ import argparse
 import sys
 from pathlib import Path
 
+from af3_server_sequence_reference import install_af3_server_sequence_reference
 from classification_common import (
     ClassificationToolError,
     atomic_write_yaml,
     read_yaml_strict,
 )
 from classification_engine import execute_classification
+
+install_af3_server_sequence_reference()
 
 VERSION = "0.2.0-draft"
 
