@@ -149,7 +149,7 @@ def test_real_alphafold_server_model_and_job_request(
         and group.get("residue_name") == nonpolymer_residue
         and group["group_type"] == nonpolymer_group_type
         for group in observations["chain_groups"]
-    )
+    ), observations["chain_groups"]
     assert reference_manifest["sequence_references"] == [
         {
             "path": str(job.resolve()),
