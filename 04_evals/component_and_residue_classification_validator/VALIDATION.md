@@ -1,6 +1,6 @@
 # Component and residue classification v1.2 validation
 
-更新日期：2026-07-29
+更新日期：2026-07-30
 
 ## 最终状态
 
@@ -25,9 +25,9 @@ VALIDATOR_V1_2_OVERALL: PASS
 
 ```text
 workflow: .github/workflows/component-classification-v1-2.yml
-run: 30452751000
-job: 90578579001
-tests: 62 passed
+run: 30508963075
+job: 90764701893
+tests: 64 passed
 conclusion: success
 ```
 
@@ -42,6 +42,7 @@ conclusion: success
 - AlphaFold Server 单 job JSON、隐式 chain ID 和 sequence comparison；
 - altLoc、RTP、terminal mapping 和 CCD；
 - possible connection、metal coordination 和 topology effect；
+- `TOPOLOGY_LINKED_NONSTANDARD` 枚举、registry 路径和 `topology_linked_nonstandard_count` 输出字段迁移；
 - confirmation replay、final-result builder 和 shared result wrapper；
 - Manager task → one FAST validation → atomic commit → terminal event → visible closure。
 
@@ -49,8 +50,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-pdb.yml
-run: 30452751113
-job: 90578579395
+run: 30508963060
+job: 90764701793
 tests: 3 passed
 conclusion: success
 ```
@@ -67,8 +68,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-mmcif.yml
-run: 30452751015
-job: 90578578794
+run: 30508963069
+job: 90764701873
 tests: 3 passed
 conclusion: success
 ```
@@ -85,8 +86,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-af3.yml
-run: 30452751038
-job: 90578579075
+run: 30508963057
+job: 90764701753
 tests: 2 passed
 conclusion: success
 ```
@@ -122,8 +123,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-gromacs-forcefield.yml
-run: 30452750925
-job: 90578579923
+run: 30508963063
+job: 90764701869
 tests: 1 passed
 conclusion: success
 ```
@@ -142,8 +143,8 @@ force-field root: /usr/share/gromacs/top/amber99sb-ildn.ff
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-authoring.yml
-run: 30452751343
-job: 90578580094
+run: 30508963095
+job: 90764701922
 conclusion: success
 ```
 
@@ -156,12 +157,13 @@ content-map errors: 0
 warnings: 0
 ```
 
-该运行对应文档层级整改后的最终文件，确认：
+该运行对应文档层级与 topology class 术语整改后的最终文件，确认：
 
 - `SKILL.md` 只拥有局部执行编排和 model branching；
 - `classification_rules.md` 拥有科学判定语义；
 - `scripts/README.md` 只拥有 CLI 与模块接口；
 - 上下级规则未形成重复定义。
+- 旧枚举、旧 registry 路径和旧 summary 字段在活动仓库文本中均为零残留。
 
 ## 7. Manager task closure
 
@@ -184,7 +186,34 @@ conclusion: success
 - Workstream 前移、active task 清空、`TASK_DONE` 持久化；
 - 基于已提交终态生成用户可见 closure summary。
 
-## 8. 结论
+
+## 8. Topology class 术语迁移
+
+```text
+旧 topology_class: COVALENTLY_LINKED_NONSTANDARD
+新 topology_class: TOPOLOGY_LINKED_NONSTANDARD
+旧 summary 字段: covalently_linked_nonstandard_count
+新 summary 字段: topology_linked_nonstandard_count
+```
+
+迁移后的语义边界：
+
+- `TOPOLOGY_LINKED_NONSTANDARD` 只描述非标准组分已经纳入连接拓扑；
+- 触发关系仍单独记录为 `COVALENT_CONNECTION`、`METAL_COORDINATION` 或其他受支持 relation type；
+- 禁止根据 topology class 反推化学关系类型；
+- `HEM` 的名称级 baseline 示例为 `INDEPENDENT_NONSTANDARD`；
+- 只有确认且应用了 topology effect 的具体 HEM 实例才提升为 `TOPOLOGY_LINKED_NONSTANDARD`；
+- 旧枚举、旧 registry 文件名和旧 summary 字段不再由活动 schema 或实现接受。
+
+永久回归测试：
+
+```text
+04_evals/component_and_residue_classification_validator/test_v1_2_topology_class_vocabulary.py
+```
+
+该测试扫描活动仓库文本，并核验三个分类 schema、规则定义、registry 路径和 summary 字段。
+
+## 9. 结论
 
 ```text
 local implementation: complete
