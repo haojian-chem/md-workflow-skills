@@ -13,32 +13,7 @@ on:
       - ".github/workflows/component-classification-v1-2.yml"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  migrate-topology-class:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'refactor/topology-linked-nonstandard' && github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: refactor/topology-linked-nonstandard
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Refine topology class migration
-        run: python 05_tools/tmp_refine_topology_class_migration.py
-      - name: Commit refined repository
-        run: |
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Refine topology class contract migration"
-          git push origin HEAD:refactor/topology-linked-nonstandard
-
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -69,6 +44,7 @@ jobs:
             04_evals/component_and_residue_classification_validator/test_v1_2_af3_server_json.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_topology_class_vocabulary.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_manager_closure.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py \
             2>&1 | tee ci_test_output/pytest.log
