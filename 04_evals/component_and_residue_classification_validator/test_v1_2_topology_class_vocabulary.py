@@ -6,6 +6,10 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILL_ROOT = REPO_ROOT / "02_validators/component_and_residue_classification_validator"
+VALIDATION_RECORD = (
+    REPO_ROOT
+    / "04_evals/component_and_residue_classification_validator/VALIDATION.md"
+)
 OLD_ENUM = "COVALENTLY" + "_LINKED_NONSTANDARD"
 NEW_ENUM = "TOPOLOGY_LINKED_NONSTANDARD"
 OLD_REGISTRY = "covalently" + "_linked_nonstandard_residue_registry.yaml"
@@ -33,18 +37,30 @@ def repository_text_files() -> list[Path]:
         files.extend(
             item
             for item in root.rglob("*")
-            if item.is_file() and item.suffix.lower() in TEXT_SUFFIXES
+            if item.is_file()
+            and item.suffix.lower() in TEXT_SUFFIXES
+            and item != VALIDATION_RECORD
         )
     return sorted(files)
 
 
-def test_deprecated_topology_class_is_absent() -> None:
+def test_deprecated_topology_class_is_absent_from_active_repository_text() -> None:
     offenders = []
     for item in repository_text_files():
         text = item.read_text(encoding="utf-8")
         if OLD_ENUM in text or OLD_REGISTRY in text or OLD_COUNT in text:
             offenders.append(str(item.relative_to(REPO_ROOT)))
     assert offenders == []
+
+
+def test_validation_record_preserves_explicit_migration_history() -> None:
+    text = VALIDATION_RECORD.read_text(encoding="utf-8")
+    assert OLD_ENUM in text
+    assert NEW_ENUM in text
+    assert OLD_COUNT in text
+    assert NEW_COUNT in text
+    assert "旧 topology_class" in text
+    assert "新 topology_class" in text
 
 
 def test_topology_linked_contract_and_registry_are_authoritative() -> None:
@@ -67,6 +83,8 @@ def test_topology_linked_contract_and_registry_are_authoritative() -> None:
         assert NEW_ENUM in serialized
         assert OLD_ENUM not in serialized
 
-    result_schema = (SKILL_ROOT / "schemas/classification_result.schema.yaml").read_text(encoding="utf-8")
+    result_schema = (SKILL_ROOT / "schemas/classification_result.schema.yaml").read_text(
+        encoding="utf-8"
+    )
     assert NEW_COUNT in result_schema
     assert OLD_COUNT not in result_schema
