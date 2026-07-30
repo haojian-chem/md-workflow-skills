@@ -1,0 +1,42 @@
+name: temporary-topology-class-migration
+
+on:
+  push:
+    branches:
+      - refactor/topology-linked-nonstandard
+    paths:
+      - 05_tools/tmp_migrate_topology_linked_nonstandard.py
+      - .github/workflows/tmp-topology-class-migration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/topology-linked-nonstandard
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply exact vocabulary migration
+        run: python 05_tools/tmp_migrate_topology_linked_nonstandard.py
+      - name: Check migration diff
+        run: |
+          git diff --check
+          git status --short
+      - name: Commit migrated repository
+        run: |
+          if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo "No migration changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Rename linked nonstandard topology class"
+          git push origin HEAD:refactor/topology-linked-nonstandard
