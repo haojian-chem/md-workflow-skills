@@ -87,7 +87,7 @@ properties:
     required:
       - chain_group_count
       - standard_residue_count
-      - covalently_linked_nonstandard_count
+      - topology_linked_nonstandard_count
       - independent_nonstandard_count
       - solvent_component_count
       - ion_component_count
@@ -98,7 +98,7 @@ properties:
     properties:
       chain_group_count: {type: integer, minimum: 0}
       standard_residue_count: {type: integer, minimum: 0}
-      covalently_linked_nonstandard_count: {type: integer, minimum: 0}
+      topology_linked_nonstandard_count: {type: integer, minimum: 0}
       independent_nonstandard_count: {type: integer, minimum: 0}
       solvent_component_count: {type: integer, minimum: 0}
       ion_component_count: {type: integer, minimum: 0}

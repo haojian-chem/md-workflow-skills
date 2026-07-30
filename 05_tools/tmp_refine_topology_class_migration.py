@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OLD_COUNT = "covalently_linked_nonstandard_count"
+OLD_COUNT = "topology_linked_nonstandard_count"
 NEW_COUNT = "topology_linked_nonstandard_count"
 TEXT_SUFFIXES = {".py", ".md", ".yaml", ".yml", ".json", ".txt"}
 

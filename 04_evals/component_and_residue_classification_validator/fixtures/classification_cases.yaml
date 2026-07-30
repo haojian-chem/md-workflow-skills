@@ -39,7 +39,7 @@ cases:
       prohibited:
         - automatic TOPOLOGY_LINKED_NONSTANDARD classification
   - case_id: CRC-004
-    title: metal coordination remains separate from covalent topology
+    title: metal coordination with no topology effect remains independent
     input_summary:
       format: MMCIF
       contents: zinc coordinated by protein donors and an independent ligand
@@ -48,7 +48,7 @@ cases:
       ligand_topology_class: INDEPENDENT_NONSTANDARD
       coordination_candidate_count_min: 1
       prohibited:
-        - ligand classified as covalently linked solely from coordination
+        - ligand promoted to TOPOLOGY_LINKED_NONSTANDARD when topology effect is disabled
   - case_id: CRC-005
     title: identical classification across multiple models
     input_summary:

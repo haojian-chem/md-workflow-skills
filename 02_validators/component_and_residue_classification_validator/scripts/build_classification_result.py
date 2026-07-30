@@ -771,7 +771,7 @@ def _render_report(result: dict[str, Any], confirmation: dict[str, Any]) -> str:
     lines.extend(["", "## Classification summary", ""])
     for key in (
         "standard_residue_count",
-        "covalently_linked_nonstandard_count",
+        "topology_linked_nonstandard_count",
         "independent_nonstandard_count",
         "solvent_component_count",
         "ion_component_count",
@@ -1027,7 +1027,7 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         "summary": {
             "chain_group_count": len(final_groups),
             "standard_residue_count": standard_count,
-            "covalently_linked_nonstandard_count": linked_count,
+            "topology_linked_nonstandard_count": linked_count,
             "independent_nonstandard_count": independent_count,
             "solvent_component_count": solvent_count,
             "ion_component_count": ion_count,

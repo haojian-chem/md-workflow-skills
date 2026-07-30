@@ -10,6 +10,8 @@ OLD_ENUM = "COVALENTLY" + "_LINKED_NONSTANDARD"
 NEW_ENUM = "TOPOLOGY_LINKED_NONSTANDARD"
 OLD_REGISTRY = "covalently" + "_linked_nonstandard_residue_registry.yaml"
 NEW_REGISTRY = "topology_linked_nonstandard_residue_registry.yaml"
+OLD_COUNT = "covalently" + "_linked_nonstandard_count"
+NEW_COUNT = "topology_linked_nonstandard_count"
 TEXT_SUFFIXES = {".py", ".md", ".yaml", ".yml", ".json", ".txt"}
 
 
@@ -40,7 +42,7 @@ def test_deprecated_topology_class_is_absent() -> None:
     offenders = []
     for item in repository_text_files():
         text = item.read_text(encoding="utf-8")
-        if OLD_ENUM in text or OLD_REGISTRY in text:
+        if OLD_ENUM in text or OLD_REGISTRY in text or OLD_COUNT in text:
             offenders.append(str(item.relative_to(REPO_ROOT)))
     assert offenders == []
 
@@ -64,3 +66,7 @@ def test_topology_linked_contract_and_registry_are_authoritative() -> None:
         serialized = yaml.safe_dump(document, sort_keys=True)
         assert NEW_ENUM in serialized
         assert OLD_ENUM not in serialized
+
+    result_schema = (SKILL_ROOT / "schemas/classification_result.schema.yaml").read_text(encoding="utf-8")
+    assert NEW_COUNT in result_schema
+    assert OLD_COUNT not in result_schema

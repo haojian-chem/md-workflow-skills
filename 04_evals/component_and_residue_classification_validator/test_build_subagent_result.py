@@ -95,7 +95,7 @@ def classification_result(status: str, unresolved_count: int) -> dict:
         "summary": {
             "chain_group_count": 0,
             "standard_residue_count": 0,
-            "covalently_linked_nonstandard_count": 0,
+            "topology_linked_nonstandard_count": 0,
             "independent_nonstandard_count": 0,
             "solvent_component_count": 0,
             "ion_component_count": 0,

@@ -79,7 +79,7 @@ SOLVENT_COMPONENT
 ION_COMPONENT
 ```
 
-`TOPOLOGY_LINKED_NONSTANDARD` 表示某个非标准组分已因确认且实际应用了 topology effect 的成键关系而纳入连接拓扑。触发关系可以是 `COVALENT_BOND`、`METAL_COORDINATION`，或其他由项目规则明确允许的 topology-forming relation。
+`TOPOLOGY_LINKED_NONSTANDARD` 表示某个非标准组分已因确认且实际应用了 topology effect 的成键关系而纳入连接拓扑。触发关系可以是 `COVALENT_CONNECTION`、`METAL_COORDINATION`，或其他由项目规则明确允许的 topology-forming relation。
 
 该字段只描述组分的拓扑归属，禁止据此反推化学关系类型；关系类型必须由 relation result 单独记录。
 
