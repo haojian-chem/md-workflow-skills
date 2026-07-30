@@ -396,7 +396,7 @@ def test_coordination_confirmation_promotes_heme_in_final_result(tmp_path: Path)
         record for record in result["residue_records"] if record["residue_name"] == "HEM"
     )
     assert heme["chain_index"] == 1
-    assert heme["classification"]["topology_class"] == "COVALENTLY_LINKED_NONSTANDARD"
+    assert heme["classification"]["topology_class"] == "TOPOLOGY_LINKED_NONSTANDARD"
     assert result["confirmed_relations"]["metal_coordination"][0][
         "relation_type"
     ] == "METAL_COORDINATION"

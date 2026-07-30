@@ -73,11 +73,15 @@ WATER
 
 ```text
 STANDARD_RESIDUE
-COVALENTLY_LINKED_NONSTANDARD
+TOPOLOGY_LINKED_NONSTANDARD
 INDEPENDENT_NONSTANDARD
 SOLVENT_COMPONENT
 ION_COMPONENT
 ```
+
+`TOPOLOGY_LINKED_NONSTANDARD` 表示某个非标准组分已因确认且实际应用了 topology effect 的成键关系而纳入连接拓扑。触发关系可以是 `COVALENT_CONNECTION`、`METAL_COORDINATION`，或其他由项目规则明确允许的 topology-forming relation。
+
+该字段只描述组分的拓扑归属，禁止据此反推化学关系类型；关系类型必须由 relation result 单独记录。
 
 `UNKNOWN`、`UNRESOLVED` 和 `CONFLICT` 是 `resolution_status`，禁止写入分类字段。
 
@@ -85,9 +89,9 @@ ION_COMPONENT
 
 | polymer_class | topology_class |
 |---|---|
-| `POLYMER` | `STANDARD_RESIDUE`, `COVALENTLY_LINKED_NONSTANDARD` |
-| `BRANCHED` | `STANDARD_RESIDUE`, `COVALENTLY_LINKED_NONSTANDARD`, `INDEPENDENT_NONSTANDARD` |
-| `NONPOLYMER` | `COVALENTLY_LINKED_NONSTANDARD`, `INDEPENDENT_NONSTANDARD`, `SOLVENT_COMPONENT`, `ION_COMPONENT` |
+| `POLYMER` | `STANDARD_RESIDUE`, `TOPOLOGY_LINKED_NONSTANDARD` |
+| `BRANCHED` | `STANDARD_RESIDUE`, `TOPOLOGY_LINKED_NONSTANDARD`, `INDEPENDENT_NONSTANDARD` |
+| `NONPOLYMER` | `TOPOLOGY_LINKED_NONSTANDARD`, `INDEPENDENT_NONSTANDARD`, `SOLVENT_COMPONENT`, `ION_COMPONENT` |
 | `WATER` | `SOLVENT_COMPONENT` |
 
 # 5. 项目级残基定义
@@ -99,7 +103,7 @@ schema_version: "1.0"
 residue_definitions:
   - residue_name: HEM
     polymer_class: NONPOLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: INDEPENDENT_NONSTANDARD
     ccd_id: HEM
 ```
 
@@ -110,6 +114,7 @@ residue_definitions:
 - 同一个精确 `residue_name` 只允许定义一次；
 - v1 定义禁止包含 model、chain、source residue number 或连接原子限制；
 - 一条定义适用于 selected model 中所有精确同名实例。
+- 项目级残基定义建立所有精确同名实例的 baseline 分类；确认的 topology-forming relation 只允许提升参与该关系的具体实例，禁止反向修改其他同名实例的 baseline。
 
 # 6. 分类来源顺序
 
@@ -380,7 +385,7 @@ possible_coordination:
 - 同一金属具有多个不同供体是合法事实，禁止自动判定为冲突；
 - 关系类型必须保持 `METAL_COORDINATION`；
 - `promote_nonstandard_to_linked: true` 只在显式关系确认或用户确认几何候选后生效；
-- HEM–CYS/HIE 等 topology-forming coordination 可以将 HEM 提升为 `COVALENTLY_LINKED_NONSTANDARD`；
+- HEM–CYS/HIE 等 topology-forming coordination 可以将 HEM 提升为 `TOPOLOGY_LINKED_NONSTANDARD`；
 - Mg、Zn 等是否改变 topology 必须由项目定义明确，禁止仅凭距离自动判断；
 - `promote_nonstandard_to_linked: false` 只记录配位，禁止改变 topology 或 chain group。
 

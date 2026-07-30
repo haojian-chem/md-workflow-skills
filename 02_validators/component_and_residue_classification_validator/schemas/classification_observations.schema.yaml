@@ -158,7 +158,7 @@ $defs:
         type: [string, "null"]
         enum:
           - STANDARD_RESIDUE
-          - COVALENTLY_LINKED_NONSTANDARD
+          - TOPOLOGY_LINKED_NONSTANDARD
           - INDEPENDENT_NONSTANDARD
           - SOLVENT_COMPONENT
           - ION_COMPONENT

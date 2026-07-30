@@ -33,7 +33,7 @@ $defs:
   topology_class:
     enum:
       - STANDARD_RESIDUE
-      - COVALENTLY_LINKED_NONSTANDARD
+      - TOPOLOGY_LINKED_NONSTANDARD
       - INDEPENDENT_NONSTANDARD
       - SOLVENT_COMPONENT
       - ION_COMPONENT
@@ -64,7 +64,7 @@ $defs:
             topology_class:
               enum:
                 - STANDARD_RESIDUE
-                - COVALENTLY_LINKED_NONSTANDARD
+                - TOPOLOGY_LINKED_NONSTANDARD
       - if:
           properties:
             polymer_class:
@@ -75,7 +75,7 @@ $defs:
             topology_class:
               enum:
                 - STANDARD_RESIDUE
-                - COVALENTLY_LINKED_NONSTANDARD
+                - TOPOLOGY_LINKED_NONSTANDARD
                 - INDEPENDENT_NONSTANDARD
       - if:
           properties:
@@ -86,7 +86,7 @@ $defs:
           properties:
             topology_class:
               enum:
-                - COVALENTLY_LINKED_NONSTANDARD
+                - TOPOLOGY_LINKED_NONSTANDARD
                 - INDEPENDENT_NONSTANDARD
                 - SOLVENT_COMPONENT
                 - ION_COMPONENT

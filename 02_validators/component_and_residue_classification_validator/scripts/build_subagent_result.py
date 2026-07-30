@@ -139,8 +139,8 @@ def _key_findings(result: dict[str, Any]) -> list[str]:
         f"chain groups: {summary['chain_group_count']}",
         f"standard residues: {summary['standard_residue_count']}",
         (
-            "covalently linked nonstandard residues: "
-            f"{summary['covalently_linked_nonstandard_count']}"
+            "topology-linked nonstandard residues: "
+            f"{summary['topology_linked_nonstandard_count']}"
         ),
         f"independent nonstandard residues: {summary['independent_nonstandard_count']}",
         f"missing residues recorded: {summary['missing_residue_count']}",

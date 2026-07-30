@@ -21,6 +21,7 @@ ATOM      4  O   ALA A   1       3.800   0.000   0.000  1.00 20.00           O
 ATOM      5  CB  ALA A   1       1.400   1.500   0.000  1.00 20.00           C
 HETATM    6 FE   Hem B 501       8.000   0.000   0.000  1.00 20.00          FE
 HETATM    7 FE   HEM C 502      12.000   0.000   0.000  1.00 20.00          FE
+HETATM    8  C1  LIG D 503      16.000   0.000   0.000  1.00 20.00           C
 END
 """
 
@@ -70,8 +71,14 @@ def test_registry_mode_is_case_sensitive_and_uses_local_ccd_first(tmp_path: Path
                 {
                     "residue_name": "HEM",
                     "polymer_class": "NONPOLYMER",
-                    "topology_class": "COVALENTLY_LINKED_NONSTANDARD",
+                    "topology_class": "INDEPENDENT_NONSTANDARD",
                     "ccd_id": "HEM",
+                },
+                {
+                    "residue_name": "LIG",
+                    "polymer_class": "NONPOLYMER",
+                    "topology_class": "TOPOLOGY_LINKED_NONSTANDARD",
+                    "ccd_id": "LIG",
                 },
             ],
         },
@@ -84,6 +91,7 @@ def test_registry_mode_is_case_sensitive_and_uses_local_ccd_first(tmp_path: Path
         [("N", "N"), ("CA", "C"), ("C", "C"), ("O", "O"), ("CB", "C")],
     )
     write_ccd(local_ccd / "HEM.cif", "HEM", [("FE", "Fe")])
+    write_ccd(local_ccd / "LIG.cif", "LIG", [("C1", "C")])
     observations_path = tmp_path / "classification_observations.yaml"
     manifest_path = tmp_path / "reference_manifest.yaml"
     config = {
@@ -112,9 +120,11 @@ def test_registry_mode_is_case_sensitive_and_uses_local_ccd_first(tmp_path: Path
     assert records["ALA"]["classification_observation"]["topology_class"] == "STANDARD_RESIDUE"
     assert records["ALA"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
     assert records["Hem"]["classification_observation"]["topology_class"] == "INDEPENDENT_NONSTANDARD"
-    assert records["HEM"]["classification_observation"]["topology_class"] == "COVALENTLY_LINKED_NONSTANDARD"
+    assert records["HEM"]["classification_observation"]["topology_class"] == "INDEPENDENT_NONSTANDARD"
+    assert records["LIG"]["classification_observation"]["topology_class"] == "TOPOLOGY_LINKED_NONSTANDARD"
     assert records["Hem"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
     assert records["HEM"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
+    assert records["LIG"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
     heme_manifest = next(
         item for item in manifest["ccd_components"] if item["component_id"] == "HEM"
     )

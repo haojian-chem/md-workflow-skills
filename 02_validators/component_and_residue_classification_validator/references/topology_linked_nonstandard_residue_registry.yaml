@@ -2,25 +2,25 @@ schema_version: "1.0"
 residue_definitions:
   - residue_name: MSE
     polymer_class: POLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: MSE
   - residue_name: SEC
     polymer_class: POLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: SEC
   - residue_name: PYL
     polymer_class: POLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: PYL
   - residue_name: ACE
     polymer_class: NONPOLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: ACE
   - residue_name: NME
     polymer_class: NONPOLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: NME
   - residue_name: NH2
     polymer_class: NONPOLYMER
-    topology_class: COVALENTLY_LINKED_NONSTANDARD
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: NH2

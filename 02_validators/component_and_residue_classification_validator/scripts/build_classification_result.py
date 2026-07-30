@@ -442,7 +442,7 @@ def _classification_decision_map(
             raise ClassificationToolError("invalid polymer_class in decision")
         if topology_class not in {
             "STANDARD_RESIDUE",
-            "COVALENTLY_LINKED_NONSTANDARD",
+            "TOPOLOGY_LINKED_NONSTANDARD",
             "INDEPENDENT_NONSTANDARD",
             "SOLVENT_COMPONENT",
             "ION_COMPONENT",
@@ -726,7 +726,7 @@ def _integrate_chain_groups_and_records(
         if key not in topology_forming_keys or classification["resolution_status"] != "RESOLVED":
             continue
         if classification["topology_class"] != "STANDARD_RESIDUE":
-            classification["topology_class"] = "COVALENTLY_LINKED_NONSTANDARD"
+            classification["topology_class"] = "TOPOLOGY_LINKED_NONSTANDARD"
             if classification["polymer_class"] == "WATER":
                 classification["polymer_class"] = "NONPOLYMER"
             classification["evidence"].append(
@@ -771,7 +771,7 @@ def _render_report(result: dict[str, Any], confirmation: dict[str, Any]) -> str:
     lines.extend(["", "## Classification summary", ""])
     for key in (
         "standard_residue_count",
-        "covalently_linked_nonstandard_count",
+        "topology_linked_nonstandard_count",
         "independent_nonstandard_count",
         "solvent_component_count",
         "ion_component_count",
@@ -945,7 +945,7 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
     )
     linked_count = sum(
         record["classification"]["topology_class"]
-        == "COVALENTLY_LINKED_NONSTANDARD"
+        == "TOPOLOGY_LINKED_NONSTANDARD"
         for record in records
     )
     independent_count = sum(
@@ -1027,7 +1027,7 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         "summary": {
             "chain_group_count": len(final_groups),
             "standard_residue_count": standard_count,
-            "covalently_linked_nonstandard_count": linked_count,
+            "topology_linked_nonstandard_count": linked_count,
             "independent_nonstandard_count": independent_count,
             "solvent_component_count": solvent_count,
             "ion_component_count": ion_count,

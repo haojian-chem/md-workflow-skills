@@ -66,7 +66,7 @@ def test_strict_registries_validate_and_have_unique_exact_names() -> None:
     names: set[str] = set()
     for name in (
         "standard_residue_registry.yaml",
-        "covalently_linked_nonstandard_residue_registry.yaml",
+        "topology_linked_nonstandard_residue_registry.yaml",
     ):
         document = yaml.safe_load((REFERENCES / name).read_text(encoding="utf-8"))
         validator.validate(document)
