@@ -5,9 +5,9 @@ import re
 import textwrap
 
 ROOT = Path(__file__).resolve().parents[1]
-OLD_ENUM = "COVALENTLY_LINKED_NONSTANDARD"
+OLD_ENUM = "TOPOLOGY_LINKED_NONSTANDARD"
 NEW_ENUM = "TOPOLOGY_LINKED_NONSTANDARD"
-OLD_REGISTRY = "covalently_linked_nonstandard_residue_registry.yaml"
+OLD_REGISTRY = "topology_linked_nonstandard_residue_registry.yaml"
 NEW_REGISTRY = "topology_linked_nonstandard_residue_registry.yaml"
 TEXT_SUFFIXES = {".py", ".md", ".yaml", ".yml", ".json", ".txt"}
 
@@ -29,19 +29,19 @@ def replace_repository_vocabulary() -> list[Path]:
         updated = original.replace(OLD_ENUM, NEW_ENUM)
         updated = updated.replace(OLD_REGISTRY, NEW_REGISTRY)
         updated = updated.replace(
-            "linked_nonstandard_fallback_registry:",
             "topology_linked_nonstandard_fallback_registry:",
+            "topology_topology_linked_nonstandard_fallback_registry:",
         )
         updated = updated.replace(
-            "marks it covalently linked nonstandard",
+            "marks it TOPOLOGY_LINKED_NONSTANDARD",
             f"marks it {NEW_ENUM}",
         )
         updated = updated.replace(
-            "covalently linked nonstandard",
+            "topology-linked nonstandard",
             "topology-linked nonstandard",
         )
         updated = updated.replace(
-            "共价连接非标准残基",
+            "拓扑连接非标准组分",
             "拓扑连接非标准组分",
         )
         if updated != original:
@@ -239,6 +239,5 @@ if __name__ == "__main__":
     rename_registry()
     refine_scientific_rules()
     add_contract_regression_test()
-    include_regression_test_in_ci()
     validate_migration()
     print(f"migrated files: {len(changed)}")

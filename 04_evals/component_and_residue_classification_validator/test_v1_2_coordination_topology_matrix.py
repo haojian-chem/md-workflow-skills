@@ -515,7 +515,7 @@ def test_confirmed_heme_coordination_promotes_heme_into_polymer_chain(
     heme = next(record for record in result["residue_records"] if record["residue_name"] == "HEM")
     assert heme["chain_index"] == 1
     assert heme["classification"]["polymer_class"] == "NONPOLYMER"
-    assert heme["classification"]["topology_class"] == "COVALENTLY_LINKED_NONSTANDARD"
+    assert heme["classification"]["topology_class"] == "TOPOLOGY_LINKED_NONSTANDARD"
     assert not any(
         group["group_type"] == "INDEPENDENT_COMPONENT"
         and group.get("residue_name") == "HEM"

@@ -16,14 +16,14 @@ cases:
       sodium: ION
       confirmation_items: 0
   - case_id: CRC-002
-    title: explicit covalently linked nonstandard residue
+    title: explicit topology-linked nonstandard residue
     input_summary:
       format: MMCIF
       contents: nonstandard component linked to a protein atom by explicit covalent struct_conn
     expected:
       validator_status: DONE
       outcome_code: CLASSIFIED_CLEAR
-      topology_class: COVALENTLY_LINKED_NONSTANDARD
+      topology_class: TOPOLOGY_LINKED_NONSTANDARD
       evidence_contains: explicit_mmcif_covalent_connection
   - case_id: CRC-003
     title: short geometric contact without explicit covalent evidence
@@ -37,7 +37,7 @@ cases:
       covalent_candidate_count_min: 1
       blocking_confirmation: true
       prohibited:
-        - automatic COVALENTLY_LINKED_NONSTANDARD classification
+        - automatic TOPOLOGY_LINKED_NONSTANDARD classification
   - case_id: CRC-004
     title: metal coordination remains separate from covalent topology
     input_summary:
@@ -97,7 +97,7 @@ cases:
       contents: MSE participates in a continuous protein backbone
     expected:
       validator_status: DONE
-      topology_class: COVALENTLY_LINKED_NONSTANDARD
+      topology_class: TOPOLOGY_LINKED_NONSTANDARD
       canonical_parent: MET
   - case_id: CRC-010
     title: ion-like residue name with conflicting atom composition

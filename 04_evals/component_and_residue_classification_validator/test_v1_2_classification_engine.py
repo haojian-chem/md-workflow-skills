@@ -70,7 +70,7 @@ def test_registry_mode_is_case_sensitive_and_uses_local_ccd_first(tmp_path: Path
                 {
                     "residue_name": "HEM",
                     "polymer_class": "NONPOLYMER",
-                    "topology_class": "COVALENTLY_LINKED_NONSTANDARD",
+                    "topology_class": "TOPOLOGY_LINKED_NONSTANDARD",
                     "ccd_id": "HEM",
                 },
             ],
@@ -112,7 +112,7 @@ def test_registry_mode_is_case_sensitive_and_uses_local_ccd_first(tmp_path: Path
     assert records["ALA"]["classification_observation"]["topology_class"] == "STANDARD_RESIDUE"
     assert records["ALA"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
     assert records["Hem"]["classification_observation"]["topology_class"] == "INDEPENDENT_NONSTANDARD"
-    assert records["HEM"]["classification_observation"]["topology_class"] == "COVALENTLY_LINKED_NONSTANDARD"
+    assert records["HEM"]["classification_observation"]["topology_class"] == "TOPOLOGY_LINKED_NONSTANDARD"
     assert records["Hem"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
     assert records["HEM"]["heavy_atom_check"]["status"] == "HEAVY_ATOMS_COMPLETE"
     heme_manifest = next(

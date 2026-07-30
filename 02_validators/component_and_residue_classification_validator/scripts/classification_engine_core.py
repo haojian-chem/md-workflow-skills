@@ -142,7 +142,7 @@ def _entity_fallback(residue: ResidueRecord) -> ClassificationValue:
     if polymer_class == "POLYMER":
         return ClassificationValue(
             "POLYMER",
-            "COVALENTLY_LINKED_NONSTANDARD",
+            "TOPOLOGY_LINKED_NONSTANDARD",
             "RESOLVED",
             "ENTITY_CONTEXT",
             ("polymer entity membership without an exact standard definition",),
@@ -822,7 +822,7 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
     linked_registry_path = Path(
         classification_config.get(
             "linked_registry_path",
-            reference_dir / "covalently_linked_nonstandard_residue_registry.yaml",
+            reference_dir / "topology_linked_nonstandard_residue_registry.yaml",
         )
     ).resolve()
     standard_defs, standard_hash = _load_definition_file(standard_registry_path, definitions_schema)
