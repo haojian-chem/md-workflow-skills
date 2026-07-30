@@ -13,7 +13,32 @@ on:
       - ".github/workflows/component-classification-v1-2.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
+  update-validation-evidence:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'refactor/topology-linked-nonstandard' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/topology-linked-nonstandard
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Update authoritative validation evidence
+        run: python 05_tools/tmp_update_v1_2_topology_validation_evidence.py
+      - name: Commit validation evidence
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Update v1.2 topology migration validation evidence"
+          git push origin HEAD:refactor/topology-linked-nonstandard
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
