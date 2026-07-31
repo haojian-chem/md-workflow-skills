@@ -1,5 +1,7 @@
 # chain_and_component_selection scripts
 
+Runtime interface version: `1.0.0`.
+
 ## Operation entry point
 
 ```bash
