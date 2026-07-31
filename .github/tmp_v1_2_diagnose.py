@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 SKILL = Path(
     "02_validators/component_and_residue_classification_validator"
@@ -129,6 +130,113 @@ for schema_name in (
         encoding="utf-8",
     )
 
+# Migrate the relation-builder fixture helper to the authoritative heavy-atom model.
+relations_test = Path(
+    "04_evals/component_and_residue_classification_validator/"
+    "test_v1_2_relations_and_builder.py"
+)
+text = relations_test.read_text(encoding="utf-8")
+heavy_helper = '''def heavy(status: str = "HEAVY_ATOMS_COMPLETE") -> dict:
+    completed = status == "HEAVY_ATOMS_COMPLETE"
+    comparison = {
+        "missing_expected_atom_names": [],
+        "unexpected_observed_atom_names": [],
+    }
+    return {
+        "execution_status": "COMPLETED" if completed else "NOT_PERFORMED",
+        "findings": [],
+        "reference_type": None,
+        "reference_name": None,
+        "exact_comparison": comparison if completed else None,
+        "atom_name_mapping_candidates": [],
+        "mapping_resolution_status": "NOT_APPLICABLE",
+        "effective_comparison": comparison if completed else None,
+        "reason": None,
+        "status": status,
+        "missing_atoms": [],
+        "unexpected_atoms": [],
+    }
+
+
+'''
+text, count = re.subn(
+    r'def heavy\(status: str = "HEAVY_ATOMS_COMPLETE"\) -> dict:\n.*?\n\ndef observations\(',
+    heavy_helper + "def observations(",
+    text,
+    count=1,
+    flags=re.S,
+)
+if count != 1:
+    raise SystemExit(f"cannot migrate relation fixture heavy helper: {count}")
+relations_test.write_text(text, encoding="utf-8")
+
+# Migrate the 1.3 classification fixture while preserving legacy summary fields.
+selection_test = Path(
+    "04_evals/chain_and_component_selection/"
+    "test_chain_and_component_selection.py"
+)
+text = selection_test.read_text(encoding="utf-8")
+old_heavy = '''        "heavy_atom_check": {
+            "status": "NOT_PERFORMED",
+            "reference_type": None,
+            "reference_name": None,
+            "missing_atoms": [],
+            "unexpected_atoms": [],
+            "reason": None,
+        },
+'''
+new_heavy = '''        "heavy_atom_check": {
+            "execution_status": "NOT_PERFORMED",
+            "findings": [],
+            "reference_type": None,
+            "reference_name": None,
+            "exact_comparison": None,
+            "atom_name_mapping_candidates": [],
+            "mapping_resolution_status": "NOT_APPLICABLE",
+            "effective_comparison": None,
+            "reason": None,
+            "status": "NOT_PERFORMED",
+            "missing_atoms": [],
+            "unexpected_atoms": [],
+        },
+'''
+if text.count(old_heavy) != 1:
+    raise SystemExit(
+        f"cannot migrate selection fixture heavy check: {text.count(old_heavy)}"
+    )
+text = text.replace(old_heavy, new_heavy, 1)
+text = text.replace(
+    '    source = {**source_identity(chain, number, name), "source_atom_name": atom_name}\n',
+    '    source = {\n'
+    '        **source_identity(chain, number, name),\n'
+    '        "source_atom_name": atom_name,\n'
+    '        "source_altloc_id": None,\n'
+    '    }\n',
+    1,
+)
+text = text.replace(
+    '    current = {**current_identity(chain, number, name), "current_atom_name": atom_name}\n',
+    '    current = {\n'
+    '        **current_identity(chain, number, name),\n'
+    '        "current_atom_name": atom_name,\n'
+    '        "current_altloc_id": None,\n'
+    '    }\n',
+    1,
+)
+text = text.replace(
+    '        "atom_name": atom_name,\n    }\n\n\ndef make_structure',
+    '        "atom_name": atom_name,\n'
+    '        "altloc_id": None,\n'
+    '    }\n\n\ndef make_structure',
+    1,
+)
+selection_test.write_text(text, encoding="utf-8")
+
+changed_file_list = Path("/tmp/changed-files.txt")
+with changed_file_list.open("a", encoding="utf-8") as handle:
+    handle.write(str(relations_test) + "\n")
+    handle.write(str(selection_test) + "\n")
+
 paths = [
     SKILL / "scripts/ccd_reference.py",
     SKILL / "scripts/classification_engine_core.py",
@@ -137,6 +245,8 @@ paths = [
         "04_evals/component_and_residue_classification_validator/"
         "test_v1_2_scientific_contract_repairs.py"
     ),
+    relations_test,
+    selection_test,
 ]
 for path in paths:
     text = path.read_text(encoding="utf-8")
