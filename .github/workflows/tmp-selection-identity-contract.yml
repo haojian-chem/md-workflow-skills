@@ -62,10 +62,10 @@ jobs:
       - name: Commit business changes
         run: |
           find 02_validators 04_evals -type d -name __pycache__ -prune -exec rm -rf {} +
+          git restore .github/workflows/component-classification-v1-2.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
-            .github/workflows/component-classification-v1-2.yml \
             00_authoring/content_maps/component_and_residue_classification_validator.yaml \
             00_authoring/content_maps/chain_and_component_selection.yaml \
             00_authoring/content_maps/chain_and_component_selection_validator.yaml \
