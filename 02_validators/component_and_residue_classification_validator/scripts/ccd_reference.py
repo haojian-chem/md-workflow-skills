@@ -358,8 +358,6 @@ def compare_ccd_heavy_atoms(
     missing = expected - observed
     unexpected = observed - expected
     mapping_candidates: list[dict[str, str]] = []
-    remapped_unexpected: set[str] = set()
-    remapped_missing: set[str] = set()
     for structure_name in sorted(unexpected):
         ccd_name = template.alternate_atom_names.get(structure_name)
         if ccd_name is not None and ccd_name in missing:
@@ -370,10 +368,4 @@ def compare_ccd_heavy_atoms(
                     "mapping_source": "CCD_ALTERNATE_ATOM_NAME",
                 }
             )
-            remapped_unexpected.add(structure_name)
-            remapped_missing.add(ccd_name)
-    return (
-        sorted(missing - remapped_missing),
-        sorted(unexpected - remapped_unexpected),
-        mapping_candidates,
-    )
+    return sorted(missing), sorted(unexpected), mapping_candidates

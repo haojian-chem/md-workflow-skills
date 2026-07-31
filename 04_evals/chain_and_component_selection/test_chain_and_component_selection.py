@@ -86,12 +86,18 @@ def residue_record(
             "altloc_ids": altloc_ids or [],
         },
         "heavy_atom_check": {
-            "status": "NOT_PERFORMED",
+            "execution_status": "NOT_PERFORMED",
+            "findings": [],
             "reference_type": None,
             "reference_name": None,
+            "exact_comparison": None,
+            "atom_name_mapping_candidates": [],
+            "mapping_resolution_status": "NOT_APPLICABLE",
+            "effective_comparison": None,
+            "reason": None,
+            "status": "NOT_PERFORMED",
             "missing_atoms": [],
             "unexpected_atoms": [],
-            "reason": None,
         },
     }
 
@@ -106,8 +112,16 @@ def endpoint(
     name: str,
     atom_name: str,
 ) -> dict:
-    source = {**source_identity(chain, number, name), "source_atom_name": atom_name}
-    current = {**current_identity(chain, number, name), "current_atom_name": atom_name}
+    source = {
+        **source_identity(chain, number, name),
+        "source_atom_name": atom_name,
+        "source_altloc_id": None,
+    }
+    current = {
+        **current_identity(chain, number, name),
+        "current_atom_name": atom_name,
+        "current_altloc_id": None,
+    }
     return {
         "endpoint_id": endpoint_id,
         "residue_id": residue_id,
@@ -119,6 +133,7 @@ def endpoint(
         "source_resid": {"number": str(number), "insertion_code": None},
         "residue_name": name,
         "atom_name": atom_name,
+        "altloc_id": None,
     }
 
 

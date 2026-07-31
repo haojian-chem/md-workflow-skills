@@ -136,12 +136,14 @@ def current_residue_identity(record: ResidueRecord | AtomRecord) -> dict[str, An
 def source_atom_identity(atom: AtomRecord) -> dict[str, Any]:
     output = source_residue_identity(atom)
     output["source_atom_name"] = atom.atom_name
+    output["source_altloc_id"] = atom.altloc_id
     return output
 
 
 def current_atom_identity(atom: AtomRecord) -> dict[str, Any]:
     output = current_residue_identity(atom)
     output["current_atom_name"] = atom.atom_name
+    output["current_altloc_id"] = atom.altloc_id
     return output
 
 

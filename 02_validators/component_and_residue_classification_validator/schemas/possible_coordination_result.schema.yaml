@@ -56,7 +56,7 @@ $defs:
   source_atom_identity:
     type: object
     additionalProperties: false
-    required: [source_model_id, source_chain_id, source_resid, source_residue_name, source_atom_name]
+    required: [source_model_id, source_chain_id, source_resid, source_residue_name, source_atom_name, source_altloc_id]
     properties:
       source_model_id: {type: string, minLength: 1}
       source_chain_id:
@@ -65,10 +65,12 @@ $defs:
         $ref: "#/$defs/source_resid"
       source_residue_name: {type: string, minLength: 1}
       source_atom_name: {type: string, minLength: 1}
+      source_altloc_id:
+        $ref: "#/$defs/nullable_string"
   current_atom_identity:
     type: object
     additionalProperties: false
-    required: [current_model_id, current_chain_id, current_resid, current_residue_name, current_atom_name]
+    required: [current_model_id, current_chain_id, current_resid, current_residue_name, current_atom_name, current_altloc_id]
     properties:
       current_model_id: {type: string, minLength: 1}
       current_chain_id:
@@ -77,6 +79,8 @@ $defs:
         $ref: "#/$defs/source_resid"
       current_residue_name: {type: string, minLength: 1}
       current_atom_name: {type: string, minLength: 1}
+      current_altloc_id:
+        $ref: "#/$defs/nullable_string"
   endpoint_definition:
     type: object
     additionalProperties: false

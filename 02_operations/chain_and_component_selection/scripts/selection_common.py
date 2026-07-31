@@ -312,7 +312,7 @@ def build_selection_plan(classification: dict[str, Any], spec: dict[str, Any]) -
     )
 
 
-def endpoint_current_key(endpoint: dict[str, Any]) -> tuple[str, str, str, str | None, str, str]:
+def endpoint_current_key(endpoint: dict[str, Any]) -> tuple[str, str, str, str | None, str, str, str | None]:
     identity = endpoint["current_identity"]
     resid = identity["current_resid"]
     return (
@@ -320,6 +320,7 @@ def endpoint_current_key(endpoint: dict[str, Any]) -> tuple[str, str, str, str |
         "" if identity.get("current_chain_id") is None else str(identity["current_chain_id"]),
         str(resid["number"]), clean_optional_text(resid.get("insertion_code")),
         str(identity["current_residue_name"]), str(identity["current_atom_name"]),
+        clean_optional_text(identity.get("current_altloc_id")),
     )
 
 
@@ -332,7 +333,10 @@ def find_atom_cra(model: gemmi.Model, endpoint: dict[str, Any]) -> tuple[gemmi.C
             if base != target[:5]:
                 continue
             for atom in residue:
-                if str(atom.name).strip() == target[5]:
+                if (
+                    str(atom.name).strip() == target[5]
+                    and clean_optional_text(atom.altloc) == target[6]
+                ):
                     matches.append((chain, residue, atom))
     if len(matches) != 1:
         raise SelectionToolError("EXPLICIT_CONNECTION_MISMATCH", f"relation endpoint resolved to {len(matches)} atoms: {target}")

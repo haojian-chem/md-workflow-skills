@@ -47,6 +47,8 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/references/standard_residue_registry.yaml
   topology_linked_nonstandard_fallback_registry:
     owner: 02_validators/component_and_residue_classification_validator/references/topology_linked_nonstandard_residue_registry.yaml
+  independent_nonstandard_fallback_registry:
+    owner: 02_validators/component_and_residue_classification_validator/references/independent_nonstandard_residue_registry.yaml
   project_residue_definition_contract:
     owner: 02_validators/component_and_residue_classification_validator/schemas/project_residue_definitions.schema.yaml
   possible_connection_definition_contract:
@@ -170,7 +172,8 @@ notes:
   - Structural entity/polymer facts are authoritative for chain grouping; unresolved or conflicting topology classification remains unchanged in residue output.
   - Missing-residue checks use MAPPING_UNRESOLVED when the author residue identifier or target chain cannot be mapped; duplicate cross-stage reports of the same issue and subject are merged while preserving evidence.
   - Real 1VNS source metadata differ by format: PDB REMARK 465 records 35 missing residues, while mmCIF unobserved-residue metadata records 46; each source is preserved rather than forced into artificial equality.
-  - Multiple altLoc residues skip heavy-atom comparison; duplicate exact RTP names require confirmation except for ordinary water context.
+  - Multiple altLoc residues skip heavy-atom comparison; altLoc-specific relation endpoints retain exact altLoc identity; duplicate exact RTP names require confirmation except for ordinary water context.
+  - Heavy-atom output separates execution status from parallel findings and preserves raw exact-name differences even when CCD mapping candidates exist.
   - Project CCD snapshots are authoritative; identical local candidates collapse by hash and differing valid local candidates require confirmation.
   - Confirmed Mg/Zn coordination with promote=false remains relation-only and does not alter topology grouping.
   - Confirmed HEM-CYS/HIE coordination with promote=true moves HEM into the polymer chain and marks it TOPOLOGY_LINKED_NONSTANDARD.
