@@ -27,7 +27,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Apply dependency repairs
-        run: python .github/tmp_v1_2_dependency_repair.py
+        run: |
+          python .github/tmp_v1_2_dependency_repair.py
+          python .github/tmp_v1_2_dependency_fixture_repair.py
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -65,7 +67,7 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          xargs git add < /tmp/dependency-changed-files.txt
+          sort -u /tmp/dependency-changed-files.txt | xargs git add
           if git diff --cached --quiet; then
             echo "No business changes to commit"
             exit 0
