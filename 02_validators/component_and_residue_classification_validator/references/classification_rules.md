@@ -358,7 +358,7 @@ AlphaFold Server `job_request.json`：
 - 每条 polymer/branched chain 一个 `chain_index`，按 selected model 中首次出现顺序分配；
 - 每种精确名称的普通水和普通离子汇总为一个组；
 - 同种、同分类、无特殊关系或异常的重复独立小分子可以汇总；
-- 普通汇总成员无需在 `residue_records` 中逐实例展开；
+- 普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`；汇总只改变 component/chain group 的组织方式，不得删除实例级身份记录；
 - 存在 altLoc、分类冲突、模板异常、显式/候选关系或项目特殊处理的实例必须从汇总组中提出并单独记录；
 - 独立小分子即使与 polymer chain 使用相同作者 chain ID，也必须使用独立 `chain_index` 并记录 source association。
 
