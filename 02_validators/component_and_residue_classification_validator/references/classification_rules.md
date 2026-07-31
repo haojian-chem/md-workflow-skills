@@ -54,6 +54,35 @@ FE atom name != Fe element symbol
 
 结构残基名与 CCD ID 不同，只允许通过项目定义中的显式 `ccd_id` 建立映射。
 
+
+## 3.1 源身份与当前身份
+
+每个已观察残基和关系端点必须同时保存两套正式身份，并使用不同字段名：
+
+```yaml
+source_identity:
+  source_model_id: "1"
+  source_chain_id: A
+  source_resid: {number: "145", insertion_code: A}
+  source_residue_name: CYS
+
+current_identity:
+  current_model_id: "1"
+  current_chain_id: A
+  current_resid: {number: "145", insertion_code: A}
+  current_residue_name: CYS
+```
+
+关系端点分别追加 `source_atom_name` 和 `current_atom_name`。规则：
+
+- `source_*` 是输入来源追溯身份，后续结构 revision 禁止覆盖；
+- `current_*` 是本次实际读取的 STRUCTURE revision 身份，只能由真实存在的新结构更新；
+- 1.2 禁止修改结构，因此 `OBSERVED` 实例的 source/current 值应相等，但两套字段仍必须分别输出；
+- `MISSING_EXPECTED` 残基只有 `source_identity`，`current_identity` 必须为 `null`；
+- `chain_index` 是逻辑分组编号，必须位于 identity 外部；topology effect 可以改变 `chain_index`，禁止据此改写 current identity；
+- `sequence_position` 只是 polymer 序列辅助索引，不属于第三套残基编号；
+- v1 平铺的 `source_chain_id`、`source_resid`、`residue_name` 和 `atom_name` 仅为兼容镜像，必须与权威 identity 字段一致，禁止赋予独立语义。
+
 # 4. 分类字段
 
 ## 4.1 `polymer_class`

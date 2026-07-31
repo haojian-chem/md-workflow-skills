@@ -83,6 +83,52 @@ $defs:
         minLength: 1
       insertion_code:
         $ref: "#/$defs/nullable_string"
+  source_residue_identity:
+    type: object
+    additionalProperties: false
+    required: [source_model_id, source_chain_id, source_resid, source_residue_name]
+    properties:
+      source_model_id: {type: string, minLength: 1}
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      source_resid:
+        $ref: "#/$defs/source_resid"
+      source_residue_name: {type: string, minLength: 1}
+  current_residue_identity:
+    type: object
+    additionalProperties: false
+    required: [current_model_id, current_chain_id, current_resid, current_residue_name]
+    properties:
+      current_model_id: {type: string, minLength: 1}
+      current_chain_id:
+        $ref: "#/$defs/nullable_string"
+      current_resid:
+        $ref: "#/$defs/source_resid"
+      current_residue_name: {type: string, minLength: 1}
+  source_atom_identity:
+    type: object
+    additionalProperties: false
+    required: [source_model_id, source_chain_id, source_resid, source_residue_name, source_atom_name]
+    properties:
+      source_model_id: {type: string, minLength: 1}
+      source_chain_id:
+        $ref: "#/$defs/nullable_string"
+      source_resid:
+        $ref: "#/$defs/source_resid"
+      source_residue_name: {type: string, minLength: 1}
+      source_atom_name: {type: string, minLength: 1}
+  current_atom_identity:
+    type: object
+    additionalProperties: false
+    required: [current_model_id, current_chain_id, current_resid, current_residue_name, current_atom_name]
+    properties:
+      current_model_id: {type: string, minLength: 1}
+      current_chain_id:
+        $ref: "#/$defs/nullable_string"
+      current_resid:
+        $ref: "#/$defs/source_resid"
+      current_residue_name: {type: string, minLength: 1}
+      current_atom_name: {type: string, minLength: 1}
   entity:
     type: object
     additionalProperties: false
@@ -219,6 +265,8 @@ $defs:
     type: object
     additionalProperties: false
     required:
+      - source_identity
+      - current_identity
       - chain_index
       - source_chain_id
       - source_resid
@@ -229,6 +277,12 @@ $defs:
       - conformation_observation
       - heavy_atom_check
     properties:
+      source_identity:
+        $ref: "#/$defs/source_residue_identity"
+      current_identity:
+        oneOf:
+          - $ref: "#/$defs/current_residue_identity"
+          - type: "null"
       chain_index:
         type: integer
         minimum: 1

@@ -101,6 +101,50 @@ class ResidueRecord:
         return len(self.altloc_ids) > 1
 
 
+def source_residue_identity(record: ResidueRecord | AtomRecord) -> dict[str, Any]:
+    """Return immutable provenance identity from the input STRUCTURE."""
+    return {
+        "source_model_id": record.model_id,
+        "source_chain_id": record.source_chain_id,
+        "source_resid": {
+            "number": record.source_resid_number,
+            "insertion_code": record.insertion_code,
+        },
+        "source_residue_name": record.residue_name,
+    }
+
+
+def current_residue_identity(record: ResidueRecord | AtomRecord) -> dict[str, Any]:
+    """Return identity in the STRUCTURE revision currently being classified.
+
+    Validator 1.2 does not mutate the input STRUCTURE, so source and current
+    values are equal at this stage.  They remain separate fields so downstream
+    structure revisions can update only current identity while preserving
+    provenance.
+    """
+    return {
+        "current_model_id": record.model_id,
+        "current_chain_id": record.source_chain_id,
+        "current_resid": {
+            "number": record.source_resid_number,
+            "insertion_code": record.insertion_code,
+        },
+        "current_residue_name": record.residue_name,
+    }
+
+
+def source_atom_identity(atom: AtomRecord) -> dict[str, Any]:
+    output = source_residue_identity(atom)
+    output["source_atom_name"] = atom.atom_name
+    return output
+
+
+def current_atom_identity(atom: AtomRecord) -> dict[str, Any]:
+    output = current_residue_identity(atom)
+    output["current_atom_name"] = atom.atom_name
+    return output
+
+
 def _entity_data(
     structure: gemmi.Structure,
     model: gemmi.Model,
@@ -257,6 +301,8 @@ def endpoint_dict(
 ) -> dict[str, Any]:
     output: dict[str, Any] = {
         "chain_index": chain_index,
+        "source_identity": source_atom_identity(atom),
+        "current_identity": current_atom_identity(atom),
         "source_chain_id": atom.source_chain_id,
         "source_resid": {
             "number": atom.source_resid_number,

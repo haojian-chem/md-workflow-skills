@@ -152,6 +152,8 @@ def _endpoint_key(endpoint: dict[str, Any]) -> tuple[str | None, str, str | None
 def _strip_endpoint(endpoint: dict[str, Any], chain_index: int | None = None) -> dict[str, Any]:
     return {
         "chain_index": int(chain_index if chain_index is not None else endpoint["chain_index"]),
+        "source_identity": copy.deepcopy(endpoint["source_identity"]),
+        "current_identity": copy.deepcopy(endpoint["current_identity"]),
         "source_chain_id": endpoint.get("source_chain_id"),
         "source_resid": {
             "number": str(endpoint["source_resid"]["number"]),
@@ -181,6 +183,8 @@ def _classification_pending_request(record: dict[str, Any]) -> dict[str, Any]:
     return {
         "request_type": "RESIDUE_CLASSIFICATION_UNRESOLVED",
         "subject": {
+            "source_identity": copy.deepcopy(record["source_identity"]),
+            "current_identity": copy.deepcopy(record["current_identity"]),
             "source_chain_id": record.get("source_chain_id"),
             "source_resid": copy.deepcopy(record["source_resid"]),
             "residue_name": record["residue_name"],
@@ -495,6 +499,8 @@ def _special_record_from_endpoint(
     polymer_class, topology_class = _inferred_group_classification(baseline_group)
     return {
         "chain_index": int(endpoint["chain_index"]),
+        "source_identity": copy.deepcopy(endpoint["source_identity"]),
+        "current_identity": copy.deepcopy(endpoint["current_identity"]),
         "source_chain_id": endpoint.get("source_chain_id"),
         "source_resid": copy.deepcopy(endpoint["source_resid"]),
         "residue_name": endpoint["residue_name"],
@@ -543,6 +549,8 @@ def _convert_baseline_record(
         }
     return {
         "chain_index": int(record["chain_index"]),
+        "source_identity": copy.deepcopy(record["source_identity"]),
+        "current_identity": copy.deepcopy(record["current_identity"]),
         "source_chain_id": record.get("source_chain_id"),
         "source_resid": copy.deepcopy(record["source_resid"]),
         "residue_name": record["residue_name"],
