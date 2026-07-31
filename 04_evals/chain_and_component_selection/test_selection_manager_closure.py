@@ -250,6 +250,9 @@ def test_manager_fast_validation_atomic_artifact_registration_and_closure(tmp_pa
     state_logical_path = project_root / "00_project_state/workstreams" / f"{WORKSTREAM_ID}.yaml"
     events_logical_path = project_root / "00_project_records/events/project_events.jsonl"
 
+    task_directory.mkdir(parents=True, exist_ok=True)
+    artifact_directory.mkdir(parents=True, exist_ok=True)
+    state_logical_path.parent.mkdir(parents=True, exist_ok=True)
     write_yaml(task_path, task_document(project_root, work_directory, case, result_logical_path))
     write_yaml(source_artifact_path, source_artifact(case))
     write_yaml(state_logical_path, workstream_state(terminal=False))
