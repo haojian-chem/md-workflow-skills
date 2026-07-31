@@ -1,0 +1,51 @@
+name: tmp-clean-v1-2-aggregate-rule
+
+on:
+  push:
+    branches:
+      - feat/chain-component-selection-core
+    paths:
+      - .github/workflows/tmp-clean-v1-2-aggregate-rule.yml
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/chain-component-selection-core
+      - name: Remove contradictory aggregation rule
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          rules_path = Path("02_validators/component_and_residue_classification_validator/references/classification_rules.md")
+          rules = rules_path.read_text(encoding="utf-8")
+          old = "- 普通汇总成员无需在 `residue_records` 中逐实例展开；"
+          new = "- 普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`；汇总只改变 component/chain group 的组织方式，不得删除实例级身份记录；"
+          if rules.count(old) != 1:
+              raise SystemExit(f"expected exactly one obsolete rule, found {rules.count(old)}")
+          rules_path.write_text(rules.replace(old, new), encoding="utf-8")
+
+          test_path = Path("04_evals/component_and_residue_classification_validator/test_v1_2_selection_identity_contract.py")
+          tests = test_path.read_text(encoding="utf-8")
+          marker = "def test_classification_rules_require_aggregate_instance_records() -> None:"
+          if marker not in tests:
+              tests += '''\n\ndef test_classification_rules_require_aggregate_instance_records() -> None:\n    rules = (SKILL / "references/classification_rules.md").read_text(encoding="utf-8")\n    assert "普通汇总成员无需在 `residue_records` 中逐实例展开" not in rules\n    assert "普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`" in rules\n    assert "不得删除实例级身份记录" in rules\n'''
+              test_path.write_text(tests, encoding="utf-8")
+          PY
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            02_validators/component_and_residue_classification_validator/references/classification_rules.md \
+            04_evals/component_and_residue_classification_validator/test_v1_2_selection_identity_contract.py
+          git diff --cached --check
+          git commit -m "Remove obsolete aggregate residue rule"
+          git push origin HEAD:feat/chain-component-selection-core
