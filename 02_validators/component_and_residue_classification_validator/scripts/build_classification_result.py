@@ -19,6 +19,7 @@ from classification_common import (
     sha256_file,
     validate_document,
 )
+from structure_records import validate_residue_identity_record
 
 VERSION = "0.2.0-draft"
 
@@ -834,6 +835,9 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         "possible_coordination_result",
         schema_dir / "possible_coordination_result.schema.yaml",
     )
+
+    for record in observations["residue_records"]:
+        validate_residue_identity_record(record)
 
     selected_model_id = model_scope["selection"]["selected_model_id"]
     if selected_model_id is None:

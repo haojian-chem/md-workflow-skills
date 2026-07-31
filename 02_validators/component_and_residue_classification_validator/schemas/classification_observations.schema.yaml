@@ -304,6 +304,23 @@ $defs:
         $ref: "#/$defs/conformation_observation"
       heavy_atom_check:
         $ref: "#/$defs/heavy_atom_check"
+    allOf:
+      - if:
+          properties:
+            presence_status: {const: OBSERVED}
+          required: [presence_status]
+        then:
+          properties:
+            current_identity:
+              $ref: "#/$defs/current_residue_identity"
+      - if:
+          properties:
+            presence_status: {const: MISSING_EXPECTED}
+          required: [presence_status]
+        then:
+          properties:
+            current_identity:
+              type: "null"
   missing_residue_check:
     type: object
     additionalProperties: false

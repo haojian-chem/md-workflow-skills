@@ -145,6 +145,49 @@ def current_atom_identity(atom: AtomRecord) -> dict[str, Any]:
     return output
 
 
+def validate_residue_identity_record(record: dict[str, Any]) -> None:
+    """Validate authoritative dual identity and its v1 compatibility mirrors."""
+    source = record.get("source_identity")
+    if not isinstance(source, dict):
+        raise ClassificationToolError("residue record source_identity must be a mapping")
+    expected_source = {
+        "source_chain_id": record.get("source_chain_id"),
+        "source_resid": record.get("source_resid"),
+        "source_residue_name": record.get("residue_name"),
+    }
+    for key, expected in expected_source.items():
+        if source.get(key) != expected:
+            raise ClassificationToolError(
+                f"residue identity compatibility mirror differs for {key}"
+            )
+
+    presence_status = record.get("presence_status")
+    current = record.get("current_identity")
+    if presence_status == "MISSING_EXPECTED":
+        if current is not None:
+            raise ClassificationToolError(
+                "MISSING_EXPECTED residue must have current_identity: null"
+            )
+        return
+    if presence_status != "OBSERVED":
+        raise ClassificationToolError(f"unsupported residue presence_status: {presence_status!r}")
+    if not isinstance(current, dict):
+        raise ClassificationToolError("OBSERVED residue must have current_identity")
+
+    equal_pairs = (
+        ("source_model_id", "current_model_id"),
+        ("source_chain_id", "current_chain_id"),
+        ("source_resid", "current_resid"),
+        ("source_residue_name", "current_residue_name"),
+    )
+    for source_key, current_key in equal_pairs:
+        if source.get(source_key) != current.get(current_key):
+            raise ClassificationToolError(
+                "validator 1.2 does not mutate STRUCTURE; observed source/current "
+                f"identity differs for {source_key}/{current_key}"
+            )
+
+
 def _entity_data(
     structure: gemmi.Structure,
     model: gemmi.Model,
@@ -248,6 +291,7 @@ def natural_residue_key(
 def build_chain_index_resolver(observations: dict[str, Any]) -> dict[tuple[str | None, str, str | None, str], int]:
     resolver: dict[tuple[str | None, str, str | None, str], int] = {}
     for residue in observations.get("residue_records", []):
+        validate_residue_identity_record(residue)
         if residue.get("presence_status") != "OBSERVED":
             continue
         key = natural_residue_key(
