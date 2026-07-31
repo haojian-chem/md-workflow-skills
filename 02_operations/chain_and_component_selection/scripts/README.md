@@ -64,6 +64,8 @@ The builder accepts only an `OPERATION_WITH_VALIDATOR` task whose Operation and 
 
 Operation-created files remain `present_unvalidated` in the Operation component result. The same candidate, manifest, and mapping become `present_validated` only in the Validator component result and artifact candidate.
 
+The builder does not write project state, artifact-set records, task records, or event logs. Manager owns the single FAST validation of its result/artifact/state/event candidates and their subsequent atomic commit.
+
 ## Exit codes
 
 ```text
