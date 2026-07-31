@@ -250,7 +250,7 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--contract-dir", type=Path, default=Path(__file__).resolve().parents[3] / "03_contracts")
     parser.add_argument("--operation-schema-dir", type=Path, default=Path(__file__).resolve().parent.parent / "schemas")
-    parser.add_argument("--validator-schema-dir", type=Path, default=Path(__file__).resolve().parents[2] / "02_validators/chain_and_component_selection_validator/schemas")
+    parser.add_argument("--validator-schema-dir", type=Path, default=Path(__file__).resolve().parents[3] / "02_validators/chain_and_component_selection_validator/schemas")
     args = parser.parse_args()
     try:
         result = build(args)
