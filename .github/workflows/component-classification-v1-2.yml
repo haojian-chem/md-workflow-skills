@@ -10,14 +10,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: v1-2-scientific-contract-migration-${{ github.event.pull_request.number || github.ref }}
+  group: v1-2-dependency-contract-repair-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
-  migrate-and-test:
+  repair-and-test:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'feat/chain-component-selection-core'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,59 +26,49 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Extract and run migration
-        shell: bash
-        run: |
-          set -o pipefail
-          python - <<'PY'
-          from pathlib import Path
-          raw = Path('.github/workflows/tmp-v1-2-scientific-contract-repair.yml').read_text(encoding='utf-8')
-          body = raw.split("cat > /tmp/repair.py <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
-          lines = [line[10:] if line.startswith('          ') else line for line in body.splitlines()]
-          script = '\n'.join(lines) + '\n'
-          patches = {
-              "text = replace_once(text, old, new, 'ccd raw comparison')": "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'ccd raw comparison regex: {count}')",
-              "text = replace_once(text, old, new, 'core registries')": "text, count = re.subn(r'    linked_registry_path = Path\\(.*?    skill_defs = \\{\\*\\*standard_defs, \\*\\*linked_defs\\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'core registries regex: {count}')",
-              "text = replace_once(text, old, new, 'rtp heavy check')": "text, count = re.subn(r'            analysis\\.heavy_atom_check = \\{\\n                \\\"status\\\": _heavy_status\\(missing, unexpected\\),.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'rtp heavy check regex: {count}')",
-              "text = replace_once(text, old, new, 'ccd heavy check')": "text, count = re.subn(r'        if mappings:\\n            status = \\\"ATOM_NAME_MAPPING_REQUIRED\\\".*?            \\\"reason\\\": reason,\\n        \\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'ccd heavy check regex: {count}')",
-              "text = replace_once(text, old, new, 'group heavy check')": "text, count = re.subn(r'            and item\\.heavy_atom_check\\[\\\"status\\\"\\]\\n            not in \\{.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'group heavy check regex: {count}')",
-              "text = replace_once(text, old, new, 'summary heavy issue')": "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                item\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for item in residue_records\\n            \\),\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'summary heavy issue regex: {count}')",
-              "text = replace_once(text, old, new, 'manifest third registry')": "text, count = re.subn(r'            \\{\\n                \\\"path\\\": str\\(linked_registry_path\\),\\n                \\\"sha256\\\": linked_hash,\\n                \\\"status\\\": \\\"LOADED\\\",\\n            \\},\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'manifest third registry regex: {count}')",
-              "text = replace_once(text, old, new, 'builder resolve mapping')": "text, count = re.subn(r'        if request\\[\\\"request_type\\\"\\] in CLASSIFICATION_REQUEST_TYPES and decision\\[\\\"decision\\\"\\] == \\\"SET_CLASSIFICATION\\\":\\n            resolved_requests\\.append\\(\\(request, decision\\)\\)\\n            continue\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'builder resolve mapping regex: {count}')",
-              "text = replace_once(text, old_special, new_special, 'special heavy check')": "text, count = re.subn(r'        \\\"heavy_atom_check\\\": \\{\\n            \\\"status\\\": \\\"NOT_PERFORMED\\\",.*?            \\\"reason\\\": \\\"GROUP_MEMBER_DETAIL_NOT_RETAINED_IN_BASELINE\\\",\\n        \\},\\n', new_special, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'special heavy check regex: {count}')",
-              "text = replace_once(text, old, new, 'builder heavy count')": "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                record\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for record in records\\n            \\),\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'builder heavy count regex: {count}')",
-          }
-          for old, new in patches.items():
-              if old not in script:
-                  raise SystemExit(f'migration patch marker missing: {old}')
-              script = script.replace(old, new)
-          Path('/tmp/repair.py').write_text(script, encoding='utf-8')
-          PY
-          python /tmp/repair.py | tee /tmp/changed-files.txt
-      - name: Normalize and diagnose generated Python
-        run: |
-          python .github/tmp_v1_2_normalize.py
-          python .github/tmp_v1_2_registry_normalize.py
-          python .github/tmp_v1_2_builder_loop_normalize.py
-          python .github/tmp_v1_2_diagnose.py
-      - name: Install and test
+      - name: Apply dependency repairs
+        run: python .github/tmp_v1_2_dependency_repair.py
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
           python -m pip install pytest
+      - name: Compile deterministic scripts
+        run: |
+          python -m compileall -q \
+            02_validators/component_and_residue_classification_validator/scripts \
+            02_operations/chain_and_component_selection/scripts \
+            02_validators/chain_and_component_selection_validator/scripts
+      - name: Run v1.2 and 1.3 contract regression
+        run: |
           pytest -q \
-            04_evals/component_and_residue_classification_validator/test_v1_2_scientific_contract_repairs.py \
-            04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py \
+            04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py \
+            04_evals/component_and_residue_classification_validator/test_classify_structure.py \
+            04_evals/component_and_residue_classification_validator/test_build_subagent_result.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_redesign_foundation.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_relations_and_builder.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_classification_engine.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_polymer_grouping_conflict.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_missing_residue_paths.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_af3_server_json.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_altloc_rtp_ccd.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_coordination_topology_matrix.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_topology_class_vocabulary.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_dual_identity.py \
             04_evals/component_and_residue_classification_validator/test_v1_2_selection_identity_contract.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_manager_closure.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_terminal_rtp.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_scientific_contract_repairs.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_dependency_contracts.py \
             04_evals/chain_and_component_selection/test_chain_and_component_selection.py
-      - name: Commit business changes
+      - name: Commit verified business changes
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          grep -v '^\.github/workflows/' /tmp/changed-files.txt | xargs git add
+          xargs git add < /tmp/dependency-changed-files.txt
           if git diff --cached --quiet; then
+            echo "No business changes to commit"
             exit 0
           fi
-          git commit -m 'Repair v1.2 scientific data contracts'
+          git commit -m "Close v1.2 dependency contracts"
           git push origin HEAD:feat/chain-component-selection-core
