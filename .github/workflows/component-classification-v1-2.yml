@@ -33,7 +33,12 @@ jobs:
           raw = Path('.github/workflows/tmp-v1-2-scientific-contract-repair.yml').read_text(encoding='utf-8')
           body = raw.split("cat > /tmp/repair.py <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
           lines = [line[10:] if line.startswith('          ') else line for line in body.splitlines()]
-          Path('/tmp/repair.py').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          script = '\n'.join(lines) + '\n'
+          script = script.replace(
+              "text = replace_once(text, old, new, 'ccd raw comparison')",
+              "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\n          if count != 1:\n              raise SystemExit(f'ccd raw comparison regex: expected one occurrence, found {count}')",
+          )
+          Path('/tmp/repair.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/repair.py | tee /tmp/changed-files.txt
       - name: Install and test
