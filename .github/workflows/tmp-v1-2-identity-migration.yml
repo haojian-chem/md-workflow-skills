@@ -5,11 +5,13 @@ on:
     branches: [fix/v1-2-source-current-identity]
     paths:
       - "tmp_migrate_v1_2_identity.py"
+      - "tmp_fix_identity_migration.py"
       - ".github/workflows/tmp-v1-2-identity-migration.yml"
   pull_request:
     branches: [main]
     paths:
       - "tmp_migrate_v1_2_identity.py"
+      - "tmp_fix_identity_migration.py"
       - ".github/workflows/tmp-v1-2-identity-migration.yml"
   workflow_dispatch:
 
@@ -34,7 +36,9 @@ jobs:
           python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
           python -m pip install pytest
       - name: Apply migration
-        run: python tmp_migrate_v1_2_identity.py
+        run: |
+          python tmp_fix_identity_migration.py
+          python tmp_migrate_v1_2_identity.py
       - name: Run v1.2 test suite
         run: |
           pytest -q \
