@@ -6,6 +6,11 @@ on:
     paths:
       - "tmp_migrate_v1_2_identity.py"
       - ".github/workflows/tmp-v1-2-identity-migration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tmp_migrate_v1_2_identity.py"
+      - ".github/workflows/tmp-v1-2-identity-migration.yml"
   workflow_dispatch:
 
 permissions:
@@ -61,5 +66,3 @@ jobs:
           fi
           git commit -m "Add explicit source and current residue identities"
           git push origin HEAD:fix/v1-2-source-current-identity
-
-# trigger after workflow installation
