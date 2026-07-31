@@ -1,0 +1,40 @@
+name: tmp-finalize-chain-component-selection-v1
+
+on:
+  push:
+    branches: [feat/chain-component-selection-core]
+    paths:
+      - "tmp_finalize_chain_component_selection_v1.py"
+      - ".github/workflows/tmp-finalize-chain-component-selection-v1.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tmp_finalize_chain_component_selection_v1.py"
+      - ".github/workflows/tmp-finalize-chain-component-selection-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/chain-component-selection-core
+      - name: Apply finalization
+        run: python tmp_finalize_chain_component_selection_v1.py
+      - name: Commit finalized business files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            00_authoring/content_maps/chain_and_component_selection.yaml \
+            00_authoring/content_maps/chain_and_component_selection_validator.yaml \
+            02_operations/chain_and_component_selection \
+            02_validators/chain_and_component_selection_validator \
+            04_evals/chain_and_component_selection
+          git commit -m "Freeze chain and component selection v1"
+          git pull --rebase origin feat/chain-component-selection-core
+          git push origin HEAD:feat/chain-component-selection-core
