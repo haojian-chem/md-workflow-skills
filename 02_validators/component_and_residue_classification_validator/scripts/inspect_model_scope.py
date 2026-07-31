@@ -19,7 +19,7 @@ from classification_common import (
     verify_source_format,
 )
 
-VERSION = "0.2.0-draft"
+VERSION = "1.0.0"
 
 
 def build_result(args: argparse.Namespace) -> dict[str, Any]:

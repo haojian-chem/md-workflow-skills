@@ -68,13 +68,23 @@ def write_structure(
 
 
 def heavy() -> dict:
+    comparison = {
+        "missing_expected_atom_names": [],
+        "unexpected_observed_atom_names": [],
+    }
     return {
-        "status": "HEAVY_ATOMS_COMPLETE",
+        "execution_status": "COMPLETED",
+        "findings": [],
         "reference_type": None,
         "reference_name": None,
+        "exact_comparison": comparison,
+        "atom_name_mapping_candidates": [],
+        "mapping_resolution_status": "NOT_APPLICABLE",
+        "effective_comparison": comparison,
+        "reason": None,
+        "status": "HEAVY_ATOMS_COMPLETE",
         "missing_atoms": [],
         "unexpected_atoms": [],
-        "reason": None,
     }
 
 
@@ -194,7 +204,12 @@ def observations(
     }
 
 
-def base_documents(tmp_path: Path, structure: Path, observations_path: Path) -> tuple[Path, Path, Path]:
+def base_documents(
+    tmp_path: Path,
+    structure: Path,
+    observations_path: Path,
+    coordination_definition: Path,
+) -> tuple[Path, Path, Path]:
     model_scope = tmp_path / "model_scope.yaml"
     write_yaml(
         model_scope,
@@ -241,9 +256,9 @@ def base_documents(tmp_path: Path, structure: Path, observations_path: Path) -> 
                     "status": "NOT_PROVIDED",
                 },
                 "possible_coordination": {
-                    "path": None,
-                    "sha256": None,
-                    "status": "NOT_PROVIDED",
+                    "path": str(coordination_definition.resolve()),
+                    "sha256": digest(coordination_definition),
+                    "status": "LOADED",
                 },
             },
         },
@@ -365,6 +380,7 @@ def run_confirmed_coordination(
         tmp_path,
         structure,
         observations_path,
+        definitions,
     )
     common_builder = {
         "model_scope": {"path": str(model_scope), "sha256": digest(model_scope)},

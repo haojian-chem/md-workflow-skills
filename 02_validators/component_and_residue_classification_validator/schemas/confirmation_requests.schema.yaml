@@ -48,6 +48,7 @@ $defs:
           - SEQUENCE_REFERENCE_CONFLICT
           - MULTIPLE_LOCAL_CCD_CANDIDATES
           - INVALID_PROJECT_CCD_SNAPSHOT
+          - ATOM_NAME_MAPPING_REQUIRED
       subject:
         type: object
       evidence:

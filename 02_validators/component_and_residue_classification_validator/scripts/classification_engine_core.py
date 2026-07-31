@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+import copy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -26,6 +27,7 @@ from sequence_missing import (
     explicit_missing_residues,
     parse_af3_sequence_references,
     sequence_based_missing_residues,
+    normalize_missing_residue_outputs,
 )
 from structure_records import (
     ResidueRecord,
@@ -485,15 +487,67 @@ def _classify_residue(
     return _entity_fallback(residue), None
 
 
-def _empty_heavy_check(status: str, reason: str | None = None) -> dict[str, Any]:
-    return {
-        "status": status,
-        "reference_type": None,
-        "reference_name": None,
-        "missing_atoms": [],
-        "unexpected_atoms": [],
-        "reason": reason,
+def _heavy_status(missing: list[str], unexpected: list[str]) -> str:
+    if missing and unexpected:
+        return "MISSING_AND_UNEXPECTED_HEAVY_ATOMS"
+    if missing:
+        return "MISSING_EXPECTED_HEAVY_ATOMS"
+    if unexpected:
+        return "UNEXPECTED_HEAVY_ATOMS"
+    return "HEAVY_ATOMS_COMPLETE"
+
+
+def _heavy_findings(
+    missing: list[str],
+    unexpected: list[str],
+    mappings: list[dict[str, str]],
+) -> list[str]:
+    findings: list[str] = []
+    if missing:
+        findings.append("MISSING_EXPECTED_HEAVY_ATOMS")
+    if unexpected:
+        findings.append("UNEXPECTED_HEAVY_ATOMS")
+    if mappings:
+        findings.append("ATOM_NAME_MAPPING_REQUIRED")
+    return findings
+
+
+def _completed_heavy_check(
+    *,
+    reference_type: str,
+    reference_name: str | None,
+    missing: list[str],
+    unexpected: list[str],
+    mappings: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    mappings = mappings or []
+    candidates = [
+        {
+  "observed_atom_name": item["structure_atom_name"],
+  "reference_atom_name": item["ccd_atom_id"],
+  "mapping_source": item["mapping_source"],
+        }
+        for item in mappings
+    ]
+    exact = {
+        "missing_expected_atom_names": list(missing),
+        "unexpected_observed_atom_names": list(unexpected),
     }
+    return {
+        "execution_status": "COMPLETED",
+        "findings": _heavy_findings(missing, unexpected, mappings),
+        "reference_type": reference_type,
+        "reference_name": reference_name,
+        "exact_comparison": exact,
+        "atom_name_mapping_candidates": candidates,
+        "mapping_resolution_status": "PENDING_CONFIRMATION" if mappings else "NOT_APPLICABLE",
+        "effective_comparison": None if mappings else dict(exact),
+        "reason": None,
+        "status": "ATOM_NAME_MAPPING_REQUIRED" if mappings else _heavy_status(missing, unexpected),
+        "missing_atoms": list(missing),
+        "unexpected_atoms": list(unexpected),
+    }
+
 
 
 def _heavy_status(missing: list[str], unexpected: list[str]) -> str:
@@ -504,6 +558,91 @@ def _heavy_status(missing: list[str], unexpected: list[str]) -> str:
     if unexpected:
         return "UNEXPECTED_HEAVY_ATOMS"
     return "HEAVY_ATOMS_COMPLETE"
+
+
+def _heavy_findings(
+    missing: list[str],
+    unexpected: list[str],
+    mappings: list[dict[str, str]],
+) -> list[str]:
+    findings: list[str] = []
+    if missing:
+        findings.append("MISSING_EXPECTED_HEAVY_ATOMS")
+    if unexpected:
+        findings.append("UNEXPECTED_HEAVY_ATOMS")
+    if mappings:
+        findings.append("ATOM_NAME_MAPPING_REQUIRED")
+    return findings
+
+
+def _completed_heavy_check(
+    *,
+    reference_type: str,
+    reference_name: str | None,
+    missing: list[str],
+    unexpected: list[str],
+    mappings: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    mappings = mappings or []
+    candidates = [
+        {
+            "observed_atom_name": item["structure_atom_name"],
+            "reference_atom_name": item["ccd_atom_id"],
+            "mapping_source": item["mapping_source"],
+        }
+        for item in mappings
+    ]
+    exact = {
+        "missing_expected_atom_names": list(missing),
+        "unexpected_observed_atom_names": list(unexpected),
+    }
+    return {
+        "execution_status": "COMPLETED",
+        "findings": _heavy_findings(missing, unexpected, mappings),
+        "reference_type": reference_type,
+        "reference_name": reference_name,
+        "exact_comparison": exact,
+        "atom_name_mapping_candidates": candidates,
+        "mapping_resolution_status": (
+            "PENDING_CONFIRMATION" if mappings else "NOT_APPLICABLE"
+        ),
+        "effective_comparison": None if mappings else copy.deepcopy(exact),
+        "reason": None,
+        "status": (
+            "ATOM_NAME_MAPPING_REQUIRED"
+            if mappings
+            else _heavy_status(missing, unexpected)
+        ),
+        "missing_atoms": list(missing),
+        "unexpected_atoms": list(unexpected),
+    }
+
+
+def _empty_heavy_check(status: str, reason: str | None = None) -> dict[str, Any]:
+    execution_status = {
+        "REFERENCE_TEMPLATE_UNAVAILABLE": "REFERENCE_TEMPLATE_UNAVAILABLE",
+        "NOT_APPLICABLE": "NOT_APPLICABLE",
+    }.get(status, "NOT_PERFORMED")
+    return {
+        "execution_status": execution_status,
+        "findings": [],
+        "reference_type": None,
+        "reference_name": None,
+        "exact_comparison": None,
+        "atom_name_mapping_candidates": [],
+        "mapping_resolution_status": "NOT_APPLICABLE",
+        "effective_comparison": None,
+        "reason": reason,
+        "status": status,
+        "missing_atoms": [],
+        "unexpected_atoms": [],
+    }
+
+
+def _heavy_check_has_issue(check: dict[str, Any]) -> bool:
+    return bool(check.get("findings")) or (
+        check.get("execution_status") == "REFERENCE_TEMPLATE_UNAVAILABLE"
+    )
 
 
 def _observed_heavy_names(residue: ResidueRecord) -> list[str]:
@@ -574,11 +713,15 @@ def _build_chain_groups(
     by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
     for analysis in analyses:
         classification = analysis.classification
-        if classification.polymer_class in {"POLYMER", "BRANCHED"}:
+        grouping_polymer_class = (
+            _entity_polymer_class(analysis.residue)
+            or classification.polymer_class
+        )
+        if grouping_polymer_class in {"POLYMER", "BRANCHED"}:
             key = (
                 analysis.residue.source_chain_id,
                 analysis.residue.entity_id,
-                classification.polymer_class,
+                grouping_polymer_class,
             )
             by_chain[key].append(analysis)
     chain_order = sorted(
@@ -626,13 +769,7 @@ def _build_chain_groups(
             for item in members
             if item.classification.resolution_status == "RESOLVED"
             and item.conformation["status"] == "SINGLE_CONFORMATION"
-            and item.heavy_atom_check["status"]
-            not in {
-                "MISSING_EXPECTED_HEAVY_ATOMS",
-                "UNEXPECTED_HEAVY_ATOMS",
-                "MISSING_AND_UNEXPECTED_HEAVY_ATOMS",
-                "ATOM_NAME_MAPPING_REQUIRED",
-            }
+            and not _heavy_check_has_issue(item.heavy_atom_check)
         ]
         exceptional = [item for item in members if item not in normal]
         classification = normal[0].classification if normal else None
@@ -845,14 +982,42 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
             reference_dir / "topology_linked_nonstandard_residue_registry.yaml",
         )
     ).resolve()
-    standard_defs, standard_hash = _load_definition_file(standard_registry_path, definitions_schema)
-    linked_defs, linked_hash = _load_definition_file(linked_registry_path, definitions_schema)
-    overlap = set(standard_defs).intersection(linked_defs)
-    if overlap:
-        raise ClassificationToolError(
-            f"exact residue names occur in both Skill registries: {sorted(overlap)}"
+    independent_registry_path = Path(
+        classification_config.get(
+            "independent_registry_path",
+            reference_dir / "independent_nonstandard_residue_registry.yaml",
         )
-    skill_defs = {**standard_defs, **linked_defs}
+    ).resolve()
+    standard_defs, standard_hash = _load_definition_file(
+        standard_registry_path,
+        definitions_schema,
+    )
+    linked_defs, linked_hash = _load_definition_file(
+        linked_registry_path,
+        definitions_schema,
+    )
+    independent_defs, independent_hash = _load_definition_file(
+        independent_registry_path,
+        definitions_schema,
+    )
+    registry_sets = {
+        "standard": set(standard_defs),
+        "topology_linked": set(linked_defs),
+        "independent": set(independent_defs),
+    }
+    overlaps: set[str] = set()
+    registry_names = list(registry_sets)
+    for index, first in enumerate(registry_names):
+        for second in registry_names[index + 1 :]:
+            overlaps.update(
+                registry_sets[first].intersection(registry_sets[second])
+            )
+    if overlaps:
+        raise ClassificationToolError(
+            "exact residue names occur in multiple Skill registries: "
+            f"{sorted(overlaps)}"
+        )
+    skill_defs = {**standard_defs, **linked_defs, **independent_defs}
 
     rtp_index: dict[str, list[RtpTemplate]] = {}
     rtp_files: list[Path] = []
@@ -960,57 +1125,82 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
             continue
         if value.topology_class in {"SOLVENT_COMPONENT", "ION_COMPONENT"}:
             analysis.heavy_atom_check = _empty_heavy_check(
-                "NOT_PERFORMED",
+                "NOT_APPLICABLE",
                 "SOLVENT_OR_ION_TEMPLATE_CHECK_NOT_REQUIRED",
             )
             continue
         observed_heavy = _observed_heavy_names(analysis.residue)
-        if mode == "FORCE_FIELD_ANALYSIS" and value.topology_class == "STANDARD_RESIDUE":
+        if (
+            mode == "FORCE_FIELD_ANALYSIS"
+            and value.topology_class == "STANDARD_RESIDUE"
+        ):
             template = selected_rtp.get(analysis.residue.residue_key)
             if template is None:
                 analysis.heavy_atom_check = {
-                    **_empty_heavy_check("REFERENCE_TEMPLATE_UNAVAILABLE", "RTP_TEMPLATE_NOT_RESOLVED"),
+                    **_empty_heavy_check(
+                        "REFERENCE_TEMPLATE_UNAVAILABLE",
+                        "RTP_TEMPLATE_NOT_RESOLVED",
+                    ),
                     "reference_type": "RTP",
                     "reference_name": value.rtp_template_name,
                 }
                 continue
-            missing, unexpected = compare_heavy_atom_names(observed_heavy, template)
-            analysis.heavy_atom_check = {
-                "status": _heavy_status(missing, unexpected),
-                "reference_type": "RTP",
-                "reference_name": template.residue_name,
-                "missing_atoms": missing,
-                "unexpected_atoms": unexpected,
-                "reason": None,
-            }
+            missing, unexpected = compare_heavy_atom_names(
+                observed_heavy,
+                template,
+            )
+            analysis.heavy_atom_check = _completed_heavy_check(
+                reference_type="RTP",
+                reference_name=template.residue_name,
+                missing=missing,
+                unexpected=unexpected,
+            )
             continue
         component_id = value.ccd_id
         template = ccd_templates.get(component_id or "")
         if component_id is None or template is None:
             analysis.heavy_atom_check = {
-                **_empty_heavy_check("REFERENCE_TEMPLATE_UNAVAILABLE", "CCD_TEMPLATE_UNAVAILABLE"),
+                **_empty_heavy_check(
+                    "REFERENCE_TEMPLATE_UNAVAILABLE",
+                    "CCD_TEMPLATE_UNAVAILABLE",
+                ),
                 "reference_type": "CCD",
                 "reference_name": component_id,
             }
             continue
-        missing, unexpected, mappings = compare_ccd_heavy_atoms(observed_heavy, template)
+        missing, unexpected, mappings = compare_ccd_heavy_atoms(
+            observed_heavy,
+            template,
+        )
+        analysis.heavy_atom_check = _completed_heavy_check(
+            reference_type="CCD",
+            reference_name=component_id,
+            missing=missing,
+            unexpected=unexpected,
+            mappings=mappings,
+        )
         if mappings:
-            status = "ATOM_NAME_MAPPING_REQUIRED"
-            reason = "; ".join(
-                f"{item['structure_atom_name']}->{item['ccd_atom_id']}"
-                for item in mappings
+            unresolved.append(
+                {
+                    "issue_type": "ATOM_NAME_MAPPING_REQUIRED",
+                    "subject": {
+                        **_identity_fields(analysis.residue),
+                        "exact_comparison": copy.deepcopy(
+                            analysis.heavy_atom_check["exact_comparison"]
+                        ),
+                        "atom_name_mapping_candidates": copy.deepcopy(
+                            analysis.heavy_atom_check[
+                                "atom_name_mapping_candidates"
+                            ]
+                        ),
+                    },
+                    "evidence": [
+                        "CCD alternate atom name provides a candidate mapping; "
+                        "raw exact-name differences are retained"
+                    ],
+                    "resolution_status": "PENDING_CONFIRMATION",
+                }
             )
-        else:
-            status = _heavy_status(missing, unexpected)
-            reason = None
-        analysis.heavy_atom_check = {
-            "status": status,
-            "reference_type": "CCD",
-            "reference_name": component_id,
-            "missing_atoms": missing,
-            "unexpected_atoms": unexpected,
-            "reason": reason,
-        }
 
     chain_groups, assignment = _build_chain_groups(analyses)
     chain_index_by_source_chain = {
@@ -1198,13 +1388,6 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
             }
         )
 
-    heavy_issue_statuses = {
-        "MISSING_EXPECTED_HEAVY_ATOMS",
-        "UNEXPECTED_HEAVY_ATOMS",
-        "MISSING_AND_UNEXPECTED_HEAVY_ATOMS",
-        "ATOM_NAME_MAPPING_REQUIRED",
-        "REFERENCE_TEMPLATE_UNAVAILABLE",
-    }
     observations = {
         "schema_version": "1.0",
         "input": {
@@ -1231,9 +1414,9 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
                 for item in residue_records
             ),
             "heavy_atom_issue_count": sum(
-                item["heavy_atom_check"]["status"] in heavy_issue_statuses
-                for item in residue_records
-            ),
+      _heavy_check_has_issue(item["heavy_atom_check"])
+      for item in residue_records
+  ),
         },
     }
 
@@ -1250,6 +1433,34 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
                 "reference_type": entry.get("type") or entry.get("reference_type") or "OTHER",
             }
         )
+
+    relation_definitions_config = config.get("relation_definitions") or {}
+    if not isinstance(relation_definitions_config, dict):
+        raise ClassificationToolError("relation_definitions must be a mapping")
+
+    def relation_definition_reference(key: str) -> dict[str, Any]:
+        entry = relation_definitions_config.get(key)
+        if entry is None:
+            return {"path": None, "sha256": None, "status": "NOT_PROVIDED"}
+        if not isinstance(entry, dict):
+            raise ClassificationToolError(
+                f"relation_definitions.{key} must be a mapping or null"
+            )
+        relation_path = _required_path(entry, "path")
+        expected_hash = str(entry.get("sha256", ""))
+        relation_hash = require_sha256(relation_path, expected_hash)
+        return {
+            "path": str(relation_path),
+            "sha256": relation_hash,
+            "status": "LOADED",
+        }
+
+    possible_connections_reference = relation_definition_reference(
+        "possible_connections"
+    )
+    possible_coordination_reference = relation_definition_reference(
+        "possible_coordination"
+    )
 
     force_field_manifest = None
     if mode == "FORCE_FIELD_ANALYSIS":
@@ -1285,22 +1496,28 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
                 "status": "LOADED",
             },
             {
-                "path": str(linked_registry_path),
-                "sha256": linked_hash,
-                "status": "LOADED",
-            },
+      "path": str(linked_registry_path),
+      "sha256": linked_hash,
+      "status": "LOADED",
+  },
+  {
+      "path": str(independent_registry_path),
+      "sha256": independent_hash,
+      "status": "LOADED",
+  },
         ],
         "force_field": force_field_manifest,
         "ccd_components": [ccd_manifest[key] for key in sorted(ccd_manifest)],
         "sequence_references": sequence_manifest,
         "relation_definition_files": {
-            "possible_connections": {"path": None, "sha256": None, "status": "NOT_PROVIDED"},
-            "possible_coordination": {"path": None, "sha256": None, "status": "NOT_PROVIDED"},
+            "possible_connections": possible_connections_reference,
+            "possible_coordination": possible_coordination_reference,
         },
     }
 
     if sha256_file(structure_path) != structure_hash:
         raise ClassificationToolError("input structure changed during classification")
+    normalize_missing_residue_outputs(observations)
     validate_document(observations, observations_schema)
     validate_document(manifest, manifest_schema)
     return observations, manifest, observations_path, manifest_path, observations_schema, manifest_schema

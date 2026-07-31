@@ -12,15 +12,3 @@ residue_definitions:
     polymer_class: POLYMER
     topology_class: TOPOLOGY_LINKED_NONSTANDARD
     ccd_id: PYL
-  - residue_name: ACE
-    polymer_class: NONPOLYMER
-    topology_class: TOPOLOGY_LINKED_NONSTANDARD
-    ccd_id: ACE
-  - residue_name: NME
-    polymer_class: NONPOLYMER
-    topology_class: TOPOLOGY_LINKED_NONSTANDARD
-    ccd_id: NME
-  - residue_name: NH2
-    polymer_class: NONPOLYMER
-    topology_class: TOPOLOGY_LINKED_NONSTANDARD
-    ccd_id: NH2

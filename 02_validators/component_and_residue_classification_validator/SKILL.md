@@ -82,7 +82,8 @@ schemas/*.schema.yaml
 - validator Skill ref 指向本 Skill；
 - 项目根与 1.2 工作目录；
 - 唯一、已登记的 STRUCTURE 文件记录；
-- `source_recognition` 的格式结论和输入 SHA-256；
+- `current_valid_files` 中唯一 STRUCTURE file record 的 path、SHA-256 与 role；
+- task 明确声明的 `source_format`；1.2 必须自行解析并核验，不读取 `source_recognition_report.yaml` 作为运行时 contract；
 - allowed read/write paths 与 forbidden paths；
 - 分类模式；
 - 必需输出路径。
@@ -134,7 +135,7 @@ CCD 本地参考目录、共享 cache 和 retrieval policy
 
 1. task 通过共享 schema，mode、workflow 和 Skill ref 正确；
 2. 唯一结构输入位于 allowed read paths，且为非空普通文件；
-3. 输入不是 symlink，声明 SHA-256 与实际内容一致；
+3. STRUCTURE file record 不是 symlink，声明 SHA-256 与实际内容一致，且不得由 1.1 业务报告字段重新拼装；
 4. source format 为 `PDB | MMCIF | AF3_CIF`；
 5. 所有配置和参考路径均显式给出，禁止无界扫描项目或文件系统；
 6. 输出路径位于 allowed write paths，管理目录位于 forbidden paths；

@@ -1,0 +1,55 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: selection_validation_result.schema.yaml
+title: Chain and component selection validation result
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - task_id
+  - workstream_id
+  - status
+  - outcome_code
+  - validation_report
+  - validated_files
+  - warnings
+properties:
+  schema_version: {const: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  status: {enum: [DONE, BLOCKED, FAILED]}
+  outcome_code:
+    enum:
+      - SELECTION_VALIDATED
+      - SELECTION_VALIDATED_WITH_WARNINGS
+      - INVALID_SELECTION_SPEC_COVALENT_BREAK
+      - SELECTED_SET_MISMATCH
+      - ATOM_MAPPING_MISMATCH
+      - COORDINATE_OR_ATTRIBUTE_CHANGED
+      - EXPLICIT_CONNECTION_MISMATCH
+      - MANIFEST_OR_HASH_MISMATCH
+      - OUTPUT_FORMAT_MISMATCH
+      - VALIDATOR_INPUT_INCOMPLETE
+      - SELECTION_VALIDATOR_INTERNAL_FAILURE
+  validation_report: {$ref: '#/$defs/file_identity'}
+  validated_files:
+    type: array
+    items: {$ref: '#/$defs/file_identity_with_size'}
+  warnings:
+    type: array
+    items: {type: string}
+$defs:
+  file_identity:
+    type: object
+    additionalProperties: false
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+  file_identity_with_size:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, size_bytes]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+      size_bytes: {type: integer, minimum: 0}

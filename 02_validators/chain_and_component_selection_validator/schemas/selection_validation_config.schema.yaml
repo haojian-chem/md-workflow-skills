@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: selection_validation_config.schema.yaml
+title: Chain and component selection validator configuration
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - selection_spec_path
+  - classification_result_path
+  - candidate_structure_path
+  - selection_manifest_path
+  - selection_mapping_path
+  - operation_report_path
+  - validation_report_path
+  - validation_result_path
+properties:
+  schema_version: {const: 1}
+  selection_spec_path: {type: string, minLength: 1}
+  classification_result_path: {type: string, minLength: 1}
+  candidate_structure_path: {type: string, minLength: 1}
+  selection_manifest_path: {type: string, minLength: 1}
+  selection_mapping_path: {type: string, minLength: 1}
+  operation_report_path: {type: string, minLength: 1}
+  validation_report_path: {type: string, minLength: 1}
+  validation_result_path: {type: string, minLength: 1}

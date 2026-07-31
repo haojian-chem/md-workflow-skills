@@ -1,0 +1,67 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: possible_connections_check_config.schema.yaml
+title: Possible covalent connection check configuration
+type: object
+additionalProperties: false
+required:
+  - structure
+  - possible_connections
+  - classification_observations
+  - output
+properties:
+  structure:
+    $ref: "#/$defs/structure_input"
+  possible_connections:
+    $ref: "#/$defs/optional_hashed_file"
+  classification_observations:
+    $ref: "#/$defs/hashed_file"
+  output:
+    type: object
+    additionalProperties: false
+    required: [path]
+    properties:
+      path: {type: string, minLength: 1}
+      schema: {type: string, minLength: 1}
+$defs:
+  sha256:
+    type: string
+    pattern: "^[0-9a-f]{64}$"
+  structure_input:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, source_format, selected_model_id]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {$ref: "#/$defs/sha256"}
+      source_format: {enum: [PDB, MMCIF, AF3_CIF]}
+      selected_model_id: {type: string, minLength: 1}
+  hashed_file:
+    type: object
+    additionalProperties: false
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {$ref: "#/$defs/sha256"}
+      schema: {type: string, minLength: 1}
+  optional_hashed_file:
+    type: object
+    additionalProperties: false
+    required: [path]
+    properties:
+      path:
+        type: [string, "null"]
+        minLength: 1
+      sha256:
+        oneOf:
+          - {$ref: "#/$defs/sha256"}
+          - {type: "null"}
+      schema: {type: string, minLength: 1}
+    allOf:
+      - if:
+          properties:
+            path: {type: string}
+          required: [path]
+        then:
+          required: [sha256]
+          properties:
+            sha256: {$ref: "#/$defs/sha256"}

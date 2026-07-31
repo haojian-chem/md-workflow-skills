@@ -84,7 +84,7 @@ structure SHA-256
 source format
 selected_model_id
 classification mode
-reference inputs
+reference inputs, including relation definition paths and SHA-256 values
 output paths
 ```
 
@@ -112,12 +112,12 @@ reference_manifest.yaml
 
 ```text
 classification_engine.py
-→ runtime facade
-→ structural grouping invariant
-→ cross-stage normalization
+→ side-effect-free runtime facade
 
 classification_engine_core.py
 → baseline classification implementation
+→ structural grouping invariant
+→ final observation normalization
 
 structure_records.py
 → selected-model structure records
@@ -141,7 +141,7 @@ explicit_relations.py
 af3_server_sequence_reference.py
 ```
 
-用于兼容 `dialect: alphafoldserver` 的单 job 顶层列表。entity 未提供显式 ID 时，按 entity 顺序和 `count` 确定性生成 `A..Z, AA..` chain IDs；ligand 和 ion 占用 chain ID，但不生成 polymer sequence。
+由 `sequence_missing.py` 以普通函数调用处理 `dialect: alphafoldserver` 的单 job 顶层列表；禁止运行时替换 parser。entity 未提供显式 ID 时，按 entity 顺序和 `count` 确定性生成 `A..Z, AA..` chain IDs；ligand 和 ion 占用 chain ID，但不生成 polymer sequence。
 
 顶层列表包含多个 job 时必须拒绝解析。
 
@@ -233,6 +233,19 @@ wrapper 必须验证本地结果 schema 和共享 `subagent_result v2` contract�
 
 退出码 `0` 只表示确定性处理完成；对象是否存在待确认问题由机器可读结果表达。
 
+# Config schemas
+
+四个结构化 config 必须分别通过：
+
+```text
+../schemas/classification_config.schema.yaml
+../schemas/possible_connections_check_config.schema.yaml
+../schemas/possible_coordination_check_config.schema.yaml
+../schemas/classification_result_build_config.schema.yaml
+```
+
+未知字段和不满足条件关系的配置必须在业务处理前拒绝。
+
 # Dependencies
 
-安装 `requirements.txt` 声明的版本。
+安装 `requirements.txt` 声明的全部直接依赖；禁止依赖未声明的传递安装。

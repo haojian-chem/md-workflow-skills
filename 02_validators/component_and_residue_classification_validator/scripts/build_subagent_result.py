@@ -22,7 +22,7 @@ from classification_common import (
 
 SKILL_NAME = "component_and_residue_classification_validator"
 WORKFLOW_NAME = "structure_preparation_workflow"
-VERSION = "0.2.0-draft"
+VERSION = "1.0.0"
 
 
 def _shared_validator(contract_dir: Path, schema_name: str) -> Draft202012Validator:

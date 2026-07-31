@@ -1,0 +1,80 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: selection_operation_report.schema.yaml
+title: Chain and component selection operation report
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - tool_version
+  - task_id
+  - workstream_id
+  - status
+  - outcome_code
+  - message
+  - created_files
+  - warnings
+  - blocking_issues
+properties:
+  schema_version: {const: 1}
+  tool_version: {type: string, minLength: 1}
+  task_id: {type: string, minLength: 1}
+  workstream_id: {type: string, minLength: 1}
+  status: {enum: [DONE, BLOCKED, FAILED]}
+  outcome_code:
+    enum:
+      - SELECTION_APPLIED
+      - SELECTION_APPLIED_WITH_WARNINGS
+      - SELECTION_SPEC_MISSING_OR_INVALID
+      - SELECTION_REFERENCES_UNKNOWN_OBJECT
+      - SELECTION_BREAKS_CONFIRMED_COVALENT_LINK
+      - OUTPUT_FORMAT_CANNOT_PRESERVE_IDENTIFIERS
+      - SOURCE_OR_CLASSIFICATION_HASH_MISMATCH
+      - OUTPUT_CONFLICT
+      - SELECTION_INTERNAL_FAILURE
+  message: {type: string}
+  selected_component_ids:
+    type: array
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  selected_residue_ids:
+    type: array
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  created_files:
+    type: array
+    items: {$ref: '#/$defs/file_identity'}
+  warnings:
+    type: array
+    items: {type: string}
+  blocking_issues:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: {type: string, minLength: 1}
+        message: {type: string}
+allOf:
+  - if:
+      properties: {status: {const: DONE}}
+      required: [status]
+    then:
+      required: [selected_component_ids, selected_residue_ids]
+      properties:
+        created_files: {minItems: 3}
+  - if:
+      properties: {status: {const: BLOCKED}}
+      required: [status]
+    then:
+      properties:
+        blocking_issues: {minItems: 1}
+$defs:
+  file_identity:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, size_bytes]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+      size_bytes: {type: integer, minimum: 0}

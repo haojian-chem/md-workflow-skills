@@ -65,7 +65,10 @@ def endpoint_id_from_source_identity(identity: dict[str, Any]) -> str:
             "source_residue_name",
         )
     }
-    return f"endpoint:v1/{residue_id_from_source_identity(residue_identity)}/atom/{_encode(atom_name)}"
+    return (
+        f"endpoint:v1/{residue_id_from_source_identity(residue_identity)}"
+        f"/atom/{_encode(atom_name)}/altloc/{_encode(identity.get('source_altloc_id'))}"
+    )
 
 
 def _membership_digest(observed: Iterable[str], missing: Iterable[str]) -> str:

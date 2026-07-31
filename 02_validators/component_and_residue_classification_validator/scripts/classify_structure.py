@@ -6,17 +6,16 @@ import argparse
 import sys
 from pathlib import Path
 
-from af3_server_sequence_reference import install_af3_server_sequence_reference
 from classification_common import (
     ClassificationToolError,
     atomic_write_yaml,
     read_yaml_strict,
+    validate_document,
 )
 from classification_engine import execute_classification
 
-install_af3_server_sequence_reference()
 
-VERSION = "0.2.0-draft"
+VERSION = "1.0.0"
 
 
 def parse_args() -> argparse.Namespace:
@@ -44,6 +43,10 @@ def main() -> int:
         config = read_yaml_strict(args.config.resolve())
         if not isinstance(config, dict):
             raise ClassificationToolError("classification config must be a YAML mapping")
+        validate_document(
+            config,
+            script_dir.parent / "schemas/classification_config.schema.yaml",
+        )
         (
             observations,
             manifest,

@@ -1,0 +1,14 @@
+schema_version: "1.0"
+residue_definitions:
+  - residue_name: ACE
+    polymer_class: NONPOLYMER
+    topology_class: INDEPENDENT_NONSTANDARD
+    ccd_id: ACE
+  - residue_name: NME
+    polymer_class: NONPOLYMER
+    topology_class: INDEPENDENT_NONSTANDARD
+    ccd_id: NME
+  - residue_name: NH2
+    polymer_class: NONPOLYMER
+    topology_class: INDEPENDENT_NONSTANDARD
+    ccd_id: NH2

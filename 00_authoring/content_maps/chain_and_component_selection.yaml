@@ -2,19 +2,31 @@ schema_version: 3
 skill_name: chain_and_component_selection
 skill_type: operation
 skill_path: 02_operations/chain_and_component_selection
-contract_status: draft
-content_ownership_status: draft
+contract_status: frozen
+content_ownership_status: frozen
 owned_content:
   local_execution_flow:
     owner: 02_operations/chain_and_component_selection/SKILL.md
   selection_semantics_and_covalent_closure:
     owner: 02_operations/chain_and_component_selection/references/selection_rules.md
+  local_script_interfaces:
+    owner: 02_operations/chain_and_component_selection/scripts/README.md
+  deterministic_selection_entry_point:
+    owner: 02_operations/chain_and_component_selection/scripts/select_structure.py
+  deterministic_selection_helpers:
+    owner: 02_operations/chain_and_component_selection/scripts/selection_common.py
+  shared_operation_validator_result_builder:
+    owner: 02_operations/chain_and_component_selection/scripts/build_subagent_result.py
   explicit_selection_spec:
     owner: 02_operations/chain_and_component_selection/schemas/selection_spec.schema.yaml
+  operation_config_contract:
+    owner: 02_operations/chain_and_component_selection/schemas/selection_operation_config.schema.yaml
   selection_manifest:
     owner: 02_operations/chain_and_component_selection/schemas/selection_manifest.schema.yaml
   atom_identity_mapping:
     owner: 02_operations/chain_and_component_selection/schemas/selection_mapping.schema.yaml
+  operation_report_contract:
+    owner: 02_operations/chain_and_component_selection/schemas/selection_operation_report.schema.yaml
 external_references:
   - purpose: layer_boundary
     owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
@@ -37,13 +49,54 @@ external_references:
   - purpose: dedicated_validator
     owner: 02_validators/chain_and_component_selection_validator/SKILL.md
     access: reference_only
-  - purpose: examples_and_test_fixtures
-    owner: 04_evals/chain_and_component_selection/fixtures/
+  - purpose: executable_tests_and_validation_record
+    owner: 04_evals/chain_and_component_selection/
     access: reference_only
     status: present
+validation_evidence:
+  authoritative_record:
+    path: 04_evals/chain_and_component_selection/VALIDATION.md
+    status: current
+  core_operation_validator_and_shared_result:
+    workflow: .github/workflows/chain-component-selection-core.yml
+    run_id: 30603213366
+    job_id: 91070077238
+    conclusion: success
+    test_count: 11
+  real_v1_2_to_v1_3_pdb_acceptance:
+    workflow: .github/workflows/chain-component-selection-real-pdb.yml
+    run_id: 30603213368
+    job_id: 91070077071
+    conclusion: success
+    test_count: 3
+    entries: [1VNS, 1A6M, 1CRN]
+  manager_fast_atomic_closure:
+    workflow: .github/workflows/chain-component-selection-manager-closure.yml
+    run_id: 30603213363
+    job_id: 91070077145
+    conclusion: success
+    test_count: 1
+  authoring_static_validation:
+    workflow: .github/workflows/chain-component-selection-core.yml
+    run_id: 30603213366
+    job_id: 91070077297
+    conclusion: success
+    validated_content_maps: 18
+    operation_duplicate_blocks: 0
+    validator_duplicate_blocks: 0
+    architecture_violations: 0
+    errors: 0
+    warnings: 0
+  overall:
+    operation: passed
+    dedicated_validator: passed
+    shared_result: passed
+    manager_closure: passed
+    chain_and_component_selection_v1: passed
 notes:
   - v1 requires an explicit selection_spec; natural-language or convention-based implicit selection is prohibited.
   - Selection is component-level and exactly one model; residue-range and atom-level selection are not supported.
   - A confirmed covalent relation crossing the boundary blocks the Operation; the selection is not auto-expanded.
-  - Metal coordination and geometry-only candidates are reported but do not force component inclusion.
-  - Operation creates an UNVALIDATED STRUCTURE candidate for the dedicated Validator.
+  - Metal coordination and rejected geometry-only candidates are reported but do not force component inclusion.
+  - The deterministic entry point preserves complete observed residue instances and creates an UNVALIDATED STRUCTURE candidate for the dedicated Validator.
+  - The shared result builder emits a validated STRUCTURE artifact candidate only after the dedicated Validator explicitly accepts and covers the candidate, manifest, and mapping hashes.

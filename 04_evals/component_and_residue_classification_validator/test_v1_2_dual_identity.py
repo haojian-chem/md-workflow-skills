@@ -147,13 +147,24 @@ def _schema_record(schema_name: str, *, presence_status: str) -> dict:
         "status": "SINGLE_CONFORMATION" if presence_status == "OBSERVED" else "NOT_APPLICABLE",
         "altloc_ids": [],
     }
+    observed = presence_status == "OBSERVED"
+    comparison = {
+        "missing_expected_atom_names": [],
+        "unexpected_observed_atom_names": [],
+    }
     record["heavy_atom_check"] = {
-        "status": "HEAVY_ATOMS_COMPLETE" if presence_status == "OBSERVED" else "NOT_APPLICABLE",
+        "execution_status": "COMPLETED" if observed else "NOT_APPLICABLE",
+        "findings": [],
         "reference_type": None,
         "reference_name": None,
+        "exact_comparison": comparison if observed else None,
+        "atom_name_mapping_candidates": [],
+        "mapping_resolution_status": "NOT_APPLICABLE",
+        "effective_comparison": comparison if observed else None,
+        "reason": None,
+        "status": "HEAVY_ATOMS_COMPLETE" if observed else "NOT_APPLICABLE",
         "missing_atoms": [],
         "unexpected_atoms": [],
-        "reason": None,
     }
     if "observations" in schema_name:
         record["classification_observation"] = {

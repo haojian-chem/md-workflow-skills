@@ -226,3 +226,10 @@ def test_classification_result_schema_requires_selection_contract_fields() -> No
     assert {"endpoint_id", "residue_id", "component_id"} <= endpoint_required
     relation_required = set(schema["$defs"]["relation"]["required"])
     assert "relation_id" in relation_required
+
+
+def test_classification_rules_require_aggregate_instance_records() -> None:
+    rules = (SKILL / "references/classification_rules.md").read_text(encoding="utf-8")
+    assert "普通汇总成员无需在 `residue_records` 中逐实例展开" not in rules
+    assert "普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`" in rules
+    assert "不得删除实例级身份记录" in rules

@@ -73,7 +73,7 @@ current_identity:
   current_residue_name: CYS
 ```
 
-关系端点分别追加 `source_atom_name` 和 `current_atom_name`。规则：
+关系端点分别追加 `source_atom_name`、`current_atom_name`、`source_altloc_id` 和 `current_altloc_id`；无 altLoc 时后两项为 `null`。规则：
 
 - `source_*` 是输入来源追溯身份，后续结构 revision 禁止覆盖；
 - `current_*` 是本次实际读取的 STRUCTURE revision 身份，只能由真实存在的新结构更新；
@@ -90,7 +90,7 @@ current_identity:
 - `source_structure`：本次分类对应的源结构 path、SHA-256 与格式；
 - `component_id`：根据 final component membership 生成，禁止由 `chain_index` 充当或重建；
 - `residue_id`：根据 immutable `source_identity` 生成；
-- `endpoint_id`：根据 source residue identity 与 exact atom name 生成；
+- `endpoint_id`：根据 source residue identity、exact atom name 与 exact altLoc identity 生成；
 - `relation_id`：根据 relation type 与两个 endpoint IDs 生成，与 endpoint 顺序和 evidence status 无关。
 
 聚合 `SOLVENT_GROUP`、`ION_GROUP` 和 `REPEATED_SMALL_MOLECULE_GROUP` 只改变逻辑分组，不得删除实例级 residue records。每个 component 分别列出：
@@ -162,6 +162,7 @@ residue_definitions:
 - v1 定义禁止包含 model、chain、source residue number 或连接原子限制；
 - 一条定义适用于 selected model 中所有精确同名实例。
 - 项目级残基定义建立所有精确同名实例的 baseline 分类；确认的 topology-forming relation 只允许提升参与该关系的具体实例，禁止反向修改其他同名实例的 baseline。
+- terminal cap 名称（ACE、NME、NH2）在 fallback registry 中只建立 `INDEPENDENT_NONSTANDARD` baseline；只有具体实例存在确认且应用的 topology-forming relation 后才提升。
 
 # 6. 分类来源顺序
 
@@ -238,23 +239,57 @@ terminal role
 | `FORCE_FIELD_ANALYSIS` | 相连/独立非标准残基 | CCD |
 | 任一模式 | 普通水、普通离子 | `NOT_APPLICABLE` |
 
-## 8.2 输出状态
+## 8.2 权威输出模型
 
-```text
-HEAVY_ATOMS_COMPLETE
-MISSING_EXPECTED_HEAVY_ATOMS
-UNEXPECTED_HEAVY_ATOMS
-MISSING_AND_UNEXPECTED_HEAVY_ATOMS
-ATOM_NAME_MAPPING_REQUIRED
-REFERENCE_TEMPLATE_UNAVAILABLE
-NOT_PERFORMED
-NOT_APPLICABLE
+重原子检查必须拆分为检查执行状态与零个或多个并行 findings，禁止再使用单一互斥状态覆盖其他异常：
+
+```yaml
+heavy_atom_check:
+  execution_status: COMPLETED
+  findings:
+    - MISSING_EXPECTED_HEAVY_ATOMS
+    - UNEXPECTED_HEAVY_ATOMS
+    - ATOM_NAME_MAPPING_REQUIRED
+  exact_comparison:
+    missing_expected_atom_names: [C1]
+    unexpected_observed_atom_names: [C01]
+  atom_name_mapping_candidates:
+    - observed_atom_name: C01
+      reference_atom_name: C1
+      mapping_source: CCD_ALTERNATE_ATOM_NAME
+  mapping_resolution_status: PENDING_CONFIRMATION
+  effective_comparison: null
 ```
 
-规则：
+`execution_status` 允许值：
 
-- 只记录缺少和多出的原子名称；禁止追加主链、侧链、端基或金属中心原子分类；
-- CCD alternate atom name 只能形成待处理映射证据，禁止静默改名。
+```text
+COMPLETED
+NOT_PERFORMED
+NOT_APPLICABLE
+REFERENCE_TEMPLATE_UNAVAILABLE
+```
+
+`findings` 允许并行包含：
+
+```text
+MISSING_EXPECTED_HEAVY_ATOMS
+UNEXPECTED_HEAVY_ATOMS
+ATOM_NAME_MAPPING_REQUIRED
+ELEMENT_MISMATCH
+DUPLICATE_ATOM_NAME
+```
+
+硬规则：
+
+- 所有适用异常必须并行记录；任何单一异常不得覆盖、终止或隐藏同一残基上的其他重原子问题；
+- `exact_comparison` 必须先按结构 exact atom name 与参考 exact atom name 比较，且永久保留原始差集；
+- CCD alternate atom name 只能产生 `atom_name_mapping_candidates`，禁止从 raw missing/unexpected 差集中删除对应名称；
+- 未经确认时 `mapping_resolution_status: PENDING_CONFIRMATION` 且 `effective_comparison: null`；
+- 用户确认应用映射后才可生成 `effective_comparison`，同时保留原始 `exact_comparison`；
+- 用户拒绝映射时记录 `mapping_resolution_status: REJECTED`，禁止伪造 effective comparison；
+- 无 mapping candidate 时 `mapping_resolution_status: NOT_APPLICABLE`，已完成比较可令 `effective_comparison` 与 exact comparison 相同；
+- v1 的 `status`、`missing_atoms`、`unexpected_atoms` 仅作为只读兼容镜像；新消费者必须读取 `execution_status`、`findings` 和 comparison 对象。
 
 ## 8.3 altLoc
 
@@ -262,11 +297,11 @@ NOT_APPLICABLE
 
 ```text
 conformation status: MULTIPLE_CONFORMATIONS
-heavy atom check: NOT_PERFORMED
+heavy atom execution_status: NOT_PERFORMED
 reason: MULTIPLE_CONFORMATIONS_PRESENT
 ```
 
-禁止将多个构象的原子并集作为一个伪完整残基进行比较。
+禁止将多个构象的原子并集作为一个伪完整残基进行比较。关系端点若由显式结构记录精确到 altLoc，必须保留该 altLoc 身份；禁止将 A/B 等不同构象端点折叠成同一个 endpoint ID。
 
 # 9. CCD 规则
 
@@ -358,7 +393,7 @@ AlphaFold Server `job_request.json`：
 - 每条 polymer/branched chain 一个 `chain_index`，按 selected model 中首次出现顺序分配；
 - 每种精确名称的普通水和普通离子汇总为一个组；
 - 同种、同分类、无特殊关系或异常的重复独立小分子可以汇总；
-- 普通汇总成员无需在 `residue_records` 中逐实例展开；
+- 普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`；汇总只改变 component/chain group 的组织方式，不得删除实例级身份记录；
 - 存在 altLoc、分类冲突、模板异常、显式/候选关系或项目特殊处理的实例必须从汇总组中提出并单独记录；
 - 独立小分子即使与 polymer chain 使用相同作者 chain ID，也必须使用独立 `chain_index` 并记录 source association。
 
@@ -374,6 +409,15 @@ AlphaFold Server `job_request.json`：
 - 与多条 polymer chain 相连：建立 `MULTICHAIN_LINKED_COMPONENT`，记录 `linked_polymer_chain_indices`；
 - 只与其他非标准组分形成 topology-forming connected component：建立 `LINKED_NONSTANDARD_GROUP`；
 - 标准残基参与连接或配位时默认保持 `STANDARD_RESIDUE`。
+
+## 11.1 关系定义 provenance
+
+`reference_manifest.yaml` 必须记录本次实际使用或明确未提供的 `possible_connections.yaml` 与 `possible_coordination.yaml`：
+
+- 提供时保存解析后的 path、exact SHA-256 和 `LOADED`；
+- 未提供时三字段固定为 `path: null`、`sha256: null`、`status: NOT_PROVIDED`；
+- relation checker 的 definition path/SHA-256 必须与 manifest 完全一致；
+- final builder 遇到缺失、不同路径或不同哈希时属于技术失败，禁止继续整合。
 
 # 12. 可能共价连接
 

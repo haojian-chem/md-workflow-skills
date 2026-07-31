@@ -38,13 +38,24 @@ def write_yaml(path: Path, document: dict) -> None:
 
 
 def heavy(status: str = "HEAVY_ATOMS_COMPLETE") -> dict:
+    completed = status == "HEAVY_ATOMS_COMPLETE"
+    comparison = {
+        "missing_expected_atom_names": [],
+        "unexpected_observed_atom_names": [],
+    }
     return {
-        "status": status,
+        "execution_status": "COMPLETED" if completed else "NOT_PERFORMED",
+        "findings": [],
         "reference_type": None,
         "reference_name": None,
+        "exact_comparison": comparison if completed else None,
+        "atom_name_mapping_candidates": [],
+        "mapping_resolution_status": "NOT_APPLICABLE",
+        "effective_comparison": comparison if completed else None,
+        "reason": None,
+        "status": status,
         "missing_atoms": [],
         "unexpected_atoms": [],
-        "reason": None,
     }
 
 
@@ -326,9 +337,9 @@ def test_coordination_confirmation_promotes_heme_in_final_result(tmp_path: Path)
                     "status": "NOT_PROVIDED",
                 },
                 "possible_coordination": {
-                    "path": None,
-                    "sha256": None,
-                    "status": "NOT_PROVIDED",
+                    "path": str(definitions.resolve()),
+                    "sha256": digest(definitions),
+                    "status": "LOADED",
                 },
             },
         },

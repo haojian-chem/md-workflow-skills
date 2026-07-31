@@ -27,7 +27,7 @@ from selection_identity import (
     residue_id_from_source_identity,
 )
 
-VERSION = "0.2.0-draft"
+VERSION = "1.0.0"
 
 RELATION_REQUEST_TYPES = {
     "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE",
@@ -64,6 +64,7 @@ ALLOWED_DECISIONS = {
     "SEQUENCE_REFERENCE_CONFLICT": ["SELECT_SEQUENCE_REFERENCE", "PROVIDE_CORRECTED_SEQUENCE_REFERENCE"],
     "MULTIPLE_LOCAL_CCD_CANDIDATES": ["SELECT_CCD_CANDIDATE", "PROVIDE_CORRECTED_CCD_FILE"],
     "INVALID_PROJECT_CCD_SNAPSHOT": ["REPLACE_CCD_SNAPSHOT", "REMOVE_CCD_SNAPSHOT"],
+    "ATOM_NAME_MAPPING_REQUIRED": ["APPLY_ATOM_NAME_MAPPING", "REJECT_ATOM_NAME_MAPPING", "PROVIDE_CORRECTED_REFERENCE"],
 }
 
 
@@ -168,6 +169,7 @@ def _strip_endpoint(endpoint: dict[str, Any], chain_index: int | None = None) ->
         },
         "residue_name": endpoint["residue_name"],
         "atom_name": endpoint["atom_name"],
+        "altloc_id": endpoint.get("altloc_id"),
     }
 
 
@@ -479,6 +481,60 @@ def _classification_decision_map(
         }
     return output
 
+def _heavy_atom_decision_map(
+    resolved_requests: list[tuple[dict[str, Any], dict[str, Any]]],
+) -> dict[tuple[str | None, str, str | None, str], dict[str, Any]]:
+    output: dict[tuple[str | None, str, str | None, str], dict[str, Any]] = {}
+    for request, decision in resolved_requests:
+        if request["request_type"] != "ATOM_NAME_MAPPING_REQUIRED":
+            continue
+        subject = request["subject"]
+        source_resid = subject.get("source_resid")
+        if not isinstance(source_resid, dict):
+            raise ClassificationToolError(
+                "atom-name mapping subject lacks source_resid"
+            )
+        key = (
+            subject.get("source_chain_id"),
+            str(source_resid["number"]),
+            source_resid.get("insertion_code"),
+            subject["residue_name"],
+        )
+        output[key] = copy.deepcopy(decision)
+    return output
+
+
+def _apply_heavy_atom_decision(
+    check: dict[str, Any],
+    decision: dict[str, Any] | None,
+) -> dict[str, Any]:
+    output = copy.deepcopy(check)
+    if decision is None:
+        return output
+    action = decision["decision"]
+    if action == "REJECT_ATOM_NAME_MAPPING":
+        output["mapping_resolution_status"] = "REJECTED"
+        output["effective_comparison"] = None
+        return output
+    if action != "APPLY_ATOM_NAME_MAPPING":
+        return output
+    exact = output.get("exact_comparison")
+    if not isinstance(exact, dict):
+        raise ClassificationToolError(
+            "cannot apply atom-name mapping without exact comparison"
+        )
+    missing = set(exact["missing_expected_atom_names"])
+    unexpected = set(exact["unexpected_observed_atom_names"])
+    for candidate in output.get("atom_name_mapping_candidates", []):
+        missing.discard(candidate["reference_atom_name"])
+        unexpected.discard(candidate["observed_atom_name"])
+    output["mapping_resolution_status"] = "APPLIED"
+    output["effective_comparison"] = {
+        "missing_expected_atom_names": sorted(missing),
+        "unexpected_observed_atom_names": sorted(unexpected),
+    }
+    return output
+
 
 def _record_index(
     records: list[dict[str, Any]],
@@ -521,12 +577,18 @@ def _special_record_from_endpoint(
         },
         "conformation": {"status": "SINGLE_CONFORMATION", "altloc_ids": []},
         "heavy_atom_check": {
-            "status": "NOT_PERFORMED",
-            "reference_type": None,
-            "reference_name": None,
-            "missing_atoms": [],
-            "unexpected_atoms": [],
-            "reason": "GROUP_MEMBER_DETAIL_NOT_RETAINED_IN_BASELINE",
+  "execution_status": "NOT_PERFORMED",
+  "findings": [],
+  "reference_type": None,
+  "reference_name": None,
+  "exact_comparison": None,
+  "atom_name_mapping_candidates": [],
+  "mapping_resolution_status": "NOT_APPLICABLE",
+  "effective_comparison": None,
+  "reason": "GROUP_MEMBER_DETAIL_NOT_RETAINED_IN_BASELINE",
+  "status": "NOT_PERFORMED",
+  "missing_atoms": [],
+  "unexpected_atoms": [],
         },
     }
 
@@ -534,6 +596,7 @@ def _special_record_from_endpoint(
 def _convert_baseline_record(
     record: dict[str, Any],
     classification_decisions: dict[tuple, dict[str, Any]],
+    heavy_atom_decisions: dict[tuple, dict[str, Any]],
 ) -> dict[str, Any]:
     key = _natural_key(record)
     observed = record["classification_observation"]
@@ -565,7 +628,9 @@ def _convert_baseline_record(
         "sequence_position": record.get("sequence_position"),
         "classification": classification,
         "conformation": copy.deepcopy(record["conformation_observation"]),
-        "heavy_atom_check": copy.deepcopy(record["heavy_atom_check"]),
+        "heavy_atom_check": _apply_heavy_atom_decision(
+            record["heavy_atom_check"], heavy_atom_decisions.get(key)
+        ),
     }
 
 
@@ -926,17 +991,39 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         raise ClassificationToolError("model scope and observations structure hashes differ")
     if manifest["classification_mode"] != observations["input"]["classification_mode"]:
         raise ClassificationToolError("manifest and observations classification modes differ")
-    for relation_document, label in (
-        (connections, "connections"),
-        (coordination, "coordination"),
+    for relation_document, label, manifest_key in (
+        (connections, "connections", "possible_connections"),
+        (coordination, "coordination", "possible_coordination"),
     ):
         relation_input = relation_document["input"]
         if relation_input["structure_sha256"] != structure_hash:
             raise ClassificationToolError(f"{label} result structure hash differs")
         if relation_input["observations_sha256"] != observations_hash:
-            raise ClassificationToolError(f"{label} result references a different observations file")
+            raise ClassificationToolError(
+                f"{label} result references a different observations file"
+            )
         if str(relation_input["selected_model_id"]) != str(selected_model_id):
             raise ClassificationToolError(f"{label} result selected model differs")
+        manifest_reference = manifest["relation_definition_files"][manifest_key]
+        definition_path = relation_input.get("definition_path")
+        definition_hash = relation_input.get("definition_sha256")
+        if definition_path is None:
+            if manifest_reference != {
+                "path": None,
+                "sha256": None,
+                "status": "NOT_PROVIDED",
+            }:
+                raise ClassificationToolError(
+                    f"{label} result omitted a definition recorded by reference manifest"
+                )
+        elif (
+            manifest_reference.get("status") != "LOADED"
+            or manifest_reference.get("path") != definition_path
+            or manifest_reference.get("sha256") != definition_hash
+        ):
+            raise ClassificationToolError(
+                f"{label} definition provenance differs from reference manifest"
+            )
 
     raw_requests: list[dict[str, Any]] = [
         *(_unresolved_to_request(item) for item in observations["unresolved_observations"]),
@@ -986,7 +1073,17 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
             else:
                 resolved_requests.append((request, decision))
             continue
-        if request["request_type"] in CLASSIFICATION_REQUEST_TYPES and decision["decision"] == "SET_CLASSIFICATION":
+        if (
+            request["request_type"] in CLASSIFICATION_REQUEST_TYPES
+            and decision["decision"] == "SET_CLASSIFICATION"
+        ):
+            resolved_requests.append((request, decision))
+            continue
+        if (
+            request["request_type"] == "ATOM_NAME_MAPPING_REQUIRED"
+            and decision["decision"]
+            in {"APPLY_ATOM_NAME_MAPPING", "REJECT_ATOM_NAME_MAPPING"}
+        ):
             resolved_requests.append((request, decision))
             continue
         if decision["decision"] == "EXCLUDE_FROM_REPORTED_MISSING_RESIDUES":
@@ -1008,8 +1105,9 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
     validate_document(confirmation, confirmation_schema)
 
     classification_decisions = _classification_decision_map(resolved_requests)
+    heavy_atom_decisions = _heavy_atom_decision_map(resolved_requests)
     records = [
-        _convert_baseline_record(record, classification_decisions)
+        _convert_baseline_record(record, classification_decisions, heavy_atom_decisions)
         for record in observations["residue_records"]
     ]
     final_groups, records, endpoint_final_chain = _integrate_chain_groups_and_records(
@@ -1061,13 +1159,6 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         record["classification"]["topology_class"] == "ION_COMPONENT"
         for record in records
     )
-    heavy_issue_statuses = {
-        "MISSING_EXPECTED_HEAVY_ATOMS",
-        "UNEXPECTED_HEAVY_ATOMS",
-        "MISSING_AND_UNEXPECTED_HEAVY_ATOMS",
-        "ATOM_NAME_MAPPING_REQUIRED",
-        "REFERENCE_TEMPLATE_UNAVAILABLE",
-    }
     result = {
         "schema_version": "1.0",
         "result_status": (
@@ -1138,7 +1229,9 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
                 for record in records
             ),
             "heavy_atom_issue_count": sum(
-                record["heavy_atom_check"]["status"] in heavy_issue_statuses
+                bool(record["heavy_atom_check"].get("findings"))
+                or record["heavy_atom_check"].get("execution_status")
+                == "REFERENCE_TEMPLATE_UNAVAILABLE"
                 for record in records
             ),
             "unresolved_item_count": len(unresolved_requests),
@@ -1167,6 +1260,10 @@ def main() -> int:
         config = read_yaml_strict(args.config.resolve())
         if not isinstance(config, dict):
             raise ClassificationToolError("config must be a YAML mapping")
+        validate_document(
+            config,
+            script_dir.parent / "schemas/classification_result_build_config.schema.yaml",
+        )
         result, _confirmation, report, paths = build(config, script_dir)
         atomic_write_yaml(paths["result"], result)
         report_path = paths["report"]

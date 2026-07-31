@@ -1,0 +1,18 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: selection_operation_config.schema.yaml
+title: Chain and component selection operation configuration
+type: object
+additionalProperties: false
+required: [schema_version, selection_spec_path, classification_result_path, output]
+properties:
+  schema_version: {const: 1}
+  selection_spec_path: {type: string, minLength: 1}
+  classification_result_path: {type: string, minLength: 1}
+  output:
+    type: object
+    additionalProperties: false
+    required: [manifest_path, mapping_path, report_path]
+    properties:
+      manifest_path: {type: string, minLength: 1}
+      mapping_path: {type: string, minLength: 1}
+      report_path: {type: string, minLength: 1}
