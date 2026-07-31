@@ -1,0 +1,36 @@
+name: tmp-v1-2-identity-validation-update
+
+on:
+  push:
+    branches: [fix/v1-2-source-current-identity]
+    paths:
+      - "tmp_update_v1_2_identity_validation.py"
+      - ".github/workflows/tmp-v1-2-identity-validation-update.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tmp-v1-2-identity-validation-update
+  cancel-in-progress: true
+
+jobs:
+  update-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/v1-2-source-current-identity
+          fetch-depth: 0
+      - name: Update evidence records
+        run: python tmp_update_v1_2_identity_validation.py
+      - name: Commit evidence records
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            04_evals/component_and_residue_classification_validator/VALIDATION.md \
+            00_authoring/content_maps/component_and_residue_classification_validator.yaml
+          git commit -m "Record v1.2 dual identity validation evidence"
+          git push origin HEAD:fix/v1-2-source-current-identity
