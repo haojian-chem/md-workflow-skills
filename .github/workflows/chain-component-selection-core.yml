@@ -1,0 +1,104 @@
+name: chain-component-selection-core
+
+on:
+  push:
+    paths:
+      - "02_operations/chain_and_component_selection/**"
+      - "02_validators/chain_and_component_selection_validator/**"
+      - "04_evals/chain_and_component_selection/**"
+      - "00_authoring/content_maps/chain_and_component_selection.yaml"
+      - "00_authoring/content_maps/chain_and_component_selection_validator.yaml"
+      - ".github/workflows/chain-component-selection-core.yml"
+  pull_request:
+    paths:
+      - "02_operations/chain_and_component_selection/**"
+      - "02_validators/chain_and_component_selection_validator/**"
+      - "04_evals/chain_and_component_selection/**"
+      - "00_authoring/content_maps/chain_and_component_selection.yaml"
+      - "00_authoring/content_maps/chain_and_component_selection_validator.yaml"
+      - ".github/workflows/chain-component-selection-core.yml"
+  workflow_dispatch:
+
+jobs:
+  executable-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: 02_operations/chain_and_component_selection/scripts/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r 02_operations/chain_and_component_selection/scripts/requirements.txt
+          python -m pip install pytest
+      - name: Run selection Operation and Validator tests
+        run: |
+          set -o pipefail
+          mkdir -p selection_ci_output
+          pytest -q \
+            04_evals/chain_and_component_selection/test_chain_and_component_selection.py \
+            2>&1 | tee selection_ci_output/pytest.log
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-component-selection-tests-${{ github.run_id }}
+          path: selection_ci_output/pytest.log
+          if-no-files-found: error
+          retention-days: 30
+
+  authoring-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install pyyaml
+      - name: Run Authoring checks
+        run: |
+          set +e
+          mkdir -p selection_authoring_output
+          overall=0
+          for skill in \
+            02_operations/chain_and_component_selection \
+            02_validators/chain_and_component_selection_validator
+          do
+            label=$(echo "$skill" | tr '/' '_')
+            python 00_authoring/md-workflow-skill-authoring/scripts/validate_md_skill.py \
+              . "$skill" > "selection_authoring_output/validate_${label}.log" 2>&1
+            status=$?
+            echo "validate_${label}=$status" | tee -a selection_authoring_output/statuses.txt
+            [ "$status" -eq 0 ] || overall=1
+            python 00_authoring/md-workflow-skill-authoring/scripts/detect_cross_file_duplication.py \
+              "$skill" > "selection_authoring_output/duplication_${label}.log" 2>&1
+            status=$?
+            echo "duplication_${label}=$status" | tee -a selection_authoring_output/statuses.txt
+            [ "$status" -eq 0 ] || overall=1
+          done
+          python 00_authoring/md-workflow-skill-authoring/scripts/validate_architecture_separation.py \
+            . > selection_authoring_output/architecture.log 2>&1
+          status=$?
+          echo "architecture=$status" | tee -a selection_authoring_output/statuses.txt
+          [ "$status" -eq 0 ] || overall=1
+          python 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py \
+            . > selection_authoring_output/content_maps.log 2>&1
+          status=$?
+          echo "content_maps=$status" | tee -a selection_authoring_output/statuses.txt
+          [ "$status" -eq 0 ] || overall=1
+          cat selection_authoring_output/*.log
+          exit "$overall"
+      - name: Upload Authoring evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-component-selection-authoring-${{ github.run_id }}
+          path: selection_authoring_output/
+          if-no-files-found: error
+          retention-days: 30
