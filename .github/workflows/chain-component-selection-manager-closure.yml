@@ -1,0 +1,44 @@
+name: chain-component-selection-manager-closure
+
+on:
+  pull_request:
+    paths:
+      - "02_operations/chain_and_component_selection/**"
+      - "02_validators/chain_and_component_selection_validator/**"
+      - "04_evals/chain_and_component_selection/test_selection_manager_closure.py"
+      - "05_tools/runtime_schema_validator/**"
+      - "03_contracts/**"
+      - ".github/workflows/chain-component-selection-manager-closure.yml"
+  workflow_dispatch:
+
+jobs:
+  manager-fast-atomic-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: 02_operations/chain_and_component_selection/scripts/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r 02_operations/chain_and_component_selection/scripts/requirements.txt
+          python -m pip install pytest
+      - name: Run Manager closure acceptance
+        run: |
+          set -o pipefail
+          mkdir -p selection_manager_output
+          pytest -q \
+            04_evals/chain_and_component_selection/test_selection_manager_closure.py \
+            2>&1 | tee selection_manager_output/pytest.log
+      - name: Upload Manager closure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-component-selection-manager-closure-${{ github.run_id }}
+          path: selection_manager_output/pytest.log
+          if-no-files-found: error
+          retention-days: 30
