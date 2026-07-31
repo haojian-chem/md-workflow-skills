@@ -1,0 +1,35 @@
+name: tmp-fix-selection-manager-fixture
+
+on:
+  push:
+    branches: [feat/chain-component-selection-core]
+    paths:
+      - "tmp_fix_selection_manager_fixture.py"
+      - ".github/workflows/tmp-fix-selection-manager-fixture.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tmp_fix_selection_manager_fixture.py"
+      - ".github/workflows/tmp-fix-selection-manager-fixture.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/chain-component-selection-core
+      - name: Apply fixture patch
+        run: python tmp_fix_selection_manager_fixture.py
+      - name: Commit fixture fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 04_evals/chain_and_component_selection/test_selection_manager_closure.py
+          git commit -m "Prepare Manager closure fixture directories"
+          git pull --rebase origin feat/chain-component-selection-core
+          git push origin HEAD:feat/chain-component-selection-core
