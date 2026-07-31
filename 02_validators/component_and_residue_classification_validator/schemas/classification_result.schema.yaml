@@ -9,6 +9,7 @@ required:
   - result_status
   - selected_model_id
   - classification_mode
+  - source_structure
   - source_hashes
   - chain_groups
   - residue_records
@@ -26,6 +27,14 @@ properties:
     minLength: 1
   classification_mode:
     enum: [REGISTRY, FORCE_FIELD_ANALYSIS]
+  source_structure:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, source_format]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {$ref: "#/$defs/sha256"}
+      source_format: {enum: [PDB, MMCIF, AF3_CIF]}
   source_hashes:
     type: object
     additionalProperties: false
@@ -177,6 +186,9 @@ $defs:
     type: object
     additionalProperties: false
     required:
+      - component_id
+      - residue_ids
+      - missing_residue_ids
       - chain_index
       - grouping_status
       - group_type
@@ -185,6 +197,15 @@ $defs:
       - instance_count
       - linked_polymer_chain_indices
     properties:
+      component_id: {type: string, minLength: 1}
+      residue_ids:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      missing_residue_ids:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
       chain_index: {type: integer, minimum: 1}
       grouping_status: {const: FINAL}
       group_type:
@@ -280,6 +301,8 @@ $defs:
     type: object
     additionalProperties: false
     required:
+      - residue_id
+      - component_id
       - source_identity
       - current_identity
       - chain_index
@@ -292,6 +315,8 @@ $defs:
       - conformation
       - heavy_atom_check
     properties:
+      residue_id: {type: string, minLength: 1}
+      component_id: {type: string, minLength: 1}
       source_identity:
         $ref: "#/$defs/source_residue_identity"
       current_identity:
@@ -334,8 +359,11 @@ $defs:
   endpoint:
     type: object
     additionalProperties: false
-    required: [source_identity, current_identity, chain_index, source_chain_id, source_resid, residue_name, atom_name]
+    required: [endpoint_id, residue_id, component_id, source_identity, current_identity, chain_index, source_chain_id, source_resid, residue_name, atom_name]
     properties:
+      endpoint_id: {type: string, minLength: 1}
+      residue_id: {type: string, minLength: 1}
+      component_id: {type: string, minLength: 1}
       source_identity:
         $ref: "#/$defs/source_atom_identity"
       current_identity:
@@ -351,12 +379,14 @@ $defs:
     type: object
     additionalProperties: false
     required:
+      - relation_id
       - relation_type
       - endpoint_1
       - endpoint_2
       - evidence_status
       - topology_effect_applied
     properties:
+      relation_id: {type: string, minLength: 1}
       relation_type:
         enum: [COVALENT_CONNECTION, METAL_COORDINATION]
       endpoint_1:

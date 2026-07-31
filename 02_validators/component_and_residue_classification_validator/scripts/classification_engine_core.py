@@ -668,7 +668,9 @@ def _build_chain_groups(
                 for item in normal:
                     assignment[item.residue.residue_key] = index
                     item.chain_index = index
-                    item.include_residue_record = False
+                    # Aggregation changes logical grouping only.  Instance-level residue
+                    # identity remains available to downstream component selection.
+                    item.include_residue_record = True
             else:
                 exceptional.extend(normal)
 

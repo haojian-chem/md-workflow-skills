@@ -145,7 +145,7 @@ $defs:
     required: [relation_id, relation_type, endpoint_1_id, endpoint_2_id]
     properties:
       relation_id: {type: string, minLength: 1}
-      relation_type: {type: string, minLength: 1}
+      relation_type: {enum: [COVALENT_CONNECTION, METAL_COORDINATION]}
       endpoint_1_id: {type: string, minLength: 1}
       endpoint_2_id: {type: string, minLength: 1}
       notes: {type: string}

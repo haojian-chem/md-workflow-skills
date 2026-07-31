@@ -145,7 +145,7 @@ PDB 格式舍入可使用 schema/rules 明确的格式容差，但不得掩盖�
 
 - 两端均被选中的 confirmed covalent connection 必须保留或可由输出事实无歧义恢复；
 - 不得保留指向已删除 atom 的显式连接；
-- disulfide/glycosidic/covalent relation 不得被静默删除；
+- 所有 `COVALENT_CONNECTION`（包括 disulfide/glycosidic 等科学亚型）不得被静默删除；
 - metal coordination 可被选择边界切分，但必须在 manifest/report 中准确记录；
 - geometry-only candidates 不作为强制连接 gate。
 

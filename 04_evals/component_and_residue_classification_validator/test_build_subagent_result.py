@@ -65,6 +65,11 @@ def classification_result(status: str, unresolved_count: int) -> dict:
         "result_status": status,
         "selected_model_id": "1",
         "classification_mode": "REGISTRY",
+        "source_structure": {
+            "path": "/fixtures/source.pdb",
+            "sha256": "6" * 64,
+            "source_format": "PDB",
+        },
         "source_hashes": {
             "model_scope": "0" * 64,
             "classification_observations": "1" * 64,

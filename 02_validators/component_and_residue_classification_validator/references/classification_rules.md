@@ -83,6 +83,24 @@ current_identity:
 - `sequence_position` 只是 polymer 序列辅助索引，不属于第三套残基编号；
 - v1 平铺的 `source_chain_id`、`source_resid`、`residue_name` 和 `atom_name` 仅为兼容镜像，必须与权威 identity 字段一致，禁止赋予独立语义。
 
+## 3.2 下游选择身份
+
+最终 `classification_result.yaml` 必须为 1.3 输出不可重建的权威选择身份：
+
+- `source_structure`：本次分类对应的源结构 path、SHA-256 与格式；
+- `component_id`：根据 final component membership 生成，禁止由 `chain_index` 充当或重建；
+- `residue_id`：根据 immutable `source_identity` 生成；
+- `endpoint_id`：根据 source residue identity 与 exact atom name 生成；
+- `relation_id`：根据 relation type 与两个 endpoint IDs 生成，与 endpoint 顺序和 evidence status 无关。
+
+聚合 `SOLVENT_GROUP`、`ION_GROUP` 和 `REPEATED_SMALL_MOLECULE_GROUP` 只改变逻辑分组，不得删除实例级 residue records。每个 component 分别列出：
+
+- `residue_ids`：当前结构中实际存在、可被选择的 observed residues；
+- `missing_residue_ids`：来源记录中 expected but unobserved residues，仅用于追溯，不作为坐标选择对象。
+
+这些 ID 对下游是 opaque contract values；1.3 必须读取 1.2 输出，禁止根据字段自行复刻 ID 算法。
+
+
 # 4. 分类字段
 
 ## 4.1 `polymer_class`

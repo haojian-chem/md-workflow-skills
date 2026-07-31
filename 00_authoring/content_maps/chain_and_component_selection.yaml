@@ -29,7 +29,7 @@ external_references:
     owner: 03_contracts/confirmation_item.schema.yaml
     access: reference_only
   - purpose: classification_result_contract
-    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result.schema.yaml
     access: reference_only
   - purpose: structure_preparation_workflow
     owner: 01_workflows/structure_preparation_workflow/SKILL.md

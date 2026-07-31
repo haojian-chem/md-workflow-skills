@@ -37,6 +37,8 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/scripts/check_possible_coordination.py
   deterministic_final_result_builder:
     owner: 02_validators/component_and_residue_classification_validator/scripts/build_classification_result.py
+  deterministic_selection_identity_contract:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/selection_identity.py
   deterministic_shared_result_wrapper:
     owner: 02_validators/component_and_residue_classification_validator/scripts/build_subagent_result.py
   classification_semantics:

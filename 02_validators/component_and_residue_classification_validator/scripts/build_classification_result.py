@@ -20,6 +20,12 @@ from classification_common import (
     validate_document,
 )
 from structure_records import validate_residue_identity_record
+from selection_identity import (
+    component_id_from_members,
+    endpoint_id_from_source_identity,
+    relation_id_from_endpoints,
+    residue_id_from_source_identity,
+)
 
 VERSION = "0.2.0-draft"
 
@@ -642,17 +648,18 @@ def _integrate_chain_groups_and_records(
                 }
             )
         for key in nonpoly_natural_keys:
+            endpoint = next(
+                endpoint_lookup[endpoint_key]
+                for endpoint_key in component
+                if _natural_key(endpoint_lookup[endpoint_key]) == key
+            )
+            baseline_index = int(endpoint["chain_index"])
+            decrement_by_group[baseline_index] += 1
             if key not in record_by_key:
-                endpoint = next(
-                    endpoint_lookup[endpoint_key]
-                    for endpoint_key in component
-                    if _natural_key(endpoint_lookup[endpoint_key]) == key
-                )
-                baseline_group = group_by_index[int(endpoint["chain_index"])]
+                baseline_group = group_by_index[baseline_index]
                 record = _special_record_from_endpoint(endpoint, baseline_group)
                 records.append(record)
                 record_by_key[key] = record
-                decrement_by_group[int(endpoint["chain_index"])] += 1
 
     max_polymer_index = max(polymer_indices, default=0)
     next_index = max_polymer_index + 1
@@ -687,17 +694,10 @@ def _integrate_chain_groups_and_records(
         )
 
     moved_keys = set(endpoint_final_chain)
-    individual_group_keys = {
-        int(record["chain_index"]): key
-        for key, record in record_by_key.items()
-    }
     for baseline_index, baseline_group in sorted(group_by_index.items()):
         if baseline_index in polymer_indices:
             continue
         count = int(baseline_group["instance_count"]) - decrement_by_group[baseline_index]
-        individual_key = individual_group_keys.get(baseline_index)
-        if individual_key in moved_keys:
-            count = 0
         if count <= 0:
             continue
         group = copy.deepcopy(baseline_group)
@@ -754,6 +754,83 @@ def _integrate_chain_groups_and_records(
     final_groups.sort(key=lambda item: int(item["chain_index"]))
     return final_groups, records, endpoint_final_chain
 
+
+
+def _assign_selection_contract_ids(
+    selected_model_id: str,
+    groups: list[dict[str, Any]],
+    records: list[dict[str, Any]],
+    relations: list[dict[str, Any]],
+) -> None:
+    """Materialize opaque stable IDs required by component selection v1."""
+    observed_by_group: defaultdict[int, list[str]] = defaultdict(list)
+    missing_by_group: defaultdict[int, list[str]] = defaultdict(list)
+    residue_ids: set[str] = set()
+    for record in records:
+        residue_id = residue_id_from_source_identity(record["source_identity"])
+        if residue_id in residue_ids:
+            raise ClassificationToolError(f"duplicate residue selection identity: {residue_id}")
+        residue_ids.add(residue_id)
+        record["residue_id"] = residue_id
+        chain_index = int(record["chain_index"])
+        if record["presence_status"] == "OBSERVED":
+            observed_by_group[chain_index].append(residue_id)
+        else:
+            missing_by_group[chain_index].append(residue_id)
+
+    component_by_chain: dict[int, str] = {}
+    component_ids: set[str] = set()
+    for group in groups:
+        chain_index = int(group["chain_index"])
+        observed = sorted(observed_by_group.get(chain_index, []))
+        missing = sorted(missing_by_group.get(chain_index, []))
+        component_id = component_id_from_members(
+            selected_model_id,
+            group["group_type"],
+            observed,
+            missing,
+        )
+        if component_id in component_ids:
+            raise ClassificationToolError(f"duplicate component selection identity: {component_id}")
+        component_ids.add(component_id)
+        component_by_chain[chain_index] = component_id
+        group["component_id"] = component_id
+        group["residue_ids"] = observed
+        group["missing_residue_ids"] = missing
+
+    for record in records:
+        chain_index = int(record["chain_index"])
+        if chain_index not in component_by_chain:
+            raise ClassificationToolError(
+                f"residue chain_index {chain_index} has no final component"
+            )
+        record["component_id"] = component_by_chain[chain_index]
+
+    relation_ids: set[str] = set()
+    for relation in relations:
+        endpoint_ids: list[str] = []
+        for endpoint_field in ("endpoint_1", "endpoint_2"):
+            endpoint = relation[endpoint_field]
+            chain_index = int(endpoint["chain_index"])
+            if chain_index not in component_by_chain:
+                raise ClassificationToolError(
+                    f"relation endpoint chain_index {chain_index} has no final component"
+                )
+            endpoint["residue_id"] = residue_id_from_source_identity(
+                endpoint["source_identity"]
+            )
+            endpoint["endpoint_id"] = endpoint_id_from_source_identity(
+                endpoint["source_identity"]
+            )
+            endpoint["component_id"] = component_by_chain[chain_index]
+            endpoint_ids.append(endpoint["endpoint_id"])
+        relation_id = relation_id_from_endpoints(
+            relation["relation_type"], endpoint_ids
+        )
+        if relation_id in relation_ids:
+            raise ClassificationToolError(f"duplicate relation selection identity: {relation_id}")
+        relation_ids.add(relation_id)
+        relation["relation_id"] = relation_id
 
 def _render_report(result: dict[str, Any], confirmation: dict[str, Any]) -> str:
     summary = result["summary"]
@@ -940,6 +1017,18 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         records,
         confirmed_relations,
     )
+    for relation in rejected_relations:
+        for endpoint_field in ("endpoint_1", "endpoint_2"):
+            endpoint = relation[endpoint_field]
+            key = _natural_key(endpoint)
+            if key in endpoint_final_chain:
+                endpoint["chain_index"] = endpoint_final_chain[key]
+    _assign_selection_contract_ids(
+        str(selected_model_id),
+        final_groups,
+        records,
+        [*confirmed_relations, *rejected_relations],
+    )
 
     output = _required_mapping(config, "output")
     confirmation_path = _required_path(output, "confirmation_requests_path")
@@ -965,18 +1054,10 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         for record in records
     )
     solvent_count = sum(
-        group["instance_count"]
-        for group in final_groups
-        if group["group_type"] == "SOLVENT_GROUP"
-    ) + sum(
         record["classification"]["topology_class"] == "SOLVENT_COMPONENT"
         for record in records
     )
     ion_count = sum(
-        group["instance_count"]
-        for group in final_groups
-        if group["group_type"] == "ION_GROUP"
-    ) + sum(
         record["classification"]["topology_class"] == "ION_COMPONENT"
         for record in records
     )
@@ -994,6 +1075,11 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         ),
         "selected_model_id": str(selected_model_id),
         "classification_mode": observations["input"]["classification_mode"],
+        "source_structure": {
+            "path": observations["input"]["structure_path"],
+            "sha256": structure_hash,
+            "source_format": observations["input"]["source_format"],
+        },
         "source_hashes": {
             "model_scope": model_scope_hash,
             "classification_observations": observations_hash,

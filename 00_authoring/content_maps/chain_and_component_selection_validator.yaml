@@ -36,7 +36,7 @@ external_references:
     owner: 02_operations/chain_and_component_selection/schemas/selection_mapping.schema.yaml
     access: reference_only
   - purpose: classification_result_contract
-    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result.schema.yaml
     access: reference_only
   - purpose: examples_and_test_fixtures
     owner: 04_evals/chain_and_component_selection_validator/fixtures/

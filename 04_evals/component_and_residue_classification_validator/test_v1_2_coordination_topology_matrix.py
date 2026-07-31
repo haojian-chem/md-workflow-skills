@@ -146,19 +146,16 @@ def observations(
             donor_residue,
             "POLYMER",
             "STANDARD_RESIDUE",
-        )
+        ),
+        classification_record(
+            2,
+            "B",
+            "501",
+            metal_residue,
+            "NONPOLYMER",
+            "INDEPENDENT_NONSTANDARD" if promote else "ION_COMPONENT",
+        ),
     ]
-    if promote:
-        records.append(
-            classification_record(
-                2,
-                "B",
-                "501",
-                metal_residue,
-                "NONPOLYMER",
-                "INDEPENDENT_NONSTANDARD",
-            )
-        )
     return {
         "schema_version": "1.0",
         "input": {

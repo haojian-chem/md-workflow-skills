@@ -134,13 +134,13 @@ v1 不支持 residue-range、atom-level、distance-based 或 role-based implicit
 
 ## 共价闭包
 
-若显式连接关系为：
+若 1.2 confirmed relation 满足：
 
 ```text
-COVALENT | DISULFIDE | GLYCOSIDIC
+relation_type: COVALENT_CONNECTION
 ```
 
-且连接两端分属选择集与排除集，selection spec 无效。
+且连接两端的 `component_id` 分属选择集与排除集，selection spec 无效。disulfide、glycosidic 等化学亚型在 v1 中仍由该统一 relation type 表达。
 
 Operation 必须：
 

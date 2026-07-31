@@ -18,9 +18,9 @@ Natural-language context, common MD conventions, file names and directory names 
 
 ## 3. Explicit component IDs
 
-Every selected object must be named by a `component_id` present in the classification result.
+Every selected object must be named by a `component_id` materialized in the classification result. Component IDs are opaque, versioned values derived from final membership rather than `chain_index`; downstream code must not reconstruct them.
 
-A component contains the complete `residue_ids` recorded by 1.2. Selecting a component selects all of its residues and every atom/altLoc in those residues.
+A component's `residue_ids` contain all observed coordinate-bearing member residues. `missing_residue_ids` preserve expected-but-unobserved membership metadata and are not selectable coordinate objects. Selecting a component selects every observed member residue and every atom/altLoc in those residues.
 
 The following implicit selectors are prohibited in v1:
 
@@ -41,15 +41,15 @@ Every selected component must belong to the selected model. A component from ano
 
 ## 5. Confirmed covalent closure
 
-Confirmed covalent relations are:
+A confirmed relation with:
 
 ```text
-COVALENT
-DISULFIDE
-GLYCOSIDIC
+relation_type: COVALENT_CONNECTION
 ```
 
-For every confirmed relation, either both endpoints are selected or both are excluded. A selection that retains only one endpoint is blocked.
+forms the v1 covalent closure. Disulfide, glycosidic and other covalent chemistry remain scientific subtypes of this relation class unless a future contract adds a separate subtype field.
+
+For every confirmed covalent connection, either both endpoint components are selected or both are excluded. A selection that retains only one endpoint is blocked.
 
 The Operation must not:
 

@@ -164,6 +164,8 @@ def _schema_record(schema_name: str, *, presence_status: str) -> dict:
             "evidence": ["test"],
         }
     else:
+        record["residue_id"] = "residue:v1/test"
+        record["component_id"] = "component:v1/test"
         record["classification"] = {
             "polymer_class": "POLYMER",
             "topology_class": "STANDARD_RESIDUE",
