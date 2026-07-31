@@ -6,7 +6,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from af3_server_sequence_reference import install_af3_server_sequence_reference
 from classification_common import (
     ClassificationToolError,
     atomic_write_yaml,
@@ -15,7 +14,6 @@ from classification_common import (
 )
 from classification_engine import execute_classification
 
-install_af3_server_sequence_reference()
 
 VERSION = "1.0.0"
 

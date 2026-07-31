@@ -170,6 +170,7 @@ validation_evidence:
     repository_controlled_validation: passed
     validator_v1_2: passed
 notes:
+  - Classification modules are side-effect-free at import time; structural grouping, missing-residue normalization and AlphaFold Server parsing are ordinary core/module calls rather than runtime monkey patches.
   - Runtime STRUCTURE input is taken from the schema-valid subagent task file record and independently revalidated; the draft source_recognition business report is not a runtime dependency.
   - General Manager, Workflow, Operation and Validator permissions are owned only by layer_boundaries.md and must not be duplicated in local Skill documentation.
   - Local execution flow and model branching are owned by SKILL.md; scientific classification semantics are owned by references/classification_rules.md; CLI and module interfaces are owned by scripts/README.md.

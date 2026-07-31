@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compatibility parser for AlphaFold Server job_request JSON sequence references."""
+"""AlphaFold Server job_request JSON sequence-reference parser."""
 from __future__ import annotations
 
 import json
@@ -10,10 +10,11 @@ from classification_common import ClassificationToolError
 
 
 def _server_chain_id(index: int) -> str:
-    """Return AlphaFold Server-style A..Z, AA.. identifiers for a zero-based index."""
-
+    """Return AlphaFold Server-style A..Z, AA.. IDs for a zero-based index."""
     if index < 0:
-        raise ClassificationToolError("AlphaFold Server chain index must be non-negative")
+        raise ClassificationToolError(
+            "AlphaFold Server chain index must be non-negative"
+        )
     value = index + 1
     letters: list[str] = []
     while value:
@@ -38,7 +39,9 @@ def _merge_sequence(
 def _positive_count(payload: dict[str, Any]) -> int:
     value = payload.get("count", 1)
     if isinstance(value, bool):
-        raise ClassificationToolError("AlphaFold Server sequence count must be a positive integer")
+        raise ClassificationToolError(
+            "AlphaFold Server sequence count must be a positive integer"
+        )
     try:
         count = int(value)
     except (TypeError, ValueError) as exc:
@@ -46,11 +49,16 @@ def _positive_count(payload: dict[str, Any]) -> int:
             "AlphaFold Server sequence count must be a positive integer"
         ) from exc
     if count < 1 or count != value:
-        raise ClassificationToolError("AlphaFold Server sequence count must be a positive integer")
+        raise ClassificationToolError(
+            "AlphaFold Server sequence count must be a positive integer"
+        )
     return count
 
 
-def _parse_server_job_request(path: Path) -> dict[str, list[str]] | None:
+def parse_af3_server_job_request(
+    path: Path,
+) -> dict[str, list[str]] | None:
+    """Parse one AlphaFold Server job, or return None for another JSON dialect."""
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, list):
         return None
@@ -110,38 +118,10 @@ def _parse_server_job_request(path: Path) -> dict[str, list[str]] | None:
                 )
             for identifier in identifiers:
                 _merge_sequence(sequences, identifier, monomers)
-        # Ligands and ions have no sequence but still consume chain identifiers.
+        # Ligands and ions still consume server-assigned chain identifiers.
         next_chain_index += count
     return sequences
 
 
-def install_af3_server_sequence_reference() -> None:
-    """Patch the active classification engine while preserving existing parsers."""
-
-    import classification_engine_core as core
-    import sequence_missing
-
-    marker = "_af3_server_original_parse_sequence_references"
-    original = getattr(sequence_missing, marker, None)
-    if original is None:
-        original = sequence_missing.parse_af3_sequence_references
-        setattr(sequence_missing, marker, original)
-
-    def parse(sequence_references: list[dict[str, Any]]) -> dict[str, list[str]]:
-        sequences: dict[str, list[str]] = {}
-        for reference in sequence_references:
-            reference_type = reference.get("type") or reference.get("reference_type")
-            if reference_type == "AF3_INPUT_JSON":
-                server_sequences = _parse_server_job_request(
-                    Path(reference["path"]).resolve()
-                )
-                if server_sequences is not None:
-                    for identifier, monomers in server_sequences.items():
-                        _merge_sequence(sequences, identifier, monomers)
-                    continue
-            for identifier, monomers in original([reference]).items():
-                _merge_sequence(sequences, identifier, monomers)
-        return sequences
-
-    sequence_missing.parse_af3_sequence_references = parse
-    core.parse_af3_sequence_references = parse
+# Private compatibility alias for existing direct parser tests.
+_parse_server_job_request = parse_af3_server_job_request

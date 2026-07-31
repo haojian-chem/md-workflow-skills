@@ -112,12 +112,12 @@ reference_manifest.yaml
 
 ```text
 classification_engine.py
-→ runtime facade
-→ structural grouping invariant
-→ cross-stage normalization
+→ side-effect-free runtime facade
 
 classification_engine_core.py
 → baseline classification implementation
+→ structural grouping invariant
+→ final observation normalization
 
 structure_records.py
 → selected-model structure records
@@ -141,7 +141,7 @@ explicit_relations.py
 af3_server_sequence_reference.py
 ```
 
-用于兼容 `dialect: alphafoldserver` 的单 job 顶层列表。entity 未提供显式 ID 时，按 entity 顺序和 `count` 确定性生成 `A..Z, AA..` chain IDs；ligand 和 ion 占用 chain ID，但不生成 polymer sequence。
+由 `sequence_missing.py` 以普通函数调用处理 `dialect: alphafoldserver` 的单 job 顶层列表；禁止运行时替换 parser。entity 未提供显式 ID 时，按 entity 顺序和 `count` 确定性生成 `A..Z, AA..` chain IDs；ligand 和 ion 占用 chain ID，但不生成 polymer sequence。
 
 顶层列表包含多个 job 时必须拒绝解析。
 

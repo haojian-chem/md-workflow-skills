@@ -27,6 +27,7 @@ from sequence_missing import (
     explicit_missing_residues,
     parse_af3_sequence_references,
     sequence_based_missing_residues,
+    normalize_missing_residue_outputs,
 )
 from structure_records import (
     ResidueRecord,
@@ -712,11 +713,15 @@ def _build_chain_groups(
     by_chain: dict[tuple[str, str | None, str], list[ResidueAnalysis]] = defaultdict(list)
     for analysis in analyses:
         classification = analysis.classification
-        if classification.polymer_class in {"POLYMER", "BRANCHED"}:
+        grouping_polymer_class = (
+            _entity_polymer_class(analysis.residue)
+            or classification.polymer_class
+        )
+        if grouping_polymer_class in {"POLYMER", "BRANCHED"}:
             key = (
                 analysis.residue.source_chain_id,
                 analysis.residue.entity_id,
-                classification.polymer_class,
+                grouping_polymer_class,
             )
             by_chain[key].append(analysis)
     chain_order = sorted(
@@ -1512,6 +1517,7 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
 
     if sha256_file(structure_path) != structure_hash:
         raise ClassificationToolError("input structure changed during classification")
+    normalize_missing_residue_outputs(observations)
     validate_document(observations, observations_schema)
     validate_document(manifest, manifest_schema)
     return observations, manifest, observations_path, manifest_path, observations_schema, manifest_schema
