@@ -34,14 +34,22 @@ jobs:
           body = raw.split("cat > /tmp/repair.py <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
           lines = [line[10:] if line.startswith('          ') else line for line in body.splitlines()]
           script = '\n'.join(lines) + '\n'
-          script = script.replace(
-              "text = replace_once(text, old, new, 'ccd raw comparison')",
-              "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd raw comparison regex: expected one occurrence, found {count}')",
-          )
-          script = script.replace(
-              "text = replace_once(text, old, new, 'core registries')",
-              "text, count = re.subn(r'    linked_registry_path = Path\\(.*?    skill_defs = \\{\\*\\*standard_defs, \\*\\*linked_defs\\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'core registries regex: expected one occurrence, found {count}')",
-          )
+          patches = {
+              "text = replace_once(text, old, new, 'ccd raw comparison')":
+                  "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd raw comparison regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'core registries')":
+                  "text, count = re.subn(r'    linked_registry_path = Path\\(.*?    skill_defs = \\{\\*\\*standard_defs, \\*\\*linked_defs\\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'core registries regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'rtp heavy check')":
+                  "text, count = re.subn(r'            analysis\\.heavy_atom_check = \\{\\n                \\\"status\\\": _heavy_status\\(missing, unexpected\\),.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'rtp heavy check regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'ccd heavy check')":
+                  "text, count = re.subn(r'        if mappings:\\n            status = \\\"ATOM_NAME_MAPPING_REQUIRED\\\".*?            \\\"reason\\\": reason,\\n        \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd heavy check regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'group heavy check')":
+                  "text, count = re.subn(r'            and item\\.heavy_atom_check\\[\\\"status\\\"\\]\\n            not in \\{.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'group heavy check regex: expected one occurrence, found {count}')",
+          }
+          for old, new in patches.items():
+              if old not in script:
+                  raise SystemExit(f'migration patch marker missing: {old}')
+              script = script.replace(old, new)
           Path('/tmp/repair.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/repair.py | tee /tmp/changed-files.txt
