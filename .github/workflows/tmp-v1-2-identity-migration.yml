@@ -6,12 +6,14 @@ on:
     paths:
       - "tmp_migrate_v1_2_identity.py"
       - "tmp_fix_identity_migration.py"
+      - "tmp_fix_identity_test_fixtures.py"
       - ".github/workflows/tmp-v1-2-identity-migration.yml"
   pull_request:
     branches: [main]
     paths:
       - "tmp_migrate_v1_2_identity.py"
       - "tmp_fix_identity_migration.py"
+      - "tmp_fix_identity_test_fixtures.py"
       - ".github/workflows/tmp-v1-2-identity-migration.yml"
   workflow_dispatch:
 
@@ -39,6 +41,7 @@ jobs:
         run: |
           python tmp_fix_identity_migration.py
           python tmp_migrate_v1_2_identity.py
+          python tmp_fix_identity_test_fixtures.py
       - name: Run v1.2 test suite
         run: |
           pytest -q \
@@ -63,7 +66,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             02_validators/component_and_residue_classification_validator \
-            04_evals/component_and_residue_classification_validator/test_v1_2_dual_identity.py
+            04_evals/component_and_residue_classification_validator
           if git diff --cached --quiet; then
             echo "No business changes to commit"
             exit 0
