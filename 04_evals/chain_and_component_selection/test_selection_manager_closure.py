@@ -286,6 +286,7 @@ def test_manager_fast_validation_atomic_artifact_registration_and_closure(tmp_pa
     assert management_snapshot(project_root) == before_wrapper
 
     candidate_root = project_root / ".manager_candidates/selection_closure"
+    candidate_root.mkdir(parents=True, exist_ok=True)
     artifact_candidate = candidate_root / "artifact.yaml"
     state_candidate = candidate_root / "workstream_state.yaml"
     events_candidate = candidate_root / "project_events.jsonl"
