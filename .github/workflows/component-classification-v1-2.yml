@@ -37,24 +37,16 @@ jobs:
           lines = [line[10:] if line.startswith('          ') else line for line in body.splitlines()]
           script = '\n'.join(lines) + '\n'
           patches = {
-              "text = replace_once(text, old, new, 'ccd raw comparison')":
-                  "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd raw comparison regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'core registries')":
-                  "text, count = re.subn(r'    linked_registry_path = Path\\(.*?    skill_defs = \\{\\*\\*standard_defs, \\*\\*linked_defs\\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'core registries regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'rtp heavy check')":
-                  "text, count = re.subn(r'            analysis\\.heavy_atom_check = \\{\\n                \\\"status\\\": _heavy_status\\(missing, unexpected\\),.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'rtp heavy check regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'ccd heavy check')":
-                  "text, count = re.subn(r'        if mappings:\\n            status = \\\"ATOM_NAME_MAPPING_REQUIRED\\\".*?            \\\"reason\\\": reason,\\n        \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd heavy check regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'group heavy check')":
-                  "text, count = re.subn(r'            and item\\.heavy_atom_check\\[\\\"status\\\"\\]\\n            not in \\{.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'group heavy check regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'summary heavy issue')":
-                  "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                item\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for item in residue_records\\n            \\),\\n', new, text, count=1)\nif count != 1:\n    raise SystemExit(f'summary heavy issue regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'manifest third registry')":
-                  "text, count = re.subn(r'            \\{\\n                \\\"path\\\": str\\(linked_registry_path\\),\\n                \\\"sha256\\\": linked_hash,\\n                \\\"status\\\": \\\"LOADED\\\",\\n            \\},\\n', new, text, count=1)\nif count != 1:\n    raise SystemExit(f'manifest third registry regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'builder resolve mapping')":
-                  "text, count = re.subn(r'        if request\\[\\\"request_type\\\"\\] in CLASSIFICATION_REQUEST_TYPES and decision\\[\\\"decision\\\"\\] == \\\"SET_CLASSIFICATION\\\":\\n            resolved_requests\\.append\\(\\(request, decision\\)\\)\\n            continue\\n', new, text, count=1)\nif count != 1:\n    raise SystemExit(f'builder resolve mapping regex: expected one occurrence, found {count}')",
-              "text = replace_once(text, old, new, 'builder heavy count')":
-                  "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                record\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for record in records\\n            \\),\\n', new, text, count=1)\nif count != 1:\n    raise SystemExit(f'builder heavy count regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'ccd raw comparison')": "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'ccd raw comparison regex: {count}')",
+              "text = replace_once(text, old, new, 'core registries')": "text, count = re.subn(r'    linked_registry_path = Path\\(.*?    skill_defs = \\{\\*\\*standard_defs, \\*\\*linked_defs\\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'core registries regex: {count}')",
+              "text = replace_once(text, old, new, 'rtp heavy check')": "text, count = re.subn(r'            analysis\\.heavy_atom_check = \\{\\n                \\\"status\\\": _heavy_status\\(missing, unexpected\\),.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'rtp heavy check regex: {count}')",
+              "text = replace_once(text, old, new, 'ccd heavy check')": "text, count = re.subn(r'        if mappings:\\n            status = \\\"ATOM_NAME_MAPPING_REQUIRED\\\".*?            \\\"reason\\\": reason,\\n        \\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'ccd heavy check regex: {count}')",
+              "text = replace_once(text, old, new, 'group heavy check')": "text, count = re.subn(r'            and item\\.heavy_atom_check\\[\\\"status\\\"\\]\\n            not in \\{.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'group heavy check regex: {count}')",
+              "text = replace_once(text, old, new, 'summary heavy issue')": "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                item\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for item in residue_records\\n            \\),\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'summary heavy issue regex: {count}')",
+              "text = replace_once(text, old, new, 'manifest third registry')": "text, count = re.subn(r'            \\{\\n                \\\"path\\\": str\\(linked_registry_path\\),\\n                \\\"sha256\\\": linked_hash,\\n                \\\"status\\\": \\\"LOADED\\\",\\n            \\},\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'manifest third registry regex: {count}')",
+              "text = replace_once(text, old, new, 'builder resolve mapping')": "text, count = re.subn(r'        if request\\[\\\"request_type\\\"\\] in CLASSIFICATION_REQUEST_TYPES and decision\\[\\\"decision\\\"\\] == \\\"SET_CLASSIFICATION\\\":\\n            resolved_requests\\.append\\(\\(request, decision\\)\\)\\n            continue\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'builder resolve mapping regex: {count}')",
+              "text = replace_once(text, old_special, new_special, 'special heavy check')": "text, count = re.subn(r'        \\\"heavy_atom_check\\\": \\{\\n            \\\"status\\\": \\\"NOT_PERFORMED\\\",.*?            \\\"reason\\\": \\\"GROUP_MEMBER_DETAIL_NOT_RETAINED_IN_BASELINE\\\",\\n        \\},\\n', new_special, text, count=1, flags=re.S)\nif count != 1: raise SystemExit(f'special heavy check regex: {count}')",
+              "text = replace_once(text, old, new, 'builder heavy count')": "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                record\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for record in records\\n            \\),\\n', new, text, count=1)\nif count != 1: raise SystemExit(f'builder heavy count regex: {count}')",
           }
           for old, new in patches.items():
               if old not in script:
@@ -79,9 +71,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           grep -v '^\.github/workflows/' /tmp/changed-files.txt | xargs git add
-          if git diff --cached --quiet; then
-            echo 'No business changes to commit'
-            exit 0
-          fi
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Repair v1.2 scientific data contracts'
           git push origin HEAD:feat/chain-component-selection-core
