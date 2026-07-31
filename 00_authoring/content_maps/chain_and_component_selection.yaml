@@ -15,6 +15,8 @@ owned_content:
     owner: 02_operations/chain_and_component_selection/scripts/select_structure.py
   deterministic_selection_helpers:
     owner: 02_operations/chain_and_component_selection/scripts/selection_common.py
+  shared_operation_validator_result_builder:
+    owner: 02_operations/chain_and_component_selection/scripts/build_subagent_result.py
   explicit_selection_spec:
     owner: 02_operations/chain_and_component_selection/schemas/selection_spec.schema.yaml
   operation_config_contract:
@@ -57,3 +59,4 @@ notes:
   - A confirmed covalent relation crossing the boundary blocks the Operation; the selection is not auto-expanded.
   - Metal coordination and rejected geometry-only candidates are reported but do not force component inclusion.
   - The deterministic entry point preserves complete observed residue instances and creates an UNVALIDATED STRUCTURE candidate for the dedicated Validator.
+  - The shared result builder emits a validated STRUCTURE artifact candidate only after the dedicated Validator explicitly accepts and covers the candidate, manifest, and mapping hashes.
