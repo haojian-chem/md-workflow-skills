@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/component-classification-v1-2.yml"
+      - ".github/tmp_v1_2_dependency_fixture_repair.py"
   workflow_dispatch:
 
 permissions:
