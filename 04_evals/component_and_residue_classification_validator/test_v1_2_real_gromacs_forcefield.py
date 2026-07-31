@@ -92,7 +92,12 @@ def run_public_classification(tmp_path: Path) -> tuple[dict, dict]:
         },
     )
     completed = subprocess.run(
-        [sys.executable, str(SCRIPTS / "classify_structure.py"), "--config", str(config_path)],
+        [
+            sys.executable,
+            str(SCRIPTS / "classify_structure.py"),
+            "--config",
+            str(config_path),
+        ],
         text=True,
         capture_output=True,
         check=False,
@@ -104,7 +109,9 @@ def run_public_classification(tmp_path: Path) -> tuple[dict, dict]:
     )
 
 
-def test_real_amber99sb_ildn_internal_rtp_and_terminal_boundary(tmp_path: Path) -> None:
+def test_real_amber99sb_ildn_internal_rtp_and_terminal_boundary(
+    tmp_path: Path,
+) -> None:
     aminoacids_rtp = REAL_FF_ROOT / "aminoacids.rtp"
     n_terminal_database = REAL_FF_ROOT / "aminoacids.n.tdb"
     c_terminal_database = REAL_FF_ROOT / "aminoacids.c.tdb"
@@ -129,27 +136,49 @@ def test_real_amber99sb_ildn_internal_rtp_and_terminal_boundary(tmp_path: Path) 
         "primary_source": "FORCE_FIELD",
         "evidence": ["exact RTP template match: ALA"],
     }
+    empty_comparison = {
+        "missing_expected_atom_names": [],
+        "unexpected_observed_atom_names": [],
+    }
     assert internal_alanine["heavy_atom_check"] == {
-        "status": "HEAVY_ATOMS_COMPLETE",
+        "execution_status": "COMPLETED",
+        "findings": [],
         "reference_type": "RTP",
         "reference_name": "ALA",
+        "exact_comparison": empty_comparison,
+        "atom_name_mapping_candidates": [],
+        "mapping_resolution_status": "NOT_APPLICABLE",
+        "effective_comparison": empty_comparison,
+        "reason": None,
+        "status": "HEAVY_ATOMS_COMPLETE",
         "missing_atoms": [],
         "unexpected_atoms": [],
-        "reason": None,
     }
 
     for residue_number in ("1", "3"):
         terminal_glycine = records[residue_number]
         assert terminal_glycine["residue_name"] == "GLY"
-        assert terminal_glycine["classification_observation"]["topology_class"] == "STANDARD_RESIDUE"
-        assert terminal_glycine["classification_observation"]["primary_source"] == "SKILL_REGISTRY"
+        assert (
+            terminal_glycine["classification_observation"]["topology_class"]
+            == "STANDARD_RESIDUE"
+        )
+        assert (
+            terminal_glycine["classification_observation"]["primary_source"]
+            == "SKILL_REGISTRY"
+        )
         assert terminal_glycine["heavy_atom_check"] == {
-            "status": "REFERENCE_TEMPLATE_UNAVAILABLE",
+            "execution_status": "REFERENCE_TEMPLATE_UNAVAILABLE",
+            "findings": [],
             "reference_type": "RTP",
             "reference_name": None,
+            "exact_comparison": None,
+            "atom_name_mapping_candidates": [],
+            "mapping_resolution_status": "NOT_APPLICABLE",
+            "effective_comparison": None,
+            "reason": "RTP_TEMPLATE_NOT_RESOLVED",
+            "status": "REFERENCE_TEMPLATE_UNAVAILABLE",
             "missing_atoms": [],
             "unexpected_atoms": [],
-            "reason": "RTP_TEMPLATE_NOT_RESOLVED",
         }
 
     assert observations["summary"]["heavy_atom_issue_count"] == 2
