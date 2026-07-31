@@ -28,7 +28,33 @@ jobs:
         with:
           python-version: "3.11"
       - name: Apply side-effect-free module refactor
-        run: python .github/tmp_v1_2_monkey_patch_removal.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('.github/tmp_v1_2_monkey_patch_removal.py')
+          text = source.read_text(encoding='utf-8')
+          old = '''text, count = re.subn(
+              r'def _parse_pdb_remark_465\\(.*?\\n\\ndef _mmcif_value\\(',
+              strict_parser + "def _mmcif_value(",
+              text,
+              count=1,
+              flags=re.S,
+          )'''
+          new = '''text, count = re.subn(
+              r'def _parse_pdb_remark_465\\(.*?\\n\\ndef _mmcif_value\\(',
+              lambda _match: strict_parser + "def _mmcif_value(",
+              text,
+              count=1,
+              flags=re.S,
+          )'''
+          if text.count(old) != 1:
+              raise SystemExit(f'cannot patch strict-parser replacement: {text.count(old)}')
+          Path('/tmp/v1_2_monkey_patch_removal.py').write_text(
+              text.replace(old, new, 1),
+              encoding='utf-8',
+          )
+          PY
+          python /tmp/v1_2_monkey_patch_removal.py
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
