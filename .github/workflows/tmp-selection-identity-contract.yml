@@ -5,11 +5,13 @@ on:
     branches: [fix/v1-2-v1-3-selection-identity]
     paths:
       - "tmp_migrate_selection_identity.py"
+      - "tmp_fix_selection_identity_fixtures.py"
       - ".github/workflows/tmp-selection-identity-contract.yml"
   pull_request:
     branches: [main]
     paths:
       - "tmp_migrate_selection_identity.py"
+      - "tmp_fix_selection_identity_fixtures.py"
       - ".github/workflows/tmp-selection-identity-contract.yml"
   workflow_dispatch:
 
@@ -35,7 +37,9 @@ jobs:
           python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
           python -m pip install pytest
       - name: Apply contract migration
-        run: python tmp_migrate_selection_identity.py
+        run: |
+          python tmp_migrate_selection_identity.py
+          python tmp_fix_selection_identity_fixtures.py
       - name: Run complete v1.2 suite
         run: |
           pytest -q \
