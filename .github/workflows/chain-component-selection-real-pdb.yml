@@ -1,0 +1,65 @@
+name: chain-component-selection-real-pdb
+
+on:
+  pull_request:
+    paths:
+      - "02_operations/chain_and_component_selection/**"
+      - "02_validators/chain_and_component_selection_validator/**"
+      - "02_validators/component_and_residue_classification_validator/**"
+      - "04_evals/chain_and_component_selection/test_real_v1_2_selection_acceptance.py"
+      - ".github/workflows/chain-component-selection-real-pdb.yml"
+  workflow_dispatch:
+
+jobs:
+  real-v1-2-to-v1-3-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: 02_operations/chain_and_component_selection/scripts/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r 02_operations/chain_and_component_selection/scripts/requirements.txt
+          python -m pip install pytest
+      - name: Download official RCSB PDB entries
+        run: |
+          set -euo pipefail
+          mkdir -p real_selection_inputs
+          for pdb_id in 1VNS 1A6M 1CRN; do
+            curl --fail --location --retry 5 --retry-all-errors \
+              --output "real_selection_inputs/${pdb_id}.pdb" \
+              "https://files.rcsb.org/download/${pdb_id}.pdb"
+          done
+          sha256sum real_selection_inputs/*.pdb | tee real_selection_inputs/sha256sums.txt
+          {
+            echo "downloaded_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "source_1VNS=https://files.rcsb.org/download/1VNS.pdb"
+            echo "source_1A6M=https://files.rcsb.org/download/1A6M.pdb"
+            echo "source_1CRN=https://files.rcsb.org/download/1CRN.pdb"
+          } | tee real_selection_inputs/provenance.txt
+      - name: Run real classification-to-selection acceptance
+        env:
+          CHAIN_SELECTION_REAL_PDB_DIR: ${{ github.workspace }}/real_selection_inputs
+        run: |
+          set -o pipefail
+          mkdir -p real_selection_outputs
+          pytest -q \
+            04_evals/chain_and_component_selection/test_real_v1_2_selection_acceptance.py \
+            --basetemp=real_selection_outputs/pytest_tmp \
+            2>&1 | tee real_selection_outputs/pytest.log
+      - name: Upload acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-component-selection-real-pdb-${{ github.run_id }}
+          path: |
+            real_selection_inputs/sha256sums.txt
+            real_selection_inputs/provenance.txt
+            real_selection_outputs/
+          if-no-files-found: warn
+          retention-days: 30
