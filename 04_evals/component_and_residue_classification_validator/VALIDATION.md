@@ -32,23 +32,7 @@ tests: 76 passed
 conclusion: success
 ```
 
-覆盖：
-
-- model scope 与 selected-model barrier；
-- PDB、mmCIF、AF3 CIF；
-- strict residue/atom names；
-- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS`；
-- entity-based grouping 与 classification conflict 解耦；
-- 缺失残基、author `source_resid` 和 mapping unresolved；
-- `source_identity` / `current_identity` 双身份、兼容镜像一致性与 presence-status gate；
-- 聚合水、离子和重复小分子的实例级 residue identity 保留；
-- stable `component_id`、`residue_id`、`endpoint_id`、`relation_id`；
-- AlphaFold Server 单 job JSON、隐式 chain ID 和 sequence comparison；
-- altLoc、RTP、terminal mapping 和 CCD；
-- possible connection、metal coordination 和 topology effect；
-- `TOPOLOGY_LINKED_NONSTANDARD` 术语迁移；
-- confirmation replay、final-result builder 和 shared result wrapper；
-- Manager task → FAST validation → atomic commit → terminal event → visible closure。
+覆盖 model scope、PDB/mmCIF/AF3、strict names、registry/force-field classification、缺失残基、双身份、altLoc、RTP、CCD、关系与 topology effect、final builder、Manager closure，以及 1.2 → 1.3 selection identity contract。
 
 ## 2. 真实 PDB
 
@@ -62,11 +46,11 @@ conclusion: success
 
 | Entry | SHA-256 | 主要验证内容 |
 |---|---|---|
-| `1VNS.pdb` | `3fa3f2f1c15cb1d02180a1da3457662ae2ed77d6611766f178c30c87390194ae` | single model、`SEQRES/REMARK 465`、35 个缺失残基、SO4 CCD |
+| `1VNS.pdb` | `3fa3f2f1c15cb1d02180a1da3457662ae2ed77d6611766f178c30c87390194ae` | `SEQRES/REMARK 465`、35 个缺失残基、SO4 CCD |
 | `1A6M.pdb` | `e6dd0945ba1ce2e3dc5525ee0c30e82fbb9497bc034663cda5e7592fecd8ceda` | altLoc、HEM CCD、`LINK + CONECT` 配位 |
 | `1CRN.pdb` | `dee120c233163d052142ec47e4f54db58acb624fcb4e26c4ef1eaed41bc63ab1` | 3 条 `SSBOND + CONECT` 二硫键 |
 
-真实 PDB 验收同时确认：聚合组分保留全部 observed residue records，最终 component membership 可由 1.3 直接读取。
+真实 PDB 验收同时确认聚合组分保留全部 observed residue records，最终 component membership 可由 1.3 直接读取。
 
 ## 3. 真实 mmCIF
 
@@ -96,12 +80,10 @@ tests: 2 passed
 conclusion: success
 ```
 
-| Fixture | 模型 SHA-256 | Job JSON SHA-256 | 源结构事实 | 分类结果 |
-|---|---|---|---|---|
-| `fold_1bk0_ipns_fe_template_free` | `2a93f960885dc6bbd6c4de1b042b00e2d5afdb87b14ba0fb9a2b434528e761d6` | `1d97551888bb8cbe769aa4d375971b037918f892b236bb7a2f0a120b85dfdc13` | chain A protein + chain B FE | FE 为 `ION_GROUP`，同时保留 FE residue identity |
-| `fold_1dz9_p450cam_hem_template_free` | `02360320a239937c1a91ee5f93717851c17a9852cdaa9a7eafa2b12844755a81` | `d9af80a7af93d3b875d634d205718c67d6c6d12cfdf4285310b15ce6539f06cf` | chain A protein + chain B HEM | HEM 为 `INDEPENDENT_COMPONENT` |
-
-测试从仓库 fixture 无损重组真实模型与 job JSON，核验 SHA-256，并通过公开分类入口验证 sequence comparison、chain-group 表达及选择身份输出。
+| Fixture | 模型 SHA-256 | Job JSON SHA-256 | 验证结果 |
+|---|---|---|---|
+| `fold_1bk0_ipns_fe_template_free` | `2a93f960885dc6bbd6c4de1b042b00e2d5afdb87b14ba0fb9a2b434528e761d6` | `1d97551888bb8cbe769aa4d375971b037918f892b236bb7a2f0a120b85dfdc13` | FE 为 `ION_GROUP`，同时保留 FE residue identity |
+| `fold_1dz9_p450cam_hem_template_free` | `02360320a239937c1a91ee5f93717851c17a9852cdaa9a7eafa2b12844755a81` | `d9af80a7af93d3b875d634d205718c67d6c6d12cfdf4285310b15ce6539f06cf` | HEM 为 `INDEPENDENT_COMPONENT` |
 
 ## 5. 真实 GROMACS force field
 
@@ -118,10 +100,7 @@ distribution: Ubuntu gromacs-data 2023.3-1ubuntu3
 force-field root: /usr/share/gromacs/top/amber99sb-ildn.ff
 ```
 
-- 内部 ALA 由真实 `aminoacids.rtp` 精确识别并通过重原子检查；
-- N/C 端 GLY 在没有显式 terminal mapping 时返回 `REFERENCE_TEMPLATE_UNAVAILABLE`；
-- 禁止静默回退到内部 GLY RTP；
-- `.n.tdb/.c.tdb` 存在，但 1.2 不应用 terminal patch。
+内部 ALA 由真实 RTP 识别；没有显式 terminal mapping 的 N/C 端 GLY 返回 `REFERENCE_TEMPLATE_UNAVAILABLE`，不静默回退或应用 terminal patch。
 
 ## 6. Authoring 静态检查
 
@@ -145,8 +124,6 @@ warnings: 0
 
 ## 7. Manager task closure
 
-Manager closure 由第 1 节同一完整套件执行：
-
 ```text
 workflow: .github/workflows/component-classification-v1-2.yml
 run: 30600172815
@@ -156,13 +133,13 @@ conclusion: success
 
 已验证 wrapper 权限边界、一次 FAST validation、直接引用检查、原子提交、Workstream 前移、`TASK_DONE` 持久化和用户可见 closure summary。
 
-## 8. Topology class 术语
+## 8. Topology class 术语迁移
 
 ```text
 旧 topology_class: COVALENTLY_LINKED_NONSTANDARD
-当前 topology_class: TOPOLOGY_LINKED_NONSTANDARD
+新 topology_class: TOPOLOGY_LINKED_NONSTANDARD
 旧 summary 字段: covalently_linked_nonstandard_count
-当前 summary 字段: topology_linked_nonstandard_count
+新 summary 字段: topology_linked_nonstandard_count
 ```
 
 `TOPOLOGY_LINKED_NONSTANDARD` 只描述已进入连接拓扑的非标准组分。关系类型继续单独记录为 `COVALENT_CONNECTION` 或 `METAL_COORDINATION`，不得由 topology class 反推。
@@ -185,7 +162,7 @@ conclusion: success
 
 ## 10. 1.2 → 1.3 selection identity contract
 
-最终 `classification_result.yaml` 现提供 1.3 所需的权威接口：
+最终 `classification_result.yaml` 提供：
 
 ```text
 source_structure
@@ -197,18 +174,18 @@ component.residue_ids
 component.missing_residue_ids
 ```
 
-验收边界：
+验收确认：
 
 - ID 是由 1.2 materialize 的 opaque、versioned contract values；
 - `component_id` 根据 final membership 生成，不使用或编码 `chain_index`；
 - `residue_id` 来自 immutable `source_identity`；
 - `endpoint_id` 来自 source residue identity 与 exact atom name；
 - `relation_id` 对 endpoint 顺序和 evidence status 不敏感；
-- 聚合 `SOLVENT_GROUP`、`ION_GROUP`、`REPEATED_SMALL_MOLECULE_GROUP` 不再删除实例记录；
-- `residue_ids` 仅列出当前结构中存在的 coordinate-bearing members；
-- `missing_residue_ids` 只保存 expected-but-unobserved provenance，不作为坐标选择对象；
+- 聚合水、离子和重复小分子不再删除实例记录；
+- `residue_ids` 列出 coordinate-bearing members；
+- `missing_residue_ids` 只保存 expected-but-unobserved provenance；
 - topology promotion 会同步修正原 component 的 membership 与 `instance_count`；
-- 1.3 共价闭包使用 1.2 实际 relation type `COVALENT_CONNECTION`，不再依赖不存在的 `COVALENT/DISULFIDE/GLYCOSIDIC` 枚举。
+- 1.3 共价闭包使用 1.2 实际 relation type `COVALENT_CONNECTION`。
 
 永久回归：
 
@@ -229,4 +206,4 @@ v1.2 to v1.3 selection identity contract: passed
 validator v1.2 overall: PASS
 ```
 
-1.2 及其面向 1.3 的权威输入 contract 已完成。下一阶段是实现 deterministic `chain_and_component_selection`，而不是继续扩展 1.2 的身份模型。
+1.2 及其面向 1.3 的权威输入 contract 已完成。下一阶段是实现 deterministic `chain_and_component_selection`。
