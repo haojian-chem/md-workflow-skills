@@ -114,28 +114,28 @@ validation_evidence:
     status: current
   synthetic_and_integration:
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30600172815
-    job_id: 91060901931
+    run_id: 30625717907
+    job_id: 91140385874
     conclusion: success
-    test_count: 76
+    test_count: 88
   real_pdb_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-pdb.yml
-    run_id: 30600172753
-    job_id: 91060901398
+    run_id: 30625717868
+    job_id: 91140385088
     conclusion: success
     test_count: 3
     entries: [1VNS, 1A6M, 1CRN]
   real_mmcif_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-mmcif.yml
-    run_id: 30600172773
-    job_id: 91060901684
+    run_id: 30625717890
+    job_id: 91140385164
     conclusion: success
     test_count: 3
     entries: [1VNS, 1A6M, 1CRN]
   real_af3_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-af3.yml
-    run_id: 30600172784
-    job_id: 91060901569
+    run_id: 30625717836
+    job_id: 91140385012
     conclusion: success
     test_count: 2
     fixtures:
@@ -143,16 +143,16 @@ validation_evidence:
       - fold_1dz9_p450cam_hem_template_free
   real_gromacs_forcefield_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-gromacs-forcefield.yml
-    run_id: 30600172760
-    job_id: 91060901361
+    run_id: 30625717945
+    job_id: 91140385217
     conclusion: success
     test_count: 1
     distribution: Ubuntu gromacs-data 2023.3-1ubuntu3
     force_field: amber99sb-ildn.ff
   authoring_static_validation:
     workflow: .github/workflows/component-classification-v1-2-authoring.yml
-    run_id: 30600172744
-    job_id: 91060901329
+    run_id: 30625717840
+    job_id: 91140384911
     conclusion: success
     validated_content_maps: 18
     duplicate_blocks: 0
@@ -162,12 +162,15 @@ validation_evidence:
   manager_task_closure:
     test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_manager_closure.py
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30600172815
-    job_id: 91060901931
+    run_id: 30625717907
+    job_id: 91140385874
     conclusion: success
+  validated_business_head:
+    commit_sha: b9faf855bbbd43fb9d5c215c0dbc52e5eee37da8
   overall:
     implementation: passed
     repository_controlled_validation: passed
+    dependency_closure: passed
     validator_v1_2: passed
 notes:
   - Classification modules are side-effect-free at import time; structural grouping, missing-residue normalization and AlphaFold Server parsing are ordinary core/module calls rather than runtime monkey patches.
@@ -176,6 +179,7 @@ notes:
   - Local execution flow and model branching are owned by SKILL.md; scientific classification semantics are owned by references/classification_rules.md; CLI and module interfaces are owned by scripts/README.md.
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
   - Residue and relation endpoint identity is dual: immutable source_* provenance and current_* STRUCTURE identity use distinct field names; chain_index remains an external logical grouping field.
+  - Relation endpoint identity includes exact altLoc; endpoint IDs must not collapse different conformations.
   - Final component, residue, endpoint and relation IDs are opaque versioned values materialized by 1.2; downstream selection must read them and must not reconstruct them from chain_index or display fields.
   - Aggregated solvent, ion and repeated-small-molecule groups retain every observed residue record; residue_ids list coordinate-bearing members and missing_residue_ids preserve expected-but-unobserved metadata.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
@@ -184,7 +188,10 @@ notes:
   - Real 1VNS source metadata differ by format: PDB REMARK 465 records 35 missing residues, while mmCIF unobserved-residue metadata records 46; each source is preserved rather than forced into artificial equality.
   - Multiple altLoc residues skip heavy-atom comparison; altLoc-specific relation endpoints retain exact altLoc identity; duplicate exact RTP names require confirmation except for ordinary water context.
   - Heavy-atom output separates execution status from parallel findings and preserves raw exact-name differences even when CCD mapping candidates exist.
+  - Relation definition path and SHA-256 provenance are recorded in the reference manifest and cross-checked during final integration.
+  - Four structured config inputs have dedicated Draft 2020-12 schemas and are validated before business processing.
   - Project CCD snapshots are authoritative; identical local candidates collapse by hash and differing valid local candidates require confirmation.
+  - ACE, NME and NH2 use INDEPENDENT_NONSTANDARD fallback baseline and require a confirmed applied topology-forming relation for promotion.
   - Confirmed Mg/Zn coordination with promote=false remains relation-only and does not alter topology grouping.
   - Confirmed HEM-CYS/HIE coordination with promote=true moves HEM into the polymer chain and marks it TOPOLOGY_LINKED_NONSTANDARD.
   - TOPOLOGY_LINKED_NONSTANDARD describes connected-topology membership only; relation types remain separate, and deprecated enum, registry path and summary field names are prohibited.
