@@ -40,13 +40,7 @@ properties:
   selection_spec:
     $ref: '#/$defs/file_identity'
   output_structure:
-    allOf:
-      - $ref: '#/$defs/file_identity'
-      - type: object
-        required: [format]
-        properties:
-          format:
-            enum: [PDB, MMCIF]
+    $ref: '#/$defs/output_file_identity'
   selected_model_id:
     type: string
     minLength: 1
@@ -139,6 +133,18 @@ $defs:
         type: string
         pattern: '^[A-Fa-f0-9]{64}$'
       size_bytes: {type: integer, minimum: 0}
+    additionalProperties: false
+  output_file_identity:
+    type: object
+    required: [path, sha256, size_bytes, format]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256:
+        type: string
+        pattern: '^[A-Fa-f0-9]{64}$'
+      size_bytes: {type: integer, minimum: 0}
+      format:
+        enum: [PDB, MMCIF]
     additionalProperties: false
   relation_ref:
     type: object
