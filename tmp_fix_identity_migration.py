@@ -32,6 +32,26 @@ def update_structure_records() -> None:
         'replace_first(\n        obs,\n        "    properties:\\n      chain_index:\\n",',
         "observation residue-record property target",
     ),
+    (
+        'replace_once(conn, "      - chain_index\\n      - source_chain_id\\n",',
+        'replace_first(conn, "      - chain_index\\n      - source_chain_id\\n",',
+        "connection endpoint required target",
+    ),
+    (
+        'replace_once(\n        conn,\n        "    properties:\\n      chain_index: {type: integer, minimum: 1}\\n      source_chain_id:\\n",',
+        'replace_first(\n        conn,\n        "    properties:\\n      chain_index: {type: integer, minimum: 1}\\n      source_chain_id:\\n",',
+        "connection endpoint property target",
+    ),
+    (
+        'replace_once(coord, "      - chain_index\\n      - source_chain_id\\n",',
+        'replace_first(coord, "      - chain_index\\n      - source_chain_id\\n",',
+        "coordination endpoint required target",
+    ),
+    (
+        'replace_once(\n        final,\n        "    properties:\\n      chain_index: {type: integer, minimum: 1}\\n      source_chain_id:\\n",',
+        'replace_first(\n        final,\n        "    properties:\\n      chain_index: {type: integer, minimum: 1}\\n      source_chain_id:\\n",',
+        "final residue-record property target",
+    ),
 ]
 
 for old, new, label in replacements:
