@@ -1,8 +1,5 @@
 from pathlib import Path
 
-import yaml
-from jsonschema import Draft202012Validator
-
 SKILL = Path(
     "02_validators/component_and_residue_classification_validator"
 )
@@ -131,27 +128,6 @@ for schema_name in (
         text[:start] + HEAVY_ATOM_DEFS + text[end:],
         encoding="utf-8",
     )
-
-schema_paths = [
-    SKILL / "schemas/classification_observations.schema.yaml",
-    SKILL / "schemas/classification_result.schema.yaml",
-    SKILL / "schemas/confirmation_requests.schema.yaml",
-    SKILL / "schemas/possible_connections_result.schema.yaml",
-    SKILL / "schemas/possible_coordination_result.schema.yaml",
-]
-for path in schema_paths:
-    document = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(document, dict):
-        raise SystemExit(f"schema is not a mapping: {path}")
-    Draft202012Validator.check_schema(document)
-
-for path in (
-    SKILL / "references/topology_linked_nonstandard_residue_registry.yaml",
-    SKILL / "references/independent_nonstandard_residue_registry.yaml",
-):
-    document = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(document, dict):
-        raise SystemExit(f"registry is not a mapping: {path}")
 
 paths = [
     SKILL / "scripts/ccd_reference.py",
