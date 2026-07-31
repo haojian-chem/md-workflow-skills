@@ -14,6 +14,24 @@ replacements = [
         'replace_once(obs, "      - chain_index\\n      - source_chain_id\\n      - source_resid\\n", "      - source_identity\\n      - current_identity\\n      - chain_index\\n      - source_chain_id\\n      - source_resid\\n")',
         "observation residue-record required fields",
     ),
+    (
+        '\n\ndef update_structure_records() -> None:\n',
+        '''\n\ndef replace_first(path: Path, old: str, new: str) -> None:
+    text = read(path)
+    if old not in text:
+        raise RuntimeError(f"{path}: first-match target not found: {old[:80]!r}")
+    write(path, text.replace(old, new, 1))
+
+
+def update_structure_records() -> None:
+''',
+        "replace_first helper insertion",
+    ),
+    (
+        'replace_once(\n        obs,\n        "    properties:\\n      chain_index:\\n",',
+        'replace_first(\n        obs,\n        "    properties:\\n      chain_index:\\n",',
+        "observation residue-record property target",
+    ),
 ]
 
 for old, new, label in replacements:
