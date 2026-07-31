@@ -1,0 +1,131 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: classification_config.schema.yaml
+title: Component and residue baseline classification configuration
+type: object
+additionalProperties: false
+required:
+  - structure
+  - classification
+  - output
+properties:
+  structure:
+    $ref: "#/$defs/structure_input"
+  classification:
+    type: object
+    additionalProperties: false
+    required: [mode]
+    properties:
+      mode: {enum: [REGISTRY, FORCE_FIELD_ANALYSIS]}
+      standard_registry_path: {type: string, minLength: 1}
+      linked_registry_path: {type: string, minLength: 1}
+      independent_registry_path: {type: string, minLength: 1}
+  project_residue_definitions:
+    oneOf:
+      - type: "null"
+      - $ref: "#/$defs/hashed_file"
+  force_field:
+    oneOf:
+      - type: "null"
+      - type: object
+        additionalProperties: false
+        required: [root_path]
+        properties:
+          root_path: {type: string, minLength: 1}
+          rtp_files:
+            type: array
+            uniqueItems: true
+            items: {type: string, minLength: 1}
+          terminal_template_mappings:
+            type: array
+            items:
+              type: object
+              additionalProperties: false
+              required: [terminal_role, source_residue_name, rtp_residue_name]
+              properties:
+                terminal_role: {type: string, minLength: 1}
+                source_residue_name: {type: string, minLength: 1}
+                rtp_residue_name: {type: string, minLength: 1}
+  ccd:
+    type: object
+    additionalProperties: false
+    properties:
+      project_snapshot_dir: {type: string, minLength: 1}
+      local_reference_dirs:
+        type: array
+        uniqueItems: true
+        items: {type: string, minLength: 1}
+      shared_cache_path:
+        type: [string, "null"]
+        minLength: 1
+      retrieval_policy:
+        enum: [CACHE_ONLY, DOWNLOAD_MISSING]
+      remote_base_url: {type: string, minLength: 1}
+      timeout_seconds: {type: number, exclusiveMinimum: 0}
+  sequence_references:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [path]
+      properties:
+        path: {type: string, minLength: 1}
+        sha256: {$ref: "#/$defs/sha256"}
+        type:
+          enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
+        reference_type:
+          enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
+  relation_definitions:
+    type: object
+    additionalProperties: false
+    properties:
+      possible_connections:
+        oneOf:
+          - type: "null"
+          - $ref: "#/$defs/hashed_file"
+      possible_coordination:
+        oneOf:
+          - type: "null"
+          - $ref: "#/$defs/hashed_file"
+  output:
+    type: object
+    additionalProperties: false
+    required: [observations_path, reference_manifest_path]
+    properties:
+      observations_path: {type: string, minLength: 1}
+      reference_manifest_path: {type: string, minLength: 1}
+      observations_schema: {type: string, minLength: 1}
+      reference_manifest_schema: {type: string, minLength: 1}
+allOf:
+  - if:
+      properties:
+        classification:
+          properties:
+            mode: {const: FORCE_FIELD_ANALYSIS}
+          required: [mode]
+      required: [classification]
+    then:
+      required: [force_field]
+      properties:
+        force_field:
+          type: object
+$defs:
+  sha256:
+    type: string
+    pattern: "^[0-9a-f]{64}$"
+  hashed_file:
+    type: object
+    additionalProperties: false
+    required: [path, sha256]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {$ref: "#/$defs/sha256"}
+      schema: {type: string, minLength: 1}
+  structure_input:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, source_format, selected_model_id]
+    properties:
+      path: {type: string, minLength: 1}
+      sha256: {$ref: "#/$defs/sha256"}
+      source_format: {enum: [PDB, MMCIF, AF3_CIF]}
+      selected_model_id: {type: string, minLength: 1}
