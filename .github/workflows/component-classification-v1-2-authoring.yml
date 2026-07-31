@@ -6,6 +6,10 @@ on:
       - "02_validators/component_and_residue_classification_validator/**"
       - "00_authoring/content_maps/component_and_residue_classification_validator.yaml"
       - "00_authoring/md-workflow-skill-authoring/scripts/**"
+      - "00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md"
+      - "01_workflows/structure_preparation_workflow/SKILL.md"
+      - "03_contracts/**"
+      - "05_tools/runtime_schema_validator/**"
       - ".github/workflows/component-classification-v1-2-authoring.yml"
   workflow_dispatch:
 
