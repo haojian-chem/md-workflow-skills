@@ -1429,6 +1429,34 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
             }
         )
 
+    relation_definitions_config = config.get("relation_definitions") or {}
+    if not isinstance(relation_definitions_config, dict):
+        raise ClassificationToolError("relation_definitions must be a mapping")
+
+    def relation_definition_reference(key: str) -> dict[str, Any]:
+        entry = relation_definitions_config.get(key)
+        if entry is None:
+            return {"path": None, "sha256": None, "status": "NOT_PROVIDED"}
+        if not isinstance(entry, dict):
+            raise ClassificationToolError(
+                f"relation_definitions.{key} must be a mapping or null"
+            )
+        relation_path = _required_path(entry, "path")
+        expected_hash = str(entry.get("sha256", ""))
+        relation_hash = require_sha256(relation_path, expected_hash)
+        return {
+            "path": str(relation_path),
+            "sha256": relation_hash,
+            "status": "LOADED",
+        }
+
+    possible_connections_reference = relation_definition_reference(
+        "possible_connections"
+    )
+    possible_coordination_reference = relation_definition_reference(
+        "possible_coordination"
+    )
+
     force_field_manifest = None
     if mode == "FORCE_FIELD_ANALYSIS":
         force_field_root = _required_path(force_field_config, "root_path")
@@ -1477,8 +1505,8 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
         "ccd_components": [ccd_manifest[key] for key in sorted(ccd_manifest)],
         "sequence_references": sequence_manifest,
         "relation_definition_files": {
-            "possible_connections": {"path": None, "sha256": None, "status": "NOT_PROVIDED"},
-            "possible_coordination": {"path": None, "sha256": None, "status": "NOT_PROVIDED"},
+            "possible_connections": possible_connections_reference,
+            "possible_coordination": possible_coordination_reference,
         },
     }
 

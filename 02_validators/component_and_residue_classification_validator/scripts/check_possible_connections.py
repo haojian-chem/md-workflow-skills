@@ -32,7 +32,7 @@ from structure_records import (
     source_residue_identity,
 )
 
-VERSION = "0.2.0-draft"
+VERSION = "1.0.0"
 COVALENT_RELATION_TYPES = {"COVALENT", "DISULFIDE", "GLYCOSIDIC"}
 
 
@@ -403,6 +403,10 @@ def main() -> int:
         config = read_yaml_strict(args.config.resolve())
         if not isinstance(config, dict):
             raise ClassificationToolError("config must be a YAML mapping")
+        validate_document(
+            config,
+            script_dir.parent / "schemas/possible_connections_check_config.schema.yaml",
+        )
         result, output_path, output_schema = build_result(config, script_dir)
         validate_document(result, output_schema)
         atomic_write_yaml(output_path, result)

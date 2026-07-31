@@ -337,9 +337,9 @@ def test_coordination_confirmation_promotes_heme_in_final_result(tmp_path: Path)
                     "status": "NOT_PROVIDED",
                 },
                 "possible_coordination": {
-                    "path": None,
-                    "sha256": None,
-                    "status": "NOT_PROVIDED",
+                    "path": str(definitions.resolve()),
+                    "sha256": digest(definitions),
+                    "status": "LOADED",
                 },
             },
         },

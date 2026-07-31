@@ -55,6 +55,14 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/schemas/possible_connections.schema.yaml
   possible_coordination_definition_contract:
     owner: 02_validators/component_and_residue_classification_validator/schemas/possible_coordination.schema.yaml
+  classification_config_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_config.schema.yaml
+  possible_connections_check_config_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/possible_connections_check_config.schema.yaml
+  possible_coordination_check_config_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/possible_coordination_check_config.schema.yaml
+  classification_result_build_config_contract:
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result_build_config.schema.yaml
   model_scope_output_contract:
     owner: 02_validators/component_and_residue_classification_validator/schemas/model_scope.schema.yaml
   classification_observations_output_contract:
@@ -162,6 +170,7 @@ validation_evidence:
     repository_controlled_validation: passed
     validator_v1_2: passed
 notes:
+  - Runtime STRUCTURE input is taken from the schema-valid subagent task file record and independently revalidated; the draft source_recognition business report is not a runtime dependency.
   - General Manager, Workflow, Operation and Validator permissions are owned only by layer_boundaries.md and must not be duplicated in local Skill documentation.
   - Local execution flow and model branching are owned by SKILL.md; scientific classification semantics are owned by references/classification_rules.md; CLI and module interfaces are owned by scripts/README.md.
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.

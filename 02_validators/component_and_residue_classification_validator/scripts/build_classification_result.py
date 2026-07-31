@@ -27,7 +27,7 @@ from selection_identity import (
     residue_id_from_source_identity,
 )
 
-VERSION = "0.2.0-draft"
+VERSION = "1.0.0"
 
 RELATION_REQUEST_TYPES = {
     "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE",
@@ -991,17 +991,39 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
         raise ClassificationToolError("model scope and observations structure hashes differ")
     if manifest["classification_mode"] != observations["input"]["classification_mode"]:
         raise ClassificationToolError("manifest and observations classification modes differ")
-    for relation_document, label in (
-        (connections, "connections"),
-        (coordination, "coordination"),
+    for relation_document, label, manifest_key in (
+        (connections, "connections", "possible_connections"),
+        (coordination, "coordination", "possible_coordination"),
     ):
         relation_input = relation_document["input"]
         if relation_input["structure_sha256"] != structure_hash:
             raise ClassificationToolError(f"{label} result structure hash differs")
         if relation_input["observations_sha256"] != observations_hash:
-            raise ClassificationToolError(f"{label} result references a different observations file")
+            raise ClassificationToolError(
+                f"{label} result references a different observations file"
+            )
         if str(relation_input["selected_model_id"]) != str(selected_model_id):
             raise ClassificationToolError(f"{label} result selected model differs")
+        manifest_reference = manifest["relation_definition_files"][manifest_key]
+        definition_path = relation_input.get("definition_path")
+        definition_hash = relation_input.get("definition_sha256")
+        if definition_path is None:
+            if manifest_reference != {
+                "path": None,
+                "sha256": None,
+                "status": "NOT_PROVIDED",
+            }:
+                raise ClassificationToolError(
+                    f"{label} result omitted a definition recorded by reference manifest"
+                )
+        elif (
+            manifest_reference.get("status") != "LOADED"
+            or manifest_reference.get("path") != definition_path
+            or manifest_reference.get("sha256") != definition_hash
+        ):
+            raise ClassificationToolError(
+                f"{label} definition provenance differs from reference manifest"
+            )
 
     raw_requests: list[dict[str, Any]] = [
         *(_unresolved_to_request(item) for item in observations["unresolved_observations"]),
@@ -1207,10 +1229,11 @@ def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dic
                 for record in records
             ),
             "heavy_atom_issue_count": sum(
-      bool(record["heavy_atom_check"].get("findings"))
-      or record["heavy_atom_check"].get("execution_status") == "REFERENCE_TEMPLATE_UNAVAILABLE"
-      for record in records
-  ),
+                bool(record["heavy_atom_check"].get("findings"))
+                or record["heavy_atom_check"].get("execution_status")
+                == "REFERENCE_TEMPLATE_UNAVAILABLE"
+                for record in records
+            ),
             "unresolved_item_count": len(unresolved_requests),
         },
     }
@@ -1237,6 +1260,10 @@ def main() -> int:
         config = read_yaml_strict(args.config.resolve())
         if not isinstance(config, dict):
             raise ClassificationToolError("config must be a YAML mapping")
+        validate_document(
+            config,
+            script_dir.parent / "schemas/classification_result_build_config.schema.yaml",
+        )
         result, _confirmation, report, paths = build(config, script_dir)
         atomic_write_yaml(paths["result"], result)
         report_path = paths["report"]

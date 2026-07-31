@@ -410,6 +410,15 @@ AlphaFold Server `job_request.json`：
 - 只与其他非标准组分形成 topology-forming connected component：建立 `LINKED_NONSTANDARD_GROUP`；
 - 标准残基参与连接或配位时默认保持 `STANDARD_RESIDUE`。
 
+## 11.1 关系定义 provenance
+
+`reference_manifest.yaml` 必须记录本次实际使用或明确未提供的 `possible_connections.yaml` 与 `possible_coordination.yaml`：
+
+- 提供时保存解析后的 path、exact SHA-256 和 `LOADED`；
+- 未提供时三字段固定为 `path: null`、`sha256: null`、`status: NOT_PROVIDED`；
+- relation checker 的 definition path/SHA-256 必须与 manifest 完全一致；
+- final builder 遇到缺失、不同路径或不同哈希时属于技术失败，禁止继续整合。
+
 # 12. 可能共价连接
 
 `possible_connections.yaml` 只支持已知精确原子对：
