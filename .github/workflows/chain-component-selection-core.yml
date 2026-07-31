@@ -35,12 +35,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r 02_operations/chain_and_component_selection/scripts/requirements.txt
           python -m pip install pytest
-      - name: Run selection Operation and Validator tests
+      - name: Run selection Operation, Validator, and shared result tests
         run: |
           set -o pipefail
           mkdir -p selection_ci_output
           pytest -q \
             04_evals/chain_and_component_selection/test_chain_and_component_selection.py \
+            04_evals/chain_and_component_selection/test_selection_subagent_result.py \
             2>&1 | tee selection_ci_output/pytest.log
       - name: Upload test evidence
         if: always()
