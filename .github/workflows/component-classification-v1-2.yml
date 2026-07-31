@@ -38,6 +38,10 @@ jobs:
               "text = replace_once(text, old, new, 'ccd raw comparison')",
               "text, count = re.subn(r'    remapped_unexpected: set\\[str\\] = set\\(\\).*?        mapping_candidates,\\n    \\)', new.rstrip(), text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd raw comparison regex: expected one occurrence, found {count}')",
           )
+          script = script.replace(
+              "text = replace_once(text, old, new, 'core registries')",
+              "text, count = re.subn(r'    linked_registry_path = Path\\(.*?    skill_defs = \\{\\*\\*standard_defs, \\*\\*linked_defs\\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'core registries regex: expected one occurrence, found {count}')",
+          )
           Path('/tmp/repair.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/repair.py | tee /tmp/changed-files.txt
