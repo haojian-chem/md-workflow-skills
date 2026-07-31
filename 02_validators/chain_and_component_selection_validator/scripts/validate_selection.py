@@ -9,7 +9,7 @@ from typing import Any
 
 import gemmi
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 OPERATION_SCRIPTS = REPO_ROOT / "02_operations/chain_and_component_selection/scripts"
 if str(OPERATION_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(OPERATION_SCRIPTS))
