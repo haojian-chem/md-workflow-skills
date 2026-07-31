@@ -28,7 +28,7 @@ from selection_common import (
     write_structure,
 )
 
-VERSION = "1.0.0-draft"
+VERSION = "1.0.0"
 
 
 def _required_path(config: dict[str, Any], key: str) -> Path:

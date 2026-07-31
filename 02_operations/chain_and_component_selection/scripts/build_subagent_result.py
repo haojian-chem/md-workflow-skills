@@ -21,7 +21,7 @@ from selection_common import (
 OPERATION_SKILL = "chain_and_component_selection"
 VALIDATOR_SKILL = "chain_and_component_selection_validator"
 WORKFLOW_NAME = "structure_preparation_workflow"
-VERSION = "1.0.0-draft"
+VERSION = "1.0.0"
 ACCEPTED_OUTCOMES = {"SELECTION_VALIDATED", "SELECTION_VALIDATED_WITH_WARNINGS"}
 
 

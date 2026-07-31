@@ -32,7 +32,7 @@ from selection_common import (
     validate_document,
 )
 
-VERSION = "1.0.0-draft"
+VERSION = "1.0.0"
 
 
 def _required_path(config: dict[str, Any], key: str) -> Path:

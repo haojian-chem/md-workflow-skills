@@ -2,8 +2,8 @@ schema_version: 3
 skill_name: chain_and_component_selection_validator
 skill_type: validator
 skill_path: 02_validators/chain_and_component_selection_validator
-contract_status: draft
-content_ownership_status: draft
+contract_status: frozen
+content_ownership_status: frozen
 owned_content:
   local_validation_flow_and_gate:
     owner: 02_validators/chain_and_component_selection_validator/SKILL.md
@@ -55,6 +55,46 @@ external_references:
     owner: 04_evals/chain_and_component_selection/
     access: reference_only
     status: present
+validation_evidence:
+  authoritative_record:
+    path: 04_evals/chain_and_component_selection/VALIDATION.md
+    status: current
+  core_operation_validator_and_shared_result:
+    workflow: .github/workflows/chain-component-selection-core.yml
+    run_id: 30603213366
+    job_id: 91070077238
+    conclusion: success
+    test_count: 11
+  real_v1_2_to_v1_3_pdb_acceptance:
+    workflow: .github/workflows/chain-component-selection-real-pdb.yml
+    run_id: 30603213368
+    job_id: 91070077071
+    conclusion: success
+    test_count: 3
+    entries: [1VNS, 1A6M, 1CRN]
+  manager_fast_atomic_closure:
+    workflow: .github/workflows/chain-component-selection-manager-closure.yml
+    run_id: 30603213363
+    job_id: 91070077145
+    conclusion: success
+    test_count: 1
+  authoring_static_validation:
+    workflow: .github/workflows/chain-component-selection-core.yml
+    run_id: 30603213366
+    job_id: 91070077297
+    conclusion: success
+    validated_content_maps: 18
+    operation_duplicate_blocks: 0
+    validator_duplicate_blocks: 0
+    architecture_violations: 0
+    errors: 0
+    warnings: 0
+  overall:
+    operation: passed
+    dedicated_validator: passed
+    shared_result: passed
+    manager_closure: passed
+    chain_and_component_selection_v1: passed
 notes:
   - Validator independently recomputes the expected selected set from classification result and selection spec.
   - Manifest self-reports are not accepted as sufficient evidence.
