@@ -55,6 +55,8 @@ schemas/selection_validation_result.schema.yaml
 
 A successful result confirms selection fidelity only. It does not claim that altLoc, completeness, protonation, or downstream topology-preparation checks have been completed.
 
+The Validator writes validation evidence only inside the task work directory. It does not register artifact sets, update workstream state, or append project events; Manager performs those writes after one FAST validation of the combined candidates.
+
 ## Exit codes
 
 ```text
