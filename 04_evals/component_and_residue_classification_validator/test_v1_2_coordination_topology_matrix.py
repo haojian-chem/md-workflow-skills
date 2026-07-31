@@ -87,6 +87,18 @@ def classification_record(
     topology_class: str,
 ) -> dict:
     return {
+        "source_identity": {
+            "source_model_id": "1",
+            "source_chain_id": source_chain_id,
+            "source_resid": {"number": source_resid, "insertion_code": None},
+            "source_residue_name": residue_name,
+        },
+        "current_identity": {
+            "current_model_id": "1",
+            "current_chain_id": source_chain_id,
+            "current_resid": {"number": source_resid, "insertion_code": None},
+            "current_residue_name": residue_name,
+        },
         "chain_index": chain_index,
         "source_chain_id": source_chain_id,
         "source_resid": {"number": source_resid, "insertion_code": None},

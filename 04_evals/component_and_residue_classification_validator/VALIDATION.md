@@ -1,6 +1,6 @@
 # Component and residue classification v1.2 validation
 
-更新日期：2026-07-30
+更新日期：2026-07-31
 
 ## 最终状态
 
@@ -25,9 +25,9 @@ VALIDATOR_V1_2_OVERALL: PASS
 
 ```text
 workflow: .github/workflows/component-classification-v1-2.yml
-run: 30508963075
-job: 90764701893
-tests: 64 passed
+run: 30598093226
+job: 91054763872
+tests: 72 passed
 conclusion: success
 ```
 
@@ -39,6 +39,7 @@ conclusion: success
 - `REGISTRY` 与 `FORCE_FIELD_ANALYSIS`；
 - entity-based grouping 与 classification conflict 解耦；
 - 缺失残基、author `source_resid` 和 mapping unresolved；
+- `source_identity` / `current_identity` 双身份、兼容镜像一致性与 presence-status gate；
 - AlphaFold Server 单 job JSON、隐式 chain ID 和 sequence comparison；
 - altLoc、RTP、terminal mapping 和 CCD；
 - possible connection、metal coordination 和 topology effect；
@@ -50,8 +51,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-pdb.yml
-run: 30508963060
-job: 90764701793
+run: 30598093207
+job: 91054763846
 tests: 3 passed
 conclusion: success
 ```
@@ -68,8 +69,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-mmcif.yml
-run: 30508963069
-job: 90764701873
+run: 30598093217
+job: 91054763992
 tests: 3 passed
 conclusion: success
 ```
@@ -86,8 +87,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-af3.yml
-run: 30508963057
-job: 90764701753
+run: 30598093234
+job: 91054763855
 tests: 2 passed
 conclusion: success
 ```
@@ -123,8 +124,8 @@ conclusion: success
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-gromacs-forcefield.yml
-run: 30508963063
-job: 90764701869
+run: 30598093230
+job: 91054763869
 tests: 1 passed
 conclusion: success
 ```
@@ -143,8 +144,8 @@ force-field root: /usr/share/gromacs/top/amber99sb-ildn.ff
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-authoring.yml
-run: 30508963095
-job: 90764701922
+run: 30598093255
+job: 91054763938
 conclusion: success
 ```
 
@@ -171,8 +172,8 @@ Manager closure 由第 1 节同一完整套件执行：
 
 ```text
 workflow: .github/workflows/component-classification-v1-2.yml
-run: 30452751000
-job: 90578579001
+run: 30598093226
+job: 91054763872
 conclusion: success
 ```
 
@@ -213,7 +214,36 @@ conclusion: success
 
 该测试扫描活动仓库文本，并核验三个分类 schema、规则定义、registry 路径和 summary 字段。
 
-## 9. 结论
+## 9. 源身份与当前身份
+
+1.2 现以两套字段名不同的正式身份保存残基与关系端点：
+
+```text
+source_identity: source_model_id / source_chain_id / source_resid / source_residue_name
+current_identity: current_model_id / current_chain_id / current_resid / current_residue_name
+relation endpoint: 另含 source_atom_name / current_atom_name
+```
+
+验收确认：
+
+- `source_*` 是输入来源追溯身份，后续 revision 禁止覆盖；
+- `current_*` 是当前实际 STRUCTURE revision 身份；
+- 1.2 不修改结构，因此 `OBSERVED` 实例两套身份值相等，但字段保持分离；
+- `MISSING_EXPECTED` 残基必须具有 `current_identity: null`；
+- `chain_index` 位于两套 identity 外部，只表示逻辑分组；
+- topology effect 可以改变 `chain_index`，不得伪造 current chain/resid 变化；
+- v1 平铺 source 字段只是兼容镜像，运行时必须与 `source_identity` 一致；
+- final-result builder 与 relation checker 会拒绝双身份或兼容镜像不一致的输入。
+
+永久回归测试：
+
+```text
+04_evals/component_and_residue_classification_validator/test_v1_2_dual_identity.py
+```
+
+该测试核验字段集合、关系端点、schema 必填约束、`OBSERVED`/`MISSING_EXPECTED` 条件约束以及运行时一致性拒绝路径。
+
+## 10. 结论
 
 ```text
 local implementation: complete

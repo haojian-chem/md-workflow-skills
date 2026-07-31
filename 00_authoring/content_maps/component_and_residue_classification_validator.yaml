@@ -102,28 +102,28 @@ validation_evidence:
     status: current
   synthetic_and_integration:
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30508963075
-    job_id: 90764701893
+    run_id: 30598093226
+    job_id: 91054763872
     conclusion: success
-    test_count: 64
+    test_count: 72
   real_pdb_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-pdb.yml
-    run_id: 30508963060
-    job_id: 90764701793
+    run_id: 30598093207
+    job_id: 91054763846
     conclusion: success
     test_count: 3
     entries: [1VNS, 1A6M, 1CRN]
   real_mmcif_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-mmcif.yml
-    run_id: 30508963069
-    job_id: 90764701873
+    run_id: 30598093217
+    job_id: 91054763992
     conclusion: success
     test_count: 3
     entries: [1VNS, 1A6M, 1CRN]
   real_af3_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-af3.yml
-    run_id: 30508963057
-    job_id: 90764701753
+    run_id: 30598093234
+    job_id: 91054763855
     conclusion: success
     test_count: 2
     fixtures:
@@ -131,16 +131,16 @@ validation_evidence:
       - fold_1dz9_p450cam_hem_template_free
   real_gromacs_forcefield_acceptance:
     workflow: .github/workflows/component-classification-v1-2-real-gromacs-forcefield.yml
-    run_id: 30508963063
-    job_id: 90764701869
+    run_id: 30598093230
+    job_id: 91054763869
     conclusion: success
     test_count: 1
     distribution: Ubuntu gromacs-data 2023.3-1ubuntu3
     force_field: amber99sb-ildn.ff
   authoring_static_validation:
     workflow: .github/workflows/component-classification-v1-2-authoring.yml
-    run_id: 30508963095
-    job_id: 90764701922
+    run_id: 30598093255
+    job_id: 91054763938
     conclusion: success
     validated_content_maps: 18
     duplicate_blocks: 0
@@ -150,8 +150,8 @@ validation_evidence:
   manager_task_closure:
     test_file: 04_evals/component_and_residue_classification_validator/test_v1_2_manager_closure.py
     workflow: .github/workflows/component-classification-v1-2.yml
-    run_id: 30452751000
-    job_id: 90578579001
+    run_id: 30598093226
+    job_id: 91054763872
     conclusion: success
   overall:
     implementation: passed
@@ -161,6 +161,7 @@ notes:
   - General Manager, Workflow, Operation and Validator permissions are owned only by layer_boundaries.md and must not be duplicated in local Skill documentation.
   - Local execution flow and model branching are owned by SKILL.md; scientific classification semantics are owned by references/classification_rules.md; CLI and module interfaces are owned by scripts/README.md.
   - Residue and atom names are exact and case-sensitive; uppercase normalization, alias matching, regular expressions and fuzzy-name matching are prohibited.
+  - Residue and relation endpoint identity is dual: immutable source_* provenance and current_* STRUCTURE identity use distinct field names; chain_index remains an external logical grouping field.
   - Model scope is resolved before full classification; one model is automatic and multiple models require a recorded user selection.
   - Structural entity/polymer facts are authoritative for chain grouping; unresolved or conflicting topology classification remains unchanged in residue output.
   - Missing-residue checks use MAPPING_UNRESOLVED when the author residue identifier or target chain cannot be mapped; duplicate cross-stage reports of the same issue and subject are merged while preserving evidence.

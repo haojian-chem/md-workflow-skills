@@ -27,7 +27,12 @@ from sequence_missing import (
     parse_af3_sequence_references,
     sequence_based_missing_residues,
 )
-from structure_records import ResidueRecord, collect_selected_model
+from structure_records import (
+    ResidueRecord,
+    collect_selected_model,
+    current_residue_identity,
+    source_residue_identity,
+)
 
 
 @dataclass(frozen=True)
@@ -50,6 +55,24 @@ class ResidueAnalysis:
     sequence_position: int | None
     chain_index: int | None = None
     include_residue_record: bool = True
+
+
+def _identity_fields(
+    residue: ResidueRecord,
+    *,
+    current_present: bool = True,
+) -> dict[str, Any]:
+    """Build authoritative dual identity plus v1 compatibility mirrors."""
+    return {
+        "source_identity": source_residue_identity(residue),
+        "current_identity": current_residue_identity(residue) if current_present else None,
+        "source_chain_id": residue.source_chain_id,
+        "source_resid": {
+            "number": residue.source_resid_number,
+            "insertion_code": residue.insertion_code,
+        },
+        "residue_name": residue.residue_name,
+    }
 
 
 PROTEIN_POLYMER_TYPES = {
@@ -219,12 +242,7 @@ def _conflict_value(
         {
             "issue_type": issue_type,
             "subject": {
-                "source_chain_id": residue.source_chain_id,
-                "source_resid": {
-                    "number": residue.source_resid_number,
-                    "insertion_code": residue.insertion_code,
-                },
-                "residue_name": residue.residue_name,
+                **_identity_fields(residue),
                 "first_classification": {
                     "polymer_class": first.polymer_class,
                     "topology_class": first.topology_class,
@@ -1166,12 +1184,10 @@ def execute_classification(config: dict[str, Any], script_dir: Path) -> tuple[di
         residue_records.append(
             {
                 "chain_index": analysis.chain_index,
-                "source_chain_id": analysis.residue.source_chain_id,
-                "source_resid": {
-                    "number": analysis.residue.source_resid_number,
-                    "insertion_code": analysis.residue.insertion_code,
-                },
-                "residue_name": analysis.residue.residue_name,
+                **_identity_fields(
+                    analysis.residue,
+                    current_present=presence_status == "OBSERVED",
+                ),
                 "presence_status": presence_status,
                 "sequence_position": analysis.sequence_position,
                 "classification_observation": _classification_dict(analysis.classification),

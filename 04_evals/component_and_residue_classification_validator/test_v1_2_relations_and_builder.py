@@ -82,6 +82,18 @@ def observations(structure: Path, nonstandard_name: str) -> dict:
         ],
         "residue_records": [
             {
+                "source_identity": {
+                    "source_model_id": "1",
+                    "source_chain_id": "A",
+                    "source_resid": {"number": "42", "insertion_code": None},
+                    "source_residue_name": "CYS",
+                },
+                "current_identity": {
+                    "current_model_id": "1",
+                    "current_chain_id": "A",
+                    "current_resid": {"number": "42", "insertion_code": None},
+                    "current_residue_name": "CYS",
+                },
                 "chain_index": 1,
                 "source_chain_id": "A",
                 "source_resid": {"number": "42", "insertion_code": None},
@@ -102,6 +114,18 @@ def observations(structure: Path, nonstandard_name: str) -> dict:
                 "heavy_atom_check": heavy(),
             },
             {
+                "source_identity": {
+                    "source_model_id": "1",
+                    "source_chain_id": "B",
+                    "source_resid": {"number": "501", "insertion_code": None},
+                    "source_residue_name": nonstandard_name,
+                },
+                "current_identity": {
+                    "current_model_id": "1",
+                    "current_chain_id": "B",
+                    "current_resid": {"number": "501", "insertion_code": None},
+                    "current_residue_name": nonstandard_name,
+                },
                 "chain_index": 2,
                 "source_chain_id": "B",
                 "source_resid": {"number": "501", "insertion_code": None},

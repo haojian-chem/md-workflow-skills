@@ -28,6 +28,8 @@ from structure_records import (
     distance_angstrom,
     endpoint_dict,
     resolve_chain_index,
+    current_residue_identity,
+    source_residue_identity,
 )
 
 VERSION = "0.2.0-draft"
@@ -85,6 +87,8 @@ def _missing_atom_entry(
 ) -> dict[str, Any]:
     return {
         "chain_index": _residue_chain_index(resolver, residue),
+        "source_identity": source_residue_identity(residue),
+        "current_identity": current_residue_identity(residue),
         "source_chain_id": residue.source_chain_id,
         "source_resid": {
             "number": residue.source_resid_number,
