@@ -222,7 +222,12 @@ END
     )
     assert solvent_group["residue_name"] == "HOH"
     assert solvent_group["instance_count"] == 1
-    assert observations["residue_records"] == []
+    assert len(observations["residue_records"]) == 1
+    water = observations["residue_records"][0]
+    assert water["chain_index"] == solvent_group["chain_index"]
+    assert water["source_identity"]["source_residue_name"] == "HOH"
+    assert water["source_identity"]["source_resid"]["number"] == "1"
+    assert water["classification_observation"]["topology_class"] == "SOLVENT_COMPONENT"
     assert manifest["force_field"]["status"] == "LOADED"
     assert len(manifest["force_field"]["files"]) == 2
 

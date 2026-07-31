@@ -14,118 +14,83 @@ REAL_AF3_ACCEPTANCE: PASS
 REAL_GROMACS_FORCE_FIELD_ACCEPTANCE: PASS
 AUTHORING_STATIC_VALIDATION: PASS
 MANAGER_TASK_CLOSURE: PASS
+V1_2_TO_V1_3_SELECTION_IDENTITY_CONTRACT: PASS
 VALIDATOR_V1_2_OVERALL: PASS
 ```
 
-1.2 的实现、共享接口、真实结构格式、真实力场、Authoring 检查和 Manager 闭环均已验收。当前不存在阻止 1.2 进入后续 Workflow 集成的已知缺口。
+1.2 的实现、共享接口、真实结构格式、真实力场、Authoring 检查、Manager 闭环以及面向 1.3 的选择身份接口均已验收。当前不存在阻止 1.2 进入 `chain_and_component_selection` 实现阶段的已知 contract 缺口。
 
-本文件记录当前权威验收证据。历史调试运行不再作为当前 PASS 的依据。
+本文件记录当前权威验收证据；历史调试运行不再作为当前 PASS 的依据。
 
 ## 1. 合成与集成测试
 
 ```text
 workflow: .github/workflows/component-classification-v1-2.yml
-run: 30598093226
-job: 91054763872
-tests: 72 passed
+run: 30600172815
+job: 91060901931
+tests: 76 passed
 conclusion: success
 ```
 
-覆盖：
-
-- model scope 与 selected-model barrier；
-- PDB、mmCIF、AF3 CIF；
-- strict residue/atom names；
-- `REGISTRY` 与 `FORCE_FIELD_ANALYSIS`；
-- entity-based grouping 与 classification conflict 解耦；
-- 缺失残基、author `source_resid` 和 mapping unresolved；
-- `source_identity` / `current_identity` 双身份、兼容镜像一致性与 presence-status gate；
-- AlphaFold Server 单 job JSON、隐式 chain ID 和 sequence comparison；
-- altLoc、RTP、terminal mapping 和 CCD；
-- possible connection、metal coordination 和 topology effect；
-- `TOPOLOGY_LINKED_NONSTANDARD` 枚举、registry 路径和 `topology_linked_nonstandard_count` 输出字段迁移；
-- confirmation replay、final-result builder 和 shared result wrapper；
-- Manager task → one FAST validation → atomic commit → terminal event → visible closure。
+覆盖 model scope、PDB/mmCIF/AF3、strict names、registry/force-field classification、缺失残基、双身份、altLoc、RTP、CCD、关系与 topology effect、final builder、Manager closure，以及 1.2 → 1.3 selection identity contract。
 
 ## 2. 真实 PDB
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-pdb.yml
-run: 30598093207
-job: 91054763846
+run: 30600172753
+job: 91060901398
 tests: 3 passed
 conclusion: success
 ```
 
-| Entry | SHA-256 | 验证内容 |
+| Entry | SHA-256 | 主要验证内容 |
 |---|---|---|
-| `1VNS.pdb` | `3fa3f2f1c15cb1d02180a1da3457662ae2ed77d6611766f178c30c87390194ae` | single model、`SEQRES/REMARK 465`、35 个缺失残基、SO4 CCD |
+| `1VNS.pdb` | `3fa3f2f1c15cb1d02180a1da3457662ae2ed77d6611766f178c30c87390194ae` | `SEQRES/REMARK 465`、35 个缺失残基、SO4 CCD |
 | `1A6M.pdb` | `e6dd0945ba1ce2e3dc5525ee0c30e82fbb9497bc034663cda5e7592fecd8ceda` | altLoc、HEM CCD、`LINK + CONECT` 配位 |
 | `1CRN.pdb` | `dee120c233163d052142ec47e4f54db58acb624fcb4e26c4ef1eaed41bc63ab1` | 3 条 `SSBOND + CONECT` 二硫键 |
 
-真实文件验证了 PDB `REMARK 465` 固定列解析、说明文字过滤和同名缺失残基 author-ID 映射。
+真实 PDB 验收同时确认聚合组分保留全部 observed residue records，最终 component membership 可由 1.3 直接读取。
 
 ## 3. 真实 mmCIF
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-mmcif.yml
-run: 30598093217
-job: 91054763992
+run: 30600172773
+job: 91060901684
 tests: 3 passed
 conclusion: success
 ```
 
-| Entry | SHA-256 | 验证内容 |
+| Entry | SHA-256 | 主要验证内容 |
 |---|---|---|
 | `1VNS.cif` | `ba9b8fc1c59df806bfe00aab17e9fbb86c712987eb59b5f5ff025359f9b446e6` | entity、author IDs、46 个 unobserved-residue records、SO4 CCD |
 | `1A6M.cif` | `ce6574d325b046f46803df49894524537d098dfeee1033e76e62133e941fd948` | altLoc、HEM CCD、`_struct_conn` 配位 |
 | `1CRN.cif` | `23787562c427d7c1abe5420e86d5f1d0a6c7007dec1e8ce85645a6d69c32e8ba` | 3 条 `_struct_conn` 二硫键 |
 
-1VNS 的 PDB 与 mmCIF 源元数据分别记录 35 和 46 个缺失或未观测残基。实现保留各源格式的权威记录，禁止制造跨格式数量一致性。
+1VNS 的 PDB 与 mmCIF 源元数据分别记录 35 和 46 个缺失或未观测残基。实现保留各自来源事实，不制造跨格式数量一致性。
 
 ## 4. 真实 AlphaFold Server 输出
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-af3.yml
-run: 30598093234
-job: 91054763855
+run: 30600172784
+job: 91060901569
 tests: 2 passed
 conclusion: success
 ```
 
-用户提供的真实 AlphaFold Server template-free 输出：
-
-| Fixture | 模型 SHA-256 | Job JSON SHA-256 | 源结构事实 | 分类结果 |
-|---|---|---|---|---|
-| `fold_1bk0_ipns_fe_template_free` | `2a93f960885dc6bbd6c4de1b042b00e2d5afdb87b14ba0fb9a2b434528e761d6` | `1d97551888bb8cbe769aa4d375971b037918f892b236bb7a2f0a120b85dfdc13` | chain A protein + chain B FE | FE 汇总为 `ION_GROUP` |
-| `fold_1dz9_p450cam_hem_template_free` | `02360320a239937c1a91ee5f93717851c17a9852cdaa9a7eafa2b12844755a81` | `d9af80a7af93d3b875d634d205718c67d6c6d12cfdf4285310b15ce6539f06cf` | chain A protein + chain B HEM | HEM 为 `INDEPENDENT_COMPONENT` |
-
-验收执行：
-
-1. 从仓库 fixture 无损重组真实 `model_0.cif`；
-2. 核验原始 size 与 SHA-256；
-3. 恢复用户上传的原始 `job_request.json` 字节并核验 SHA-256；
-4. 检查 CIF 自带 AlphaFold Server Output Terms 声明；
-5. 直接检查源 CIF 中 chain B 的 FE/HEM 身份；
-6. 使用公开 `classify_structure.py` 执行 `AF3_CIF + AF3_INPUT_JSON`；
-7. chain A 输入序列与坐标精确匹配，结果为 `NO_MISSING_RESIDUES`；
-8. 验证 FE/HEM 的实际 chain-group 表达；
-9. 验证不存在 `SEQUENCE_REFERENCE_CONFLICT`。
-
-真实输入保存在：
-
-```text
-04_evals/component_and_residue_classification_validator/fixtures/real_af3/
-```
-
-模型以同一次确定性 `xz+base64` 编码分片保存。测试在解码后核验原始模型大小和 SHA-256；传输编码不得改变科学输入身份。
+| Fixture | 模型 SHA-256 | Job JSON SHA-256 | 验证结果 |
+|---|---|---|---|
+| `fold_1bk0_ipns_fe_template_free` | `2a93f960885dc6bbd6c4de1b042b00e2d5afdb87b14ba0fb9a2b434528e761d6` | `1d97551888bb8cbe769aa4d375971b037918f892b236bb7a2f0a120b85dfdc13` | FE 为 `ION_GROUP`，同时保留 FE residue identity |
+| `fold_1dz9_p450cam_hem_template_free` | `02360320a239937c1a91ee5f93717851c17a9852cdaa9a7eafa2b12844755a81` | `d9af80a7af93d3b875d634d205718c67d6c6d12cfdf4285310b15ce6539f06cf` | HEM 为 `INDEPENDENT_COMPONENT` |
 
 ## 5. 真实 GROMACS force field
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-real-gromacs-forcefield.yml
-run: 30598093230
-job: 91054763869
+run: 30600172760
+job: 91060901361
 tests: 1 passed
 conclusion: success
 ```
@@ -135,17 +100,14 @@ distribution: Ubuntu gromacs-data 2023.3-1ubuntu3
 force-field root: /usr/share/gromacs/top/amber99sb-ildn.ff
 ```
 
-- 内部 ALA 由真实 `aminoacids.rtp` 精确识别并通过重原子检查；
-- N/C 端 GLY 在没有显式 terminal mapping 时返回 `REFERENCE_TEMPLATE_UNAVAILABLE`；
-- 禁止静默回退到内部 GLY RTP；
-- `.n.tdb/.c.tdb` 存在，但 1.2 禁止应用 terminal patch。
+内部 ALA 由真实 RTP 识别；没有显式 terminal mapping 的 N/C 端 GLY 返回 `REFERENCE_TEMPLATE_UNAVAILABLE`，不静默回退或应用 terminal patch。
 
 ## 6. Authoring 静态检查
 
 ```text
 workflow: .github/workflows/component-classification-v1-2-authoring.yml
-run: 30598093255
-job: 91054763938
+run: 30600172744
+job: 91060901329
 conclusion: success
 ```
 
@@ -158,35 +120,18 @@ content-map errors: 0
 warnings: 0
 ```
 
-该运行对应文档层级与 topology class 术语整改后的最终文件，确认：
-
-- `SKILL.md` 只拥有局部执行编排和 model branching；
-- `classification_rules.md` 拥有科学判定语义；
-- `scripts/README.md` 只拥有 CLI 与模块接口；
-- 上下级规则未形成重复定义。
-- 旧枚举、旧 registry 路径和旧 summary 字段在活动仓库文本中均为零残留。
+确认局部执行编排、科学分类语义、脚本接口和跨阶段 contract 各自拥有唯一 owner；1.3 content map 不再引用已删除的 `classification_outputs.schema.yaml`。
 
 ## 7. Manager task closure
 
-Manager closure 由第 1 节同一完整套件执行：
-
 ```text
 workflow: .github/workflows/component-classification-v1-2.yml
-run: 30598093226
-job: 91054763872
+run: 30600172815
+job: 91060901931
 conclusion: success
 ```
 
-已验证：
-
-- wrapper 只在业务目录生成 candidate result；
-- wrapper 不修改 `00_project_state/**` 或 `00_project_records/**`；
-- Manager 准备 result/state/event candidates；
-- `runtime_schema_validator` 对 changed logical paths 执行一次 FAST；
-- schema 与直接引用检查通过后原子提交；
-- Workstream 前移、active task 清空、`TASK_DONE` 持久化；
-- 基于已提交终态生成用户可见 closure summary。
-
+已验证 wrapper 权限边界、一次 FAST validation、直接引用检查、原子提交、Workstream 前移、`TASK_DONE` 持久化和用户可见 closure summary。
 
 ## 8. Topology class 术语迁移
 
@@ -197,62 +142,68 @@ conclusion: success
 新 summary 字段: topology_linked_nonstandard_count
 ```
 
-迁移后的语义边界：
+`TOPOLOGY_LINKED_NONSTANDARD` 只描述已进入连接拓扑的非标准组分。关系类型继续单独记录为 `COVALENT_CONNECTION` 或 `METAL_COORDINATION`，不得由 topology class 反推。
 
-- `TOPOLOGY_LINKED_NONSTANDARD` 只描述非标准组分已经纳入连接拓扑；
-- 触发关系仍单独记录为 `COVALENT_CONNECTION`、`METAL_COORDINATION` 或其他受支持 relation type；
-- 禁止根据 topology class 反推化学关系类型；
-- `HEM` 的名称级 baseline 示例为 `INDEPENDENT_NONSTANDARD`；
-- 只有确认且应用了 topology effect 的具体 HEM 实例才提升为 `TOPOLOGY_LINKED_NONSTANDARD`；
-- 旧枚举、旧 registry 文件名和旧 summary 字段不再由活动 schema 或实现接受。
-
-永久回归测试：
+永久回归：
 
 ```text
 04_evals/component_and_residue_classification_validator/test_v1_2_topology_class_vocabulary.py
 ```
 
-该测试扫描活动仓库文本，并核验三个分类 schema、规则定义、registry 路径和 summary 字段。
-
 ## 9. 源身份与当前身份
 
-1.2 现以两套字段名不同的正式身份保存残基与关系端点：
+残基与关系端点分别保存 immutable `source_*` provenance 和当前 STRUCTURE revision 的 `current_*` identity。1.2 不修改结构，所以 observed 实例的值相等，但字段保持分离；missing expected residue 的 `current_identity` 必须为 `null`。`chain_index` 只表示外部逻辑分组。
 
-```text
-source_identity: source_model_id / source_chain_id / source_resid / source_residue_name
-current_identity: current_model_id / current_chain_id / current_resid / current_residue_name
-relation endpoint: 另含 source_atom_name / current_atom_name
-```
-
-验收确认：
-
-- `source_*` 是输入来源追溯身份，后续 revision 禁止覆盖；
-- `current_*` 是当前实际 STRUCTURE revision 身份；
-- 1.2 不修改结构，因此 `OBSERVED` 实例两套身份值相等，但字段保持分离；
-- `MISSING_EXPECTED` 残基必须具有 `current_identity: null`；
-- `chain_index` 位于两套 identity 外部，只表示逻辑分组；
-- topology effect 可以改变 `chain_index`，不得伪造 current chain/resid 变化；
-- v1 平铺 source 字段只是兼容镜像，运行时必须与 `source_identity` 一致；
-- final-result builder 与 relation checker 会拒绝双身份或兼容镜像不一致的输入。
-
-永久回归测试：
+永久回归：
 
 ```text
 04_evals/component_and_residue_classification_validator/test_v1_2_dual_identity.py
 ```
 
-该测试核验字段集合、关系端点、schema 必填约束、`OBSERVED`/`MISSING_EXPECTED` 条件约束以及运行时一致性拒绝路径。
+## 10. 1.2 → 1.3 selection identity contract
 
-## 10. 结论
+最终 `classification_result.yaml` 提供：
+
+```text
+source_structure
+component_id
+residue_id
+endpoint_id
+relation_id
+component.residue_ids
+component.missing_residue_ids
+```
+
+验收确认：
+
+- ID 是由 1.2 materialize 的 opaque、versioned contract values；
+- `component_id` 根据 final membership 生成，不使用或编码 `chain_index`；
+- `residue_id` 来自 immutable `source_identity`；
+- `endpoint_id` 来自 source residue identity 与 exact atom name；
+- `relation_id` 对 endpoint 顺序和 evidence status 不敏感；
+- 聚合水、离子和重复小分子不再删除实例记录；
+- `residue_ids` 列出 coordinate-bearing members；
+- `missing_residue_ids` 只保存 expected-but-unobserved provenance；
+- topology promotion 会同步修正原 component 的 membership 与 `instance_count`；
+- 1.3 共价闭包使用 1.2 实际 relation type `COVALENT_CONNECTION`。
+
+永久回归：
+
+```text
+04_evals/component_and_residue_classification_validator/test_v1_2_selection_identity_contract.py
+```
+
+## 11. 结论
 
 ```text
 local implementation: complete
 contracts and content ownership: frozen
-all synthetic and integration validation: passed
+synthetic and integration validation: passed
 real PDB/mmCIF/AF3/GROMACS: passed
 Authoring validation: passed
 Manager closure: passed
+v1.2 to v1.3 selection identity contract: passed
 validator v1.2 overall: PASS
 ```
 
-1.2 已完成。后续新增真实体系属于覆盖扩展，不再是 1.2 发布阻断项。
+1.2 及其面向 1.3 的权威输入 contract 已完成。下一阶段是实现 deterministic `chain_and_component_selection`。

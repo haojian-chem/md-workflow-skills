@@ -27,6 +27,7 @@ selection manifest schema: present
 atom mapping schema: present
 Operation behavior cases: 18
 Validator behavior cases: 17
+1.2 selection identity input contract: implemented
 deterministic selection implementation: not implemented
 executable tests: not run
 status: draft
@@ -153,6 +154,16 @@ Validator 17 cases 覆盖：
 - missing candidate；
 - limited validation claims；
 - source/candidate immutability。
+
+## 已完成的跨阶段前置接口
+
+- 1.2 `classification_result.yaml` 输出 `source_structure`；
+- 每个 final component 输出稳定 `component_id`、observed `residue_ids` 与 `missing_residue_ids`；
+- 每个 residue 输出 `residue_id` 与所属 `component_id`；
+- relation endpoint 输出 `endpoint_id`、`residue_id`、`component_id`；
+- relation 输出稳定 `relation_id`；
+- 聚合水、离子和重复小分子仍保留全部实例级 residue identity；
+- v1 共价闭包统一使用 1.2 实际 relation type `COVALENT_CONNECTION`。
 
 ## 尚未实现
 

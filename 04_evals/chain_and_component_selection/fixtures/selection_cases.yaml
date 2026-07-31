@@ -56,7 +56,7 @@ cases:
     input:
       selected_component_ids: [model:1/chain:A/polymer]
       explicit_connection:
-        relation_type: COVALENT
+        relation_type: COVALENT_CONNECTION
         selected_endpoint: model:1/chain:A/res:CYS:10
         excluded_endpoint: model:1/chain:L/res:LIG:101
     expected:
@@ -72,7 +72,7 @@ cases:
     input:
       selected_component_ids: [model:1/chain:A/polymer]
       explicit_connection:
-        relation_type: DISULFIDE
+        relation_type: COVALENT_CONNECTION
         selected_endpoint: model:1/chain:A/res:CYS:10
         excluded_endpoint: model:1/chain:B/res:CYS:20
     expected:
