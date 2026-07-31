@@ -6,6 +6,11 @@ on:
     paths:
       - "tmp_migrate_selection_identity.py"
       - ".github/workflows/tmp-selection-identity-contract.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tmp_migrate_selection_identity.py"
+      - ".github/workflows/tmp-selection-identity-contract.yml"
   workflow_dispatch:
 
 permissions:
