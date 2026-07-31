@@ -55,6 +55,125 @@ jobs:
           Path('/tmp/repair.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/repair.py | tee /tmp/changed-files.txt
+      - name: Normalize generated Python
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          skill = Path('02_validators/component_and_residue_classification_validator')
+
+          path = skill / 'scripts/ccd_reference.py'
+          text = path.read_text(encoding='utf-8')
+          marker = 'def compare_ccd_heavy_atoms('
+          prefix = text[:text.index(marker)]
+          function = '''def compare_ccd_heavy_atoms(
+    observed_heavy_atom_names: Iterable[str],
+    template: CcdTemplate,
+) -> tuple[list[str], list[str], list[dict[str, str]]]:
+    observed = set(observed_heavy_atom_names)
+    expected = set(template.heavy_atom_names)
+    missing = expected - observed
+    unexpected = observed - expected
+    mapping_candidates: list[dict[str, str]] = []
+    for structure_name in sorted(unexpected):
+        ccd_name = template.alternate_atom_names.get(structure_name)
+        if ccd_name is not None and ccd_name in missing:
+            mapping_candidates.append(
+                {
+                    "structure_atom_name": structure_name,
+                    "ccd_atom_id": ccd_name,
+                    "mapping_source": "CCD_ALTERNATE_ATOM_NAME",
+                }
+            )
+    return sorted(missing), sorted(unexpected), mapping_candidates
+'''
+          path.write_text(prefix + function, encoding='utf-8')
+
+          path = skill / 'scripts/build_classification_result.py'
+          text = path.read_text(encoding='utf-8')
+          pattern = re.compile(r'\n\s*def _heavy_atom_decision_map\(.*?\ndef _record_index\(', re.S)
+          replacement = '''
+
+def _heavy_atom_decision_map(
+    resolved_requests: list[tuple[dict[str, Any], dict[str, Any]]],
+) -> dict[tuple[str | None, str, str | None, str], dict[str, Any]]:
+    output: dict[tuple[str | None, str, str | None, str], dict[str, Any]] = {}
+    for request, decision in resolved_requests:
+        if request["request_type"] != "ATOM_NAME_MAPPING_REQUIRED":
+            continue
+        subject = request["subject"]
+        source_resid = subject.get("source_resid")
+        if not isinstance(source_resid, dict):
+            raise ClassificationToolError("atom-name mapping subject lacks source_resid")
+        key = (
+            subject.get("source_chain_id"),
+            str(source_resid["number"]),
+            source_resid.get("insertion_code"),
+            subject["residue_name"],
+        )
+        output[key] = copy.deepcopy(decision)
+    return output
+
+
+def _apply_heavy_atom_decision(
+    check: dict[str, Any],
+    decision: dict[str, Any] | None,
+) -> dict[str, Any]:
+    output = copy.deepcopy(check)
+    if decision is None:
+        return output
+    action = decision["decision"]
+    if action == "REJECT_ATOM_NAME_MAPPING":
+        output["mapping_resolution_status"] = "REJECTED"
+        output["effective_comparison"] = None
+        return output
+    if action != "APPLY_ATOM_NAME_MAPPING":
+        return output
+    exact = output.get("exact_comparison")
+    if not isinstance(exact, dict):
+        raise ClassificationToolError("cannot apply atom-name mapping without exact comparison")
+    missing = set(exact["missing_expected_atom_names"])
+    unexpected = set(exact["unexpected_observed_atom_names"])
+    for candidate in output.get("atom_name_mapping_candidates", []):
+        missing.discard(candidate["reference_atom_name"])
+        unexpected.discard(candidate["observed_atom_name"])
+    output["mapping_resolution_status"] = "APPLIED"
+    output["effective_comparison"] = {
+        "missing_expected_atom_names": sorted(missing),
+        "unexpected_observed_atom_names": sorted(unexpected),
+    }
+    return output
+
+
+def _record_index('''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'cannot normalize heavy atom decision helpers: {count}')
+          path.write_text(text, encoding='utf-8')
+
+          path = Path('04_evals/component_and_residue_classification_validator/test_v1_2_scientific_contract_repairs.py')
+          text = path.read_text(encoding='utf-8')
+          text = re.sub(
+              r'    structure\.write_text\(\n.*?        encoding="utf-8",\n    \)',
+              '''    structure.write_text(
+        """HETATM    1  C01 LIG A   1       0.000   0.000   0.000  1.00 20.00           C
+HETATM    2  N1  LIG A   1       1.000   0.000   0.000  1.00 20.00           N
+END
+""",
+        encoding="utf-8",
+    )''',
+              text,
+              count=1,
+              flags=re.S,
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
+          python -m py_compile \
+            02_validators/component_and_residue_classification_validator/scripts/ccd_reference.py \
+            02_validators/component_and_residue_classification_validator/scripts/classification_engine_core.py \
+            02_validators/component_and_residue_classification_validator/scripts/build_classification_result.py \
+            04_evals/component_and_residue_classification_validator/test_v1_2_scientific_contract_repairs.py
       - name: Install and test
         run: |
           python -m pip install --upgrade pip
