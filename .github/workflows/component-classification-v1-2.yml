@@ -45,6 +45,10 @@ jobs:
                   "text, count = re.subn(r'        if mappings:\\n            status = \\\"ATOM_NAME_MAPPING_REQUIRED\\\".*?            \\\"reason\\\": reason,\\n        \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'ccd heavy check regex: expected one occurrence, found {count}')",
               "text = replace_once(text, old, new, 'group heavy check')":
                   "text, count = re.subn(r'            and item\\.heavy_atom_check\\[\\\"status\\\"\\]\\n            not in \\{.*?            \\}\\n', new, text, count=1, flags=re.S)\nif count != 1:\n    raise SystemExit(f'group heavy check regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'summary heavy issue')":
+                  "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                item\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for item in residue_records\\n            \\),\\n', new, text, count=1)\nif count != 1:\n    raise SystemExit(f'summary heavy issue regex: expected one occurrence, found {count}')",
+              "text = replace_once(text, old, new, 'builder heavy count')":
+                  "text, count = re.subn(r'            \\\"heavy_atom_issue_count\\\": sum\\(\\n                record\\[\\\"heavy_atom_check\\\"\\]\\[\\\"status\\\"\\] in heavy_issue_statuses\\n                for record in records\\n            \\),\\n', new, text, count=1)\nif count != 1:\n    raise SystemExit(f'builder heavy count regex: expected one occurrence, found {count}')",
           }
           for old, new in patches.items():
               if old not in script:
