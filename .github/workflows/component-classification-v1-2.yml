@@ -62,7 +62,6 @@ jobs:
           import re
 
           skill = Path('02_validators/component_and_residue_classification_validator')
-
           path = skill / 'scripts/ccd_reference.py'
           text = path.read_text(encoding='utf-8')
           marker = 'def compare_ccd_heavy_atoms('
@@ -154,19 +153,23 @@ def _record_index('''
 
           path = Path('04_evals/component_and_residue_classification_validator/test_v1_2_scientific_contract_repairs.py')
           text = path.read_text(encoding='utf-8')
-          text = re.sub(
+          replacement_text = (
+              '    structure.write_text(\n'
+              '        "HETATM    1  C01 LIG A   1       0.000   0.000   0.000  1.00 20.00           C\\n"\n'
+              '        "HETATM    2  N1  LIG A   1       1.000   0.000   0.000  1.00 20.00           N\\n"\n'
+              '        "END\\n",\n'
+              '        encoding="utf-8",\n'
+              '    )'
+          )
+          text, count = re.subn(
               r'    structure\.write_text\(\n.*?        encoding="utf-8",\n    \)',
-              '''    structure.write_text(
-        """HETATM    1  C01 LIG A   1       0.000   0.000   0.000  1.00 20.00           C
-HETATM    2  N1  LIG A   1       1.000   0.000   0.000  1.00 20.00           N
-END
-""",
-        encoding="utf-8",
-    )''',
+              lambda _match: replacement_text,
               text,
               count=1,
               flags=re.S,
           )
+          if count != 1:
+              raise SystemExit(f'cannot normalize scientific test PDB string: {count}')
           path.write_text(text, encoding='utf-8')
           PY
           python -m py_compile \
