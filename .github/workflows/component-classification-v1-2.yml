@@ -49,8 +49,14 @@ jobs:
           )'''
           if text.count(old) != 1:
               raise SystemExit(f'cannot patch strict-parser replacement: {text.count(old)}')
+          text = text.replace(old, new, 1)
+          old_marker = 'parse_marker = "def parse_af3_sequence_references(\\n"'
+          new_marker = 'parse_marker = "def parse_af3_sequence_references("'
+          if text.count(old_marker) != 1:
+              raise SystemExit(f'cannot patch AF3 parser marker: {text.count(old_marker)}')
+          text = text.replace(old_marker, new_marker, 1)
           Path('/tmp/v1_2_monkey_patch_removal.py').write_text(
-              text.replace(old, new, 1),
+              text,
               encoding='utf-8',
           )
           PY
