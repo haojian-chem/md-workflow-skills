@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 changed: list[Path] = []
 
@@ -42,7 +41,57 @@ if text.count(old) != 1:
     raise SystemExit(
         f"coordination heavy fixture: expected one occurrence, found {text.count(old)}"
     )
-coordination.write_text(text.replace(old, new, 1), encoding="utf-8")
+text = text.replace(old, new, 1)
+old = '''def base_documents(tmp_path: Path, structure: Path, observations_path: Path) -> tuple[Path, Path, Path]:
+'''
+new = '''def base_documents(
+    tmp_path: Path,
+    structure: Path,
+    observations_path: Path,
+    coordination_definition: Path,
+) -> tuple[Path, Path, Path]:
+'''
+if text.count(old) != 1:
+    raise SystemExit(
+        f"coordination base_documents signature: expected one occurrence, found {text.count(old)}"
+    )
+text = text.replace(old, new, 1)
+old = '''                "possible_coordination": {
+                    "path": None,
+                    "sha256": None,
+                    "status": "NOT_PROVIDED",
+                },
+'''
+new = '''                "possible_coordination": {
+                    "path": str(coordination_definition.resolve()),
+                    "sha256": digest(coordination_definition),
+                    "status": "LOADED",
+                },
+'''
+if text.count(old) != 1:
+    raise SystemExit(
+        f"coordination manifest reference: expected one occurrence, found {text.count(old)}"
+    )
+text = text.replace(old, new, 1)
+old = '''    model_scope, manifest, connection_result = base_documents(
+        tmp_path,
+        structure,
+        observations_path,
+    )
+'''
+new = '''    model_scope, manifest, connection_result = base_documents(
+        tmp_path,
+        structure,
+        observations_path,
+        definitions,
+    )
+'''
+if text.count(old) != 1:
+    raise SystemExit(
+        f"coordination base_documents call: expected one occurrence, found {text.count(old)}"
+    )
+text = text.replace(old, new, 1)
+coordination.write_text(text, encoding="utf-8")
 changed.append(coordination)
 
 dual_identity = Path(
