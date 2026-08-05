@@ -274,54 +274,56 @@ expected_route:
 - 存在多个合理解释时，汇总候选解释后向用户确认；
 - 记录、实际文件或日志之间存在冲突时，停止并报告，不自行猜测。
 
-### 16.3 基于本轮请求生成预计路线
+### 16.3 基于本轮请求生成当前预计路线
 
-`04_md_simulation/expected_route.yaml` 基于本轮请求生成，只记录本轮当前预计涉及的 run units 及顺序。
+`04_md_simulation/expected_route.yaml` 基于本轮请求和当前可用证据生成。
 
 它不是当前 Workstream 的长期总路线，也不需要包含此前完成但与本轮请求无关的 run units。
 
-新一轮请求到来后，根据新请求重新生成或替换；本轮执行过程中允许根据实际结果动态调整、扩展或缩短。
+预计路线只写入当前能够落实为明确 run units 的部分；不能明确的远端步骤暂不写入。随着本轮执行推进，可以扩展、缩短或替换路线。
 
-### 16.4 根据当前预计路线确定当前需要处理的节点
+### 16.4 为当前预计路线落实 run units
 
-先结合本轮请求、当前进展和 `expected_route.yaml`，确定当前首先需要处理的路线节点。
-
-不在本轮开始时一次性锁定全部所需 run units。预计路线推进或发生调整后，需要重新判断当前节点及后续所需 run units。
-
-### 16.5 按当前可确定范围引用或创建 run unit
-
-针对当前节点以及当前已经能够明确定义的路线部分：
+针对当前 `expected_route.yaml` 中的节点：
 
 - 已存在且符合当前需求的 run unit：直接引用，不复制、不修改、不自动重新执行；
-- 当前需要但尚不存在的 run unit：创建并加入 `run_unit.yaml`；
-- 尚不能明确定义的后续 run unit：暂不创建；
-- 需要不同类型、不同起点或新 TPR 时：创建新的 run unit，不修改已有确定 run unit。
+- 当前路线需要但尚不存在的 run unit：创建并加入 `run_unit.yaml`；
+- 需要不同类型、不同起点或新 TPR时：创建新的 run unit，不修改已有确定 run unit。
 
-`run_unit.yaml` 累积保存当前 Workstream 已定义的全部 run units。每次路线推进或调整时，可以继续追加新创建的 run units。
+当前 `expected_route.yaml` 中列出的每个 ID 都必须已经在 `run_unit.yaml` 中定义。
 
-### 16.6 检查当前已落实范围的一致性
+### 16.5 更新并检查当前路线的一致性
 
-在当前已经落实为 run units 的路线范围内检查：
+`run_unit.yaml` 累积保存当前 Workstream 已定义的全部 run units。
 
-- `expected_route.yaml` 中当前已落实的 ID 存在于 `run_unit.yaml`；
-- `run_unit_type` 只能为 `EM/NVT/NPT/MD`；
-- 非空 `start_from_run_unit_id` 指向已存在的 run unit。
+每次生成或调整当前预计路线时：
 
-尚未能够明确定义的后续路线部分不应为了通过一致性检查而被强制提前创建为 run unit。
+- 只追加新创建的 run units；
+- 不重复写入已有 run units；
+- 不修改已有确定 run unit；
+- 检查 `expected_route.yaml` 中每个 ID 均存在于 `run_unit.yaml`；
+- 检查 `run_unit_type` 只能为 `EM/NVT/NPT/MD`；
+- 检查非空 `start_from_run_unit_id` 指向已存在的 run unit。
+
+### 16.6 确定当前需要处理的 run unit
+
+根据本轮当前预计路线、本轮请求范围和当前进展，确定当前首先需要处理的 run unit。
 
 ### 16.7 随路线推进循环更新
 
-当前 run unit 完成检查后，重新评估本轮请求和预计路线：
+当前 run unit 完成相应处理和检查后，重新评估本轮请求和预计路线：
 
 ```text
 当前 run unit 处理结果
-→ 判断 expected_route.yaml 是否仍适用
-→ 必要时调整预计路线
-→ 确定新的当前节点
-→ 引用或创建该节点所需 run unit
-→ 再次检查当前已落实范围的一致性
+→ 判断当前 expected_route.yaml 是否仍适用
+→ 必要时更新 expected_route.yaml
+→ 为更新后的路线引用或创建所需 run units
+→ 更新并检查 run_unit.yaml
+→ 确定新的当前 run unit
 ```
 
-因此，run unit 的确定和创建是随路线推进反复执行的过程，不是本轮请求开始时的一次性步骤。
+因此，“落实路线所需 run units”会在本轮执行过程中反复发生，不是本轮开始时的一次性步骤。
+
+从当前路线移除某个节点时，不删除该节点已经存在的 run unit 或文件。
 
 后续的 MDP 要求整理、用户确认、MDP/TPR 生成及执行流程尚未确认，不属于本节暂时通过的范围。
