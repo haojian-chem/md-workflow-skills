@@ -247,3 +247,64 @@ expected_route:
 - 是否错误引入外部 scheduler、submission、attempt 或分析选择；
 - 是否与本文件已经确认的目录、run unit、MDP 和执行规则冲突；
 - 是否能形成一条简洁、可实际执行的主流程。
+
+## 16. 暂时通过：本轮请求到当前 run unit 的确定
+
+本节只表示当前讨论暂时通过，仍属于完整 Workflow 草案的一部分；后续若与其他环节产生实质冲突，可以继续修订。
+
+### 16.1 建立当前模拟上下文
+
+根据本轮用户请求，按相关性读取：
+
+- 当前 Workstream 信息；
+- `04_md_simulation/run_unit.yaml`；
+- 相关 run unit 目录中的实际文件；
+- 必要的项目日志；
+- 如有需要，将上一轮 `expected_route.yaml` 作为历史参考。
+
+前两个 YAML 不能单独用于解释用户请求；必须结合实际文件、日志和 Workstream 上下文。
+
+### 16.2 解释本轮请求
+
+结合当前模拟上下文，确定本轮用户希望处理的范围。
+
+用户描述不要求直接包含具体 `run_unit_id`。
+
+- 能唯一解释时直接继续；
+- 存在多个合理解释时，汇总候选解释后向用户确认；
+- 记录、实际文件或日志之间存在冲突时，停止并报告，不自行猜测。
+
+### 16.3 基于本轮请求生成预计路线
+
+`04_md_simulation/expected_route.yaml` 基于本轮请求生成，只记录本轮预计涉及的 run units 及顺序。
+
+它不是当前 Workstream 的长期总路线，也不需要包含此前完成但与本轮请求无关的 run units。
+
+新一轮请求到来后，根据新请求重新生成或替换；本轮执行过程中允许动态调整。
+
+### 16.4 根据本轮预计路线确定所需 run units
+
+- 已存在且符合本轮需求的 run unit：直接引用，不复制、不修改、不自动重新执行；
+- 本轮路线需要但尚不存在的 run unit：创建并加入 `run_unit.yaml`；
+- 不创建与本轮路线无关的 run units；
+- 需要不同类型、不同起点或新 TPR 时，创建新的 run unit，不修改已有确定 run unit。
+
+### 16.5 更新 run unit 索引
+
+`run_unit.yaml` 累积保存当前 Workstream 已定义的全部 run units。
+
+本轮只追加新创建的 run units，不重复写入已有 run units，也不修改已有确定 run unit。
+
+### 16.6 检查两份文件的一致性
+
+在本轮已定义范围内检查：
+
+- `expected_route.yaml` 中每个 ID 均存在于 `run_unit.yaml`；
+- `run_unit_type` 只能为 `EM/NVT/NPT/MD`；
+- 非空 `start_from_run_unit_id` 指向已存在的 run unit。
+
+### 16.7 确定当前需要处理的 run unit
+
+根据本轮预计路线和本轮请求范围，确定当前首先需要处理的 run unit。
+
+后续的 MDP 要求整理、用户确认、MDP/TPR 生成及执行流程尚未确认，不属于本节暂时通过的范围。
