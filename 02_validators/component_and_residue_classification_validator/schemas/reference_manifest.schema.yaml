@@ -1,37 +1,24 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: reference_manifest.schema.yaml
 title: Classification reference manifest
-schema_version: "1.0"
 type: object
 additionalProperties: false
-required:
-  - schema_version
-  - classification_mode
-  - project_files
-  - skill_references
-  - force_field
-  - ccd_components
-  - sequence_references
-  - relation_definition_files
+required: [schema_version, classification_mode, project_files, skill_references, force_field, ccd_components, sequence_references, relation_definition_files]
 properties:
-  schema_version:
-    const: "1.0"
-  classification_mode:
-    enum: [REGISTRY, FORCE_FIELD_ANALYSIS]
+  schema_version: {const: "1.0"}
+  classification_mode: {enum: [REGISTRY, FORCE_FIELD_ANALYSIS]}
   project_files:
     type: object
     additionalProperties: false
     required: [residue_definitions]
     properties:
-      residue_definitions:
-        $ref: "#/$defs/optional_file_reference"
+      residue_definitions: {$ref: "#/$defs/optional_file_reference"}
   skill_references:
     type: array
-    items:
-      $ref: "#/$defs/file_reference"
+    items: {$ref: "#/$defs/file_reference"}
   force_field:
     oneOf:
-      - type: "null"
+      - {type: "null"}
       - type: object
         additionalProperties: false
         required: [root_path, files, status]
@@ -39,137 +26,72 @@ properties:
           root_path: {type: string, minLength: 1}
           files:
             type: array
-            items:
-              $ref: "#/$defs/force_field_file"
-          status:
-            enum: [LOADED, PARTIALLY_LOADED, INVALID]
+            items: {$ref: "#/$defs/force_field_file"}
+          status: {enum: [LOADED, PARTIALLY_LOADED, INVALID]}
   ccd_components:
     type: array
-    items:
-      $ref: "#/$defs/ccd_component"
+    items: {$ref: "#/$defs/ccd_component"}
   sequence_references:
     type: array
-    items:
-      $ref: "#/$defs/sequence_reference"
+    items: {$ref: "#/$defs/sequence_reference"}
   relation_definition_files:
     type: object
     additionalProperties: false
     required: [possible_connections, possible_coordination]
     properties:
-      possible_connections:
-        $ref: "#/$defs/optional_file_reference"
-      possible_coordination:
-        $ref: "#/$defs/optional_file_reference"
+      possible_connections: {$ref: "#/$defs/optional_file_reference"}
+      possible_coordination: {$ref: "#/$defs/optional_file_reference"}
 $defs:
-  sha256:
-    type: string
-    pattern: "^[0-9a-f]{64}$"
+  sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
   file_reference:
     type: object
     additionalProperties: false
     required: [path, sha256, status]
     properties:
       path: {type: string, minLength: 1}
+      sha256: {$ref: "#/$defs/sha256"}
+      status: {enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]}
+  optional_file_reference:
+    type: object
+    additionalProperties: false
+    required: [path, sha256, status]
+    properties:
+      path: {type: [string, "null"]}
       sha256:
-        $ref: "#/$defs/sha256"
-      status:
-        enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]
+        oneOf: [{type: "null"}, {$ref: "#/$defs/sha256"}]
+      status: {enum: [LOADED, NOT_PROVIDED, INVALID, UNAVAILABLE]}
   force_field_file:
     type: object
     additionalProperties: false
     required: [path, sha256, status, role]
     properties:
       path: {type: string, minLength: 1}
-      sha256:
-        $ref: "#/$defs/sha256"
-      status:
-        enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]
-      role:
-        enum: [RTP_RESIDUE_RECOGNITION, RTP_HEAVY_ATOM_TEMPLATE]
+      sha256: {$ref: "#/$defs/sha256"}
+      status: {enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]}
+      role: {enum: [RTP_RESIDUE_RECOGNITION, RTP_HEAVY_ATOM_TEMPLATE]}
   sequence_reference:
     type: object
     additionalProperties: false
     required: [path, sha256, status, reference_type]
     properties:
       path: {type: string, minLength: 1}
-      sha256:
-        $ref: "#/$defs/sha256"
-      status:
-        enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]
-      reference_type:
-        enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
-  optional_file_reference:
-    type: object
-    additionalProperties: false
-    required: [path, sha256, status]
-    properties:
-      path:
-        type: [string, "null"]
-      sha256:
-        type: [string, "null"]
-        pattern: "^[0-9a-f]{64}$"
-      status:
-        enum: [LOADED, NOT_PROVIDED, INVALID, UNAVAILABLE]
+      sha256: {$ref: "#/$defs/sha256"}
+      status: {enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]}
+      reference_type: {enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]}
   ccd_component:
     type: object
     additionalProperties: false
-    required:
-      - component_id
-      - mapped_residue_names
-      - retrieval
-      - project_snapshot
-      - validation
+    required: [component_id, mapped_residue_names, status, source_type, library_path, reference_path, sha256]
     properties:
       component_id: {type: string, minLength: 1, maxLength: 32}
       mapped_residue_names:
         type: array
         minItems: 1
+        uniqueItems: true
         items: {type: string, minLength: 1}
-      retrieval:
-        type: object
-        additionalProperties: false
-        required: [policy, source, source_path, status]
-        properties:
-          policy: {enum: [DOWNLOAD_MISSING, CACHE_ONLY]}
-          source:
-            enum:
-              - PROJECT_SNAPSHOT
-              - LOCAL_REFERENCE_DIRECTORY
-              - SHARED_CACHE
-              - REMOTE
-              - NONE
-          source_path:
-            type: [string, "null"]
-          status:
-            enum:
-              - AVAILABLE_PROJECT_SNAPSHOT
-              - AVAILABLE_LOCAL_REFERENCE
-              - AVAILABLE_SHARED_CACHE
-              - DOWNLOADED
-              - RETRIEVAL_FAILED
-              - MULTIPLE_LOCAL_CANDIDATES
-          retrieved_at:
-            type: [string, "null"]
-      project_snapshot:
-        type: object
-        additionalProperties: false
-        required: [path, sha256, status]
-        properties:
-          path:
-            type: [string, "null"]
-          sha256:
-            type: [string, "null"]
-            pattern: "^[0-9a-f]{64}$"
-          status:
-            enum: [AVAILABLE, UNAVAILABLE]
-      validation:
-        type: object
-        additionalProperties: false
-        required: [status, component_id_match, atom_table_valid]
-        properties:
-          status:
-            enum: [VALID, INVALID_COMPONENT_FILE, COMPONENT_ID_MISMATCH, NOT_PERFORMED]
-          component_id_match:
-            type: [boolean, "null"]
-          atom_table_valid:
-            type: [boolean, "null"]
+      status: {enum: [LOADED, UNAVAILABLE, INVALID, CONFLICT]}
+      source_type: {enum: [BUILTIN_CCD_LIBRARY, ADDITIONAL_CCD_LIBRARY, NONE]}
+      library_path: {type: [string, "null"]}
+      reference_path: {type: [string, "null"]}
+      sha256:
+        oneOf: [{type: "null"}, {$ref: "#/$defs/sha256"}]

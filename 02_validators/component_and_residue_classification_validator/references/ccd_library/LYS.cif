@@ -1,0 +1,16 @@
+data_LYS
+_chem_comp.id LYS
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+LYS "N" N .
+LYS "CA" C .
+LYS "C" C .
+LYS "O" O .
+LYS "CB" C .
+LYS "CG" C .
+LYS "CD" C .
+LYS "CE" C .
+LYS "NZ" N .

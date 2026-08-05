@@ -1,0 +1,11 @@
+data_GLY
+_chem_comp.id GLY
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+GLY "N" N .
+GLY "CA" C .
+GLY "C" C .
+GLY "O" O .

@@ -1,0 +1,199 @@
+schema_version: '1.0'
+components:
+  A:
+    path: A.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: b3f2747d9ca6b6f183fbe3200871e202f91cf582dfe5fb5fb7f48e439cb9bae3
+  ALA:
+    path: ALA.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 8ce9974030c35cd11072f5a32a3e3e874a7031dd2f058b0c7b07fecef5fc1a72
+  ARG:
+    path: ARG.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 1c398f5dc0a41ca779f10d6ed3df6d4adebc205ca0ef9a79fed76d8c80ca3e43
+  ASH:
+    path: ASH.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 504ad3d644173656ad43242a15aa580c56535c126789c64276bf9c6a7bd246ab
+    parent_component_id: ASP
+  ASN:
+    path: ASN.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 891db31dca03e9fcc49ce597375afe4607c5f10e6ca610b3e1df3655724e2432
+  ASP:
+    path: ASP.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: cf018eefb4f237530267ced02ea794c1996ffaf0fa875b62995eef67aa54def9
+  C:
+    path: C.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: ade5becc369e0a20e6b9a5331c2f45ec82f4f52c473287caf6e6d9377203f625
+  CYM:
+    path: CYM.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 87f9d442caafcde5e0f45ba7e27e9ae651a69d70248a804e88bb8e84796bd558
+    parent_component_id: CYS
+  CYS:
+    path: CYS.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: c5f722831518f8c6bee0e89bb593b7734f370c51e902519225624cf74179a644
+  DA:
+    path: DA.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 002938346032ea9abb55e629898cd381562e8d6638985d88eb431ae3c729274b
+  DC:
+    path: DC.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 42105d17447223026bc4f5a11b12239172aad07aaadb9ed30f8028d7fc5f348a
+  DG:
+    path: DG.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: c821478c104ed305f07170aba9414a2887c426293bde10637239cfe641f367ec
+  DT:
+    path: DT.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 7069e223ceef55ebb7234c265ada177f0882d20d3e2a80d0393a8a9ef8394f37
+  G:
+    path: G.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: bdff35ad4a09110318c446a64be86f20db33177b1f96b3bbbe16ccfba7f021c7
+  GLH:
+    path: GLH.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 62e94b2d6f3c1e9b2ce7aa170909a9d27e4d602c0eb136931eb04830eb332108
+    parent_component_id: GLU
+  GLN:
+    path: GLN.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 4a05a9c910e931e344c3705be08a3581164a194ef582449959d55417f630a01f
+  GLU:
+    path: GLU.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 2e78c6100a254d40fa2d3569b1c03149c8e02d7153f9de6ae33c0ddae3bdf3f0
+  GLY:
+    path: GLY.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: ea2c23696d8b0cec78aea19e875c5eacd824f29bd11789e1d7de21eaed721f2a
+  HID:
+    path: HID.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 1192d4eb538be5e5a2315c8446f66a99729360af30790fc7afe8de6c320b0467
+    parent_component_id: HIS
+  HIE:
+    path: HIE.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 781194baca6b7bffb9be4e24f0658ad60929c08b8d5e2f55bc303d1e9ca84056
+    parent_component_id: HIS
+  HIP:
+    path: HIP.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 4ce9a381fe4a789e4b1bf4e1d60768a1eda9428af7b23e5bea85d6d5e5a72f86
+    parent_component_id: HIS
+  HIS:
+    path: HIS.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 07ed46469fb34202d07d59175118d56dad5e44df55493fd37bfaf11b0f4a0b87
+  ILE:
+    path: ILE.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: b470cd6a7b94d47ae04fd0b2e3cfd3bac3aecaf9a1e18942cce241d3a49653b0
+  LEU:
+    path: LEU.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 4a80327abb86d1c9383d291014787c03474706e9b88e24708bdc1482f960492c
+  LYN:
+    path: LYN.cif
+    category: PROTONATION_VARIANT
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 0b2e1de42f3da83918da91297b0d5466a8697abf246d87a7e32bc1c7504c565d
+    parent_component_id: LYS
+  LYS:
+    path: LYS.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 8edf62c7910b4376c2767361e866a5c2f9b7d3f989c6b4c56417d9c6553d8281
+  MET:
+    path: MET.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 6033a6e8b4e99a2c5cd8ac267ce518211b970c1c528cf2ed138449fafa87302d
+  MSE:
+    path: MSE.cif
+    category: NONSTANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 3a9dfcf2cfdd407446c1a442a5a41e1b4cdc3a923cad7dcdf90adcfd8c65adaa
+  PHE:
+    path: PHE.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: ccd34ebde1e85c182273273ad24c648d4afdbc04d9f9d1af1ebf20299c0d6399
+  PRO:
+    path: PRO.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: c26b1e39acb49e1af86eeb528ba74559ae33d3f87bde007cb85d6589567659bf
+  PYL:
+    path: PYL.cif
+    category: NONSTANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 7ac21e6c3c4f37c5965e14b3efe9864715d5f82fea4ca7591e2ef574995c4be5
+  SEC:
+    path: SEC.cif
+    category: NONSTANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 2ab4e8e2e510acc56128e5e02c7ae87ec1a645d7db41e555ebb67261bd2afa48
+  SER:
+    path: SER.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 087d0aef09603fb7f89f2ce3471e98d4c50dc75c082df9a8474b8d44fa0ad0c9
+  THR:
+    path: THR.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 2de084f5af0d9d8395f5954d74fdd375d22669a3304616c73dc6ba8c60e2ca4d
+  TRP:
+    path: TRP.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 73198b0266d5da58e0f902d3d3c0e1f2d644bc50fbe6f9aacea95c1d924dd86e
+  TYR:
+    path: TYR.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: d366f815d561b619984dcf43fdae0aa650b11db9c427f5e127f667cb23bfd1c2
+  U:
+    path: U.cif
+    category: NUCLEIC_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 3706895e3431f0a21d3fea466a918b1a6f05e206a587d7c05e4c981babec4875
+  VAL:
+    path: VAL.cif
+    category: STANDARD_AMINO_ACID
+    source_type: SKILL_CUSTOM_COMPONENT
+    sha256: 390f41105d4768c80fc1a9339978dea1a6b61590c9e3877bee6330d5d56a3d3d

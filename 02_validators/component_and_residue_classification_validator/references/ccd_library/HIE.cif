@@ -1,0 +1,17 @@
+data_HIE
+_chem_comp.id HIE
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+HIE "N" N .
+HIE "CA" C .
+HIE "C" C .
+HIE "O" O .
+HIE "CB" C .
+HIE "CG" C .
+HIE "ND1" N .
+HIE "CD2" C .
+HIE "CE1" C .
+HIE "NE2" N .

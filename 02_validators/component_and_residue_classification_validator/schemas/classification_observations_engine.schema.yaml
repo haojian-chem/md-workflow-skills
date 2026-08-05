@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: classification_observations_engine.schema.yaml
+title: Internal baseline engine output adapter
+type: object
+required: [schema_version, input, entities, chain_groups, residue_records, missing_residue_checks, unresolved_observations, summary]
+properties:
+  schema_version: {const: "1.0"}
+  input: {type: object}
+  entities: {type: array}
+  chain_groups: {type: array}
+  residue_records: {type: array}
+  missing_residue_checks: {type: array}
+  unresolved_observations: {type: array}
+  summary: {type: object}
+additionalProperties: true

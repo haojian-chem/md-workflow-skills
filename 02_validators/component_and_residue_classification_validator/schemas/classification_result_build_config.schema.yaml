@@ -3,28 +3,17 @@ $id: classification_result_build_config.schema.yaml
 title: Final component classification integration configuration
 type: object
 additionalProperties: false
-required:
-  - model_scope
-  - classification_observations
-  - reference_manifest
-  - possible_connections_result
-  - possible_coordination_result
-  - output
+required: [model_scope, classification_observations, reference_manifest, output]
 properties:
   model_scope: {$ref: "#/$defs/hashed_file"}
-  classification_observations: {$ref: "#/$defs/hashed_file"}
+  classification_observations: {$ref: "#/$defs/file_path"}
   reference_manifest: {$ref: "#/$defs/hashed_file"}
-  possible_connections_result: {$ref: "#/$defs/hashed_file"}
-  possible_coordination_result: {$ref: "#/$defs/hashed_file"}
   decision_source:
     oneOf:
-      - type: "null"
+      - {type: "null"}
       - type: object
         additionalProperties: false
-        required:
-          - confirmation_requests_path
-          - confirmation_requests_sha256
-          - decisions
+        required: [confirmation_requests_path, confirmation_requests_sha256, decisions]
         properties:
           confirmation_requests_path: {type: string, minLength: 1}
           confirmation_requests_sha256: {$ref: "#/$defs/sha256"}
@@ -40,19 +29,14 @@ properties:
   output:
     type: object
     additionalProperties: false
-    required:
-      - confirmation_requests_path
-      - classification_result_path
-      - classification_report_path
+    required: [confirmation_requests_path, classification_result_path, classification_report_path]
     properties:
       confirmation_requests_path: {type: string, minLength: 1}
       classification_result_path: {type: string, minLength: 1}
       classification_report_path: {type: string, minLength: 1}
       classification_result_schema: {type: string, minLength: 1}
 $defs:
-  sha256:
-    type: string
-    pattern: "^[0-9a-f]{64}$"
+  sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
   hashed_file:
     type: object
     additionalProperties: false
@@ -60,4 +44,11 @@ $defs:
     properties:
       path: {type: string, minLength: 1}
       sha256: {$ref: "#/$defs/sha256"}
+      schema: {type: string, minLength: 1}
+  file_path:
+    type: object
+    additionalProperties: false
+    required: [path]
+    properties:
+      path: {type: string, minLength: 1}
       schema: {type: string, minLength: 1}

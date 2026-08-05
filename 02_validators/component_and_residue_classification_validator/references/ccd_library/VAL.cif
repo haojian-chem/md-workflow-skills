@@ -1,0 +1,14 @@
+data_VAL
+_chem_comp.id VAL
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+VAL "N" N .
+VAL "CA" C .
+VAL "C" C .
+VAL "O" O .
+VAL "CB" C .
+VAL "CG1" C .
+VAL "CG2" C .

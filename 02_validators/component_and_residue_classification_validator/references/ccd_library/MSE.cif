@@ -1,0 +1,15 @@
+data_MSE
+_chem_comp.id MSE
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+MSE "N" N .
+MSE "CA" C .
+MSE "C" C .
+MSE "O" O .
+MSE "CB" C .
+MSE "CG" C .
+MSE "SE" SE .
+MSE "CE" C .

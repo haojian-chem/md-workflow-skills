@@ -1,0 +1,13 @@
+data_CYS
+_chem_comp.id CYS
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+CYS "N" N .
+CYS "CA" C .
+CYS "C" C .
+CYS "O" O .
+CYS "CB" C .
+CYS "SG" S .

@@ -1,0 +1,16 @@
+data_GLU
+_chem_comp.id GLU
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+GLU "N" N .
+GLU "CA" C .
+GLU "C" C .
+GLU "O" O .
+GLU "CB" C .
+GLU "CG" C .
+GLU "CD" C .
+GLU "OE1" O .
+GLU "OE2" O .

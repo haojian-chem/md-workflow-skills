@@ -1,122 +1,20 @@
 # 组分与残基分类规则
 
-# 1. 定义范围
+本文件是结构准备 1.2 的科学语义唯一权威来源。执行顺序见 `../SKILL.md`，机器字段见 `../schemas/`，CLI 见 `../scripts/README.md`。
 
-本文件是 `structure_preparation_workflow` 1.2 的科学判定语义唯一权威来源，定义：
+# 1. 身份与名称
 
-- model 范围；
-- 结构事实与名称身份；
-- 残基分类；
-- RTP/CCD 参考；
-- 缺失残基与重原子检查；
-- 可能共价连接；
-- 金属配位；
-- topology effect；
-- 确认事项聚合。
+残基名、原子名、chain、residue number、insertion code 和 altLoc 必须按源结构精确保留；禁止大小写归一化、正则/模糊匹配或依据近似名称选择 RTP/CCD。
 
-执行编排、层级权限、用户交互和管理目录提交权分别由 Validator `SKILL.md`、上级 Workflow 和 `layer_boundaries.md` 定义，本文件禁止重复定义。
+每个观察残基和关系端点同时保存 immutable `source_identity` 与本次结构的 `current_identity`。1.2 不修改结构，因此观察实例两者值相同；缺失残基没有 current identity。`chain_index` 是可随 topology effect 改变的逻辑分组编号，不属于 identity。
 
-模型范围无法建立、输入哈希失配、配置/schema 无效或输出无法可靠生成时属于技术失败。科学歧义、分类冲突和候选关系必须写入结构化结果，禁止伪装成技术失败。
+最终 `component_id`、`residue_id`、`endpoint_id` 和 `relation_id` 是下游 opaque contract。1.3 只能读取物化值，禁止自行重建。
 
-# 2. 模型范围
+# 2. 分类
 
-执行顺序固定为：
+`polymer_class`：`POLYMER | BRANCHED | NONPOLYMER | WATER`。
 
-```text
-inspect_model_scope
-→ selected model resolved
-→ full classification pass
-```
-
-规则：
-
-- 单 model 自动选择；
-- 多 model 只枚举 model ID 和最小链/残基/原子计数，随后形成用户选择请求；
-- selected model 未解决前，禁止执行完整残基分类；
-- model ID 使用源结构中的 model 标识，禁止额外生成 model UUID。
-
-# 3. 精确名称规则
-
-结构中的 `residue_name` 和 `atom_name` 必须原样保留并区分大小写：
-
-```text
-HEM != Hem != hem
-FE atom name != Fe element symbol
-```
-
-禁止执行：
-
-- 大小写归一化；
-- alias 合并；
-- 正则匹配；
-- 编辑距离或模糊名称匹配；
-- 依据近似名称自动选择 CCD/RTP 模板。
-
-结构残基名与 CCD ID 不同，只允许通过项目定义中的显式 `ccd_id` 建立映射。
-
-
-## 3.1 源身份与当前身份
-
-每个已观察残基和关系端点必须同时保存两套正式身份，并使用不同字段名：
-
-```yaml
-source_identity:
-  source_model_id: "1"
-  source_chain_id: A
-  source_resid: {number: "145", insertion_code: A}
-  source_residue_name: CYS
-
-current_identity:
-  current_model_id: "1"
-  current_chain_id: A
-  current_resid: {number: "145", insertion_code: A}
-  current_residue_name: CYS
-```
-
-关系端点分别追加 `source_atom_name`、`current_atom_name`、`source_altloc_id` 和 `current_altloc_id`；无 altLoc 时后两项为 `null`。规则：
-
-- `source_*` 是输入来源追溯身份，后续结构 revision 禁止覆盖；
-- `current_*` 是本次实际读取的 STRUCTURE revision 身份，只能由真实存在的新结构更新；
-- 1.2 禁止修改结构，因此 `OBSERVED` 实例的 source/current 值应相等，但两套字段仍必须分别输出；
-- `MISSING_EXPECTED` 残基只有 `source_identity`，`current_identity` 必须为 `null`；
-- `chain_index` 是逻辑分组编号，必须位于 identity 外部；topology effect 可以改变 `chain_index`，禁止据此改写 current identity；
-- `sequence_position` 只是 polymer 序列辅助索引，不属于第三套残基编号；
-- v1 平铺的 `source_chain_id`、`source_resid`、`residue_name` 和 `atom_name` 仅为兼容镜像，必须与权威 identity 字段一致，禁止赋予独立语义。
-
-## 3.2 下游选择身份
-
-最终 `classification_result.yaml` 必须为 1.3 输出不可重建的权威选择身份：
-
-- `source_structure`：本次分类对应的源结构 path、SHA-256 与格式；
-- `component_id`：根据 final component membership 生成，禁止由 `chain_index` 充当或重建；
-- `residue_id`：根据 immutable `source_identity` 生成；
-- `endpoint_id`：根据 source residue identity、exact atom name 与 exact altLoc identity 生成；
-- `relation_id`：根据 relation type 与两个 endpoint IDs 生成，与 endpoint 顺序和 evidence status 无关。
-
-聚合 `SOLVENT_GROUP`、`ION_GROUP` 和 `REPEATED_SMALL_MOLECULE_GROUP` 只改变逻辑分组，不得删除实例级 residue records。每个 component 分别列出：
-
-- `residue_ids`：当前结构中实际存在、可被选择的 observed residues；
-- `missing_residue_ids`：来源记录中 expected but unobserved residues，仅用于追溯，不作为坐标选择对象。
-
-这些 ID 对下游是 opaque contract values；1.3 必须读取 1.2 输出，禁止根据字段自行复刻 ID 算法。
-
-
-# 4. 分类字段
-
-## 4.1 `polymer_class`
-
-允许值：
-
-```text
-POLYMER
-BRANCHED
-NONPOLYMER
-WATER
-```
-
-## 4.2 `topology_class`
-
-允许值：
+`topology_class`：
 
 ```text
 STANDARD_RESIDUE
@@ -126,422 +24,100 @@ SOLVENT_COMPONENT
 ION_COMPONENT
 ```
 
-`TOPOLOGY_LINKED_NONSTANDARD` 表示某个非标准组分已因确认且实际应用了 topology effect 的成键关系而纳入连接拓扑。触发关系可以是 `COVALENT_CONNECTION`、`METAL_COORDINATION`，或其他由项目规则明确允许的 topology-forming relation。
+`UNKNOWN`、`CONFLICT`、`UNRESOLVED` 只属于 resolution status。
 
-该字段只描述组分的拓扑归属，禁止据此反推化学关系类型；关系类型必须由 relation result 单独记录。
-
-`UNKNOWN`、`UNRESOLVED` 和 `CONFLICT` 是 `resolution_status`，禁止写入分类字段。
-
-## 4.3 合法组合
-
-| polymer_class | topology_class |
-|---|---|
-| `POLYMER` | `STANDARD_RESIDUE`, `TOPOLOGY_LINKED_NONSTANDARD` |
-| `BRANCHED` | `STANDARD_RESIDUE`, `TOPOLOGY_LINKED_NONSTANDARD`, `INDEPENDENT_NONSTANDARD` |
-| `NONPOLYMER` | `TOPOLOGY_LINKED_NONSTANDARD`, `INDEPENDENT_NONSTANDARD`, `SOLVENT_COMPONENT`, `ION_COMPONENT` |
-| `WATER` | `SOLVENT_COMPONENT` |
-
-# 5. 项目级残基定义
-
-`project_residue_definitions.yaml` 使用列表：
-
-```yaml
-schema_version: "1.0"
-residue_definitions:
-  - residue_name: HEM
-    polymer_class: NONPOLYMER
-    topology_class: INDEPENDENT_NONSTANDARD
-    ccd_id: HEM
-```
-
-规则：
-
-- `residue_name`、`polymer_class`、`topology_class` 必填；
-- `ccd_id` 可选；未提供时等于精确 `residue_name`；
-- 同一个精确 `residue_name` 只允许定义一次；
-- v1 定义禁止包含 model、chain、source residue number 或连接原子限制；
-- 一条定义适用于 selected model 中所有精确同名实例。
-- 项目级残基定义建立所有精确同名实例的 baseline 分类；确认的 topology-forming relation 只允许提升参与该关系的具体实例，禁止反向修改其他同名实例的 baseline。
-- terminal cap 名称（ACE、NME、NH2）在 fallback registry 中只建立 `INDEPENDENT_NONSTANDARD` baseline；只有具体实例存在确认且应用的 topology-forming relation 后才提升。
-
-# 6. 分类来源顺序
-
-## 6.1 `REGISTRY`
+分类来源顺序：
 
 ```text
-项目定义
-→ 精确 Skill registry
-→ entity/polymer context
+REGISTRY:
+项目定义 → 精确 Skill registry → entity context
+
+FORCE_FIELD_ANALYSIS:
+项目定义 → 精确 RTP block → 精确 Skill registry → entity context
 ```
 
-项目定义与 Skill registry 同时命中时：
+项目定义与同层有效来源标签不一致时形成确认事项，禁止静默设置优先级。项目定义可省略；缺失时记录 `NOT_PROVIDED`，不阻断。
 
-- 两个分类标签一致：接受，并记录一致性证据；
-- 任一标签不同：记录 `PROJECT_REGISTRY_CLASSIFICATION_CONFLICT`，完成其余检查后统一确认；
-- 禁止设置自动优先级覆盖冲突。
+标准 registry 只收录已批准的氨基酸/质子化名称、DNA/RNA、水和 `NA K CL MG CA ZN`。`HSD/HSE/HSP` 分别映射到 `HID/HIE/HIP`；结构原名仍保留。MSE/SEC/PYL 由 linked registry 建立明确 baseline。
 
-## 6.2 `FORCE_FIELD_ANALYSIS`
+# 3. RTP 与端基
+
+力场识别只依据 `*.rtp` 中精确 residue block。重复非水 block、显式 terminal mapping 冲突必须确认；禁止用文件名、`residuetypes.dat` 或字符串增删规则猜测模板。
+
+端基先确定角色，再查显式 mapping；该角色没有 mapping 时使用精确同名 RTP block。1.2 不应用 `.n.tdb`、`.c.tdb` 或其他 patch 合成模板。
+
+# 4. CCD-compatible libraries
+
+内置库固定为：
 
 ```text
-项目定义
-→ 所选力场的精确 RTP residue block
-→ 仍未解决时使用精确 Skill registry
-→ entity/polymer context
+references/ccd_library/
 ```
 
-力场是否识别某个残基只由 `*.rtp` 中的精确 residue block 名称决定。`residuetypes.dat` 和 RTP 文件名禁止参与识别。
+附加库必须显式列出，且使用同一扁平结构：`index.yaml`、`README.md`、`<component_id>.cif`。运行时禁止联网、cache、snapshot 和无界目录扫描。
 
-项目定义与 RTP 分类同时命中时：
+解析顺序为内置库后附加库。同一 ID/同一 SHA 可重复，优先首个；同一 ID/不同 SHA 形成 `CCD_COMPONENT_DEFINITION_CONFLICT`。所有文件必须匹配 index SHA 和 CIF component ID。
 
-- 两个标签一致：接受；
-- 标签不同：记录 `PROJECT_FORCE_FIELD_CLASSIFICATION_CONFLICT`；
-- 项目未定义但 RTP 命中：采用 RTP 分类，禁止并行咨询 Skill registry；
-- 只有项目和 RTP 都未解决时才允许使用 Skill registry fallback。
+存在 CCD 条目不等于标准残基；分类仍由项目定义、RTP、registry 和 entity context 决定。
 
-# 7. RTP 与端基
+# 5. 重原子与缺失残基
 
-## 7.1 重复 RTP 定义
+重原子检查先保留 exact atom-name 差集，再单独记录 alternate-name mapping candidate。未经确认不得改写 raw comparison；确认映射后生成 effective comparison，仍保留 exact comparison。
 
-- 非水残基的同一精确 RTP 名称定义多次：生成 `DUPLICATE_FORCE_FIELD_RESIDUE_TEMPLATE`，统一人工确认；
-- 水允许同一力场目录存在多个水模型 RTP；禁止在 1.2 根据这些重复项自动选择水模型；
-- 普通水禁止使用 RTP 水原子名核验原始水；
-- 禁止以 RTP 文件名推测残基类别。
+多个 altLoc 的残基不合并原子集合；重原子比较记为 `NOT_PERFORMED`。普通水和普通离子为 `NOT_APPLICABLE`。参考缺失记为 `REFERENCE_TEMPLATE_UNAVAILABLE`，不伪造通过。
 
-## 7.2 普通与端基模板
+缺失残基只在来源可追溯时物化；编号或 chain mapping 无法确定时形成确认事项。一次完整遍历即使发现问题，阶段仍可为 `COMPLETED`；`BLOCKED` 只表示无法可靠完成遍历。
 
-普通内部标准残基使用精确同名 RTP block。
+# 6. 共价连接与金属配位
 
-N/C 端和 5′/3′端标准残基必须先确定端基角色，再使用显式 terminal-template mapping 选择端基 RTP block：
+`possible_connections.yaml` 和 `possible_coordination.yaml` 都可省略。定义文件只限定要检查的精确 residue/atom 和距离范围；几何支持不能自动等同于化学事实。
+
+关系状态：
 
 ```text
-terminal role
-+ source residue name
-→ explicit RTP terminal residue name
+CONFIRMED
+CANDIDATE
+CONFLICT
+NOT_EVALUATED
+REJECTED
 ```
 
-禁止通过删除或添加 `N`、`C`、`5`、`3` 等字符猜测端基名称。
-
-- terminal mapping 不唯一：生成 `TERMINAL_RTP_TEMPLATE_AMBIGUOUS`；
-- 缺少可用 mapping 或完整端基 RTP block：重原子检查写为 `REFERENCE_TEMPLATE_UNAVAILABLE`；
-- 禁止回退到普通内部模板并宣称端基通过。
-
-1.2 禁止应用 `.n.tdb`、`.c.tdb` 或其他 terminal patch 合成模板。
-
-# 8. 重原子检查
-
-## 8.1 参考矩阵
-
-| 模式 | 分类 | 重原子参考 |
-|---|---|---|
-| `REGISTRY` | 标准残基 | CCD |
-| `REGISTRY` | 相连/独立非标准残基 | CCD |
-| `FORCE_FIELD_ANALYSIS` | 标准残基 | 已选 RTP block，包括显式端基 block |
-| `FORCE_FIELD_ANALYSIS` | 相连/独立非标准残基 | CCD |
-| 任一模式 | 普通水、普通离子 | `NOT_APPLICABLE` |
-
-## 8.2 权威输出模型
-
-重原子检查必须拆分为检查执行状态与零个或多个并行 findings，禁止再使用单一互斥状态覆盖其他异常：
-
-```yaml
-heavy_atom_check:
-  execution_status: COMPLETED
-  findings:
-    - MISSING_EXPECTED_HEAVY_ATOMS
-    - UNEXPECTED_HEAVY_ATOMS
-    - ATOM_NAME_MAPPING_REQUIRED
-  exact_comparison:
-    missing_expected_atom_names: [C1]
-    unexpected_observed_atom_names: [C01]
-  atom_name_mapping_candidates:
-    - observed_atom_name: C01
-      reference_atom_name: C1
-      mapping_source: CCD_ALTERNATE_ATOM_NAME
-  mapping_resolution_status: PENDING_CONFIRMATION
-  effective_comparison: null
-```
-
-`execution_status` 允许值：
+确认状态：
 
 ```text
-COMPLETED
-NOT_PERFORMED
-NOT_APPLICABLE
-REFERENCE_TEMPLATE_UNAVAILABLE
+NOT_REQUIRED
+PENDING_CONFIRMATION
+CONFIRMED_BY_USER
+REJECTED_BY_USER
 ```
 
-`findings` 允许并行包含：
+显式结构关系且与定义/几何一致时为 `CONFIRMED + NOT_REQUIRED`；只有几何支持时为 candidate；定义冲突、多构象或元素问题按证据记录，不被其他异常覆盖。
 
-```text
-MISSING_EXPECTED_HEAVY_ATOMS
-UNEXPECTED_HEAVY_ATOMS
-ATOM_NAME_MAPPING_REQUIRED
-ELEMENT_MISMATCH
-DUPLICATE_ATOM_NAME
-```
+`relation_id` 只由 `selection_identity.py` 生成：共价端点无方向排序；配位固定 `metal → donor` 角色。`request_index` 只用于当前确认界面，持久决定必须绑定 relation ID。
 
-硬规则：
+# 7. 人工关系决定
 
-- 所有适用异常必须并行记录；任何单一异常不得覆盖、终止或隐藏同一残基上的其他重原子问题；
-- `exact_comparison` 必须先按结构 exact atom name 与参考 exact atom name 比较，且永久保留原始差集；
-- CCD alternate atom name 只能产生 `atom_name_mapping_candidates`，禁止从 raw missing/unexpected 差集中删除对应名称；
-- 未经确认时 `mapping_resolution_status: PENDING_CONFIRMATION` 且 `effective_comparison: null`；
-- 用户确认应用映射后才可生成 `effective_comparison`，同时保留原始 `exact_comparison`；
-- 用户拒绝映射时记录 `mapping_resolution_status: REJECTED`，禁止伪造 effective comparison；
-- 无 mapping candidate 时 `mapping_resolution_status: NOT_APPLICABLE`，已完成比较可令 `effective_comparison` 与 exact comparison 相同；
-- v1 的 `status`、`missing_atoms`、`unexpected_atoms` 仅作为只读兼容镜像；新消费者必须读取 `execution_status`、`findings` 和 comparison 对象。
+人工关系决定独立保存在 `relation_decisions.yaml`，并绑定结构 SHA 与 selected model。只允许 `CONFIRMED` 或 `REJECTED`；未回答请求不写入该文件。
 
-## 8.3 altLoc
+自动重跑不得覆盖已有决定。相同决定幂等；相反决定必须显式替换。决定目标在当前检查中不存在时记录 `RELATION_DECISION_TARGET_NOT_FOUND`，不得静默删除。
 
-只要残基存在多个 altLoc：
+# 8. Topology effect 与分组
 
-```text
-conformation status: MULTIPLE_CONFORMATIONS
-heavy atom execution_status: NOT_PERFORMED
-reason: MULTIPLE_CONFORMATIONS_PRESENT
-```
+确认共价连接总是 topology-forming。确认金属配位只有在定义明确 `promote_nonstandard_to_linked: true` 时产生 topology effect。候选、冲突、拒绝或无法评估关系不改变分类与分组。
 
-禁止将多个构象的原子并集作为一个伪完整残基进行比较。关系端点若由显式结构记录精确到 altLoc，必须保留该 altLoc 身份；禁止将 A/B 等不同构象端点折叠成同一个 endpoint ID。
+应用后：
 
-# 9. CCD 规则
+- 标准残基保持 `STANDARD_RESIDUE`；
+- 独立非标准、水或离子实例提升为 `TOPOLOGY_LINKED_NONSTANDARD`，水改为 `NONPOLYMER`；
+- 非标准组分连接一个 polymer 时并入该 polymer group；
+- 只连接非标准组分时形成 `LINKED_NONSTANDARD_GROUP`；
+- 同时连接多个 polymer 时形成 `MULTICHAIN_LINKED_COMPONENT`；
+- polymer–polymer 直接关系不合并原 polymer groups。
 
-唯一 component ID 的确定方式：
+当前 groups 必须从保存的 baseline 状态和全部已确认 topology relations 重新计算，以保证重跑和决定替换幂等。
 
-```text
-显式 project ccd_id
-否则 exact residue_name
-```
+# 9. 当前状态与最终结果
 
-获取顺序：
+`classification_observations.yaml` 保存当前状态，并记录五个检查阶段及实际独立 relation outputs。`completed_checks` 不暗示每个阶段都有单独结果文件。
 
-```text
-项目已有 snapshot
-→ 用户指定本地目录
-→ 共享 cache
-→ 按 retrieval_policy 远程下载
-```
-
-规则：
-
-- 禁止扫描用户未指定的文件系统目录；
-- 本地目录默认只查找精确 `<ccd_id>.cif`；
-- 文件名匹配后仍必须核验文件内部 component ID；
-- 有效外部文件必须复制到项目 `reference_data/ccd/`，并核验复制前后 SHA-256；
-- 项目 snapshot 是本次结果的权威 CCD 文件；
-- 单个 component 获取失败只记录并继续；
-- CCD 机制整体不可用或 snapshot 无法一致写入时属于技术失败；
-- 多个相同 SHA-256 的有效候选视为同一参考；
-- 多个不同内容的有效本地候选必须进入统一确认。
-
-# 10. 缺失残基
-
-## 10.1 PDB/mmCIF
-
-使用可用的预期序列、实际坐标以及 PDB `REMARK 465` 或 mmCIF unobserved-residue 记录建立证据。
-
-禁止仅凭作者编号跳号认定残基缺失。
-
-1.2 只记录缺失残基身份；禁止判断缺失区域属于内部、N 端、C 端或其他区域。
-
-正式缺失残基记录必须具有作者原始编号：
-
-```yaml
-source_resid:
-  number: "145"
-  insertion_code: null
-```
-
-插入码必须按源文件原样保留。
-
-作者编号无法确定时：
-
-- 禁止生成虚构编号；
-- 禁止使用 sequence position 替代正式 `source_resid`；
-- 继续完成所有其他可执行检查；
-- 统一返回 `MISSING_RESIDUE_SOURCE_RESID_UNAVAILABLE`。
-
-链归属无法确定时统一返回 `MISSING_RESIDUE_CHAIN_UNRESOLVED`。
-
-无法建立 author `source_resid` 或 `chain_index` 的记录必须写为 `MAPPING_UNRESOLVED`，禁止伪装成已解析的 `MISSING_EXPECTED` residue record。
-
-## 10.2 AF3 CIF
-
-AF3 CIF 只有在提供 AF3 输入 JSON、FASTA 或等价序列参考时才执行缺失残基检查。
-
-缺少输入序列时记录：
-
-```text
-NOT_PERFORMED
-AF3_INPUT_SEQUENCE_NOT_PROVIDED
-```
-
-该状态禁止解释为已经确认没有缺失残基。
-
-AlphaFold Server `job_request.json`：
-
-- 顶层 list 必须恰好包含一个 `dialect: alphafoldserver` job；
-- entity 无显式 ID 时按 entity 顺序和 `count` 生成 `A..Z, AA..` chain IDs；
-- ligand 和 ion 占用 chain ID，但禁止生成 polymer sequence；
-- 多 job、非法 count 或 ID 数量不一致必须拒绝解析。
-
-# 11. `chain_groups` 与 `chain_index`
-
-`chain_index` 是 1.2 建立的内部组分归属编号，禁止解释为源文件 chain ID。
-
-基础规则：
-
-- 每条 polymer/branched chain 一个 `chain_index`，按 selected model 中首次出现顺序分配；
-- 每种精确名称的普通水和普通离子汇总为一个组；
-- 同种、同分类、无特殊关系或异常的重复独立小分子可以汇总；
-- 普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`；汇总只改变 component/chain group 的组织方式，不得删除实例级身份记录；
-- 存在 altLoc、分类冲突、模板异常、显式/候选关系或项目特殊处理的实例必须从汇总组中提出并单独记录；
-- 独立小分子即使与 polymer chain 使用相同作者 chain ID，也必须使用独立 `chain_index` 并记录 source association。
-
-结构 entity/polymer 事实对 baseline grouping 具有权威性：
-
-- 结构明确属于 polymer/branched chain 的残基，即使分类为 `CONFLICT` 或 `UNRESOLVED`，仍保留在原结构链；
-- 结构明确为 nonpolymer entity 的组分，禁止仅凭项目分类标签提升为 polymer chain；
-- grouping 完成后必须恢复原始分类值、冲突状态和证据，禁止借 grouping 静默解决分类冲突。
-
-最终整合：
-
-- 非标准组分与一条 polymer chain 存在确认的 topology-forming relation：编入该 polymer chain 的 `chain_index`；
-- 与多条 polymer chain 相连：建立 `MULTICHAIN_LINKED_COMPONENT`，记录 `linked_polymer_chain_indices`；
-- 只与其他非标准组分形成 topology-forming connected component：建立 `LINKED_NONSTANDARD_GROUP`；
-- 标准残基参与连接或配位时默认保持 `STANDARD_RESIDUE`。
-
-## 11.1 关系定义 provenance
-
-`reference_manifest.yaml` 必须记录本次实际使用或明确未提供的 `possible_connections.yaml` 与 `possible_coordination.yaml`：
-
-- 提供时保存解析后的 path、exact SHA-256 和 `LOADED`；
-- 未提供时三字段固定为 `path: null`、`sha256: null`、`status: NOT_PROVIDED`；
-- relation checker 的 definition path/SHA-256 必须与 manifest 完全一致；
-- final builder 遇到缺失、不同路径或不同哈希时属于技术失败，禁止继续整合。
-
-# 12. 可能共价连接
-
-`possible_connections.yaml` 只支持已知精确原子对：
-
-```yaml
-possible_connections:
-  - label: LIG_CYS_LINK
-    partner_1: {residue_name: LIG, atom_name: C1}
-    partner_2: {residue_name: CYS, atom_name: SG}
-    distance_range_angstrom: {minimum: 1.5, maximum: 2.3}
-```
-
-规则：
-
-- 两侧无方向，正反重复定义视为同一条；
-- `minimum`、`maximum` 均必填；
-- 必须枚举全部唯一实例组合，禁止自动选择最近的一对；
-- 同一原子禁止与自身配对；
-- 显式 PDB/mmCIF 连接和几何距离必须分别记录；
-- 只有显式确认或用户确认后的几何候选才允许影响 topology；
-- 输入定义本身禁止创建结构连接。
-
-主要状态：
-
-```text
-CONFIRMED_BY_STRUCTURE
-GEOMETRY_SUPPORTED_CANDIDATE
-NOT_GEOMETRICALLY_SUPPORTED
-CONNECTION_DEFINITION_CONFLICT
-PARTNER_NOT_FOUND
-ATOM_NOT_FOUND
-GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS
-```
-
-只有几何支持候选和定义冲突进入人工确认。
-
-# 13. 金属配位
-
-`possible_coordination.yaml` 必须明确金属端、供体端、元素、距离范围和 topology effect：
-
-```yaml
-possible_coordination:
-  - label: HEM_FE_CYS
-    metal: {residue_name: HEM, atom_name: FE, element: Fe}
-    donor: {residue_name: CYS, atom_name: SG, element: S}
-    distance_range_angstrom: {minimum: 1.8, maximum: 2.7}
-    topology_effect:
-      promote_nonstandard_to_linked: true
-```
-
-规则：
-
-- 金属端与供体端有方向；
-- 元素字段必填，并在几何判断前核验；
-- 同一金属具有多个不同供体是合法事实，禁止自动判定为冲突；
-- 关系类型必须保持 `METAL_COORDINATION`；
-- `promote_nonstandard_to_linked: true` 只在显式关系确认或用户确认几何候选后生效；
-- HEM–CYS/HIE 等 topology-forming coordination 可以将 HEM 提升为 `TOPOLOGY_LINKED_NONSTANDARD`；
-- Mg、Zn 等是否改变 topology 必须由项目定义明确，禁止仅凭距离自动判断；
-- `promote_nonstandard_to_linked: false` 只记录配位，禁止改变 topology 或 chain group。
-
-主要状态：
-
-```text
-CONFIRMED_BY_STRUCTURE
-GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE
-NOT_GEOMETRICALLY_SUPPORTED
-COORDINATION_DEFINITION_CONFLICT
-PARTNER_NOT_FOUND
-ATOM_NOT_FOUND
-ELEMENT_MISMATCH
-ELEMENT_UNRESOLVED
-GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS
-```
-
-# 14. 完整扫描与确认
-
-除 model selection barrier 外，正式 1.2 解析禁止在遇到第一项科学问题时停止。
-
-执行顺序：
-
-```text
-完成全部可执行残基分类
-→ 完成缺失残基和重原子检查
-→ 完成全部可能共价连接定义
-→ 完成全部金属配位定义
-→ 汇总仍需确认的问题
-→ 生成 PENDING_USER_CONFIRMATION 或 COMPLETE
-```
-
-以下问题进入统一确认：
-
-- 项目定义与 Skill/力场分类冲突；
-- 非水 RTP 重复定义；
-- 端基 RTP 映射歧义；
-- 几何支持的共价或配位候选；
-- 显式关系与项目定义冲突；
-- 缺失残基作者编号或链归属无法确定；
-- AF3/序列参考冲突；
-- 多个不同内容的有效本地 CCD 候选。
-
-以下事实只记录，禁止自动形成确认项：
-
-- 明确缺失重原子；
-- 单个 CCD 获取失败；
-- partner/atom 不存在；
-- 无显式关系的元素异常；
-- 几何不支持；
-- 多构象事实。
-
-同一 `issue_type + subject + resolution_status` 的跨阶段重复报告必须合并，并保留全部不同 evidence。
-
-# 15. 禁止使用的力场推断来源
-
-1.2 禁止读取或应用：
-
-```text
-residuetypes.dat
-*.n.tdb
-*.c.tdb
-specbond.dat
-```
-
-`specbond.dat` 只表示力场可能支持某种特殊连接，禁止据此证明当前结构存在连接。
-
-已确认特殊键的力场支持能力由后续 topology preparation 处理。
+关系 result 保存完整检查证据；observations 只保留当前有效关系状态。最终构建器不得再次推断关系、改变 topology effect 或重新计算 relation ID，只负责物化下游选择 ID、聚合确认事项和生成最终契约。

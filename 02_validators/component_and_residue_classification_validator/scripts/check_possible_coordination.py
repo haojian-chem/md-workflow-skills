@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check project-defined metal coordination relations without mutating structure."""
+"""Check possible metal coordination and apply the result to current observations."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,6 @@ from typing import Any
 
 from classification_common import (
     ClassificationToolError,
-    atomic_write_yaml,
     parse_structure,
     read_yaml_strict,
     require_sha256,
@@ -20,20 +19,27 @@ from classification_common import (
     verify_source_format,
 )
 from explicit_relations import collect_explicit_relations, explicit_evidence_for_pair
+from observation_state import (
+    apply_relation_result,
+    commit_yaml_pair,
+    load_relation_decisions,
+    observations_lock,
+)
+from selection_identity import coordination_relation_id, endpoint_id_from_source_identity
 from structure_records import (
     AtomRecord,
     ResidueRecord,
     atoms_matching,
     build_chain_index_resolver,
     collect_selected_model,
+    current_residue_identity,
     distance_angstrom,
     endpoint_dict,
     resolve_chain_index,
-    current_residue_identity,
     source_residue_identity,
 )
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 def _required_mapping(document: dict[str, Any], key: str) -> dict[str, Any]:
@@ -46,7 +52,7 @@ def _required_mapping(document: dict[str, Any], key: str) -> dict[str, Any]:
 def _required_path(mapping: dict[str, Any], key: str) -> Path:
     value = mapping.get(key)
     if not isinstance(value, str) or not value:
-        raise ClassificationToolError(f"config field {key!r} must be a non-empty path string")
+        raise ClassificationToolError(f"config field {key!r} must be a non-empty path")
     return Path(value).resolve()
 
 
@@ -55,7 +61,7 @@ def _nullable_path(mapping: dict[str, Any], key: str) -> Path | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value:
-        raise ClassificationToolError(f"config field {key!r} must be null or a non-empty path string")
+        raise ClassificationToolError(f"config field {key!r} must be null or a path")
     return Path(value).resolve()
 
 
@@ -76,7 +82,8 @@ def _residue_chain_index(
         return resolver[grouped]
     raise ClassificationToolError(
         "classification observations do not provide chain_index for "
-        f"{residue.source_chain_id}:{residue.source_resid_number}{residue.insertion_code or ''}:{residue.residue_name}"
+        f"{residue.source_chain_id}:{residue.source_resid_number}:"
+        f"{residue.residue_name}"
     )
 
 
@@ -120,11 +127,14 @@ def _explicit_summary(evidence) -> dict[str, Any]:
         return {"status": "ABSENT", "source_type": None, "relation_type": None}
     source_types = sorted({item.source_type for item in evidence})
     relation_types = sorted({item.relation_type for item in evidence})
-    status = "PRESENT" if len(relation_types) == 1 else "AMBIGUOUS"
     return {
-        "status": status,
+        "status": "PRESENT" if len(relation_types) == 1 else "AMBIGUOUS",
         "source_type": ",".join(source_types),
-        "relation_type": relation_types[0] if len(relation_types) == 1 else "MULTIPLE:" + ",".join(relation_types),
+        "relation_type": (
+            relation_types[0]
+            if len(relation_types) == 1
+            else "MULTIPLE:" + ",".join(relation_types)
+        ),
     }
 
 
@@ -144,11 +154,8 @@ def _element_issue(atom: AtomRecord, expected: str) -> str | None:
     return None
 
 
-def _application_status(
-    status: str,
-    promote_nonstandard_to_linked: bool,
-) -> str:
-    if not promote_nonstandard_to_linked:
+def _application_status(status: str, promote: bool) -> str:
+    if not promote:
         return "NOT_APPLICABLE"
     if status == "CONFIRMED_BY_STRUCTURE":
         return "ELIGIBLE"
@@ -157,10 +164,15 @@ def _application_status(
     return "NOT_APPLICABLE"
 
 
+def _relation_id(metal: dict[str, Any], donor: dict[str, Any]) -> str:
+    return coordination_relation_id(
+        endpoint_id_from_source_identity(metal["source_identity"]),
+        endpoint_id_from_source_identity(donor["source_identity"]),
+    )
+
+
 def _not_performed_output(
-    structure: dict[str, Any],
-    observations_path: Path,
-    observations_hash: str,
+    structure: dict[str, Any], observations_path: Path
 ) -> dict[str, Any]:
     return {
         "schema_version": "1.0",
@@ -173,13 +185,16 @@ def _not_performed_output(
             "definition_path": None,
             "definition_sha256": None,
             "observations_path": str(observations_path),
-            "observations_sha256": observations_hash,
         },
         "definition_results": [],
     }
 
 
-def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], Path, Path]:
+def build_result(
+    config: dict[str, Any],
+    script_dir: Path,
+    observations: dict[str, Any],
+) -> tuple[dict[str, Any], Path, Path]:
     structure_config = _required_mapping(config, "structure")
     definition_config = _required_mapping(config, "possible_coordination")
     observations_config = _required_mapping(config, "classification_observations")
@@ -189,44 +204,34 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
     structure_hash = str(structure_config.get("sha256", ""))
     source_format = str(structure_config.get("source_format", ""))
     selected_model_id = str(structure_config.get("selected_model_id", ""))
-    if not selected_model_id:
-        raise ClassificationToolError("selected_model_id is required")
     require_sha256(structure_path, structure_hash)
+    obs_input = observations.get("input", {})
+    if (
+        obs_input.get("structure_sha256") != structure_hash
+        or str(obs_input.get("selected_model_id")) != selected_model_id
+    ):
+        raise ClassificationToolError(
+            "classification observations do not match structure and selected model"
+        )
 
     observations_path = _required_path(observations_config, "path")
-    observations_hash = str(observations_config.get("sha256", ""))
-    require_sha256(observations_path, observations_hash)
-    observations_schema = Path(
-        observations_config.get(
-            "schema",
-            script_dir.parent / "schemas" / "classification_observations.schema.yaml",
-        )
-    ).resolve()
-    observations = read_yaml_strict(observations_path)
-    validate_document(observations, observations_schema)
-    obs_input = observations.get("input", {})
-    if obs_input.get("structure_sha256") != structure_hash or str(obs_input.get("selected_model_id")) != selected_model_id:
-        raise ClassificationToolError("classification observations do not match structure hash and selected model")
-
     output_path = _required_path(output_config, "path")
     output_schema = Path(
         output_config.get(
             "schema",
-            script_dir.parent / "schemas" / "possible_coordination_result.schema.yaml",
+            script_dir.parent / "schemas/possible_coordination_result.schema.yaml",
         )
     ).resolve()
-
     definition_path = _nullable_path(definition_config, "path")
     if definition_path is None:
-        result = _not_performed_output(structure_config, observations_path, observations_hash)
-        return result, output_path, output_schema
+        return _not_performed_output(structure_config, observations_path), output_path, output_schema
 
     definition_hash = str(definition_config.get("sha256", ""))
     require_sha256(definition_path, definition_hash)
     definition_schema = Path(
         definition_config.get(
             "schema",
-            script_dir.parent / "schemas" / "possible_coordination.schema.yaml",
+            script_dir.parent / "schemas/possible_coordination.schema.yaml",
         )
     ).resolve()
     definitions = read_yaml_strict(definition_path)
@@ -239,62 +244,51 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
     residue_lookup = {residue.residue_key: residue for residue in residues}
     resolver = build_chain_index_resolver(observations)
     specific_relations, base_relations = collect_explicit_relations(
-        structure,
-        selected_model_id,
-        residues,
-        atoms_by_serial,
+        structure, selected_model_id, residues, atoms_by_serial
     )
 
     definition_results: list[dict[str, Any]] = []
     for definition_index, definition in enumerate(definitions["possible_coordination"], start=1):
-        metal_def = definition["metal"]
-        donor_def = definition["donor"]
+        metal_def, donor_def = definition["metal"], definition["donor"]
         metal_residues, metal_atoms, metal_missing = atoms_matching(
-            residues,
-            metal_def["residue_name"],
-            metal_def["atom_name"],
+            residues, metal_def["residue_name"], metal_def["atom_name"]
         )
         donor_residues, donor_atoms, donor_missing = atoms_matching(
-            residues,
-            donor_def["residue_name"],
-            donor_def["atom_name"],
+            residues, donor_def["residue_name"], donor_def["atom_name"]
         )
-        missing_partner: str | None = None
+        missing_partner = None
         if not metal_residues and not donor_residues:
             missing_partner = "BOTH"
         elif not metal_residues:
             missing_partner = "METAL"
         elif not donor_residues:
             missing_partner = "DONOR"
-
         issue_instances = [
-            *(_issue_entry("METAL", item, metal_def["atom_name"], "ATOM_NOT_FOUND", resolver) for item in metal_missing),
-            *(_issue_entry("DONOR", item, donor_def["atom_name"], "ATOM_NOT_FOUND", resolver) for item in donor_missing),
+            *(
+                _issue_entry("METAL", item, metal_def["atom_name"], "ATOM_NOT_FOUND", resolver)
+                for item in metal_missing
+            ),
+            *(
+                _issue_entry("DONOR", item, donor_def["atom_name"], "ATOM_NOT_FOUND", resolver)
+                for item in donor_missing
+            ),
         ]
-        for atom in metal_atoms:
-            issue = _element_issue(atom, metal_def["element"])
-            if issue is not None:
-                issue_instances.append(
-                    _issue_entry(
-                        "METAL",
-                        residue_lookup[atom.residue_key],
-                        atom.atom_name,
-                        issue,
-                        resolver,
+        for role, atoms, definition_endpoint in (
+            ("METAL", metal_atoms, metal_def),
+            ("DONOR", donor_atoms, donor_def),
+        ):
+            for atom in atoms:
+                issue = _element_issue(atom, definition_endpoint["element"])
+                if issue:
+                    issue_instances.append(
+                        _issue_entry(
+                            role,
+                            residue_lookup[atom.residue_key],
+                            atom.atom_name,
+                            issue,
+                            resolver,
+                        )
                     )
-                )
-        for atom in donor_atoms:
-            issue = _element_issue(atom, donor_def["element"])
-            if issue is not None:
-                issue_instances.append(
-                    _issue_entry(
-                        "DONOR",
-                        residue_lookup[atom.residue_key],
-                        atom.atom_name,
-                        issue,
-                        resolver,
-                    )
-                )
 
         minimum = float(definition["distance_range_angstrom"]["minimum"])
         maximum = float(definition["distance_range_angstrom"]["maximum"])
@@ -302,35 +296,40 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
         pair_results: list[dict[str, Any]] = []
         omitted_distances: list[float] = []
         considered_pair_count = 0
-
         if missing_partner is None:
             for metal, donor in _pair_candidates(metal_atoms, donor_atoms):
                 considered_pair_count += 1
-                evidence = explicit_evidence_for_pair(
+                metal_endpoint = endpoint_dict(
                     metal,
+                    resolve_chain_index(resolver, metal),
+                    include_element=True,
+                    expected_element=metal_def["element"],
+                )
+                donor_endpoint = endpoint_dict(
                     donor,
-                    specific_relations,
-                    base_relations,
+                    resolve_chain_index(resolver, donor),
+                    include_element=True,
+                    expected_element=donor_def["element"],
+                )
+                evidence = explicit_evidence_for_pair(
+                    metal, donor, specific_relations, base_relations
                 )
                 explicit = _explicit_summary(evidence)
-                metal_issue = _element_issue(metal, metal_def["element"])
-                donor_issue = _element_issue(donor, donor_def["element"])
-                element_issue = metal_issue or donor_issue
+                element_issue = _element_issue(metal, metal_def["element"]) or _element_issue(
+                    donor, donor_def["element"]
+                )
                 metal_multiple = residue_lookup[metal.residue_key].has_multiple_conformations
                 donor_multiple = residue_lookup[donor.residue_key].has_multiple_conformations
-                explicit_altloc_specific = bool(evidence) and all(item.altloc_specific for item in evidence)
-
-                if element_issue is not None:
+                altloc_specific = bool(evidence) and all(item.altloc_specific for item in evidence)
+                if element_issue:
                     geometry = None
                     if evidence:
                         status = "COORDINATION_DEFINITION_CONFLICT"
                         detail = f"{element_issue}_WITH_EXPLICIT_RELATION"
                         confirmation_required = True
                     else:
-                        status = element_issue
-                        detail = element_issue
-                        confirmation_required = False
-                elif (metal_multiple or donor_multiple) and not explicit_altloc_specific:
+                        status, detail, confirmation_required = element_issue, element_issue, False
+                elif (metal_multiple or donor_multiple) and not altloc_specific:
                     geometry = None
                     status = "GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS"
                     detail = "MULTIPLE_CONFORMATIONS_PRESENT"
@@ -346,42 +345,31 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
                     relation_types = {item.relation_type for item in evidence}
                     if evidence:
                         if relation_types == {"METAL_COORDINATION"} and range_status == "WITHIN_RANGE":
-                            status = "CONFIRMED_BY_STRUCTURE"
-                            detail = None
-                            confirmation_required = False
+                            status, detail, confirmation_required = "CONFIRMED_BY_STRUCTURE", None, False
                         else:
                             status = "COORDINATION_DEFINITION_CONFLICT"
-                            if relation_types != {"METAL_COORDINATION"}:
-                                detail = "EXPLICIT_RELATION_TYPE_CONFLICT"
-                            else:
-                                detail = f"EXPLICIT_RELATION_{range_status}"
+                            detail = (
+                                "EXPLICIT_RELATION_TYPE_CONFLICT"
+                                if relation_types != {"METAL_COORDINATION"}
+                                else f"EXPLICIT_RELATION_{range_status}"
+                            )
                             confirmation_required = True
                     elif range_status == "WITHIN_RANGE":
-                        status = "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE"
-                        detail = None
-                        confirmation_required = True
+                        status, detail, confirmation_required = (
+                            "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE", None, True
+                        )
                     else:
-                        status = "NOT_GEOMETRICALLY_SUPPORTED"
-                        detail = range_status
-                        confirmation_required = False
+                        status, detail, confirmation_required = (
+                            "NOT_GEOMETRICALLY_SUPPORTED", range_status, False
+                        )
                         if range_status == "ABOVE_MAXIMUM":
                             omitted_distances.append(distance)
                             continue
-
                 pair_results.append(
                     {
-                        "metal": endpoint_dict(
-                            metal,
-                            resolve_chain_index(resolver, metal),
-                            include_element=True,
-                            expected_element=metal_def["element"],
-                        ),
-                        "donor": endpoint_dict(
-                            donor,
-                            resolve_chain_index(resolver, donor),
-                            include_element=True,
-                            expected_element=donor_def["element"],
-                        ),
+                        "relation_id": _relation_id(metal_endpoint, donor_endpoint),
+                        "metal": metal_endpoint,
+                        "donor": donor_endpoint,
                         "explicit_coordination": explicit,
                         "geometry": geometry,
                         "status": status,
@@ -393,16 +381,18 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
                         },
                     }
                 )
-
-        if missing_partner is not None:
-            definition_status = "PARTNER_NOT_FOUND"
-        elif not metal_atoms or not donor_atoms:
-            definition_status = "ATOM_NOT_FOUND"
-        elif any(item["issue_type"] in {"ELEMENT_MISMATCH", "ELEMENT_UNRESOLVED"} for item in issue_instances):
-            definition_status = "ELEMENT_ISSUES"
-        else:
-            definition_status = "EVALUATED"
-
+        definition_status = (
+            "PARTNER_NOT_FOUND"
+            if missing_partner is not None
+            else "ATOM_NOT_FOUND"
+            if not metal_atoms or not donor_atoms
+            else "ELEMENT_ISSUES"
+            if any(
+                item["issue_type"] in {"ELEMENT_MISMATCH", "ELEMENT_UNRESOLVED"}
+                for item in issue_instances
+            )
+            else "EVALUATED"
+        )
         definition_results.append(
             {
                 "definition_index": definition_index,
@@ -410,13 +400,8 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
                 "definition": {
                     "metal": metal_def,
                     "donor": donor_def,
-                    "distance_range_angstrom": {
-                        "minimum": minimum,
-                        "maximum": maximum,
-                    },
-                    "topology_effect": {
-                        "promote_nonstandard_to_linked": promote,
-                    },
+                    "distance_range_angstrom": {"minimum": minimum, "maximum": maximum},
+                    "topology_effect": {"promote_nonstandard_to_linked": promote},
                 },
                 "definition_status": definition_status,
                 "missing_partner": missing_partner,
@@ -438,10 +423,9 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
                 },
             }
         )
-
     if sha256_file(structure_path) != structure_hash:
         raise ClassificationToolError("input structure changed during coordination checking")
-    result = {
+    return {
         "schema_version": "1.0",
         "status": "COMPLETED",
         "reason": None,
@@ -452,11 +436,9 @@ def build_result(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, An
             "definition_path": str(definition_path),
             "definition_sha256": definition_hash,
             "observations_path": str(observations_path),
-            "observations_sha256": observations_hash,
         },
         "definition_results": definition_results,
-    }
-    return result, output_path, output_schema
+    }, output_path, output_schema
 
 
 def parse_args() -> argparse.Namespace:
@@ -477,9 +459,47 @@ def main() -> int:
             config,
             script_dir.parent / "schemas/possible_coordination_check_config.schema.yaml",
         )
-        result, output_path, output_schema = build_result(config, script_dir)
-        validate_document(result, output_schema)
-        atomic_write_yaml(output_path, result)
+        observations_config = _required_mapping(config, "classification_observations")
+        observations_path = _required_path(observations_config, "path")
+        observations_schema = Path(
+            observations_config.get(
+                "schema",
+                script_dir.parent / "schemas/classification_observations.schema.yaml",
+            )
+        ).resolve()
+        with observations_lock(observations_path):
+            observations = read_yaml_strict(observations_path)
+            validate_document(observations, observations_schema)
+            result, output_path, output_schema = build_result(config, script_dir, observations)
+            validate_document(result, output_schema)
+            decisions_config = config.get("relation_decisions")
+            decisions_path = (
+                _required_path(decisions_config, "path")
+                if isinstance(decisions_config, dict)
+                else None
+            )
+            decisions = load_relation_decisions(
+                decisions_path,
+                observations,
+                Path(
+                    decisions_config.get(
+                        "schema",
+                        script_dir.parent / "schemas/relation_decisions.schema.yaml",
+                    )
+                ).resolve()
+                if isinstance(decisions_config, dict)
+                else script_dir.parent / "schemas/relation_decisions.schema.yaml",
+                validate_document,
+            )
+            updated = apply_relation_result(
+                observations,
+                result,
+                "METAL_COORDINATION",
+                output_path,
+                decisions,
+            )
+            validate_document(updated, observations_schema)
+            commit_yaml_pair(output_path, result, observations_path, updated)
         return 0
     except ClassificationToolError as exc:
         print(f"check_possible_coordination.py: {exc}", file=sys.stderr)

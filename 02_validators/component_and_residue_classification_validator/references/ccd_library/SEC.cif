@@ -1,0 +1,13 @@
+data_SEC
+_chem_comp.id SEC
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+SEC "N" N .
+SEC "CA" C .
+SEC "C" C .
+SEC "O" O .
+SEC "CB" C .
+SEC "SE" SE .

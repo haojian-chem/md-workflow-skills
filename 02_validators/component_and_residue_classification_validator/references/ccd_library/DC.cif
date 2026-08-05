@@ -1,0 +1,26 @@
+data_DC
+_chem_comp.id DC
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+DC "P" P .
+DC "OP1" O .
+DC "OP2" O .
+DC "O5'" O .
+DC "C5'" C .
+DC "C4'" C .
+DC "O4'" O .
+DC "C3'" C .
+DC "O3'" O .
+DC "C2'" C .
+DC "C1'" C .
+DC "N1" N .
+DC "C2" C .
+DC "O2" O .
+DC "N3" N .
+DC "C4" C .
+DC "N4" N .
+DC "C5" C .
+DC "C6" C .

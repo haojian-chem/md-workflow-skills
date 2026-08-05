@@ -1,0 +1,17 @@
+data_HID
+_chem_comp.id HID
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+HID "N" N .
+HID "CA" C .
+HID "C" C .
+HID "O" O .
+HID "CB" C .
+HID "CG" C .
+HID "ND1" N .
+HID "CD2" C .
+HID "CE1" C .
+HID "NE2" N .

@@ -1,37 +1,22 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: confirmation_requests.schema.yaml
 title: Component and residue classification confirmation requests
-schema_version: "1.0"
 type: object
 additionalProperties: false
-required:
-  - schema_version
-  - status
-  - requests
+required: [schema_version, status, requests]
 properties:
-  schema_version:
-    const: "1.0"
-  status:
-    enum: [NO_CONFIRMATION_REQUIRED, USER_CONFIRMATION_REQUIRED]
+  schema_version: {const: "1.0"}
+  status: {enum: [NO_CONFIRMATION_REQUIRED, USER_CONFIRMATION_REQUIRED]}
   requests:
     type: array
-    items:
-      $ref: "#/$defs/request"
+    items: {$ref: "#/$defs/request"}
 $defs:
   request:
     type: object
     additionalProperties: false
-    required:
-      - request_index
-      - request_type
-      - subject
-      - evidence
-      - reason
-      - allowed_decisions
+    required: [request_index, request_type, subject, evidence, reason, allowed_decisions]
     properties:
-      request_index:
-        type: integer
-        minimum: 1
+      request_index: {type: integer, minimum: 1}
       request_type:
         enum:
           - PROJECT_REGISTRY_CLASSIFICATION_CONFLICT
@@ -46,19 +31,24 @@ $defs:
           - MISSING_RESIDUE_SOURCE_RESID_UNAVAILABLE
           - MISSING_RESIDUE_CHAIN_UNRESOLVED
           - SEQUENCE_REFERENCE_CONFLICT
-          - MULTIPLE_LOCAL_CCD_CANDIDATES
-          - INVALID_PROJECT_CCD_SNAPSHOT
+          - CCD_COMPONENT_DEFINITION_CONFLICT
           - ATOM_NAME_MAPPING_REQUIRED
-      subject:
-        type: object
-      evidence:
-        type: object
-      reason:
+          - RELATION_DECISION_TARGET_NOT_FOUND
+      relation_id:
         type: string
-        minLength: 1
+        pattern: "^relation:v1/type/(COVALENT_CONNECTION|METAL_COORDINATION)/endpoints/[0-9a-f]{64}$"
+      subject: {type: object}
+      evidence: {type: object}
+      reason: {type: string, minLength: 1}
       allowed_decisions:
         type: array
         minItems: 1
-        items:
-          type: string
-          minLength: 1
+        items: {type: string, minLength: 1}
+    allOf:
+      - if:
+          properties:
+            request_type:
+              enum: [GEOMETRY_SUPPORTED_COVALENT_CANDIDATE, CONNECTION_DEFINITION_CONFLICT, GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE, COORDINATION_DEFINITION_CONFLICT]
+          required: [request_type]
+        then:
+          required: [relation_id]

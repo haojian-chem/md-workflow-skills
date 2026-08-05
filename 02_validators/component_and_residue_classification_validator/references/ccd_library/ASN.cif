@@ -1,0 +1,15 @@
+data_ASN
+_chem_comp.id ASN
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ASN "N" N .
+ASN "CA" C .
+ASN "C" C .
+ASN "O" O .
+ASN "CB" C .
+ASN "CG" C .
+ASN "OD1" O .
+ASN "ND2" N .

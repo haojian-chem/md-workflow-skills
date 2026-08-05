@@ -1,0 +1,15 @@
+data_MET
+_chem_comp.id MET
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+MET "N" N .
+MET "CA" C .
+MET "C" C .
+MET "O" O .
+MET "CB" C .
+MET "CG" C .
+MET "SD" S .
+MET "CE" C .

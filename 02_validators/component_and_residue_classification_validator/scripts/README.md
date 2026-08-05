@@ -1,20 +1,6 @@
-# Component and residue classification scripts
+# Skill 1.2 deterministic scripts
 
-本文件只说明 1.2 确定性脚本的 CLI、模块边界、配置输入、输出文件和退出码。
-
-科学判定语义由：
-
-```text
-../references/classification_rules.md
-```
-
-定义；Validator 编排、preflight 和 task completion 由：
-
-```text
-../SKILL.md
-```
-
-定义。禁止在本文件复制上述文件已经拥有的规则。
+本文件只说明 CLI、配置和模块边界。科学规则见 `../references/classification_rules.md`，执行编排见 `../SKILL.md`，字段约束见 `../schemas/`。
 
 # Pipeline
 
@@ -28,9 +14,15 @@ classify_structure.py
 
 check_possible_connections.py
 → relation_checks/possible_connections_result.yaml
+→ update classification_observations.yaml
 
 check_possible_coordination.py
 → relation_checks/possible_coordination_result.yaml
+→ update classification_observations.yaml
+
+record_relation_decisions.py
+→ relation_decisions.yaml
+→ rerun affected relation check(s)
 
 build_classification_result.py
 → confirmation_requests.yaml
@@ -41,211 +33,101 @@ build_subagent_result.py
 → subagent_result.yaml
 ```
 
-# 1. Model scope
+# Entry points
+
+## Model scope
 
 ```bash
 python scripts/inspect_model_scope.py \
-  --structure <recognized-structure.pdb-or-cif> \
+  --structure <structure> \
   --structure-sha256 <sha256> \
   --source-format <PDB|MMCIF|AF3_CIF> \
   --output <model_scope.yaml>
 ```
 
-单 model 自动返回唯一 selected model。
+多 model 未选择时不得继续 baseline classification。
 
-多 model 返回：
-
-```text
-USER_SELECTION_REQUIRED
-```
-
-完成已记录的用户选择后，使用：
-
-```text
---selected-model-id <model_id>
-```
-
-重新执行。
-
-selected model 未解决时，禁止启动 `classify_structure.py`。
-
-# 2. Baseline classification
+## Baseline classification
 
 ```bash
-python scripts/classify_structure.py \
-  --config <classification_config.yaml>
+python scripts/classify_structure.py --config <classification_config.yaml>
 ```
 
-配置至少固定：
+配置固定 structure identity、classification mode、可选项目/力场/序列参考、`ccd.additional_library_paths` 和两个输出。内置 CCD-compatible root 由脚本固定，不写入配置。
 
-```text
-structure path
-structure SHA-256
-source format
-selected_model_id
-classification mode
-reference inputs, including relation definition paths and SHA-256 values
-output paths
-```
+`classify_structure.py` 通过内部 adapter 调用既有 baseline engine，再规范化为当前 observations contract；内部 adapter schema 不是公共输出 contract。
 
-可选配置：
-
-```text
-project_residue_definitions.yaml
-force-field root
-terminal RTP mappings
-AF3 input JSON or FASTA
-CCD project snapshot
-CCD local directories
-shared CCD cache
-retrieval policy
-```
-
-输出：
-
-```text
-classification_observations.yaml
-reference_manifest.yaml
-```
-
-## 模块边界
-
-```text
-classification_engine.py
-→ side-effect-free runtime facade
-
-classification_engine_core.py
-→ baseline classification implementation
-→ structural grouping invariant
-→ final observation normalization
-
-structure_records.py
-→ selected-model structure records
-
-sequence_missing.py
-→ sequence-reference and missing-residue evidence
-
-rtp_reference.py
-→ RTP reference parsing
-
-ccd_reference.py
-→ CCD reference handling
-
-explicit_relations.py
-→ explicit PDB/mmCIF relation evidence
-```
-
-## AlphaFold Server JSON
-
-```text
-af3_server_sequence_reference.py
-```
-
-由 `sequence_missing.py` 以普通函数调用处理 `dialect: alphafoldserver` 的单 job 顶层列表；禁止运行时替换 parser。entity 未提供显式 ID 时，按 entity 顺序和 `count` 确定性生成 `A..Z, AA..` chain IDs；ligand 和 ion 占用 chain ID，但不生成 polymer sequence。
-
-顶层列表包含多个 job 时必须拒绝解析。
-
-# 3. Possible covalent connections
+## Relation checks
 
 ```bash
-python scripts/check_possible_connections.py \
-  --config <possible_connections_check_config.yaml>
+python scripts/check_possible_connections.py --config <possible_connections_check_config.yaml>
+python scripts/check_possible_coordination.py --config <possible_coordination_check_config.yaml>
 ```
 
-输出：
+两个配置都包含 structure、可选定义、普通 observations path、可选 relation decisions path 和 result output。observations/decisions 不要求配置 SHA；结构和定义仍要求 SHA。
 
-```text
-relation_checks/possible_connections_result.yaml
-```
+每个脚本锁定 observations，生成并校验 result，应用决定、重算当前状态，然后成对提交 result 与 observations。重跑替换本关系类型的状态，不覆盖另一类型。
 
-配置未提供 `possible_connections.yaml` 时，脚本必须写出 schema 合法的 `NOT_PERFORMED` 结果。
-
-# 4. Possible metal coordination
+## Relation decisions
 
 ```bash
-python scripts/check_possible_coordination.py \
-  --config <possible_coordination_check_config.yaml>
+python scripts/record_relation_decisions.py \
+  --config <relation_decision_record_config.yaml>
 ```
 
-输出：
+config 使用 exact confirmation request SHA 和便于交互的 `request_index`。脚本将其解析为稳定 `relation_id`；默认拒绝相反决定，只有显式 `--replace-existing` 或配置开关才替换。
 
-```text
-relation_checks/possible_coordination_result.yaml
+## CCD library maintenance
+
+```bash
+python scripts/add_ccd_reference.py \
+  --library <explicit-library-root> \
+  --component-file <component.cif> \
+  --category <category> \
+  --source-type <RCSB_CCD_COMPONENT|SKILL_CUSTOM_COMPONENT|PROJECT_COMPONENT>
 ```
 
-配置未提供 `possible_coordination.yaml` 时，脚本必须写出 schema 合法的 `NOT_PERFORMED` 结果。
+目标文件名来自 CIF component ID，不来自输入文件名。相同 ID/相同 SHA 幂等；不同 SHA 冲突。脚本不修改 residue registries。
 
-# 5. Result integration
+## Final integration
 
 ```bash
 python scripts/build_classification_result.py \
   --config <classification_result_build_config.yaml>
 ```
 
-输出：
+构建器要求两个 relation stages 已闭合且 `check_outputs` 的路径/hash 有效。它读取当前 observations，生成 opaque selection IDs 和最终下游 contract。关系决定不再由 build config 内联处理。
 
-```text
-confirmation_requests.yaml
-classification_result.yaml
-classification_report.md
-```
-
-首次整合通常不提供 decisions。
-
-再次整合必须使用新输出路径，并提供绑定到上一份 `confirmation_requests.yaml` exact SHA-256 的 `decision_source`。禁止覆盖旧结果或应用未绑定的决定。
-
-# 6. Shared Validator result
+## Shared Validator result
 
 ```bash
-python scripts/build_subagent_result.py \
-  --task <task.yaml> \
-  --classification-result <classification_result.yaml> \
-  --confirmation-requests <confirmation_requests.yaml> \
-  --report <classification_report.md> \
-  --log <classification.log> \
-  --output <subagent_result.yaml>
+python scripts/build_subagent_result.py ...
 ```
 
-wrapper 必须验证本地结果 schema 和共享 `subagent_result v2` contract。
+同时验证本地 classification contracts 与共享 `subagent_result v2`。
+
+# Shared modules
+
+```text
+classification_engine*.py   baseline parsing/classification
+ccd_reference.py            indexed local CCD-compatible lookup
+observation_state.py         current-state normalization, locking, relation apply, regrouping
+selection_identity.py        opaque component/residue/endpoint/relation IDs
+structure_records.py         selected-model structure records
+explicit_relations.py        PDB/mmCIF explicit relation evidence
+sequence_missing.py          sequence and missing-residue evidence
+rtp_reference.py             RTP parsing and atom comparison
+classification_common.py     strict YAML, hashes, schema validation and atomic primitives
+```
 
 # I/O invariants
 
-所有公开脚本必须：
+公开脚本必须使用显式路径、严格 YAML、Draft 2020-12 schema、结构/model 一致性检查和受控写入。禁止修改输入 STRUCTURE、联网获取 CCD、扫描未声明目录或写入管理目录。
 
-- 使用显式输入路径和输出路径；
-- 核验声明 SHA-256 与实际文件内容；
-- 核验 selected-model identity；
-- 使用严格 YAML duplicate-key parsing；
-- 使用 Draft 2020-12 schema validation；
-- 使用原子写入；
-- 拒绝覆盖已有不同内容的结果；
-- 在技术无效时停止并返回非零退出码。
-
-禁止脚本修改输入 STRUCTURE 文件或写入未声明路径。
-
-# Exit codes
+退出码：
 
 ```text
-0  deterministic processing completed
-2  technical/configuration/schema/consistency failure
-3  unexpected internal failure
+0 deterministic processing completed
+2 technical/configuration/schema/consistency failure
+3 unexpected internal failure
 ```
-
-退出码 `0` 只表示确定性处理完成；对象是否存在待确认问题由机器可读结果表达。
-
-# Config schemas
-
-四个结构化 config 必须分别通过：
-
-```text
-../schemas/classification_config.schema.yaml
-../schemas/possible_connections_check_config.schema.yaml
-../schemas/possible_coordination_check_config.schema.yaml
-../schemas/classification_result_build_config.schema.yaml
-```
-
-未知字段和不满足条件关系的配置必须在业务处理前拒绝。
-
-# Dependencies
-
-安装 `requirements.txt` 声明的全部直接依赖；禁止依赖未声明的传递安装。

@@ -3,10 +3,7 @@ $id: classification_config.schema.yaml
 title: Component and residue baseline classification configuration
 type: object
 additionalProperties: false
-required:
-  - structure
-  - classification
-  - output
+required: [structure, classification, output]
 properties:
   structure:
     $ref: "#/$defs/structure_input"
@@ -21,11 +18,11 @@ properties:
       independent_registry_path: {type: string, minLength: 1}
   project_residue_definitions:
     oneOf:
-      - type: "null"
-      - $ref: "#/$defs/hashed_file"
+      - {type: "null"}
+      - {$ref: "#/$defs/hashed_file"}
   force_field:
     oneOf:
-      - type: "null"
+      - {type: "null"}
       - type: object
         additionalProperties: false
         required: [root_path]
@@ -42,25 +39,30 @@ properties:
               additionalProperties: false
               required: [terminal_role, source_residue_name, rtp_residue_name]
               properties:
-                terminal_role: {type: string, minLength: 1}
+                terminal_role:
+                  enum: [N_TERMINUS, C_TERMINUS, FIVE_PRIME, THREE_PRIME]
                 source_residue_name: {type: string, minLength: 1}
                 rtp_residue_name: {type: string, minLength: 1}
   ccd:
     type: object
     additionalProperties: false
     properties:
-      project_snapshot_dir: {type: string, minLength: 1}
-      local_reference_dirs:
+      additional_library_paths:
         type: array
         uniqueItems: true
         items: {type: string, minLength: 1}
-      shared_cache_path:
-        type: [string, "null"]
-        minLength: 1
-      retrieval_policy:
-        enum: [CACHE_ONLY, DOWNLOAD_MISSING]
-      remote_base_url: {type: string, minLength: 1}
-      timeout_seconds: {type: number, exclusiveMinimum: 0}
+  relation_definitions:
+    type: object
+    additionalProperties: false
+    properties:
+      possible_connections:
+        oneOf:
+          - {type: "null"}
+          - {$ref: "#/$defs/hashed_file"}
+      possible_coordination:
+        oneOf:
+          - {type: "null"}
+          - {$ref: "#/$defs/hashed_file"}
   sequence_references:
     type: array
     items:
@@ -70,22 +72,8 @@ properties:
       properties:
         path: {type: string, minLength: 1}
         sha256: {$ref: "#/$defs/sha256"}
-        type:
-          enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
-        reference_type:
-          enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]
-  relation_definitions:
-    type: object
-    additionalProperties: false
-    properties:
-      possible_connections:
-        oneOf:
-          - type: "null"
-          - $ref: "#/$defs/hashed_file"
-      possible_coordination:
-        oneOf:
-          - type: "null"
-          - $ref: "#/$defs/hashed_file"
+        type: {enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]}
+        reference_type: {enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]}
   output:
     type: object
     additionalProperties: false
@@ -106,8 +94,7 @@ allOf:
     then:
       required: [force_field]
       properties:
-        force_field:
-          type: object
+        force_field: {type: object}
 $defs:
   sha256:
     type: string

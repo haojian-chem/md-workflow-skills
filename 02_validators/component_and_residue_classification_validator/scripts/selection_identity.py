@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Stable identifiers exported by classification result for downstream selection.
-
-The identifiers are deterministic for one source STRUCTURE revision and do not
-encode chain_index.  Downstream consumers must treat them as opaque values
-materialized by validator 1.2 rather than reconstructing them independently.
-"""
+"""Opaque deterministic IDs exported by Skill 1.2 for downstream selection."""
 from __future__ import annotations
 
 import hashlib
@@ -13,7 +8,7 @@ from urllib.parse import quote
 
 
 class SelectionIdentityError(ValueError):
-    """Raised when an identity cannot be converted into a stable selection ID."""
+    pass
 
 
 def _encode(value: Any) -> str:
@@ -28,15 +23,13 @@ def _required_mapping(mapping: dict[str, Any], key: str) -> dict[str, Any]:
 
 
 def residue_id_from_source_identity(identity: dict[str, Any]) -> str:
-    """Return immutable residue ID from source provenance identity."""
     resid = _required_mapping(identity, "source_resid")
-    required = ("source_model_id", "source_residue_name")
-    for key in required:
+    for key in ("source_model_id", "source_residue_name"):
         if not isinstance(identity.get(key), str) or not identity[key]:
-            raise SelectionIdentityError(f"identity field {key!r} must be a non-empty string")
+            raise SelectionIdentityError(f"identity field {key!r} must be non-empty")
     number = resid.get("number")
     if not isinstance(number, str) or not number:
-        raise SelectionIdentityError("source_resid.number must be a non-empty string")
+        raise SelectionIdentityError("source_resid.number must be non-empty")
     return (
         "residue:v1"
         f"/model/{_encode(identity['source_model_id'])}"
@@ -48,14 +41,9 @@ def residue_id_from_source_identity(identity: dict[str, Any]) -> str:
 
 
 def endpoint_id_from_source_identity(identity: dict[str, Any]) -> str:
-    """Return atom endpoint ID for a relation endpoint.
-
-    Relation contracts currently do not carry altLoc, so this endpoint identity
-    intentionally ends at the exact atom name within the source residue.
-    """
     atom_name = identity.get("source_atom_name")
     if not isinstance(atom_name, str) or not atom_name:
-        raise SelectionIdentityError("source_atom_name must be a non-empty string")
+        raise SelectionIdentityError("source_atom_name must be non-empty")
     residue_identity = {
         key: identity[key]
         for key in (
@@ -72,9 +60,12 @@ def endpoint_id_from_source_identity(identity: dict[str, Any]) -> str:
 
 
 def _membership_digest(observed: Iterable[str], missing: Iterable[str]) -> str:
-    members = [*(f"OBSERVED:{value}" for value in sorted(observed)), *(f"MISSING:{value}" for value in sorted(missing))]
+    members = [
+        *(f"OBSERVED:{value}" for value in sorted(observed)),
+        *(f"MISSING:{value}" for value in sorted(missing)),
+    ]
     if not members:
-        raise SelectionIdentityError("component must contain at least one observed or missing residue")
+        raise SelectionIdentityError("component must contain at least one residue")
     return hashlib.sha256("\n".join(members).encode("utf-8")).hexdigest()
 
 
@@ -84,11 +75,8 @@ def component_id_from_members(
     observed_residue_ids: Iterable[str],
     missing_residue_ids: Iterable[str],
 ) -> str:
-    """Return stable component ID from membership, not from chain_index."""
-    if not selected_model_id:
-        raise SelectionIdentityError("selected_model_id must be non-empty")
-    if not group_type:
-        raise SelectionIdentityError("group_type must be non-empty")
+    if not selected_model_id or not group_type:
+        raise SelectionIdentityError("selected model and group type must be non-empty")
     digest = _membership_digest(observed_residue_ids, missing_residue_ids)
     return (
         "component:v1"
@@ -98,10 +86,32 @@ def component_id_from_members(
     )
 
 
+def _relation_digest(parts: Iterable[str]) -> str:
+    values = list(parts)
+    if len(values) != 2 or any(not value for value in values):
+        raise SelectionIdentityError("relation ID requires exactly two endpoints")
+    return hashlib.sha256("\n".join(values).encode("utf-8")).hexdigest()
+
+
+def covalent_relation_id(endpoint_1_id: str, endpoint_2_id: str) -> str:
+    digest = _relation_digest(sorted([endpoint_1_id, endpoint_2_id]))
+    return f"relation:v1/type/COVALENT_CONNECTION/endpoints/{digest}"
+
+
+def coordination_relation_id(metal_endpoint_id: str, donor_endpoint_id: str) -> str:
+    digest = _relation_digest(
+        [f"metal:{metal_endpoint_id}", f"donor:{donor_endpoint_id}"]
+    )
+    return f"relation:v1/type/METAL_COORDINATION/endpoints/{digest}"
+
+
 def relation_id_from_endpoints(relation_type: str, endpoint_ids: Iterable[str]) -> str:
-    """Return stable relation ID independent of evidence status and ordering."""
-    endpoints = sorted(endpoint_ids)
-    if len(endpoints) != 2 or any(not value for value in endpoints):
-        raise SelectionIdentityError("relation ID requires exactly two endpoint IDs")
-    digest = hashlib.sha256("\n".join(endpoints).encode("utf-8")).hexdigest()
-    return f"relation:v1/type/{_encode(relation_type)}/endpoints/{digest}"
+    """Compatibility entry point retained only for unordered covalent relations."""
+    endpoints = list(endpoint_ids)
+    if relation_type != "COVALENT_CONNECTION":
+        raise SelectionIdentityError(
+            "role-sensitive relations must use coordination_relation_id()"
+        )
+    if len(endpoints) != 2:
+        raise SelectionIdentityError("relation ID requires exactly two endpoints")
+    return covalent_relation_id(endpoints[0], endpoints[1])

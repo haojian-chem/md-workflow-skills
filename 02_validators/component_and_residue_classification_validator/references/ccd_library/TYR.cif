@@ -1,0 +1,19 @@
+data_TYR
+_chem_comp.id TYR
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+TYR "N" N .
+TYR "CA" C .
+TYR "C" C .
+TYR "O" O .
+TYR "CB" C .
+TYR "CG" C .
+TYR "CD1" C .
+TYR "CD2" C .
+TYR "CE1" C .
+TYR "CE2" C .
+TYR "CZ" C .
+TYR "OH" O .

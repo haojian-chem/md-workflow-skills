@@ -42,11 +42,12 @@ jobs:
         run: |
           python -m compileall -q \
             02_validators/component_and_residue_classification_validator/scripts
-      - name: Run v1.2 redesign tests
+      - name: Run 1.2 tests
         run: |
           set -o pipefail
           mkdir -p ci_test_output
           pytest -q \
+            04_evals/component_and_residue_classification_validator/test_skill_1_2_state_redesign_contracts.py \
             04_evals/component_and_residue_classification_validator/test_inspect_model_scope.py \
             04_evals/component_and_residue_classification_validator/test_classify_structure.py \
             04_evals/component_and_residue_classification_validator/test_build_subagent_result.py \

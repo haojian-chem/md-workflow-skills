@@ -1,0 +1,15 @@
+data_LEU
+_chem_comp.id LEU
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+LEU "N" N .
+LEU "CA" C .
+LEU "C" C .
+LEU "O" O .
+LEU "CB" C .
+LEU "CG" C .
+LEU "CD1" C .
+LEU "CD2" C .

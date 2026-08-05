@@ -1,0 +1,18 @@
+data_PHE
+_chem_comp.id PHE
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+PHE "N" N .
+PHE "CA" C .
+PHE "C" C .
+PHE "O" O .
+PHE "CB" C .
+PHE "CG" C .
+PHE "CD1" C .
+PHE "CD2" C .
+PHE "CE1" C .
+PHE "CE2" C .
+PHE "CZ" C .

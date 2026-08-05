@@ -1,0 +1,16 @@
+data_GLH
+_chem_comp.id GLH
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+GLH "N" N .
+GLH "CA" C .
+GLH "C" C .
+GLH "O" O .
+GLH "CB" C .
+GLH "CG" C .
+GLH "CD" C .
+GLH "OE1" O .
+GLH "OE2" O .

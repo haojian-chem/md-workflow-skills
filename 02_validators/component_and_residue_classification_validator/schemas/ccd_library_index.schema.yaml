@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ccd_library_index.schema.yaml
+title: Local CCD-compatible component library index
+type: object
+additionalProperties: false
+required: [schema_version, components]
+properties:
+  schema_version: {const: "1.0"}
+  components:
+    type: object
+    additionalProperties:
+      type: object
+      additionalProperties: false
+      required: [path, category, source_type, sha256]
+      properties:
+        path: {type: string, pattern: "^[A-Za-z0-9][A-Za-z0-9_+\\-]*\\.cif$"}
+        category: {type: string, minLength: 1}
+        source_type: {enum: [RCSB_CCD_COMPONENT, SKILL_CUSTOM_COMPONENT, PROJECT_COMPONENT]}
+        parent_component_id: {type: string, minLength: 1}
+        sha256: {type: string, pattern: "^[0-9a-f]{64}$"}

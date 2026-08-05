@@ -1,0 +1,15 @@
+data_ILE
+_chem_comp.id ILE
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ILE "N" N .
+ILE "CA" C .
+ILE "C" C .
+ILE "O" O .
+ILE "CB" C .
+ILE "CG1" C .
+ILE "CG2" C .
+ILE "CD1" C .

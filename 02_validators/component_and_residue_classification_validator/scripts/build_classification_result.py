@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Integrate baseline classification, relation checks and recorded decisions."""
+"""Build the downstream classification contract from current Skill 1.2 observations."""
 from __future__ import annotations
 
 import argparse
 import copy
 import hashlib
-import json
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from classification_common import (
     ClassificationToolError,
@@ -18,80 +18,38 @@ from classification_common import (
     require_sha256,
     sha256_file,
     validate_document,
+    yaml_text,
 )
-from structure_records import validate_residue_identity_record
 from selection_identity import (
     component_id_from_members,
     endpoint_id_from_source_identity,
-    relation_id_from_endpoints,
     residue_id_from_source_identity,
 )
 
-VERSION = "1.0.0"
-
+VERSION = "1.1.0"
 RELATION_REQUEST_TYPES = {
     "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE",
     "CONNECTION_DEFINITION_CONFLICT",
     "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE",
     "COORDINATION_DEFINITION_CONFLICT",
 }
-CLASSIFICATION_REQUEST_TYPES = {
-    "PROJECT_REGISTRY_CLASSIFICATION_CONFLICT",
-    "PROJECT_FORCE_FIELD_CLASSIFICATION_CONFLICT",
-    "RESIDUE_CLASSIFICATION_UNRESOLVED",
-}
-
 ALLOWED_DECISIONS = {
     "PROJECT_REGISTRY_CLASSIFICATION_CONFLICT": ["SET_CLASSIFICATION"],
     "PROJECT_FORCE_FIELD_CLASSIFICATION_CONFLICT": ["SET_CLASSIFICATION"],
     "RESIDUE_CLASSIFICATION_UNRESOLVED": ["SET_CLASSIFICATION"],
     "DUPLICATE_FORCE_FIELD_RESIDUE_TEMPLATE": ["SELECT_RTP_TEMPLATE", "PROVIDE_CORRECTED_FORCE_FIELD"],
     "TERMINAL_RTP_TEMPLATE_AMBIGUOUS": ["SELECT_RTP_TEMPLATE", "PROVIDE_TERMINAL_TEMPLATE_MAPPING"],
-    "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE": ["CONFIRM", "REJECT"],
-    "CONNECTION_DEFINITION_CONFLICT": ["CONFIRM", "REJECT", "PROVIDE_CORRECTED_DEFINITION"],
-    "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE": ["CONFIRM", "REJECT"],
-    "COORDINATION_DEFINITION_CONFLICT": ["CONFIRM", "REJECT", "PROVIDE_CORRECTED_DEFINITION"],
-    "MISSING_RESIDUE_SOURCE_RESID_UNAVAILABLE": [
-        "PROVIDE_SOURCE_RESID",
-        "PROVIDE_NUMBERING_MAPPING",
-        "EXCLUDE_FROM_REPORTED_MISSING_RESIDUES",
-    ],
-    "MISSING_RESIDUE_CHAIN_UNRESOLVED": [
-        "ASSIGN_CHAIN_INDEX",
-        "PROVIDE_CHAIN_MAPPING",
-        "EXCLUDE_FROM_REPORTED_MISSING_RESIDUES",
-    ],
+    "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE": ["CONFIRMED", "REJECTED"],
+    "CONNECTION_DEFINITION_CONFLICT": ["CONFIRMED", "REJECTED", "PROVIDE_CORRECTED_DEFINITION"],
+    "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE": ["CONFIRMED", "REJECTED"],
+    "COORDINATION_DEFINITION_CONFLICT": ["CONFIRMED", "REJECTED", "PROVIDE_CORRECTED_DEFINITION"],
+    "MISSING_RESIDUE_SOURCE_RESID_UNAVAILABLE": ["PROVIDE_SOURCE_RESID", "PROVIDE_NUMBERING_MAPPING", "EXCLUDE_FROM_REPORTED_MISSING_RESIDUES"],
+    "MISSING_RESIDUE_CHAIN_UNRESOLVED": ["ASSIGN_CHAIN_INDEX", "PROVIDE_CHAIN_MAPPING", "EXCLUDE_FROM_REPORTED_MISSING_RESIDUES"],
     "SEQUENCE_REFERENCE_CONFLICT": ["SELECT_SEQUENCE_REFERENCE", "PROVIDE_CORRECTED_SEQUENCE_REFERENCE"],
-    "MULTIPLE_LOCAL_CCD_CANDIDATES": ["SELECT_CCD_CANDIDATE", "PROVIDE_CORRECTED_CCD_FILE"],
-    "INVALID_PROJECT_CCD_SNAPSHOT": ["REPLACE_CCD_SNAPSHOT", "REMOVE_CCD_SNAPSHOT"],
+    "CCD_COMPONENT_DEFINITION_CONFLICT": ["PROVIDE_CORRECTED_CCD_LIBRARY"],
     "ATOM_NAME_MAPPING_REQUIRED": ["APPLY_ATOM_NAME_MAPPING", "REJECT_ATOM_NAME_MAPPING", "PROVIDE_CORRECTED_REFERENCE"],
+    "RELATION_DECISION_TARGET_NOT_FOUND": ["REMOVE_STALE_RELATION_DECISION", "PROVIDE_CORRECTED_RELATION_DEFINITION"],
 }
-
-
-class UnionFind:
-    def __init__(self) -> None:
-        self.parent: dict[tuple, tuple] = {}
-
-    def find(self, item: tuple) -> tuple:
-        self.parent.setdefault(item, item)
-        if self.parent[item] != item:
-            self.parent[item] = self.find(self.parent[item])
-        return self.parent[item]
-
-    def union(self, first: tuple, second: tuple) -> None:
-        first_root = self.find(first)
-        second_root = self.find(second)
-        if first_root != second_root:
-            if first_root <= second_root:
-                self.parent[second_root] = first_root
-            else:
-                self.parent[first_root] = second_root
-
-    def components(self) -> list[set[tuple]]:
-        grouped: dict[tuple, set[tuple]] = defaultdict(set)
-        for item in self.parent:
-            grouped[self.find(item)].add(item)
-        return list(grouped.values())
 
 
 def _required_mapping(document: dict[str, Any], key: str) -> dict[str, Any]:
@@ -104,800 +62,290 @@ def _required_mapping(document: dict[str, Any], key: str) -> dict[str, Any]:
 def _required_path(mapping: dict[str, Any], key: str) -> Path:
     value = mapping.get(key)
     if not isinstance(value, str) or not value:
-        raise ClassificationToolError(f"config field {key!r} must be a non-empty path string")
+        raise ClassificationToolError(f"config field {key!r} must be a path")
     return Path(value).resolve()
 
 
-def _load_validated(
-    config: dict[str, Any],
-    key: str,
-    default_schema: Path,
-) -> tuple[dict[str, Any], Path, str]:
+def _load_hashed(config: dict[str, Any], key: str, default_schema: Path) -> tuple[dict[str, Any], Path, str]:
     item = _required_mapping(config, key)
     path = _required_path(item, "path")
-    expected_hash = str(item.get("sha256", ""))
-    observed_hash = require_sha256(path, expected_hash)
+    observed_hash = require_sha256(path, str(item.get("sha256", "")))
     schema = Path(item.get("schema", default_schema)).resolve()
     document = read_yaml_strict(path)
-    if not isinstance(document, dict):
-        raise ClassificationToolError(f"{key} document must be a mapping")
     validate_document(document, schema)
     return document, path, observed_hash
 
 
-def _canonical_request_payload(request: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "request_type": request["request_type"],
-        "subject": request["subject"],
-        "evidence": request["evidence"],
-    }
+def _load_check_output(
+    observations: dict[str, Any],
+    name: str,
+    schema_path: Path,
+) -> tuple[dict[str, Any], str]:
+    reference = observations["check_outputs"][name]
+    if not reference["path"] or not reference["sha256"]:
+        raise ClassificationToolError(f"relation result reference is missing: {name}")
+    path = Path(reference["path"]).resolve()
+    observed_hash = require_sha256(path, reference["sha256"])
+    document = read_yaml_strict(path)
+    validate_document(document, schema_path)
+    expected = observations["input"]
+    result_input = document["input"]
+    if (
+        result_input["structure_sha256"] != expected["structure_sha256"]
+        or str(result_input["selected_model_id"]) != str(expected["selected_model_id"])
+    ):
+        raise ClassificationToolError(f"relation result does not match observations: {name}")
+    return document, observed_hash
 
 
-def _request_fingerprint(request: dict[str, Any]) -> str:
-    payload = json.dumps(
-        _canonical_request_payload(request),
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+def _validate_relation_provenance(
+    manifest: dict[str, Any],
+    connections: dict[str, Any],
+    coordination: dict[str, Any],
+) -> None:
+    for name, document in (
+        ("possible_connections", connections),
+        ("possible_coordination", coordination),
+    ):
+        manifest_entry = manifest["relation_definition_files"][name]
+        result_input = document["input"]
+        if (
+            manifest_entry["path"] != result_input["definition_path"]
+            or manifest_entry["sha256"] != result_input["definition_sha256"]
+        ):
+            raise ClassificationToolError(
+                f"relation definition provenance differs between manifest and result: {name}"
+            )
 
 
-def _natural_key(endpoint: dict[str, Any]) -> tuple[str | None, str, str | None, str]:
-    source_resid = endpoint["source_resid"]
+def _source_key(value: dict[str, Any]) -> tuple[str | None, str, str | None, str]:
+    identity = value.get("source_identity", value)
+    resid = identity["source_resid"]
     return (
-        endpoint.get("source_chain_id"),
-        str(source_resid["number"]),
-        source_resid.get("insertion_code"),
-        endpoint["residue_name"],
+        identity.get("source_chain_id"),
+        str(resid["number"]),
+        resid.get("insertion_code"),
+        identity["source_residue_name"],
     )
 
 
-def _endpoint_key(endpoint: dict[str, Any]) -> tuple[str | None, str, str | None, str, str]:
-    return (*_natural_key(endpoint), endpoint["atom_name"])
+def _issue_to_request(issue: dict[str, Any]) -> dict[str, Any]:
+    issue_type = issue.get("issue_type", "RESIDUE_CLASSIFICATION_UNRESOLVED")
+    if issue_type not in ALLOWED_DECISIONS:
+        issue_type = "RESIDUE_CLASSIFICATION_UNRESOLVED"
+    subject = copy.deepcopy(issue.get("subject", {}))
+    relation_id = subject.pop("relation_id", None)
+    request = {
+        "request_type": issue_type,
+        "subject": subject,
+        "evidence": {"items": copy.deepcopy(issue.get("evidence", []))},
+        "reason": "; ".join(str(item) for item in issue.get("evidence", []))
+        or "classification evidence remains unresolved",
+        "allowed_decisions": ALLOWED_DECISIONS[issue_type],
+    }
+    if issue_type in RELATION_REQUEST_TYPES:
+        if not isinstance(relation_id, str):
+            raise ClassificationToolError(f"relation issue {issue_type} lacks relation_id")
+        request["relation_id"] = relation_id
+    return request
 
 
-def _strip_endpoint(endpoint: dict[str, Any], chain_index: int | None = None) -> dict[str, Any]:
+def _requests(observations: dict[str, Any]) -> dict[str, Any]:
+    requests = [_issue_to_request(item) for item in observations["unresolved_observations"]]
+    for index, request in enumerate(requests, start=1):
+        request["request_index"] = index
     return {
-        "chain_index": int(chain_index if chain_index is not None else endpoint["chain_index"]),
+        "schema_version": "1.0",
+        "status": "USER_CONFIRMATION_REQUIRED" if requests else "NO_CONFIRMATION_REQUIRED",
+        "requests": requests,
+    }
+
+
+def _apply_supported_decisions(
+    observations: dict[str, Any],
+    config: dict[str, Any],
+    confirmation_schema: Path,
+) -> dict[str, Any]:
+    source = config.get("decision_source")
+    if source is None:
+        return copy.deepcopy(observations)
+    if not isinstance(source, dict):
+        raise ClassificationToolError("decision_source must be a mapping")
+    path = _required_path(source, "confirmation_requests_path")
+    require_sha256(path, str(source.get("confirmation_requests_sha256", "")))
+    previous = read_yaml_strict(path)
+    validate_document(previous, confirmation_schema)
+    by_index = {item["request_index"]: item for item in previous["requests"]}
+    output = copy.deepcopy(observations)
+    records = {_source_key(item): item for item in output["residue_records"]}
+    resolved_issue_keys: set[tuple[str, str]] = set()
+    for decision in source.get("decisions", []) or []:
+        request = by_index.get(decision.get("request_index"))
+        if request is None:
+            raise ClassificationToolError("decision references a missing request_index")
+        if request["request_type"] in RELATION_REQUEST_TYPES:
+            raise ClassificationToolError(
+                "relation decisions must be recorded with record_relation_decisions.py"
+            )
+        action = decision.get("decision")
+        if action not in request["allowed_decisions"]:
+            raise ClassificationToolError("decision is not allowed for the referenced request")
+        subject = request["subject"]
+        if action == "SET_CLASSIFICATION":
+            classification = decision.get("classification")
+            if not isinstance(classification, dict):
+                raise ClassificationToolError("SET_CLASSIFICATION requires classification")
+            source_resid = subject.get("source_resid")
+            key = (
+                subject.get("source_chain_id"),
+                str(source_resid["number"]),
+                source_resid.get("insertion_code"),
+                subject["residue_name"],
+            )
+            if key not in records:
+                raise ClassificationToolError("classification decision target is missing")
+            records[key]["classification_observation"] = {
+                "component_id": classification.get("component_id"),
+                "polymer_class": classification["polymer_class"],
+                "topology_class": classification["topology_class"],
+                "resolution_status": "RESOLVED",
+                "primary_source": "PROJECT_DEFINITION",
+                "evidence": ["user classification decision"],
+            }
+            resolved_issue_keys.add((request["request_type"], str(subject)))
+        elif action in {"APPLY_ATOM_NAME_MAPPING", "REJECT_ATOM_NAME_MAPPING"}:
+            source_resid = subject.get("source_resid")
+            key = (
+                subject.get("source_chain_id"),
+                str(source_resid["number"]),
+                source_resid.get("insertion_code"),
+                subject["residue_name"],
+            )
+            record = records.get(key)
+            if record is None:
+                raise ClassificationToolError("atom mapping decision target is missing")
+            check = record["heavy_atom_check"]
+            if action == "REJECT_ATOM_NAME_MAPPING":
+                check["mapping_resolution_status"] = "REJECTED"
+                check["effective_comparison"] = None
+            else:
+                exact = check.get("exact_comparison")
+                if not isinstance(exact, dict):
+                    raise ClassificationToolError("mapping cannot be applied without exact comparison")
+                missing = set(exact["missing_expected_atom_names"])
+                unexpected = set(exact["unexpected_observed_atom_names"])
+                for candidate in check.get("atom_name_mapping_candidates", []):
+                    missing.discard(candidate["reference_atom_name"])
+                    unexpected.discard(candidate["observed_atom_name"])
+                check["mapping_resolution_status"] = "APPLIED"
+                check["effective_comparison"] = {
+                    "missing_expected_atom_names": sorted(missing),
+                    "unexpected_observed_atom_names": sorted(unexpected),
+                }
+            resolved_issue_keys.add((request["request_type"], str(subject)))
+    if resolved_issue_keys:
+        output["unresolved_observations"] = [
+            item
+            for item in output["unresolved_observations"]
+            if (item.get("issue_type"), str(item.get("subject", {}))) not in resolved_issue_keys
+        ]
+    return output
+
+
+def _materialize_ids(observations: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[tuple, dict[str, str]]]:
+    records = copy.deepcopy(observations["residue_records"])
+    groups = copy.deepcopy(observations["chain_groups"])
+    observed_by_group: defaultdict[int, list[str]] = defaultdict(list)
+    missing_by_group: defaultdict[int, list[str]] = defaultdict(list)
+    identity_by_key: dict[tuple, dict[str, str]] = {}
+    for record in records:
+        residue_id = residue_id_from_source_identity(record["source_identity"])
+        record["residue_id"] = residue_id
+        bucket = observed_by_group if record["presence_status"] == "OBSERVED" else missing_by_group
+        bucket[int(record["chain_index"])].append(residue_id)
+        identity_by_key[_source_key(record)] = {"residue_id": residue_id}
+    component_by_chain: dict[int, str] = {}
+    for group in groups:
+        chain_index = int(group["chain_index"])
+        component_id = component_id_from_members(
+            str(observations["input"]["selected_model_id"]),
+            group["group_type"],
+            observed_by_group.get(chain_index, []),
+            missing_by_group.get(chain_index, []),
+        )
+        component_by_chain[chain_index] = component_id
+        group["component_id"] = component_id
+        group["residue_ids"] = sorted(observed_by_group.get(chain_index, []))
+        group["missing_residue_ids"] = sorted(missing_by_group.get(chain_index, []))
+        group["grouping_status"] = "FINAL"
+    for record in records:
+        record["component_id"] = component_by_chain[int(record["chain_index"])]
+        identity_by_key[_source_key(record)]["component_id"] = record["component_id"]
+    return groups, records, identity_by_key
+
+
+def _final_endpoint(endpoint: dict[str, Any], identities: dict[tuple, dict[str, str]]) -> dict[str, Any]:
+    identity = identities[_source_key(endpoint)]
+    return {
+        "endpoint_id": endpoint_id_from_source_identity(endpoint["source_identity"]),
+        "residue_id": identity["residue_id"],
+        "component_id": identity["component_id"],
         "source_identity": copy.deepcopy(endpoint["source_identity"]),
         "current_identity": copy.deepcopy(endpoint["current_identity"]),
+        "chain_index": int(endpoint["chain_index"]),
         "source_chain_id": endpoint.get("source_chain_id"),
-        "source_resid": {
-            "number": str(endpoint["source_resid"]["number"]),
-            "insertion_code": endpoint["source_resid"].get("insertion_code"),
-        },
+        "source_resid": copy.deepcopy(endpoint["source_resid"]),
         "residue_name": endpoint["residue_name"],
         "atom_name": endpoint["atom_name"],
         "altloc_id": endpoint.get("altloc_id"),
     }
 
 
-def _unresolved_to_request(issue: dict[str, Any]) -> dict[str, Any]:
-    issue_type = issue.get("issue_type", "RESIDUE_CLASSIFICATION_UNRESOLVED")
-    if issue_type not in ALLOWED_DECISIONS:
-        issue_type = "RESIDUE_CLASSIFICATION_UNRESOLVED"
-    return {
-        "request_type": issue_type,
-        "subject": copy.deepcopy(issue.get("subject", {})),
-        "evidence": {"items": copy.deepcopy(issue.get("evidence", []))},
-        "reason": "; ".join(str(item) for item in issue.get("evidence", []))
-        or "classification evidence is unresolved",
-        "allowed_decisions": ALLOWED_DECISIONS[issue_type],
-    }
-
-
-def _classification_pending_request(record: dict[str, Any]) -> dict[str, Any]:
-    classification = record["classification_observation"]
-    return {
-        "request_type": "RESIDUE_CLASSIFICATION_UNRESOLVED",
-        "subject": {
-            "source_identity": copy.deepcopy(record["source_identity"]),
-            "current_identity": copy.deepcopy(record["current_identity"]),
-            "source_chain_id": record.get("source_chain_id"),
-            "source_resid": copy.deepcopy(record["source_resid"]),
-            "residue_name": record["residue_name"],
-            "observed_resolution_status": classification["resolution_status"],
-        },
-        "evidence": {"items": copy.deepcopy(classification.get("evidence", []))},
-        "reason": "residue classification remains unresolved after the baseline pass",
-        "allowed_decisions": ["SET_CLASSIFICATION"],
-    }
-
-
-def _connection_requests(document: dict[str, Any]) -> list[dict[str, Any]]:
-    requests: list[dict[str, Any]] = []
-    for definition in document.get("definition_results", []):
-        for pair in definition.get("pair_results", []):
-            status = pair["status"]
-            if status not in {"GEOMETRY_SUPPORTED_CANDIDATE", "CONNECTION_DEFINITION_CONFLICT"}:
-                continue
-            request_type = (
-                "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE"
-                if status == "GEOMETRY_SUPPORTED_CANDIDATE"
-                else "CONNECTION_DEFINITION_CONFLICT"
-            )
-            requests.append(
-                {
-                    "request_type": request_type,
-                    "subject": {
-                        "partner_1": copy.deepcopy(pair["partner_1"]),
-                        "partner_2": copy.deepcopy(pair["partner_2"]),
-                    },
-                    "evidence": {
-                        "definition_index": definition["definition_index"],
-                        "label": definition.get("label"),
-                        "definition": copy.deepcopy(definition["definition"]),
-                        "explicit_connection": copy.deepcopy(pair["explicit_connection"]),
-                        "geometry": copy.deepcopy(pair["geometry"]),
-                        "detail": pair.get("detail"),
-                    },
-                    "reason": (
-                        "geometry supports a possible covalent connection but no confirmed relation is available"
-                        if status == "GEOMETRY_SUPPORTED_CANDIDATE"
-                        else "the explicit structure relation conflicts with the project connection definition"
-                    ),
-                    "allowed_decisions": ALLOWED_DECISIONS[request_type],
-                }
-            )
-    return requests
-
-
-def _coordination_requests(document: dict[str, Any]) -> list[dict[str, Any]]:
-    requests: list[dict[str, Any]] = []
-    for definition in document.get("definition_results", []):
-        for pair in definition.get("pair_results", []):
-            status = pair["status"]
-            if status not in {
-                "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE",
-                "COORDINATION_DEFINITION_CONFLICT",
-            }:
-                continue
-            request_type = status
-            requests.append(
-                {
-                    "request_type": request_type,
-                    "subject": {
-                        "metal": copy.deepcopy(pair["metal"]),
-                        "donor": copy.deepcopy(pair["donor"]),
-                    },
-                    "evidence": {
-                        "definition_index": definition["definition_index"],
-                        "label": definition.get("label"),
-                        "definition": copy.deepcopy(definition["definition"]),
-                        "explicit_coordination": copy.deepcopy(pair["explicit_coordination"]),
-                        "geometry": copy.deepcopy(pair["geometry"]),
-                        "detail": pair.get("detail"),
-                        "topology_effect_evaluation": copy.deepcopy(
-                            pair["topology_effect_evaluation"]
-                        ),
-                    },
-                    "reason": (
-                        "geometry supports a possible metal coordination relation but user confirmation is required"
-                        if status == "GEOMETRY_SUPPORTED_COORDINATION_CANDIDATE"
-                        else "the explicit structure relation conflicts with the project coordination definition"
-                    ),
-                    "allowed_decisions": ALLOWED_DECISIONS[request_type],
-                }
-            )
-    return requests
-
-
-def _deduplicate_requests(requests: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    result: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for request in requests:
-        fingerprint = _request_fingerprint(request)
-        if fingerprint in seen:
+def _relations(observations: dict[str, Any], identities: dict[tuple, dict[str, str]]) -> tuple[dict[str, list], dict[str, list]]:
+    confirmed = {"covalent_connections": [], "metal_coordination": []}
+    rejected = {"covalent_connections": [], "metal_coordination": []}
+    for item in observations["connection_observations"]:
+        if item["status"] not in {"CONFIRMED", "REJECTED"}:
             continue
-        seen.add(fingerprint)
-        result.append(request)
-    return result
-
-
-def _load_decisions(
-    config: dict[str, Any],
-    confirmation_schema: Path,
-) -> dict[str, dict[str, Any]]:
-    decision_source = config.get("decision_source")
-    if decision_source is None:
-        return {}
-    if not isinstance(decision_source, dict):
-        raise ClassificationToolError("decision_source must be a mapping")
-    path = _required_path(decision_source, "confirmation_requests_path")
-    expected_hash = str(decision_source.get("confirmation_requests_sha256", ""))
-    require_sha256(path, expected_hash)
-    document = read_yaml_strict(path)
-    validate_document(document, confirmation_schema)
-    by_index = {item["request_index"]: item for item in document["requests"]}
-    decisions: dict[str, dict[str, Any]] = {}
-    for decision in decision_source.get("decisions", []) or []:
-        if not isinstance(decision, dict):
-            raise ClassificationToolError("each decision must be a mapping")
-        request_index = decision.get("request_index")
-        if request_index not in by_index:
-            raise ClassificationToolError(
-                f"decision references missing request_index {request_index}"
-            )
-        request = by_index[request_index]
-        decision_name = decision.get("decision")
-        if decision_name not in request["allowed_decisions"]:
-            raise ClassificationToolError(
-                f"decision {decision_name!r} is not allowed for request {request_index}"
-            )
-        fingerprint = _request_fingerprint(request)
-        if fingerprint in decisions:
-            raise ClassificationToolError(
-                f"multiple decisions resolve the same confirmation request {request_index}"
-            )
-        decisions[fingerprint] = copy.deepcopy(decision)
-    return decisions
-
-
-def _relation_from_pair(
-    relation_type: str,
-    endpoint_1: dict[str, Any],
-    endpoint_2: dict[str, Any],
-    evidence_status: str,
-    topology_effect_applied: bool,
-) -> dict[str, Any]:
-    return {
-        "relation_type": relation_type,
-        "endpoint_1": _strip_endpoint(endpoint_1),
-        "endpoint_2": _strip_endpoint(endpoint_2),
-        "evidence_status": evidence_status,
-        "topology_effect_applied": topology_effect_applied,
-    }
-
-
-def _explicit_relations(
-    connections: dict[str, Any],
-    coordination: dict[str, Any],
-) -> list[dict[str, Any]]:
-    relations: list[dict[str, Any]] = []
-    for definition in connections.get("definition_results", []):
-        for pair in definition.get("pair_results", []):
-            if pair["status"] == "CONFIRMED_BY_STRUCTURE":
-                relations.append(
-                    _relation_from_pair(
-                        "COVALENT_CONNECTION",
-                        pair["partner_1"],
-                        pair["partner_2"],
-                        "CONFIRMED_BY_STRUCTURE",
-                        True,
-                    )
-                )
-    for definition in coordination.get("definition_results", []):
-        promote = bool(
-            definition["definition"]["topology_effect"][
-                "promote_nonstandard_to_linked"
-            ]
-        )
-        for pair in definition.get("pair_results", []):
-            if pair["status"] == "CONFIRMED_BY_STRUCTURE":
-                relations.append(
-                    _relation_from_pair(
-                        "METAL_COORDINATION",
-                        pair["metal"],
-                        pair["donor"],
-                        "CONFIRMED_BY_STRUCTURE",
-                        promote,
-                    )
-                )
-    return relations
-
-
-def _decision_relation(
-    request: dict[str, Any],
-    decision: dict[str, Any],
-) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-    decision_name = decision["decision"]
-    request_type = request["request_type"]
-    if request_type in {
-        "GEOMETRY_SUPPORTED_COVALENT_CANDIDATE",
-        "CONNECTION_DEFINITION_CONFLICT",
-    }:
-        endpoint_1 = request["subject"]["partner_1"]
-        endpoint_2 = request["subject"]["partner_2"]
-        relation_type = "COVALENT_CONNECTION"
-        topology_effect = True
-    else:
-        endpoint_1 = request["subject"]["metal"]
-        endpoint_2 = request["subject"]["donor"]
-        relation_type = "METAL_COORDINATION"
-        topology_effect = bool(
-            request["evidence"]["definition"]["topology_effect"][
-                "promote_nonstandard_to_linked"
-            ]
-        )
-    if decision_name == "CONFIRM":
-        return (
-            _relation_from_pair(
-                relation_type,
-                endpoint_1,
-                endpoint_2,
-                "CONFIRMED_BY_USER",
-                topology_effect,
+        relation = {
+            "relation_id": item["relation_id"],
+            "relation_type": "COVALENT_CONNECTION",
+            "endpoint_1": _final_endpoint(item["partner_1"], identities),
+            "endpoint_2": _final_endpoint(item["partner_2"], identities),
+            "evidence_status": (
+                "REJECTED_BY_USER"
+                if item["status"] == "REJECTED"
+                else "CONFIRMED_BY_USER"
+                if item["confirmation_status"] == "CONFIRMED_BY_USER"
+                else "CONFIRMED_BY_STRUCTURE"
             ),
-            None,
-        )
-    if decision_name == "REJECT":
-        return (
-            None,
-            _relation_from_pair(
-                relation_type,
-                endpoint_1,
-                endpoint_2,
-                "REJECTED_BY_USER",
-                False,
+            "topology_effect_applied": item["topology_effect"]["status"] == "APPLIED",
+        }
+        target = confirmed if item["status"] == "CONFIRMED" else rejected
+        target["covalent_connections"].append(relation)
+    for item in observations["coordination_observations"]:
+        if item["status"] not in {"CONFIRMED", "REJECTED"}:
+            continue
+        relation = {
+            "relation_id": item["relation_id"],
+            "relation_type": "METAL_COORDINATION",
+            "endpoint_1": _final_endpoint(item["metal"], identities),
+            "endpoint_2": _final_endpoint(item["donor"], identities),
+            "evidence_status": (
+                "REJECTED_BY_USER"
+                if item["status"] == "REJECTED"
+                else "CONFIRMED_BY_USER"
+                if item["confirmation_status"] == "CONFIRMED_BY_USER"
+                else "CONFIRMED_BY_STRUCTURE"
             ),
-        )
-    return None, None
-
-
-def _classification_decision_map(
-    resolved_requests: list[tuple[dict[str, Any], dict[str, Any]]],
-) -> dict[tuple[str | None, str, str | None, str], dict[str, Any]]:
-    output: dict[tuple[str | None, str, str | None, str], dict[str, Any]] = {}
-    for request, decision in resolved_requests:
-        if request["request_type"] not in CLASSIFICATION_REQUEST_TYPES:
-            continue
-        if decision.get("decision") != "SET_CLASSIFICATION":
-            continue
-        classification = decision.get("classification")
-        if not isinstance(classification, dict):
-            raise ClassificationToolError(
-                "SET_CLASSIFICATION decision requires a classification mapping"
-            )
-        polymer_class = classification.get("polymer_class")
-        topology_class = classification.get("topology_class")
-        if polymer_class not in {"POLYMER", "BRANCHED", "NONPOLYMER", "WATER"}:
-            raise ClassificationToolError("invalid polymer_class in decision")
-        if topology_class not in {
-            "STANDARD_RESIDUE",
-            "TOPOLOGY_LINKED_NONSTANDARD",
-            "INDEPENDENT_NONSTANDARD",
-            "SOLVENT_COMPONENT",
-            "ION_COMPONENT",
-        }:
-            raise ClassificationToolError("invalid topology_class in decision")
-        subject = request["subject"]
-        source_resid = subject.get("source_resid")
-        if not isinstance(source_resid, dict):
-            raise ClassificationToolError(
-                "classification decision subject lacks source_resid"
-            )
-        key = (
-            subject.get("source_chain_id"),
-            str(source_resid["number"]),
-            source_resid.get("insertion_code"),
-            subject["residue_name"],
-        )
-        output[key] = {
-            "polymer_class": polymer_class,
-            "topology_class": topology_class,
-            "resolution_status": "RESOLVED",
-            "evidence": ["user classification decision"],
+            "topology_effect_applied": item["topology_effect"]["status"] == "APPLIED",
         }
-    return output
-
-def _heavy_atom_decision_map(
-    resolved_requests: list[tuple[dict[str, Any], dict[str, Any]]],
-) -> dict[tuple[str | None, str, str | None, str], dict[str, Any]]:
-    output: dict[tuple[str | None, str, str | None, str], dict[str, Any]] = {}
-    for request, decision in resolved_requests:
-        if request["request_type"] != "ATOM_NAME_MAPPING_REQUIRED":
-            continue
-        subject = request["subject"]
-        source_resid = subject.get("source_resid")
-        if not isinstance(source_resid, dict):
-            raise ClassificationToolError(
-                "atom-name mapping subject lacks source_resid"
-            )
-        key = (
-            subject.get("source_chain_id"),
-            str(source_resid["number"]),
-            source_resid.get("insertion_code"),
-            subject["residue_name"],
-        )
-        output[key] = copy.deepcopy(decision)
-    return output
+        target = confirmed if item["status"] == "CONFIRMED" else rejected
+        target["metal_coordination"].append(relation)
+    return confirmed, rejected
 
 
-def _apply_heavy_atom_decision(
-    check: dict[str, Any],
-    decision: dict[str, Any] | None,
-) -> dict[str, Any]:
-    output = copy.deepcopy(check)
-    if decision is None:
-        return output
-    action = decision["decision"]
-    if action == "REJECT_ATOM_NAME_MAPPING":
-        output["mapping_resolution_status"] = "REJECTED"
-        output["effective_comparison"] = None
-        return output
-    if action != "APPLY_ATOM_NAME_MAPPING":
-        return output
-    exact = output.get("exact_comparison")
-    if not isinstance(exact, dict):
-        raise ClassificationToolError(
-            "cannot apply atom-name mapping without exact comparison"
-        )
-    missing = set(exact["missing_expected_atom_names"])
-    unexpected = set(exact["unexpected_observed_atom_names"])
-    for candidate in output.get("atom_name_mapping_candidates", []):
-        missing.discard(candidate["reference_atom_name"])
-        unexpected.discard(candidate["observed_atom_name"])
-    output["mapping_resolution_status"] = "APPLIED"
-    output["effective_comparison"] = {
-        "missing_expected_atom_names": sorted(missing),
-        "unexpected_observed_atom_names": sorted(unexpected),
-    }
-    return output
-
-
-def _record_index(
-    records: list[dict[str, Any]],
-) -> dict[tuple[str | None, str, str | None, str], dict[str, Any]]:
-    return {_natural_key(record): record for record in records}
-
-
-def _baseline_group_map(groups: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
-    return {int(group["chain_index"]): group for group in groups}
-
-
-def _inferred_group_classification(group: dict[str, Any]) -> tuple[str, str]:
-    group_type = group["group_type"]
-    if group_type == "SOLVENT_GROUP":
-        return "WATER", "SOLVENT_COMPONENT"
-    if group_type == "ION_GROUP":
-        return "NONPOLYMER", "ION_COMPONENT"
-    return "NONPOLYMER", "INDEPENDENT_NONSTANDARD"
-
-
-def _special_record_from_endpoint(
-    endpoint: dict[str, Any],
-    baseline_group: dict[str, Any],
-) -> dict[str, Any]:
-    polymer_class, topology_class = _inferred_group_classification(baseline_group)
-    return {
-        "chain_index": int(endpoint["chain_index"]),
-        "source_identity": copy.deepcopy(endpoint["source_identity"]),
-        "current_identity": copy.deepcopy(endpoint["current_identity"]),
-        "source_chain_id": endpoint.get("source_chain_id"),
-        "source_resid": copy.deepcopy(endpoint["source_resid"]),
-        "residue_name": endpoint["residue_name"],
-        "presence_status": "OBSERVED",
-        "sequence_position": None,
-        "classification": {
-            "polymer_class": polymer_class,
-            "topology_class": topology_class,
-            "resolution_status": "RESOLVED",
-            "evidence": ["classification inherited from baseline grouped component"],
-        },
-        "conformation": {"status": "SINGLE_CONFORMATION", "altloc_ids": []},
-        "heavy_atom_check": {
-  "execution_status": "NOT_PERFORMED",
-  "findings": [],
-  "reference_type": None,
-  "reference_name": None,
-  "exact_comparison": None,
-  "atom_name_mapping_candidates": [],
-  "mapping_resolution_status": "NOT_APPLICABLE",
-  "effective_comparison": None,
-  "reason": "GROUP_MEMBER_DETAIL_NOT_RETAINED_IN_BASELINE",
-  "status": "NOT_PERFORMED",
-  "missing_atoms": [],
-  "unexpected_atoms": [],
-        },
-    }
-
-
-def _convert_baseline_record(
-    record: dict[str, Any],
-    classification_decisions: dict[tuple, dict[str, Any]],
-    heavy_atom_decisions: dict[tuple, dict[str, Any]],
-) -> dict[str, Any]:
-    key = _natural_key(record)
-    observed = record["classification_observation"]
-    decision = classification_decisions.get(key)
-    if decision is not None:
-        classification = copy.deepcopy(decision)
-    elif observed["resolution_status"] == "RESOLVED":
-        classification = {
-            "polymer_class": observed["polymer_class"],
-            "topology_class": observed["topology_class"],
-            "resolution_status": "RESOLVED",
-            "evidence": copy.deepcopy(observed.get("evidence", [])),
-        }
-    else:
-        classification = {
-            "polymer_class": None,
-            "topology_class": None,
-            "resolution_status": "PENDING_CONFIRMATION",
-            "evidence": copy.deepcopy(observed.get("evidence", [])),
-        }
-    return {
-        "chain_index": int(record["chain_index"]),
-        "source_identity": copy.deepcopy(record["source_identity"]),
-        "current_identity": copy.deepcopy(record["current_identity"]),
-        "source_chain_id": record.get("source_chain_id"),
-        "source_resid": copy.deepcopy(record["source_resid"]),
-        "residue_name": record["residue_name"],
-        "presence_status": record["presence_status"],
-        "sequence_position": record.get("sequence_position"),
-        "classification": classification,
-        "conformation": copy.deepcopy(record["conformation_observation"]),
-        "heavy_atom_check": _apply_heavy_atom_decision(
-            record["heavy_atom_check"], heavy_atom_decisions.get(key)
-        ),
-    }
-
-
-def _relation_components(
-    relations: list[dict[str, Any]],
-) -> tuple[list[set[tuple]], dict[tuple, dict[str, Any]]]:
-    union_find = UnionFind()
-    endpoints: dict[tuple, dict[str, Any]] = {}
-    for relation in relations:
-        if not relation["topology_effect_applied"]:
-            continue
-        first = relation["endpoint_1"]
-        second = relation["endpoint_2"]
-        first_key = _endpoint_key(first)
-        second_key = _endpoint_key(second)
-        endpoints[first_key] = first
-        endpoints[second_key] = second
-        union_find.union(first_key, second_key)
-    return union_find.components(), endpoints
-
-
-def _integrate_chain_groups_and_records(
-    observations: dict[str, Any],
-    records: list[dict[str, Any]],
-    confirmed_relations: list[dict[str, Any]],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[tuple, int]]:
-    baseline_groups = copy.deepcopy(observations["chain_groups"])
-    group_by_index = _baseline_group_map(baseline_groups)
-    record_by_key = _record_index(records)
-    components, endpoint_lookup = _relation_components(confirmed_relations)
-
-    endpoint_final_chain: dict[tuple, int] = {}
-    special_component_specs: list[dict[str, Any]] = []
-    decrement_by_group: defaultdict[int, int] = defaultdict(int)
-    polymer_indices = {
-        index
-        for index, group in group_by_index.items()
-        if group["group_type"] in {"POLYMER_CHAIN", "BRANCHED_CHAIN"}
-    }
-
-    for component in components:
-        natural_keys = {_natural_key(endpoint_lookup[key]) for key in component}
-        involved_baseline_indices = {
-            int(endpoint_lookup[key]["chain_index"]) for key in component
-        }
-        connected_polymer_indices = sorted(
-            index for index in involved_baseline_indices if index in polymer_indices
-        )
-        nonpoly_natural_keys = {
-            key
-            for key in natural_keys
-            if int(
-                next(
-                    endpoint_lookup[endpoint_key]["chain_index"]
-                    for endpoint_key in component
-                    if _natural_key(endpoint_lookup[endpoint_key]) == key
-                )
-            )
-            not in polymer_indices
-        }
-        if not nonpoly_natural_keys:
-            continue
-        if len(connected_polymer_indices) == 1:
-            target = connected_polymer_indices[0]
-            for key in nonpoly_natural_keys:
-                endpoint_final_chain[key] = target
-        else:
-            group_type = (
-                "MULTICHAIN_LINKED_COMPONENT"
-                if len(connected_polymer_indices) > 1
-                else "LINKED_NONSTANDARD_GROUP"
-            )
-            baseline_order = min(involved_baseline_indices)
-            special_component_specs.append(
-                {
-                    "natural_keys": nonpoly_natural_keys,
-                    "group_type": group_type,
-                    "linked_polymer_chain_indices": connected_polymer_indices,
-                    "baseline_order": baseline_order,
-                }
-            )
-        for key in nonpoly_natural_keys:
-            endpoint = next(
-                endpoint_lookup[endpoint_key]
-                for endpoint_key in component
-                if _natural_key(endpoint_lookup[endpoint_key]) == key
-            )
-            baseline_index = int(endpoint["chain_index"])
-            decrement_by_group[baseline_index] += 1
-            if key not in record_by_key:
-                baseline_group = group_by_index[baseline_index]
-                record = _special_record_from_endpoint(endpoint, baseline_group)
-                records.append(record)
-                record_by_key[key] = record
-
-    max_polymer_index = max(polymer_indices, default=0)
-    next_index = max_polymer_index + 1
-    final_groups: list[dict[str, Any]] = []
-    for index in sorted(polymer_indices):
-        group = copy.deepcopy(group_by_index[index])
-        group["grouping_status"] = "FINAL"
-        group["linked_polymer_chain_indices"] = []
-        final_groups.append(group)
-
-    for spec in sorted(
-        special_component_specs,
-        key=lambda item: (item["baseline_order"], sorted(item["natural_keys"])),
-    ):
-        index = next_index
-        next_index += 1
-        for key in spec["natural_keys"]:
-            endpoint_final_chain[key] = index
-        residue_names = {key[3] for key in spec["natural_keys"]}
-        final_groups.append(
-            {
-                "chain_index": index,
-                "grouping_status": "FINAL",
-                "group_type": spec["group_type"],
-                "source_chain_id": None,
-                "entity_id": None,
-                "residue_name": next(iter(residue_names)) if len(residue_names) == 1 else "MIXED",
-                "instance_count": len(spec["natural_keys"]),
-                "linked_polymer_chain_indices": spec["linked_polymer_chain_indices"],
-                "source_associations": [],
-            }
-        )
-
-    moved_keys = set(endpoint_final_chain)
-    for baseline_index, baseline_group in sorted(group_by_index.items()):
-        if baseline_index in polymer_indices:
-            continue
-        count = int(baseline_group["instance_count"]) - decrement_by_group[baseline_index]
-        if count <= 0:
-            continue
-        group = copy.deepcopy(baseline_group)
-        group["chain_index"] = next_index
-        next_index += 1
-        group["grouping_status"] = "FINAL"
-        group["instance_count"] = count
-        group["linked_polymer_chain_indices"] = []
-        final_groups.append(group)
-        for record in records:
-            if int(record["chain_index"]) == baseline_index and _natural_key(record) not in moved_keys:
-                endpoint_final_chain[_natural_key(record)] = int(group["chain_index"])
-
-    for record in records:
-        key = _natural_key(record)
-        if key in endpoint_final_chain:
-            record["chain_index"] = endpoint_final_chain[key]
-
-    for relation in confirmed_relations:
-        for endpoint_field in ("endpoint_1", "endpoint_2"):
-            endpoint = relation[endpoint_field]
-            key = _natural_key(endpoint)
-            if key in endpoint_final_chain:
-                endpoint["chain_index"] = endpoint_final_chain[key]
-
-    topology_forming_keys = {
-        _natural_key(relation[endpoint_field])
-        for relation in confirmed_relations
-        if relation["topology_effect_applied"]
-        for endpoint_field in ("endpoint_1", "endpoint_2")
-    }
-    for record in records:
-        key = _natural_key(record)
-        classification = record["classification"]
-        if key not in topology_forming_keys or classification["resolution_status"] != "RESOLVED":
-            continue
-        if classification["topology_class"] != "STANDARD_RESIDUE":
-            classification["topology_class"] = "TOPOLOGY_LINKED_NONSTANDARD"
-            if classification["polymer_class"] == "WATER":
-                classification["polymer_class"] = "NONPOLYMER"
-            classification["evidence"].append(
-                "confirmed topology-forming covalent or metal-coordination relation"
-            )
-
-    records.sort(
-        key=lambda item: (
-            int(item["chain_index"]),
-            str(item.get("source_chain_id")),
-            str(item["source_resid"]["number"]),
-            str(item["source_resid"].get("insertion_code")),
-            item["residue_name"],
-        )
-    )
-    final_groups.sort(key=lambda item: int(item["chain_index"]))
-    return final_groups, records, endpoint_final_chain
-
-
-
-def _assign_selection_contract_ids(
-    selected_model_id: str,
-    groups: list[dict[str, Any]],
-    records: list[dict[str, Any]],
-    relations: list[dict[str, Any]],
-) -> None:
-    """Materialize opaque stable IDs required by component selection v1."""
-    observed_by_group: defaultdict[int, list[str]] = defaultdict(list)
-    missing_by_group: defaultdict[int, list[str]] = defaultdict(list)
-    residue_ids: set[str] = set()
-    for record in records:
-        residue_id = residue_id_from_source_identity(record["source_identity"])
-        if residue_id in residue_ids:
-            raise ClassificationToolError(f"duplicate residue selection identity: {residue_id}")
-        residue_ids.add(residue_id)
-        record["residue_id"] = residue_id
-        chain_index = int(record["chain_index"])
-        if record["presence_status"] == "OBSERVED":
-            observed_by_group[chain_index].append(residue_id)
-        else:
-            missing_by_group[chain_index].append(residue_id)
-
-    component_by_chain: dict[int, str] = {}
-    component_ids: set[str] = set()
-    for group in groups:
-        chain_index = int(group["chain_index"])
-        observed = sorted(observed_by_group.get(chain_index, []))
-        missing = sorted(missing_by_group.get(chain_index, []))
-        component_id = component_id_from_members(
-            selected_model_id,
-            group["group_type"],
-            observed,
-            missing,
-        )
-        if component_id in component_ids:
-            raise ClassificationToolError(f"duplicate component selection identity: {component_id}")
-        component_ids.add(component_id)
-        component_by_chain[chain_index] = component_id
-        group["component_id"] = component_id
-        group["residue_ids"] = observed
-        group["missing_residue_ids"] = missing
-
-    for record in records:
-        chain_index = int(record["chain_index"])
-        if chain_index not in component_by_chain:
-            raise ClassificationToolError(
-                f"residue chain_index {chain_index} has no final component"
-            )
-        record["component_id"] = component_by_chain[chain_index]
-
-    relation_ids: set[str] = set()
-    for relation in relations:
-        endpoint_ids: list[str] = []
-        for endpoint_field in ("endpoint_1", "endpoint_2"):
-            endpoint = relation[endpoint_field]
-            chain_index = int(endpoint["chain_index"])
-            if chain_index not in component_by_chain:
-                raise ClassificationToolError(
-                    f"relation endpoint chain_index {chain_index} has no final component"
-                )
-            endpoint["residue_id"] = residue_id_from_source_identity(
-                endpoint["source_identity"]
-            )
-            endpoint["endpoint_id"] = endpoint_id_from_source_identity(
-                endpoint["source_identity"]
-            )
-            endpoint["component_id"] = component_by_chain[chain_index]
-            endpoint_ids.append(endpoint["endpoint_id"])
-        relation_id = relation_id_from_endpoints(
-            relation["relation_type"], endpoint_ids
-        )
-        if relation_id in relation_ids:
-            raise ClassificationToolError(f"duplicate relation selection identity: {relation_id}")
-        relation_ids.add(relation_id)
-        relation["relation_id"] = relation_id
-
-def _render_report(result: dict[str, Any], confirmation: dict[str, Any]) -> str:
+def _render_report(result: dict[str, Any], confirmations: dict[str, Any]) -> str:
     summary = result["summary"]
     lines = [
         "# Component and residue classification report",
@@ -905,21 +353,12 @@ def _render_report(result: dict[str, Any], confirmation: dict[str, Any]) -> str:
         f"- Result status: `{result['result_status']}`",
         f"- Selected model: `{result['selected_model_id']}`",
         f"- Classification mode: `{result['classification_mode']}`",
-        f"- Chain groups: {summary['chain_group_count']}",
-        f"- Pending confirmation items: {summary['unresolved_item_count']}",
+        f"- Components: {summary['chain_group_count']}",
+        f"- Pending confirmations: {summary['unresolved_item_count']}",
         "",
-        "## Chain groups",
+        "## Classification counts",
         "",
-        "| chain_index | group_type | residue_name | instances | linked polymer chains |",
-        "|---:|---|---|---:|---|",
     ]
-    for group in result["chain_groups"]:
-        linked = ", ".join(str(value) for value in group["linked_polymer_chain_indices"]) or "—"
-        lines.append(
-            f"| {group['chain_index']} | {group['group_type']} | {group.get('residue_name', '—')} | "
-            f"{group['instance_count']} | {linked} |"
-        )
-    lines.extend(["", "## Classification summary", ""])
     for key in (
         "standard_residue_count",
         "topology_linked_nonstandard_count",
@@ -931,315 +370,144 @@ def _render_report(result: dict[str, Any], confirmation: dict[str, Any]) -> str:
         "heavy_atom_issue_count",
     ):
         lines.append(f"- `{key}`: {summary[key]}")
-    lines.extend(["", "## Confirmed relations", ""])
-    lines.append(
-        f"- Covalent connections: {len(result['confirmed_relations']['covalent_connections'])}"
-    )
-    lines.append(
-        f"- Metal coordination relations: {len(result['confirmed_relations']['metal_coordination'])}"
-    )
     lines.extend(["", "## Pending confirmations", ""])
-    if not confirmation["requests"]:
-        lines.append("None.")
-    else:
-        for request in confirmation["requests"]:
+    if confirmations["requests"]:
+        for request in confirmations["requests"]:
             lines.append(
                 f"- {request['request_index']}. `{request['request_type']}` — {request['reason']}"
             )
+    else:
+        lines.append("None.")
     lines.append("")
     return "\n".join(lines)
 
 
 def build(config: dict[str, Any], script_dir: Path) -> tuple[dict[str, Any], dict[str, Any], str, dict[str, Path]]:
     schema_dir = script_dir.parent / "schemas"
-    model_scope, model_scope_path, model_scope_hash = _load_validated(
-        config,
-        "model_scope",
-        schema_dir / "model_scope.schema.yaml",
+    model_scope, _model_path, model_hash = _load_hashed(
+        config, "model_scope", schema_dir / "model_scope.schema.yaml"
     )
-    observations, observations_path, observations_hash = _load_validated(
-        config,
-        "classification_observations",
-        schema_dir / "classification_observations.schema.yaml",
+    manifest, _manifest_path, manifest_hash = _load_hashed(
+        config, "reference_manifest", schema_dir / "reference_manifest.schema.yaml"
     )
-    manifest, manifest_path, manifest_hash = _load_validated(
-        config,
-        "reference_manifest",
-        schema_dir / "reference_manifest.schema.yaml",
+    observations_config = _required_mapping(config, "classification_observations")
+    observations_path = _required_path(observations_config, "path")
+    observations = read_yaml_strict(observations_path)
+    validate_document(
+        observations,
+        Path(
+            observations_config.get(
+                "schema", schema_dir / "classification_observations.schema.yaml"
+            )
+        ).resolve(),
     )
-    connections, connections_path, connections_hash = _load_validated(
-        config,
-        "possible_connections_result",
+    for name in ("possible_connections", "possible_coordination"):
+        if observations["completed_checks"][name] in {"PENDING", "BLOCKED"}:
+            raise ClassificationToolError(f"relation stage is not complete: {name}")
+    connections, connections_hash = _load_check_output(
+        observations,
+        "possible_connections",
         schema_dir / "possible_connections_result.schema.yaml",
     )
-    coordination, coordination_path, coordination_hash = _load_validated(
-        config,
-        "possible_coordination_result",
+    coordination, coordination_hash = _load_check_output(
+        observations,
+        "possible_coordination",
         schema_dir / "possible_coordination_result.schema.yaml",
     )
-
-    for record in observations["residue_records"]:
-        validate_residue_identity_record(record)
-
-    selected_model_id = model_scope["selection"]["selected_model_id"]
-    if selected_model_id is None:
-        raise ClassificationToolError("model scope is unresolved")
-    if str(observations["input"]["selected_model_id"]) != str(selected_model_id):
-        raise ClassificationToolError("model scope and observations selected model differ")
-    structure_hash = observations["input"]["structure_sha256"]
-    if model_scope["input_structure"]["sha256"] != structure_hash:
-        raise ClassificationToolError("model scope and observations structure hashes differ")
-    if manifest["classification_mode"] != observations["input"]["classification_mode"]:
-        raise ClassificationToolError("manifest and observations classification modes differ")
-    for relation_document, label, manifest_key in (
-        (connections, "connections", "possible_connections"),
-        (coordination, "coordination", "possible_coordination"),
+    _validate_relation_provenance(manifest, connections, coordination)
+    if (
+        observations["input"]["structure_sha256"] != model_scope["input_structure"]["sha256"]
+        or str(observations["input"]["selected_model_id"])
+        != str(model_scope["selection"]["selected_model_id"])
     ):
-        relation_input = relation_document["input"]
-        if relation_input["structure_sha256"] != structure_hash:
-            raise ClassificationToolError(f"{label} result structure hash differs")
-        if relation_input["observations_sha256"] != observations_hash:
-            raise ClassificationToolError(
-                f"{label} result references a different observations file"
-            )
-        if str(relation_input["selected_model_id"]) != str(selected_model_id):
-            raise ClassificationToolError(f"{label} result selected model differs")
-        manifest_reference = manifest["relation_definition_files"][manifest_key]
-        definition_path = relation_input.get("definition_path")
-        definition_hash = relation_input.get("definition_sha256")
-        if definition_path is None:
-            if manifest_reference != {
-                "path": None,
-                "sha256": None,
-                "status": "NOT_PROVIDED",
-            }:
-                raise ClassificationToolError(
-                    f"{label} result omitted a definition recorded by reference manifest"
-                )
-        elif (
-            manifest_reference.get("status") != "LOADED"
-            or manifest_reference.get("path") != definition_path
-            or manifest_reference.get("sha256") != definition_hash
-        ):
-            raise ClassificationToolError(
-                f"{label} definition provenance differs from reference manifest"
-            )
-
-    raw_requests: list[dict[str, Any]] = [
-        *(_unresolved_to_request(item) for item in observations["unresolved_observations"]),
-        *(_connection_requests(connections)),
-        *(_coordination_requests(coordination)),
+        raise ClassificationToolError("model scope and observations do not match")
+    effective = _apply_supported_decisions(
+        observations, config, schema_dir / "confirmation_requests.schema.yaml"
+    )
+    confirmations = _requests(effective)
+    validate_document(confirmations, schema_dir / "confirmation_requests.schema.yaml")
+    groups, records, identities = _materialize_ids(effective)
+    confirmed, rejected = _relations(effective, identities)
+    counts = defaultdict(int)
+    heavy_issues = 0
+    for record in records:
+        topology = record["classification_observation"]["topology_class"]
+        if topology:
+            counts[topology] += 1
+        check = record["heavy_atom_check"]
+        heavy_issues += bool(check.get("findings")) or check.get("execution_status") == "REFERENCE_TEMPLATE_UNAVAILABLE"
+    output_config = _required_mapping(config, "output")
+    confirmation_path = _required_path(output_config, "confirmation_requests_path")
+    result_path = _required_path(output_config, "classification_result_path")
+    report_path = _required_path(output_config, "classification_report_path")
+    confirmation_hash = hashlib.sha256(yaml_text(confirmations).encode("utf-8")).hexdigest()
+    unresolved = [
+        {
+            "request_index": item["request_index"],
+            "request_type": item["request_type"],
+            **({"relation_id": item["relation_id"]} if "relation_id" in item else {}),
+            "subject": copy.deepcopy(item["subject"]),
+        }
+        for item in confirmations["requests"]
     ]
-    issue_subject_keys = {
-        (
-            item["subject"].get("source_chain_id"),
-            json.dumps(item["subject"].get("source_resid"), sort_keys=True),
-            item["subject"].get("residue_name"),
-        )
-        for item in observations["unresolved_observations"]
-        if isinstance(item.get("subject"), dict)
-    }
-    for record in observations["residue_records"]:
-        if record["classification_observation"]["resolution_status"] == "RESOLVED":
-            continue
-        key = (
-            record.get("source_chain_id"),
-            json.dumps(record["source_resid"], sort_keys=True),
-            record["residue_name"],
-        )
-        if key not in issue_subject_keys:
-            raw_requests.append(_classification_pending_request(record))
-    raw_requests = _deduplicate_requests(raw_requests)
-
-    confirmation_schema = schema_dir / "confirmation_requests.schema.yaml"
-    decisions = _load_decisions(config, confirmation_schema)
-    unresolved_requests: list[dict[str, Any]] = []
-    resolved_requests: list[tuple[dict[str, Any], dict[str, Any]]] = []
-    confirmed_relations = _explicit_relations(connections, coordination)
-    rejected_relations: list[dict[str, Any]] = []
-    for request in raw_requests:
-        decision = decisions.get(_request_fingerprint(request))
-        if decision is None:
-            unresolved_requests.append(request)
-            continue
-        if request["request_type"] in RELATION_REQUEST_TYPES:
-            confirmed, rejected = _decision_relation(request, decision)
-            if confirmed is not None:
-                confirmed_relations.append(confirmed)
-            if rejected is not None:
-                rejected_relations.append(rejected)
-            if confirmed is None and rejected is None:
-                unresolved_requests.append(request)
-            else:
-                resolved_requests.append((request, decision))
-            continue
-        if (
-            request["request_type"] in CLASSIFICATION_REQUEST_TYPES
-            and decision["decision"] == "SET_CLASSIFICATION"
-        ):
-            resolved_requests.append((request, decision))
-            continue
-        if (
-            request["request_type"] == "ATOM_NAME_MAPPING_REQUIRED"
-            and decision["decision"]
-            in {"APPLY_ATOM_NAME_MAPPING", "REJECT_ATOM_NAME_MAPPING"}
-        ):
-            resolved_requests.append((request, decision))
-            continue
-        if decision["decision"] == "EXCLUDE_FROM_REPORTED_MISSING_RESIDUES":
-            resolved_requests.append((request, decision))
-            continue
-        unresolved_requests.append(request)
-
-    for index, request in enumerate(unresolved_requests, start=1):
-        request["request_index"] = index
-    confirmation = {
-        "schema_version": "1.0",
-        "status": (
-            "USER_CONFIRMATION_REQUIRED"
-            if unresolved_requests
-            else "NO_CONFIRMATION_REQUIRED"
-        ),
-        "requests": unresolved_requests,
-    }
-    validate_document(confirmation, confirmation_schema)
-
-    classification_decisions = _classification_decision_map(resolved_requests)
-    heavy_atom_decisions = _heavy_atom_decision_map(resolved_requests)
-    records = [
-        _convert_baseline_record(record, classification_decisions, heavy_atom_decisions)
-        for record in observations["residue_records"]
-    ]
-    final_groups, records, endpoint_final_chain = _integrate_chain_groups_and_records(
-        observations,
-        records,
-        confirmed_relations,
-    )
-    for relation in rejected_relations:
-        for endpoint_field in ("endpoint_1", "endpoint_2"):
-            endpoint = relation[endpoint_field]
-            key = _natural_key(endpoint)
-            if key in endpoint_final_chain:
-                endpoint["chain_index"] = endpoint_final_chain[key]
-    _assign_selection_contract_ids(
-        str(selected_model_id),
-        final_groups,
-        records,
-        [*confirmed_relations, *rejected_relations],
-    )
-
-    output = _required_mapping(config, "output")
-    confirmation_path = _required_path(output, "confirmation_requests_path")
-    result_path = _required_path(output, "classification_result_path")
-    report_path = _required_path(output, "classification_report_path")
-    result_schema = Path(
-        output.get("classification_result_schema", schema_dir / "classification_result.schema.yaml")
-    ).resolve()
-    atomic_write_yaml(confirmation_path, confirmation)
-    confirmation_hash = sha256_file(confirmation_path)
-
-    standard_count = sum(
-        record["classification"]["topology_class"] == "STANDARD_RESIDUE"
-        for record in records
-    )
-    linked_count = sum(
-        record["classification"]["topology_class"]
-        == "TOPOLOGY_LINKED_NONSTANDARD"
-        for record in records
-    )
-    independent_count = sum(
-        record["classification"]["topology_class"] == "INDEPENDENT_NONSTANDARD"
-        for record in records
-    )
-    solvent_count = sum(
-        record["classification"]["topology_class"] == "SOLVENT_COMPONENT"
-        for record in records
-    )
-    ion_count = sum(
-        record["classification"]["topology_class"] == "ION_COMPONENT"
-        for record in records
-    )
     result = {
         "schema_version": "1.0",
-        "result_status": (
-            "PENDING_USER_CONFIRMATION" if unresolved_requests else "COMPLETE"
-        ),
-        "selected_model_id": str(selected_model_id),
-        "classification_mode": observations["input"]["classification_mode"],
+        "result_status": "PENDING_USER_CONFIRMATION" if unresolved else "COMPLETE",
+        "selected_model_id": str(effective["input"]["selected_model_id"]),
+        "classification_mode": effective["input"]["classification_mode"],
         "source_structure": {
-            "path": observations["input"]["structure_path"],
-            "sha256": structure_hash,
-            "source_format": observations["input"]["source_format"],
+            "path": effective["input"]["structure_path"],
+            "sha256": effective["input"]["structure_sha256"],
+            "source_format": effective["input"]["source_format"],
         },
         "source_hashes": {
-            "model_scope": model_scope_hash,
-            "classification_observations": observations_hash,
+            "model_scope": model_hash,
+            "classification_observations": sha256_file(observations_path),
             "reference_manifest": manifest_hash,
             "possible_connections_result": connections_hash,
             "possible_coordination_result": coordination_hash,
             "confirmation_requests": confirmation_hash,
         },
-        "chain_groups": final_groups,
-        "residue_records": records,
-        "confirmed_relations": {
-            "covalent_connections": [
-                relation
-                for relation in confirmed_relations
-                if relation["relation_type"] == "COVALENT_CONNECTION"
-            ],
-            "metal_coordination": [
-                relation
-                for relation in confirmed_relations
-                if relation["relation_type"] == "METAL_COORDINATION"
-            ],
-        },
-        "rejected_candidates": {
-            "covalent_connections": [
-                relation
-                for relation in rejected_relations
-                if relation["relation_type"] == "COVALENT_CONNECTION"
-            ],
-            "metal_coordination": [
-                relation
-                for relation in rejected_relations
-                if relation["relation_type"] == "METAL_COORDINATION"
-            ],
-        },
-        "unresolved_items": [
+        "chain_groups": groups,
+        "residue_records": [
             {
-                "request_index": request["request_index"],
-                "request_type": request["request_type"],
-                "subject": copy.deepcopy(request["subject"]),
+                "residue_id": item["residue_id"],
+                "component_id": item["component_id"],
+                "source_identity": item["source_identity"],
+                "current_identity": item["current_identity"],
+                "chain_index": item["chain_index"],
+                "source_chain_id": item["source_chain_id"],
+                "source_resid": item["source_resid"],
+                "residue_name": item["residue_name"],
+                "presence_status": item["presence_status"],
+                "sequence_position": item["sequence_position"],
+                "classification": item["classification_observation"],
+                "conformation": item["conformation_observation"],
+                "heavy_atom_check": item["heavy_atom_check"],
             }
-            for request in unresolved_requests
+            for item in records
         ],
+        "confirmed_relations": confirmed,
+        "rejected_candidates": rejected,
+        "unresolved_items": unresolved,
         "summary": {
-            "chain_group_count": len(final_groups),
-            "standard_residue_count": standard_count,
-            "topology_linked_nonstandard_count": linked_count,
-            "independent_nonstandard_count": independent_count,
-            "solvent_component_count": solvent_count,
-            "ion_component_count": ion_count,
+            "chain_group_count": len(groups),
+            "standard_residue_count": counts["STANDARD_RESIDUE"],
+            "topology_linked_nonstandard_count": counts["TOPOLOGY_LINKED_NONSTANDARD"],
+            "independent_nonstandard_count": counts["INDEPENDENT_NONSTANDARD"],
+            "solvent_component_count": counts["SOLVENT_COMPONENT"],
+            "ion_component_count": counts["ION_COMPONENT"],
             "multiple_conformation_residue_count": sum(
-                record["conformation"]["status"] == "MULTIPLE_CONFORMATIONS"
+                record["conformation_observation"]["status"] == "MULTIPLE_CONFORMATIONS"
                 for record in records
             ),
-            "missing_residue_count": sum(
-                record["presence_status"] == "MISSING_EXPECTED"
-                for record in records
-            ),
-            "heavy_atom_issue_count": sum(
-                bool(record["heavy_atom_check"].get("findings"))
-                or record["heavy_atom_check"].get("execution_status")
-                == "REFERENCE_TEMPLATE_UNAVAILABLE"
-                for record in records
-            ),
-            "unresolved_item_count": len(unresolved_requests),
+            "missing_residue_count": sum(item["presence_status"] == "MISSING_EXPECTED" for item in records),
+            "heavy_atom_issue_count": int(heavy_issues),
+            "unresolved_item_count": len(unresolved),
         },
     }
-    validate_document(result, result_schema)
-    report = _render_report(result, confirmation)
-    return result, confirmation, report, {
+    report = _render_report(result, confirmations)
+    return result, confirmations, report, {
         "result": result_path,
         "confirmation": confirmation_path,
         "report": report_path,
@@ -1264,24 +532,50 @@ def main() -> int:
             config,
             script_dir.parent / "schemas/classification_result_build_config.schema.yaml",
         )
-        result, _confirmation, report, paths = build(config, script_dir)
-        atomic_write_yaml(paths["result"], result)
-        report_path = paths["report"]
-        if report_path.exists():
-            if report_path.is_symlink() or not report_path.is_file():
-                raise ClassificationToolError(
-                    f"classification report path is not a regular file: {report_path}"
+        result, confirmations, report, paths = build(config, script_dir)
+        validate_document(
+            result,
+            Path(
+                config["output"].get(
+                    "classification_result_schema",
+                    script_dir.parent / "schemas/classification_result.schema.yaml",
                 )
-            existing = report_path.read_text(encoding="utf-8")
-            if existing != report:
-                raise ClassificationToolError(
-                    f"refusing to overwrite different existing report: {report_path}"
-                )
-        else:
-            report_path.parent.mkdir(parents=True, exist_ok=True)
-            temporary = report_path.with_name(report_path.name + ".tmp")
-            temporary.write_text(report, encoding="utf-8")
-            temporary.replace(report_path)
+            ).resolve(),
+        )
+        validate_document(
+            confirmations,
+            script_dir.parent / "schemas/confirmation_requests.schema.yaml",
+        )
+        staged = {
+            paths["confirmation"]: yaml_text(confirmations),
+            paths["result"]: yaml_text(result),
+            paths["report"]: report,
+        }
+        for path, text in staged.items():
+            if path.exists():
+                if path.is_symlink() or not path.is_file():
+                    raise ClassificationToolError(f"output path is not a regular file: {path}")
+                if path.read_text(encoding="utf-8") != text:
+                    raise ClassificationToolError(f"refusing to overwrite different existing output: {path}")
+        temporaries = []
+        created_paths = []
+        for path, text in staged.items():
+            if path.exists():
+                continue
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = path.with_name(path.name + ".tmp")
+            temporary.write_text(text, encoding="utf-8")
+            temporaries.append((temporary, path))
+        try:
+            for temporary, path in temporaries:
+                os.replace(temporary, path)
+                created_paths.append(path)
+        except Exception as exc:
+            for temporary, _path in temporaries:
+                temporary.unlink(missing_ok=True)
+            for path in created_paths:
+                path.unlink(missing_ok=True)
+            raise ClassificationToolError(f"final output commit failed: {exc}") from exc
         return 0
     except ClassificationToolError as exc:
         print(f"build_classification_result.py: {exc}", file=sys.stderr)

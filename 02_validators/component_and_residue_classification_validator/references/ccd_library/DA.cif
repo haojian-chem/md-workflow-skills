@@ -1,0 +1,28 @@
+data_DA
+_chem_comp.id DA
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+DA "P" P .
+DA "OP1" O .
+DA "OP2" O .
+DA "O5'" O .
+DA "C5'" C .
+DA "C4'" C .
+DA "O4'" O .
+DA "C3'" C .
+DA "O3'" O .
+DA "C2'" C .
+DA "C1'" C .
+DA "N9" N .
+DA "C8" C .
+DA "N7" N .
+DA "C5" C .
+DA "C6" C .
+DA "N6" N .
+DA "N1" N .
+DA "C2" C .
+DA "N3" N .
+DA "C4" C .

@@ -1,0 +1,29 @@
+data_DG
+_chem_comp.id DG
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+DG "P" P .
+DG "OP1" O .
+DG "OP2" O .
+DG "O5'" O .
+DG "C5'" C .
+DG "C4'" C .
+DG "O4'" O .
+DG "C3'" C .
+DG "O3'" O .
+DG "C2'" C .
+DG "C1'" C .
+DG "N9" N .
+DG "C8" C .
+DG "N7" N .
+DG "C5" C .
+DG "C6" C .
+DG "O6" O .
+DG "N1" N .
+DG "C2" C .
+DG "N2" N .
+DG "N3" N .
+DG "C4" C .

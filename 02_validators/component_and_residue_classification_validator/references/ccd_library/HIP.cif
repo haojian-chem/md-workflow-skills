@@ -1,0 +1,17 @@
+data_HIP
+_chem_comp.id HIP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+HIP "N" N .
+HIP "CA" C .
+HIP "C" C .
+HIP "O" O .
+HIP "CB" C .
+HIP "CG" C .
+HIP "ND1" N .
+HIP "CD2" C .
+HIP "CE1" C .
+HIP "NE2" N .

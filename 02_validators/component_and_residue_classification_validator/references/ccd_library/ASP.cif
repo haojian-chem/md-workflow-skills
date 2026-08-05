@@ -1,0 +1,15 @@
+data_ASP
+_chem_comp.id ASP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ASP "N" N .
+ASP "CA" C .
+ASP "C" C .
+ASP "O" O .
+ASP "CB" C .
+ASP "CG" C .
+ASP "OD1" O .
+ASP "OD2" O .

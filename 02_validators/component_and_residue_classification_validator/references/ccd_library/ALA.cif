@@ -1,0 +1,12 @@
+data_ALA
+_chem_comp.id ALA
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ALA "N" N .
+ALA "CA" C .
+ALA "C" C .
+ALA "O" O .
+ALA "CB" C .

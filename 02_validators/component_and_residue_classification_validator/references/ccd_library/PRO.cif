@@ -1,0 +1,14 @@
+data_PRO
+_chem_comp.id PRO
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+PRO "N" N .
+PRO "CA" C .
+PRO "C" C .
+PRO "O" O .
+PRO "CB" C .
+PRO "CG" C .
+PRO "CD" C .

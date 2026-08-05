@@ -1,0 +1,16 @@
+data_GLN
+_chem_comp.id GLN
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+GLN "N" N .
+GLN "CA" C .
+GLN "C" C .
+GLN "O" O .
+GLN "CB" C .
+GLN "CG" C .
+GLN "CD" C .
+GLN "OE1" O .
+GLN "NE2" N .

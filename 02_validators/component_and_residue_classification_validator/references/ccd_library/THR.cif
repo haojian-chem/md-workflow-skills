@@ -1,0 +1,14 @@
+data_THR
+_chem_comp.id THR
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+THR "N" N .
+THR "CA" C .
+THR "C" C .
+THR "O" O .
+THR "CB" C .
+THR "OG1" O .
+THR "CG2" C .

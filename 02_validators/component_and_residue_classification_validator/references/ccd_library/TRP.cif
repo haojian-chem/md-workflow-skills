@@ -1,0 +1,21 @@
+data_TRP
+_chem_comp.id TRP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+TRP "N" N .
+TRP "CA" C .
+TRP "C" C .
+TRP "O" O .
+TRP "CB" C .
+TRP "CG" C .
+TRP "CD1" C .
+TRP "CD2" C .
+TRP "NE1" N .
+TRP "CE2" C .
+TRP "CE3" C .
+TRP "CZ2" C .
+TRP "CZ3" C .
+TRP "CH2" C .

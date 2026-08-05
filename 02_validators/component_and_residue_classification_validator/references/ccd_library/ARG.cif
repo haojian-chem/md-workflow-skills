@@ -1,0 +1,18 @@
+data_ARG
+_chem_comp.id ARG
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ARG "N" N .
+ARG "CA" C .
+ARG "C" C .
+ARG "O" O .
+ARG "CB" C .
+ARG "CG" C .
+ARG "CD" C .
+ARG "NE" N .
+ARG "CZ" C .
+ARG "NH1" N .
+ARG "NH2" N .

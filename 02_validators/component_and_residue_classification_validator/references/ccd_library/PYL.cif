@@ -1,0 +1,25 @@
+data_PYL
+_chem_comp.id PYL
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+PYL "CB2" C .
+PYL "CG2" C .
+PYL "CD2" C .
+PYL "CE2" C .
+PYL "N2" N .
+PYL "CA2" C .
+PYL "C2" C .
+PYL "O2" O .
+PYL "NZ" N .
+PYL "CE" C .
+PYL "CD" C .
+PYL "CG" C .
+PYL "CB" C .
+PYL "CA" C .
+PYL "C" C .
+PYL "OXT" O .
+PYL "O" O .
+PYL "N" N .

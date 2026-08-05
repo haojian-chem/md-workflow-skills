@@ -1,0 +1,15 @@
+data_ASH
+_chem_comp.id ASH
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ASH "N" N .
+ASH "CA" C .
+ASH "C" C .
+ASH "O" O .
+ASH "CB" C .
+ASH "CG" C .
+ASH "OD1" O .
+ASH "OD2" O .

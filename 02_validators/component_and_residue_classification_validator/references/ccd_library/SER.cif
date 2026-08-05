@@ -1,0 +1,13 @@
+data_SER
+_chem_comp.id SER
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+SER "N" N .
+SER "CA" C .
+SER "C" C .
+SER "O" O .
+SER "CB" C .
+SER "OG" O .

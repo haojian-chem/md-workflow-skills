@@ -1,0 +1,16 @@
+data_LYN
+_chem_comp.id LYN
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+LYN "N" N .
+LYN "CA" C .
+LYN "C" C .
+LYN "O" O .
+LYN "CB" C .
+LYN "CG" C .
+LYN "CD" C .
+LYN "CE" C .
+LYN "NZ" N .

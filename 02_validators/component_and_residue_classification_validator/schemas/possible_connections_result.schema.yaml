@@ -1,244 +1,109 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: possible_connections_result.schema.yaml
-title: Possible covalent connection check results
-schema_version: "1.0"
+title: Possible covalent connection check result
 type: object
 additionalProperties: false
-required: [schema_version, status, input, definition_results]
+required: [schema_version, status, reason, input, definition_results]
 properties:
   schema_version: {const: "1.0"}
-  status:
-    enum: [COMPLETED, NOT_PERFORMED]
-  reason:
-    type: [string, "null"]
+  status: {enum: [COMPLETED, NOT_PERFORMED]}
+  reason: {type: [string, "null"]}
   input:
-    $ref: "#/$defs/input"
+    type: object
+    additionalProperties: false
+    required: [structure_path, structure_sha256, selected_model_id, definition_path, definition_sha256, observations_path]
+    properties:
+      structure_path: {type: string, minLength: 1}
+      structure_sha256: {$ref: "#/$defs/sha256"}
+      selected_model_id: {type: string, minLength: 1}
+      definition_path: {type: [string, "null"]}
+      definition_sha256:
+        oneOf: [{type: "null"}, {$ref: "#/$defs/sha256"}]
+      observations_path: {type: string, minLength: 1}
   definition_results:
     type: array
-    items:
-      $ref: "#/$defs/definition_result"
+    items: {$ref: "#/$defs/definition_result"}
 $defs:
-  sha256:
-    type: string
-    pattern: "^[0-9a-f]{64}$"
-  nullable_string:
-    type: [string, "null"]
+  sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
+  nullable_string: {type: [string, "null"]}
   source_resid:
     type: object
     additionalProperties: false
     required: [number, insertion_code]
     properties:
       number: {type: string, minLength: 1}
-      insertion_code:
-        $ref: "#/$defs/nullable_string"
-  source_residue_identity:
-    type: object
-    additionalProperties: false
-    required: [source_model_id, source_chain_id, source_resid, source_residue_name]
-    properties:
-      source_model_id: {type: string, minLength: 1}
-      source_chain_id:
-        $ref: "#/$defs/nullable_string"
-      source_resid:
-        $ref: "#/$defs/source_resid"
-      source_residue_name: {type: string, minLength: 1}
-  current_residue_identity:
-    type: object
-    additionalProperties: false
-    required: [current_model_id, current_chain_id, current_resid, current_residue_name]
-    properties:
-      current_model_id: {type: string, minLength: 1}
-      current_chain_id:
-        $ref: "#/$defs/nullable_string"
-      current_resid:
-        $ref: "#/$defs/source_resid"
-      current_residue_name: {type: string, minLength: 1}
+      insertion_code: {$ref: "#/$defs/nullable_string"}
   source_atom_identity:
     type: object
     additionalProperties: false
     required: [source_model_id, source_chain_id, source_resid, source_residue_name, source_atom_name, source_altloc_id]
     properties:
       source_model_id: {type: string, minLength: 1}
-      source_chain_id:
-        $ref: "#/$defs/nullable_string"
-      source_resid:
-        $ref: "#/$defs/source_resid"
+      source_chain_id: {$ref: "#/$defs/nullable_string"}
+      source_resid: {$ref: "#/$defs/source_resid"}
       source_residue_name: {type: string, minLength: 1}
       source_atom_name: {type: string, minLength: 1}
-      source_altloc_id:
-        $ref: "#/$defs/nullable_string"
+      source_altloc_id: {$ref: "#/$defs/nullable_string"}
   current_atom_identity:
     type: object
     additionalProperties: false
     required: [current_model_id, current_chain_id, current_resid, current_residue_name, current_atom_name, current_altloc_id]
     properties:
       current_model_id: {type: string, minLength: 1}
-      current_chain_id:
-        $ref: "#/$defs/nullable_string"
-      current_resid:
-        $ref: "#/$defs/source_resid"
+      current_chain_id: {$ref: "#/$defs/nullable_string"}
+      current_resid: {$ref: "#/$defs/source_resid"}
       current_residue_name: {type: string, minLength: 1}
       current_atom_name: {type: string, minLength: 1}
-      current_altloc_id:
-        $ref: "#/$defs/nullable_string"
+      current_altloc_id: {$ref: "#/$defs/nullable_string"}
   endpoint:
     type: object
     additionalProperties: false
-    required:
-      - source_identity
-      - current_identity
-      - chain_index
-      - source_chain_id
-      - source_resid
-      - residue_name
-      - atom_name
-      - altloc_id
+    required: [chain_index, source_identity, current_identity, source_chain_id, source_resid, residue_name, atom_name, altloc_id]
     properties:
-      source_identity:
-        $ref: "#/$defs/source_atom_identity"
-      current_identity:
-        $ref: "#/$defs/current_atom_identity"
       chain_index: {type: integer, minimum: 1}
-      source_chain_id:
-        $ref: "#/$defs/nullable_string"
-      source_resid:
-        $ref: "#/$defs/source_resid"
+      source_identity: {$ref: "#/$defs/source_atom_identity"}
+      current_identity: {$ref: "#/$defs/current_atom_identity"}
+      source_chain_id: {$ref: "#/$defs/nullable_string"}
+      source_resid: {$ref: "#/$defs/source_resid"}
       residue_name: {type: string, minLength: 1}
       atom_name: {type: string, minLength: 1}
-      altloc_id:
-        $ref: "#/$defs/nullable_string"
-  partner_definition:
-    type: object
-    additionalProperties: false
-    required: [residue_name, atom_name]
-    properties:
-      residue_name: {type: string, minLength: 1}
-      atom_name: {type: string, minLength: 1}
-  distance_range:
-    type: object
-    additionalProperties: false
-    required: [minimum, maximum]
-    properties:
-      minimum: {type: number, minimum: 0}
-      maximum: {type: number, exclusiveMinimum: 0}
-  input:
-    type: object
-    additionalProperties: false
-    required:
-      - structure_path
-      - structure_sha256
-      - selected_model_id
-      - definition_path
-      - definition_sha256
-      - observations_path
-      - observations_sha256
-    properties:
-      structure_path: {type: string, minLength: 1}
-      structure_sha256:
-        $ref: "#/$defs/sha256"
-      selected_model_id: {type: string, minLength: 1}
-      definition_path:
-        type: [string, "null"]
-      definition_sha256:
-        type: [string, "null"]
-        pattern: "^[0-9a-f]{64}$"
-      observations_path: {type: string, minLength: 1}
-      observations_sha256:
-        $ref: "#/$defs/sha256"
-  matching_summary:
-    type: object
-    additionalProperties: false
-    required:
-      - partner_1_residue_count
-      - partner_1_atom_count
-      - partner_2_residue_count
-      - partner_2_atom_count
-      - considered_pair_count
-      - recorded_pair_count
-      - omitted_above_maximum_pair_count
-    properties:
-      partner_1_residue_count: {type: integer, minimum: 0}
-      partner_1_atom_count: {type: integer, minimum: 0}
-      partner_2_residue_count: {type: integer, minimum: 0}
-      partner_2_atom_count: {type: integer, minimum: 0}
-      considered_pair_count: {type: integer, minimum: 0}
-      recorded_pair_count: {type: integer, minimum: 0}
-      omitted_above_maximum_pair_count: {type: integer, minimum: 0}
-  missing_atom_instance:
-    type: object
-    additionalProperties: false
-    required:
-      - source_identity
-      - current_identity
-      - chain_index
-      - source_chain_id
-      - source_resid
-      - residue_name
-      - missing_atom_name
-    properties:
-      source_identity:
-        $ref: "#/$defs/source_residue_identity"
-      current_identity:
-        $ref: "#/$defs/current_residue_identity"
-      chain_index: {type: integer, minimum: 1}
-      source_chain_id:
-        $ref: "#/$defs/nullable_string"
-      source_resid:
-        $ref: "#/$defs/source_resid"
-      residue_name: {type: string, minLength: 1}
-      missing_atom_name: {type: string, minLength: 1}
-  explicit_connection:
-    type: object
-    additionalProperties: false
-    required: [status, source_type, relation_type]
-    properties:
-      status: {enum: [PRESENT, ABSENT]}
-      source_type:
-        type: [string, "null"]
-      relation_type:
-        type: [string, "null"]
+      altloc_id: {$ref: "#/$defs/nullable_string"}
   geometry:
     oneOf:
-      - type: "null"
+      - {type: "null"}
       - type: object
         additionalProperties: false
         required: [distance_angstrom, configured_range, range_status]
         properties:
           distance_angstrom: {type: number, minimum: 0}
           configured_range:
-            $ref: "#/$defs/distance_range"
-          range_status:
-            enum: [BELOW_MINIMUM, WITHIN_RANGE, ABOVE_MAXIMUM]
+            type: object
+            additionalProperties: false
+            required: [minimum, maximum]
+            properties:
+              minimum: {type: number, minimum: 0}
+              maximum: {type: number, minimum: 0}
+          range_status: {enum: [BELOW_MINIMUM, WITHIN_RANGE, ABOVE_MAXIMUM]}
+  explicit_relation:
+    type: object
+    additionalProperties: false
+    required: [status, source_type, relation_type]
+    properties:
+      status: {enum: [ABSENT, PRESENT, AMBIGUOUS]}
+      source_type: {$ref: "#/$defs/nullable_string"}
+      relation_type: {$ref: "#/$defs/nullable_string"}
   pair_result:
     type: object
     additionalProperties: false
-    required:
-      - partner_1
-      - partner_2
-      - explicit_connection
-      - geometry
-      - status
-      - detail
-      - confirmation_required
-      - topology_effect_candidate
+    required: [relation_id, partner_1, partner_2, explicit_connection, geometry, status, detail, confirmation_required, topology_effect_candidate]
     properties:
-      partner_1:
-        $ref: "#/$defs/endpoint"
-      partner_2:
-        $ref: "#/$defs/endpoint"
-      explicit_connection:
-        $ref: "#/$defs/explicit_connection"
-      geometry:
-        $ref: "#/$defs/geometry"
-      status:
-        enum:
-          - CONFIRMED_BY_STRUCTURE
-          - GEOMETRY_SUPPORTED_CANDIDATE
-          - NOT_GEOMETRICALLY_SUPPORTED
-          - CONNECTION_DEFINITION_CONFLICT
-          - GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS
-      detail:
-        type: [string, "null"]
+      relation_id: {type: string, pattern: "^relation:v1/type/COVALENT_CONNECTION/endpoints/[0-9a-f]{64}$"}
+      partner_1: {$ref: "#/$defs/endpoint"}
+      partner_2: {$ref: "#/$defs/endpoint"}
+      explicit_connection: {$ref: "#/$defs/explicit_relation"}
+      geometry: {$ref: "#/$defs/geometry"}
+      status: {enum: [CONFIRMED_BY_STRUCTURE, GEOMETRY_SUPPORTED_CANDIDATE, NOT_GEOMETRICALLY_SUPPORTED, CONNECTION_DEFINITION_CONFLICT, GEOMETRY_NOT_EVALUATED_MULTIPLE_CONFORMATIONS]}
+      detail: {$ref: "#/$defs/nullable_string"}
       confirmation_required: {type: boolean}
       topology_effect_candidate:
         type: object
@@ -247,60 +112,13 @@ $defs:
         properties:
           relation_type: {const: COVALENT_CONNECTION}
           applicable: {type: boolean}
-  omitted_pairs:
-    type: object
-    additionalProperties: false
-    required: [count, minimum_distance_angstrom, maximum_distance_angstrom]
-    properties:
-      count: {type: integer, minimum: 0}
-      minimum_distance_angstrom:
-        type: [number, "null"]
-        minimum: 0
-      maximum_distance_angstrom:
-        type: [number, "null"]
-        minimum: 0
   definition_result:
     type: object
-    additionalProperties: false
-    required:
-      - definition_index
-      - label
-      - definition
-      - definition_status
-      - missing_partner
-      - matching_summary
-      - atom_not_found_instances
-      - pair_results
-      - omitted_above_maximum_pairs
+    additionalProperties: true
+    required: [definition_index, definition_status, matching_summary, pair_results]
     properties:
       definition_index: {type: integer, minimum: 1}
-      label:
-        $ref: "#/$defs/nullable_string"
-      definition:
-        type: object
-        additionalProperties: false
-        required: [partner_1, partner_2, distance_range_angstrom]
-        properties:
-          partner_1:
-            $ref: "#/$defs/partner_definition"
-          partner_2:
-            $ref: "#/$defs/partner_definition"
-          distance_range_angstrom:
-            $ref: "#/$defs/distance_range"
-      definition_status:
-        enum: [EVALUATED, PARTNER_NOT_FOUND, ATOM_NOT_FOUND]
-      missing_partner:
-        type: [string, "null"]
-        enum: [PARTNER_1, PARTNER_2, BOTH, null]
-      matching_summary:
-        $ref: "#/$defs/matching_summary"
-      atom_not_found_instances:
-        type: array
-        items:
-          $ref: "#/$defs/missing_atom_instance"
+      definition_status: {enum: [EVALUATED, PARTNER_NOT_FOUND, ATOM_NOT_FOUND]}
       pair_results:
         type: array
-        items:
-          $ref: "#/$defs/pair_result"
-      omitted_above_maximum_pairs:
-        $ref: "#/$defs/omitted_pairs"
+        items: {$ref: "#/$defs/pair_result"}
