@@ -75,8 +75,11 @@ validation_evidence:
       - python_compile
       - schema_meta_validation
       - ccd_index_id_hash_parse
+      - migrated_skill_1_2_automated_suite
+      - real_af3_acceptance
       - relation_state_regrouping_synthetic
       - final_builder_synthetic
+      - historical_1_2_to_1_3_opaque_id_regression
   overall:
     implementation: present
     repository_controlled_validation: pending

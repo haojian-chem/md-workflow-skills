@@ -6,28 +6,33 @@
 
 ```text
 IMPLEMENTATION: PRESENT
-CURRENT_CONTRACT_VALIDATION: PENDING
-REAL_INPUT_REVALIDATION: PENDING
-1.2_TO_1.3_REVALIDATION: PENDING
+LOCAL_AUTOMATED_SUITE: PASS
+REAL_AF3_ACCEPTANCE: PASS
+HOSTED_CI: PENDING
+REAL_PDB_MMCIF_GROMACS: PENDING
+REAL_1.2_TO_1.3_ACCEPTANCE: PENDING
 OVERALL: PRESENT_UNVALIDATED
 ```
 
 2026-07-31 的 PASS 证据对应旧业务 head `b9faf855bbbd43fb9d5c215c0dbc52e5eee37da8`。本次修改改变了 observations、关系决定、CCD 输入和最终整合契约，因此旧结果仅作历史记录，不能证明当前实现通过。
 
-词汇迁移记录：旧 `COVALENTLY_LINKED_NONSTANDARD` 与 `covalently_linked_nonstandard_count` 已统一为 `TOPOLOGY_LINKED_NONSTANDARD` 与 `topology_linked_nonstandard_count`；该迁移不改变“拓扑归属与证据状态分离”的原则。
+旧 topology_class / summary 迁移记录：`COVALENTLY_LINKED_NONSTANDARD` 与 `covalently_linked_nonstandard_count` 已统一为 `TOPOLOGY_LINKED_NONSTANDARD` 与 `topology_linked_nonstandard_count`；该迁移不改变“拓扑归属与证据状态分离”的原则。
 
-## 已完成的本地检查
+## 已完成证据
 
 ```text
 Python compile: PASS
 Draft 2020-12 schema meta-validation: PASS
 built-in CCD-compatible entries: 38 parsed and hash-matched
-relation ID ordering/roles synthetic check: PASS
-relation decision + topology regrouping synthetic check: PASS
-current observations → final selection contract synthetic check: PASS
+migrated Skill 1.2 automated suite: PASS (local)
+real AlphaFold Server CIF + job request acceptance: PASS (local)
+relation ID ordering/roles: PASS
+relation decision + topology regrouping: PASS
+current observations → final selection contract: PASS
+historical 1.2→1.3 opaque-ID regression: PASS
 ```
 
-这些检查只证明草案内部可解析和关键数据流可运行，不等同于仓库验收。
+本地自动测试证明当前实现和已迁移 fixtures 一致，但不能替代尚未完成的真实 PDB/mmCIF/GROMACS、完整下游选择和 hosted CI 证据。
 
 ## 当前实现范围
 
@@ -40,17 +45,17 @@ current observations → final selection contract synthetic check: PASS
 
 ## 已知未闭合项
 
-1. 旧测试与 fixtures 尚未全部迁移到新 config/state contract；
-2. 真实 PDB、mmCIF、AF3 和 GROMACS 尚未重跑；
-3. 1.2→1.3 真实选择验收尚未重跑；
+1. hosted GitHub Actions 尚待确认；
+2. 真实 PDB、mmCIF 和 GROMACS 尚未重跑；
+3. 完整的真实 1.2→1.3 选择验收尚未重跑；
 4. 当前内置库已覆盖标准氨基酸、批准质子化变体、DNA/RNA 与 MSE/SEC/PYL；批准的较大辅因子/配体 seed 尚待补齐并逐项核验；
-5. Authoring、Manager closure 和 CI 结果尚待取得。
+5. Authoring/Manager closure 的本次变更回归尚待确认。
 
 ## 重新标记 PASS 的必要证据
 
 ```text
-updated synthetic/integration suite
-real PDB + mmCIF + AF3 + GROMACS
+hosted CI success
+real PDB + mmCIF + GROMACS
 real 1.2 → 1.3 selection acceptance
 Authoring duplication/architecture/content-map checks
 Manager FAST/atomic closure

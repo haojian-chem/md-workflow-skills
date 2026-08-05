@@ -6,11 +6,11 @@
 
 ```text
 1.2 component/residue classification: present_unvalidated
-1.3 chain/component selection: PASS（沿用 2026-07-31 验收）
+1.3 chain/component selection: PASS（沿用 2026-07-31 验收，需针对本次上游变更重跑）
 runtime_schema_validator: ACTIVE
 ```
 
-1.2 已完成当前状态、独立关系决定与本地 CCD-compatible library 的实现调整，但尚未完成新的仓库级、真实结构与 1.2→1.3 回归。2026-07-31 的 PASS 证据只适用于旧业务 head，不得用于本次修改。
+1.2 当前状态重构已实现；迁移后的本地自动测试与真实 AF3 输入验收通过。hosted CI、真实 PDB/mmCIF/GROMACS、完整 1.2→1.3 选择回归及批准辅因子/配体 CCD seed 仍未闭合，因此状态保持 `present_unvalidated`。
 
 # 权威位置
 
@@ -58,14 +58,15 @@ classification_result.yaml
 
 - Python 编译与 JSON Schema 元校验；
 - 38 个内置 CCD-compatible atom-table 条目的 ID/hash/解析检查；
-- relation ID 的共价无方向与配位有角色检查；
-- relation result → observations → topology regrouping 的合成检查；
-- current observations → final 1.3 contract 的合成整合检查。
+- 迁移后的 Skill 1.2 自动测试集本地通过；
+- 真实 AlphaFold Server CIF + job request 验收本地通过；
+- relation ID、人工决定、topology regrouping 与 final contract 合成检查；
+- 历史 1.2→1.3 opaque-ID 接口回归。
 
 仍需：
 
-- 更新并执行完整 1.2 测试集；
-- 真实 PDB/mmCIF/AF3/GROMACS 回归；
-- 1.2→1.3 真实选择回归；
-- 补齐并核验已批准的辅因子/配体 CCD seed；
+- hosted GitHub Actions；
+- 真实 PDB/mmCIF/GROMACS 回归；
+- 完整真实 1.2→1.3 选择验收；
+- 已批准辅因子/配体 CCD seed 完整性与 hash 核验；
 - Authoring/Manager closure 回归。

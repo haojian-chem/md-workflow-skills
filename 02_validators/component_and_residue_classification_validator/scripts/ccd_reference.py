@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import ccd_reference_core as _core
 from classification_common import ClassificationToolError, sha256_file
@@ -16,6 +15,45 @@ globals().update(
         if not name.startswith("__")
     }
 )
+
+
+def _literal_value(value: str) -> str:
+    text = str(value).strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
+        return text[1:-1]
+    return text
+
+
+def _normalize_template(template):
+    if template is None:
+        return None
+    return _core.CcdTemplate(
+        component_id=template.component_id,
+        snapshot_path=template.snapshot_path,
+        snapshot_sha256=template.snapshot_sha256,
+        atom_names=tuple(_literal_value(value) for value in template.atom_names),
+        heavy_atom_names=tuple(
+            _literal_value(value) for value in template.heavy_atom_names
+        ),
+        alternate_atom_names={
+            _literal_value(key): _literal_value(value)
+            for key, value in template.alternate_atom_names.items()
+        },
+    )
+
+
+def parse_ccd_file(path: Path, requested_component_id: str):
+    atom_names, heavy_names, alternates = _core.parse_ccd_file(
+        path, requested_component_id
+    )
+    return (
+        tuple(_literal_value(value) for value in atom_names),
+        tuple(_literal_value(value) for value in heavy_names),
+        {
+            _literal_value(key): _literal_value(value)
+            for key, value in alternates.items()
+        },
+    )
 
 
 def _legacy_exact_candidates(
@@ -32,7 +70,7 @@ def _legacy_exact_candidates(
         candidate = resolved / f"{component_id}.cif"
         if not candidate.exists():
             continue
-        _core.parse_ccd_file(candidate, component_id)
+        parse_ccd_file(candidate, component_id)
         candidates.append((candidate, sha256_file(candidate)))
     return candidates
 
@@ -58,7 +96,7 @@ def acquire_ccd_template(
     if retrieval_policy == "INDEXED_ONLY" or all(
         (root.resolve() / "index.yaml").is_file() for root in local_reference_dirs
     ):
-        return _core.acquire_ccd_template(
+        template, manifest, issue = _core.acquire_ccd_template(
             component_id,
             mapped_residue_names,
             project_snapshot_dir=project_snapshot_dir,
@@ -68,6 +106,7 @@ def acquire_ccd_template(
             remote_base_url=remote_base_url,
             timeout_seconds=timeout_seconds,
         )
+        return _normalize_template(template), manifest, issue
 
     candidates = _legacy_exact_candidates(component_id, local_reference_dirs)
     if not candidates:
@@ -100,7 +139,7 @@ def acquire_ccd_template(
             "resolution_status": "PENDING_CONFIRMATION",
         }
     path, file_hash = candidates[0]
-    atom_names, heavy_names, alternates = _core.parse_ccd_file(path, component_id)
+    atom_names, heavy_names, alternates = parse_ccd_file(path, component_id)
     template = _core.CcdTemplate(
         component_id=component_id,
         snapshot_path=path,

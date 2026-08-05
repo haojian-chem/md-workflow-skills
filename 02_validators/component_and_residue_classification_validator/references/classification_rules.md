@@ -26,6 +26,8 @@ SOLVENT_COMPONENT
 ION_COMPONENT
 ```
 
+项目定义示例使用显式键值，如 `topology_class: INDEPENDENT_NONSTANDARD`；不得把状态词写入该字段。
+
 `UNKNOWN`、`CONFLICT`、`UNRESOLVED` 只属于 resolution status。
 
 分类来源顺序：
