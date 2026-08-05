@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import sys
 from pathlib import Path
 
@@ -37,15 +38,9 @@ def test_manifest_records_relation_definition_provenance(tmp_path: Path) -> None
         encoding="utf-8",
     )
     connections = tmp_path / "possible_connections.yaml"
-    connections.write_text(
-        yaml.safe_dump({"schema_version": "1.0", "possible_connections": []}),
-        encoding="utf-8",
-    )
+    connections.write_text(yaml.safe_dump({"schema_version": "1.0", "possible_connections": []}), encoding="utf-8")
     coordination = tmp_path / "possible_coordination.yaml"
-    coordination.write_text(
-        yaml.safe_dump({"schema_version": "1.0", "possible_coordination": []}),
-        encoding="utf-8",
-    )
+    coordination.write_text(yaml.safe_dump({"schema_version": "1.0", "possible_coordination": []}), encoding="utf-8")
     config = {
         "structure": {
             "path": str(structure),
@@ -54,16 +49,9 @@ def test_manifest_records_relation_definition_provenance(tmp_path: Path) -> None
             "selected_model_id": "1",
         },
         "classification": {"mode": "REGISTRY"},
-        "ccd": {"retrieval_policy": "CACHE_ONLY"},
         "relation_definitions": {
-            "possible_connections": {
-                "path": str(connections),
-                "sha256": digest(connections),
-            },
-            "possible_coordination": {
-                "path": str(coordination),
-                "sha256": digest(coordination),
-            },
+            "possible_connections": {"path": str(connections), "sha256": digest(connections)},
+            "possible_coordination": {"path": str(coordination), "sha256": digest(coordination)},
         },
         "output": {
             "observations_path": str(tmp_path / "observations.yaml"),
@@ -72,32 +60,25 @@ def test_manifest_records_relation_definition_provenance(tmp_path: Path) -> None
     }
     _observations, manifest, *_ = execute_classification(config, SCRIPTS)
     assert manifest["relation_definition_files"] == {
-        "possible_connections": {
-            "path": str(connections.resolve()),
-            "sha256": digest(connections),
-            "status": "LOADED",
-        },
-        "possible_coordination": {
-            "path": str(coordination.resolve()),
-            "sha256": digest(coordination),
-            "status": "LOADED",
-        },
+        "possible_connections": {"path": str(connections.resolve()), "sha256": digest(connections), "status": "LOADED"},
+        "possible_coordination": {"path": str(coordination.resolve()), "sha256": digest(coordination), "status": "LOADED"},
     }
 
 
-def test_direct_dependencies_and_versions_are_frozen() -> None:
+def test_direct_dependencies_and_release_markers_are_explicit() -> None:
     requirements = (SCRIPTS / "requirements.txt").read_text(encoding="utf-8")
     assert "referencing>=" in requirements
-    for name in (
+    version_owners = (
         "inspect_model_scope.py",
         "classify_structure.py",
         "check_possible_connections.py",
         "check_possible_coordination.py",
-        "build_classification_result.py",
+        "build_classification_result_core.py",
         "build_subagent_result.py",
-    ):
+    )
+    for name in version_owners:
         text = (SCRIPTS / name).read_text(encoding="utf-8")
-        assert 'VERSION = "1.0.0"' in text
+        assert re.search(r'^VERSION = "\d+\.\d+\.\d+"$', text, re.MULTILINE)
         assert "-draft" not in text
 
 

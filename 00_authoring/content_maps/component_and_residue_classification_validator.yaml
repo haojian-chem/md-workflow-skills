@@ -13,6 +13,8 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/scripts/README.md
   deterministic_baseline_entry:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classify_structure.py
+  deterministic_baseline_engine_facade:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/classification_engine.py
   deterministic_baseline_engine:
     owner: 02_validators/component_and_residue_classification_validator/scripts/classification_engine_core.py
   deterministic_current_state:
@@ -23,12 +25,18 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/scripts/check_possible_coordination.py
   deterministic_relation_decision_writer:
     owner: 02_validators/component_and_residue_classification_validator/scripts/record_relation_decisions.py
-  deterministic_final_result_builder:
+  deterministic_final_result_facade:
     owner: 02_validators/component_and_residue_classification_validator/scripts/build_classification_result.py
-  deterministic_selection_identity:
+  deterministic_final_result_builder:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/build_classification_result_core.py
+  deterministic_selection_identity_facade:
     owner: 02_validators/component_and_residue_classification_validator/scripts/selection_identity.py
-  deterministic_ccd_lookup:
+  deterministic_selection_identity:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/selection_identity_core.py
+  deterministic_ccd_lookup_facade:
     owner: 02_validators/component_and_residue_classification_validator/scripts/ccd_reference.py
+  deterministic_ccd_lookup:
+    owner: 02_validators/component_and_residue_classification_validator/scripts/ccd_reference_core.py
   deterministic_ccd_library_writer:
     owner: 02_validators/component_and_residue_classification_validator/scripts/add_ccd_reference.py
   built_in_ccd_library:
@@ -74,6 +82,7 @@ validation_evidence:
     repository_controlled_validation: pending
     dependency_closure: pending_revalidation
 notes:
+  - Facade files preserve CLI/import compatibility; core files own deterministic implementations.
   - SKILL.md owns only local execution and gates; scientific rules, schemas and CLI documentation are not duplicated there.
   - classification_result.yaml preserves the opaque 1.2 to 1.3 identity contract; downstream code must not reconstruct IDs.
   - The 2026-07-31 PASS record is historical and cannot validate the current contract.
