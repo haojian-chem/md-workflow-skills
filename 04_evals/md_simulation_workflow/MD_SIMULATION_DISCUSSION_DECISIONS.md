@@ -166,20 +166,39 @@ run_units:
 04_md_simulation/expected_route.yaml
 ```
 
-该文件只记录预计路线，不重复保存 run unit 的类型、起点、MDP 参数或状态。
+预计路线中区分两类节点：
+
+```text
+run_unit_id
+→ 已经建立并存在于 run_unit.yaml 的正式 run unit
+
+expected_node_id
+→ 尚未建立为 run unit 的预计节点
+```
 
 示例：
 
 ```yaml
 schema_version: 1
 expected_route:
-  - em.1
-  - nvt.1
-  - npt.1
-  - md.1
+  - run_unit_id: npt.1
+  - expected_node_id: expected.md.1
+    run_unit_type: MD
+  - expected_node_id: expected.md.2
+    run_unit_type: MD
 ```
 
-预计路线不硬性锁定，可根据执行结果动态更新；调整原因进入项目日志。
+预计节点不是 run unit：
+
+- 不写入 `run_unit.yaml`；
+- 不建立对应目录；
+- 不生成 MDP 或 TPR；
+- 不参与执行；
+- 只表示本轮请求当前预计会经过的后续节点。
+
+当预计节点成为当前处理对象时，先创建正式 run unit，再在 `expected_route.yaml` 中用正式 `run_unit_id` 替换原 `expected_node_id`。
+
+预计路线不硬性锁定，可根据执行结果动态扩展、缩短或替换；调整原因进入项目日志。
 
 ## 11. MDP 生成
 
@@ -280,34 +299,63 @@ expected_route:
 
 它不是当前 Workstream 的长期总路线，也不需要包含此前完成但与本轮请求无关的 run units。
 
-预计路线只写入当前能够落实为明确 run units 的部分；不能明确的远端步骤暂不写入。随着本轮执行推进，可以扩展、缩短或替换路线。
+路线中可以同时包含：
 
-### 16.4 为当前预计路线落实 run units
+- 已经落实的正式 run unit，使用 `run_unit_id`；
+- 尚未落实的预计节点，使用 `expected_node_id` 和预计 `run_unit_type`。
 
-针对当前 `expected_route.yaml` 中的节点：
+随着本轮执行推进，可以扩展、缩短或替换路线。
 
-- 已存在且符合当前需求的 run unit：直接引用，不复制、不修改、不自动重新执行；
-- 当前路线需要但尚不存在的 run unit：创建并加入 `run_unit.yaml`；
-- 需要不同类型、不同起点或新 TPR时：创建新的 run unit，不修改已有确定 run unit。
+### 16.4 区分正式 run unit 与预计节点
 
-当前 `expected_route.yaml` 中列出的每个 ID 都必须已经在 `run_unit.yaml` 中定义。
+对于 `expected_route.yaml` 中的正式节点：
 
-### 16.5 更新并检查当前路线的一致性
+```text
+run_unit_id
+→ 必须存在于 run_unit.yaml
+```
 
-`run_unit.yaml` 累积保存当前 Workstream 已定义的全部 run units。
+对于尚未落实的预计节点：
 
-每次生成或调整当前预计路线时：
+```text
+expected_node_id
+→ 不写入 run_unit.yaml
+→ 不建立目录
+→ 不生成 MDP 或 TPR
+→ 不参与执行
+```
 
-- 只追加新创建的 run units；
-- 不重复写入已有 run units；
-- 不修改已有确定 run unit；
-- 检查 `expected_route.yaml` 中每个 ID 均存在于 `run_unit.yaml`；
-- 检查 `run_unit_type` 只能为 `EM/NVT/NPT/MD`；
-- 检查非空 `start_from_run_unit_id` 指向已存在的 run unit。
+建议预计节点采用明显不同的命名，例如：
 
-### 16.6 确定当前需要处理的 run unit
+```text
+expected.md.1
+expected.npt.2
+```
 
-根据本轮当前预计路线、本轮请求范围和当前进展，确定当前首先需要处理的 run unit。
+预计节点只是路线占位，不是尚未完成的 run unit。
+
+### 16.5 当前节点的落实
+
+根据本轮当前预计路线和当前进展，确定下一个需要实际处理的节点。
+
+- 若该节点已经使用 `run_unit_id`：直接引用对应正式 run unit；
+- 若该节点使用 `expected_node_id`：此时才创建正式 run unit，并加入 `run_unit.yaml`；
+- 创建完成后，在 `expected_route.yaml` 中使用新的 `run_unit_id` 替换原 `expected_node_id`。
+
+只有正式 run unit 才能进入后续 MDP、TPR 和执行流程。
+
+### 16.6 更新并检查一致性
+
+`run_unit.yaml` 累积保存当前 Workstream 已定义的全部正式 run units。
+
+检查规则为：
+
+- `expected_route.yaml` 中带 `run_unit_id` 的节点必须存在于 `run_unit.yaml`；
+- 带 `expected_node_id` 的节点不要求存在于 `run_unit.yaml`；
+- `expected_node_id` 不得与正式 `run_unit_id` 混淆或重复；
+- 正式 run unit 的 `run_unit_type` 只能为 `EM/NVT/NPT/MD`；
+- 预计节点的 `run_unit_type` 也只能为 `EM/NVT/NPT/MD`；
+- 正式 run unit 的非空 `start_from_run_unit_id` 必须指向已存在的正式 run unit。
 
 ### 16.7 随路线推进循环更新
 
@@ -316,14 +364,18 @@ expected_route:
 ```text
 当前 run unit 处理结果
 → 判断当前 expected_route.yaml 是否仍适用
-→ 必要时更新 expected_route.yaml
-→ 为更新后的路线引用或创建所需 run units
-→ 更新并检查 run_unit.yaml
-→ 确定新的当前 run unit
+→ 必要时增加、移除或替换正式节点与预计节点
+→ 确定下一个需要实际处理的节点
+→ 必要时将预计节点落实为正式 run unit
+→ 更新 run_unit.yaml 和 expected_route.yaml
+→ 进入新的当前 run unit
 ```
 
-因此，“落实路线所需 run units”会在本轮执行过程中反复发生，不是本轮开始时的一次性步骤。
+因此，run unit 的创建会随着路线推进反复发生，不是本轮开始时的一次性步骤。
 
-从当前路线移除某个节点时，不删除该节点已经存在的 run unit 或文件。
+从当前路线移除节点时：
+
+- 若是预计节点，直接从路线移除；
+- 若是正式 run unit，只从路线移除，不删除该 run unit 或其文件。
 
 后续的 MDP 要求整理、用户确认、MDP/TPR 生成及执行流程尚未确认，不属于本节暂时通过的范围。
