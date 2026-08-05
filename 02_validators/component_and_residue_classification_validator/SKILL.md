@@ -7,6 +7,8 @@ description: 在结构准备工作流 1.2 中，对一个已选 model 执行组�
 
 本 Validator 实现 `structure_preparation_workflow` 的 1.2。它读取一个已登记的 STRUCTURE，不修改坐标文件，只生成分类证据、当前 observations、最终分类结果、报告和确认事项。
 
+不读取 `source_recognition_report.yaml` 作为运行时 contract；只消费 task 中登记的 STRUCTURE file record。
+
 权威归属：
 
 ```text

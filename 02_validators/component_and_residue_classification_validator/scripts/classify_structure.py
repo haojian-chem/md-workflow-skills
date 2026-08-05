@@ -57,7 +57,7 @@ def _engine_config(config: dict, script_dir: Path) -> dict:
         "project_snapshot_dir": str(script_dir.parent / "references/ccd_library"),
         "local_reference_dirs": [str(path.resolve()) for path in libraries],
         "shared_cache_path": None,
-        "retrieval_policy": "CACHE_ONLY",
+        "retrieval_policy": "INDEXED_ONLY",
     }
     runtime["output"] = copy.deepcopy(config["output"])
     runtime["output"]["observations_schema"] = str(
