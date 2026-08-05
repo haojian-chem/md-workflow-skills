@@ -18,10 +18,6 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def write_yaml(path: Path, document: dict) -> None:
-    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
-
-
 def write_ccd(path: Path, component_id: str, atoms: list[tuple[str, str]]) -> None:
     rows = "\n".join(f"{component_id} {name} {name} {element}" for name, element in atoms)
     path.write_text(
@@ -47,7 +43,13 @@ def run_engine(tmp_path: Path, structure: Path, *, ccd_dirs: list[Path] | None =
     if ccd_dirs is not None:
         config["ccd"] = {"local_reference_dirs": [str(path) for path in ccd_dirs], "retrieval_policy": "CACHE_ONLY"}
     if force_field is not None:
-        config["force_field"] = {"root_path": str(force_field)}
+        config["force_field"] = {
+            "root_path": str(force_field),
+            "terminal_template_mappings": [
+                {"terminal_role": "N_TERMINUS", "source_residue_name": "ALA", "rtp_residue_name": "ALA"},
+                {"terminal_role": "C_TERMINUS", "source_residue_name": "ALA", "rtp_residue_name": "ALA"},
+            ],
+        }
     return execute_classification(config, SCRIPTS)
 
 

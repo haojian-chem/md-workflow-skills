@@ -14,7 +14,7 @@ OVERALL: PRESENT_UNVALIDATED
 
 2026-07-31 的 PASS 证据对应旧业务 head `b9faf855bbbd43fb9d5c215c0dbc52e5eee37da8`。本次修改改变了 observations、关系决定、CCD 输入和最终整合契约，因此旧结果仅作历史记录，不能证明当前实现通过。
 
-词汇迁移记录：旧 `COVALENTLY_LINKED_NONSTANDARD` 已统一为 `TOPOLOGY_LINKED_NONSTANDARD`；该迁移不改变“拓扑归属与证据状态分离”的原则。
+词汇迁移记录：旧 `COVALENTLY_LINKED_NONSTANDARD` 与 `covalently_linked_nonstandard_count` 已统一为 `TOPOLOGY_LINKED_NONSTANDARD` 与 `topology_linked_nonstandard_count`；该迁移不改变“拓扑归属与证据状态分离”的原则。
 
 ## 已完成的本地检查
 

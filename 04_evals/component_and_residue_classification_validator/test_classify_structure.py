@@ -80,9 +80,8 @@ def make_config(tmp_path: Path, structure_hash: str) -> tuple[Path, Path, Path]:
     )
     local_ccd = tmp_path / "local_ccd"
     local_ccd.mkdir(exist_ok=True)
-    write_ccd(local_ccd / "ALA.cif", "ALA", [("N", "N"), ("CA", "C"), ("C", "C"), ("O", "O"), ("CB", "C")])
     write_ccd(local_ccd / "HEM.cif", "HEM", [("FE", "Fe")])
-    write_index(local_ccd, ["ALA", "HEM"])
+    write_index(local_ccd, ["HEM"])
     observations = tmp_path / "classification_observations.yaml"
     manifest = tmp_path / "reference_manifest.yaml"
     config = tmp_path / "classification_config.yaml"

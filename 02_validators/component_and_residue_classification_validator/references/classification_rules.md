@@ -10,13 +10,13 @@
 
 最终 `component_id`、`residue_id`、`endpoint_id` 和 `relation_id` 是下游 opaque contract。1.3 只能读取物化值，禁止自行重建。
 
-普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`；汇总计数不能代替实例身份。
+普通汇总组仍必须为每个 `OBSERVED` 实例保留 `residue_record`；汇总计数不能代替实例身份，不得删除实例级身份记录。
 
 # 2. 分类
 
 `polymer_class`：`POLYMER | BRANCHED | NONPOLYMER | WATER`。
 
-`topology_class` 该字段只描述组分的拓扑归属，不描述证据充分性：
+`topology_class` 该字段只描述组分的拓扑归属，不描述证据充分性，也禁止据此反推化学关系类型：
 
 ```text
 STANDARD_RESIDUE
