@@ -248,7 +248,7 @@ expected_route:
 - 是否与本文件已经确认的目录、run unit、MDP 和执行规则冲突；
 - 是否能形成一条简洁、可实际执行的主流程。
 
-## 16. 暂时通过：本轮请求到当前 run unit 的确定
+## 16. 暂时通过：本轮请求、预计路线与当前 run unit
 
 本节只表示当前讨论暂时通过，仍属于完整 Workflow 草案的一部分；后续若与其他环节产生实质冲突，可以继续修订。
 
@@ -276,35 +276,52 @@ expected_route:
 
 ### 16.3 基于本轮请求生成预计路线
 
-`04_md_simulation/expected_route.yaml` 基于本轮请求生成，只记录本轮预计涉及的 run units 及顺序。
+`04_md_simulation/expected_route.yaml` 基于本轮请求生成，只记录本轮当前预计涉及的 run units 及顺序。
 
 它不是当前 Workstream 的长期总路线，也不需要包含此前完成但与本轮请求无关的 run units。
 
-新一轮请求到来后，根据新请求重新生成或替换；本轮执行过程中允许动态调整。
+新一轮请求到来后，根据新请求重新生成或替换；本轮执行过程中允许根据实际结果动态调整、扩展或缩短。
 
-### 16.4 根据本轮预计路线确定所需 run units
+### 16.4 根据当前预计路线确定当前需要处理的节点
 
-- 已存在且符合本轮需求的 run unit：直接引用，不复制、不修改、不自动重新执行；
-- 本轮路线需要但尚不存在的 run unit：创建并加入 `run_unit.yaml`；
-- 不创建与本轮路线无关的 run units；
-- 需要不同类型、不同起点或新 TPR 时，创建新的 run unit，不修改已有确定 run unit。
+先结合本轮请求、当前进展和 `expected_route.yaml`，确定当前首先需要处理的路线节点。
 
-### 16.5 更新 run unit 索引
+不在本轮开始时一次性锁定全部所需 run units。预计路线推进或发生调整后，需要重新判断当前节点及后续所需 run units。
 
-`run_unit.yaml` 累积保存当前 Workstream 已定义的全部 run units。
+### 16.5 按当前可确定范围引用或创建 run unit
 
-本轮只追加新创建的 run units，不重复写入已有 run units，也不修改已有确定 run unit。
+针对当前节点以及当前已经能够明确定义的路线部分：
 
-### 16.6 检查两份文件的一致性
+- 已存在且符合当前需求的 run unit：直接引用，不复制、不修改、不自动重新执行；
+- 当前需要但尚不存在的 run unit：创建并加入 `run_unit.yaml`；
+- 尚不能明确定义的后续 run unit：暂不创建；
+- 需要不同类型、不同起点或新 TPR 时：创建新的 run unit，不修改已有确定 run unit。
 
-在本轮已定义范围内检查：
+`run_unit.yaml` 累积保存当前 Workstream 已定义的全部 run units。每次路线推进或调整时，可以继续追加新创建的 run units。
 
-- `expected_route.yaml` 中每个 ID 均存在于 `run_unit.yaml`；
+### 16.6 检查当前已落实范围的一致性
+
+在当前已经落实为 run units 的路线范围内检查：
+
+- `expected_route.yaml` 中当前已落实的 ID 存在于 `run_unit.yaml`；
 - `run_unit_type` 只能为 `EM/NVT/NPT/MD`；
 - 非空 `start_from_run_unit_id` 指向已存在的 run unit。
 
-### 16.7 确定当前需要处理的 run unit
+尚未能够明确定义的后续路线部分不应为了通过一致性检查而被强制提前创建为 run unit。
 
-根据本轮预计路线和本轮请求范围，确定当前首先需要处理的 run unit。
+### 16.7 随路线推进循环更新
+
+当前 run unit 完成检查后，重新评估本轮请求和预计路线：
+
+```text
+当前 run unit 处理结果
+→ 判断 expected_route.yaml 是否仍适用
+→ 必要时调整预计路线
+→ 确定新的当前节点
+→ 引用或创建该节点所需 run unit
+→ 再次检查当前已落实范围的一致性
+```
+
+因此，run unit 的确定和创建是随路线推进反复执行的过程，不是本轮请求开始时的一次性步骤。
 
 后续的 MDP 要求整理、用户确认、MDP/TPR 生成及执行流程尚未确认，不属于本节暂时通过的范围。
