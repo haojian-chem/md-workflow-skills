@@ -29,6 +29,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
+      - name: Normalize quoted CIF tokens in seed synchronizer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("02_validators/component_and_residue_classification_validator/scripts/sync_approved_ccd_seeds.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''    text = str(value).strip()
+              return None if not text or text in {".", "?"} else text
+          '''
+          new = '''    text = str(value).strip()
+              if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
+                  text = text[1:-1]
+              return None if not text or text in {".", "?"} else text
+          '''
+          if old not in text:
+              raise SystemExit("expected _clean implementation not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
       - name: Synchronize approved RCSB CCD seeds
         run: |
           python 02_validators/component_and_residue_classification_validator/scripts/sync_approved_ccd_seeds.py \
@@ -42,11 +61,13 @@ jobs:
             --library 02_validators/component_and_residue_classification_validator/references/ccd_library \
             --verify-only
           git diff --check
-      - name: Commit generated seed files
+      - name: Commit generated seed files and synchronizer fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 02_validators/component_and_residue_classification_validator/references/ccd_library
+          git add \
+            02_validators/component_and_residue_classification_validator/scripts/sync_approved_ccd_seeds.py \
+            02_validators/component_and_residue_classification_validator/references/ccd_library
           if git diff --cached --quiet; then
             echo "No CCD seed changes"
             exit 0
