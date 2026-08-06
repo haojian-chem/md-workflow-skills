@@ -66,6 +66,15 @@ def test_built_in_ccd_index_matches_files():
         assert heavy_atoms
 
 
+def test_seed_sync_unquotes_cif_tokens_before_requoting():
+    sync = _load_module(
+        "sync_approved_ccd_seeds",
+        SKILL / "scripts/sync_approved_ccd_seeds.py",
+    )
+    assert sync._clean('"O5\'"') == "O5'"
+    assert sync._clean("'C1'") == "C1"
+
+
 def test_relation_identity_has_correct_direction_semantics():
     identity = _load_module("selection_identity", SKILL / "scripts/selection_identity.py")
     first = "endpoint:v1/a"
