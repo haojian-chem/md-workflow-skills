@@ -1,0 +1,24 @@
+schema_version: "1.0"
+source:
+  base_url: https://files.rcsb.org/ligands/view
+  source_type: RCSB_CCD_COMPONENT
+components:
+  AMP: {category: NUCLEOTIDE_COFACTOR}
+  ADP: {category: NUCLEOTIDE_COFACTOR}
+  ATP: {category: NUCLEOTIDE_COFACTOR}
+  GDP: {category: NUCLEOTIDE_COFACTOR}
+  GTP: {category: NUCLEOTIDE_COFACTOR}
+  FAD: {category: REDOX_COFACTOR}
+  NAD: {category: REDOX_COFACTOR}
+  NAP: {category: REDOX_COFACTOR}
+  NDP: {category: REDOX_COFACTOR}
+  HEM: {category: HEME_COFACTOR}
+  HEC: {category: HEME_COFACTOR}
+  PLM: {category: FATTY_ACID}
+  OLA: {category: FATTY_ACID}
+  MYR: {category: FATTY_ACID}
+  CIT: {category: METABOLITE}
+  CLA: {category: TETRAPYRROLE_PIGMENT}
+  CHL: {category: TETRAPYRROLE_PIGMENT}
+  BCL: {category: TETRAPYRROLE_PIGMENT}
+  BCB: {category: TETRAPYRROLE_PIGMENT}
