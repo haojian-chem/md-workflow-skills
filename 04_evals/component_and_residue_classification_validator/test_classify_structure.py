@@ -30,35 +30,6 @@ def write_yaml(path: Path, document: dict) -> None:
     path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
 
 
-def write_ccd(path: Path, component_id: str, atoms: list[tuple[str, str]]) -> None:
-    rows = "\n".join(f"{component_id} {name} {element} ." for name, element in atoms)
-    path.write_text(
-        f"""data_{component_id}
-_chem_comp.id {component_id}
-loop_
-_chem_comp_atom.comp_id
-_chem_comp_atom.atom_id
-_chem_comp_atom.type_symbol
-_chem_comp_atom.alt_atom_id
-{rows}
-""",
-        encoding="utf-8",
-    )
-
-
-def write_index(library: Path, component_ids: list[str]) -> None:
-    components = {}
-    for component_id in component_ids:
-        path = library / f"{component_id}.cif"
-        components[component_id] = {
-            "path": path.name,
-            "category": "TEST_COMPONENT",
-            "source_type": "PROJECT_COMPONENT",
-            "sha256": digest(path),
-        }
-    write_yaml(library / "index.yaml", {"schema_version": "1.0", "components": components})
-
-
 def make_config(tmp_path: Path, structure_hash: str) -> tuple[Path, Path, Path]:
     structure = tmp_path / "structure.pdb"
     if not structure.exists():
@@ -78,10 +49,6 @@ def make_config(tmp_path: Path, structure_hash: str) -> tuple[Path, Path, Path]:
             ],
         },
     )
-    local_ccd = tmp_path / "local_ccd"
-    local_ccd.mkdir(exist_ok=True)
-    write_ccd(local_ccd / "HEM.cif", "HEM", [("FE", "Fe")])
-    write_index(local_ccd, ["HEM"])
     observations = tmp_path / "classification_observations.yaml"
     manifest = tmp_path / "reference_manifest.yaml"
     config = tmp_path / "classification_config.yaml"
@@ -96,7 +63,6 @@ def make_config(tmp_path: Path, structure_hash: str) -> tuple[Path, Path, Path]:
             },
             "classification": {"mode": "REGISTRY"},
             "project_residue_definitions": {"path": str(project), "sha256": digest(project)},
-            "ccd": {"additional_library_paths": [str(local_ccd)]},
             "output": {
                 "observations_path": str(observations),
                 "reference_manifest_path": str(manifest),
@@ -129,6 +95,7 @@ def test_v1_2_cli_writes_current_observations_and_reference_manifest(tmp_path: P
     assert records["ALA"]["heavy_atom_check"]["findings"] == []
     assert records["HEM"]["classification_observation"]["topology_class"] == "INDEPENDENT_NONSTANDARD"
     assert records["HEM"]["heavy_atom_check"]["execution_status"] == "COMPLETED"
+    assert records["HEM"]["heavy_atom_check"]["findings"]
     assert observations["completed_checks"]["baseline_classification"] == "COMPLETED"
     assert observations["completed_checks"]["possible_connections"] == "PENDING"
     assert manifest["classification_mode"] == "REGISTRY"
