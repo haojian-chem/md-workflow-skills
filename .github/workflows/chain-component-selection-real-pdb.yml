@@ -9,11 +9,6 @@ on:
       - "04_evals/chain_and_component_selection/test_real_v1_2_selection_acceptance.py"
       - ".github/workflows/chain-component-selection-real-pdb.yml"
   workflow_dispatch:
-  push:
-    branches:
-      - skill-1-2-state-redesign
-    paths:
-      - ".github/real-selection-acceptance-trigger"
 
 jobs:
   real-v1-2-to-v1-3-acceptance:
