@@ -8,7 +8,7 @@
 IMPLEMENTATION: PRESENT
 LOCAL_AUTOMATED_SUITE: PASS
 REAL_AF3_ACCEPTANCE: PASS
-HOSTED_CI: PENDING_FOR_FINAL_HEAD
+HOSTED_CORE_CI: PASS
 CCD_SEED_COMPLETENESS_AND_HASH_VALIDATION: PASS
 REAL_1.2_TO_1.3_ACCEPTANCE: PASS
 REAL_PDB_MMCIF_GROMACS_REGRESSION: PENDING
@@ -33,6 +33,8 @@ approved cofactor/ligand CCD seeds: 19 synced and independently verified
 CCD seed workflow run: 31106984398
 migrated Skill 1.2 automated suite: PASS (local)
 real AlphaFold Server CIF + job request acceptance: PASS (local)
+hosted core CI: PASS on code head 3a3a08cfd80e0e99b608ccfe7d128559485b7276
+hosted core CI run: 31107690986
 hosted implementation and authoring/closure CI: PASS for pre-seed implementation head
 relation ID ordering/roles: PASS
 relation decision + topology regrouping: PASS
@@ -58,14 +60,12 @@ real selection evidence artifact: 8970115209
 ## 已知未闭合项
 
 1. 独立真实 PDB、mmCIF 和 GROMACS 回归矩阵尚未重跑；
-2. CCD seed 与真实选择验收后的最终分支 head 尚需通过 hosted core CI；
-3. 合并前仍需复核最终 PR checks。
+2. 合并前仍需复核最终 PR checks。
 
 ## 重新标记 PASS 的必要证据
 
 ```text
 real PDB + mmCIF + GROMACS regression matrix
-hosted core CI success on the final branch head
 final PR checks on the merge candidate
 ```
 
