@@ -15,6 +15,7 @@ CLASSIFICATION = REPO_ROOT / "02_validators/component_and_residue_classification
 CLASSIFICATION_SCRIPTS = CLASSIFICATION / "scripts"
 SELECTION = REPO_ROOT / "02_operations/chain_and_component_selection"
 SELECTION_VALIDATOR = REPO_ROOT / "02_validators/chain_and_component_selection_validator"
+TEST_CCD_LIBRARY = Path(__file__).resolve().parent / "fixtures/ccd_library"
 REAL_PDB_DIR = Path(os.environ.get("CHAIN_SELECTION_REAL_PDB_DIR", ""))
 
 pytestmark = pytest.mark.skipif(
@@ -44,37 +45,68 @@ def inspect_model_scope(structure: Path, output: Path) -> None:
         [
             sys.executable,
             str(CLASSIFICATION_SCRIPTS / "inspect_model_scope.py"),
-            "--structure", str(structure),
-            "--structure-sha256", digest(structure),
-            "--source-format", "PDB",
-            "--output", str(output),
+            "--structure",
+            str(structure),
+            "--structure-sha256",
+            digest(structure),
+            "--source-format",
+            "PDB",
+            "--output",
+            str(output),
         ]
     )
     assert completed.returncode == 0, completed.stderr
 
 
-def not_performed_relation_result(structure: Path, observations: Path) -> dict:
-    return {
-        "schema_version": "1.0",
-        "status": "NOT_PERFORMED",
-        "reason": "DEFINITION_FILE_NOT_PROVIDED",
-        "input": {
-            "structure_path": str(structure.resolve()),
-            "structure_sha256": digest(structure),
-            "selected_model_id": "1",
-            "definition_path": None,
-            "definition_sha256": None,
-            "observations_path": str(observations.resolve()),
-            "observations_sha256": digest(observations),
-        },
-        "definition_results": [],
+def run_optional_relation_checks(
+    structure: Path,
+    observations: Path,
+    output_dir: Path,
+) -> None:
+    shared_structure = {
+        "path": str(structure.resolve()),
+        "sha256": digest(structure),
+        "source_format": "PDB",
+        "selected_model_id": "1",
     }
+    connections = output_dir / "possible_connections_result.yaml"
+    connection_config = output_dir / "possible_connections_config.yaml"
+    write_yaml(
+        connection_config,
+        {
+            "structure": shared_structure,
+            "possible_connections": {"path": None},
+            "classification_observations": {"path": str(observations)},
+            "output": {"path": str(connections)},
+        },
+    )
+    completed = run_classification_script("check_possible_connections.py", connection_config)
+    assert completed.returncode == 0, completed.stderr
+
+    coordination = output_dir / "possible_coordination_result.yaml"
+    coordination_config = output_dir / "possible_coordination_config.yaml"
+    write_yaml(
+        coordination_config,
+        {
+            "structure": shared_structure,
+            "possible_coordination": {"path": None},
+            "classification_observations": {"path": str(observations)},
+            "output": {"path": str(coordination)},
+        },
+    )
+    completed = run_classification_script("check_possible_coordination.py", coordination_config)
+    assert completed.returncode == 0, completed.stderr
+
+    current = yaml.safe_load(observations.read_text(encoding="utf-8"))
+    assert current["completed_checks"]["possible_connections"] == "NOT_PERFORMED"
+    assert current["completed_checks"]["possible_coordination"] == "NOT_PERFORMED"
+    assert current["check_outputs"]["possible_connections"]["sha256"] == digest(connections)
+    assert current["check_outputs"]["possible_coordination"]["sha256"] == digest(coordination)
 
 
 def build_real_classification(
     structure: Path,
     output_dir: Path,
-    shared_ccd_cache: Path,
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     model_scope = output_dir / "model_scope.yaml"
@@ -94,10 +126,7 @@ def build_real_classification(
             },
             "classification": {"mode": "REGISTRY"},
             "ccd": {
-                "project_snapshot_dir": str(output_dir / "reference_data" / "ccd"),
-                "shared_cache_path": str(shared_ccd_cache),
-                "retrieval_policy": "DOWNLOAD_MISSING",
-                "timeout_seconds": 60,
+                "additional_library_paths": [str(TEST_CCD_LIBRARY.resolve())],
             },
             "output": {
                 "observations_path": str(observations),
@@ -108,10 +137,7 @@ def build_real_classification(
     completed = run_classification_script("classify_structure.py", classify_config)
     assert completed.returncode == 0, completed.stderr
 
-    connections = output_dir / "possible_connections_result.yaml"
-    coordination = output_dir / "possible_coordination_result.yaml"
-    write_yaml(connections, not_performed_relation_result(structure, observations))
-    write_yaml(coordination, not_performed_relation_result(structure, observations))
+    run_optional_relation_checks(structure, observations, output_dir)
 
     confirmation_requests = output_dir / "confirmation_requests.yaml"
     classification_result = output_dir / "classification_result.yaml"
@@ -121,10 +147,11 @@ def build_real_classification(
         builder_config,
         {
             "model_scope": {"path": str(model_scope), "sha256": digest(model_scope)},
-            "classification_observations": {"path": str(observations), "sha256": digest(observations)},
-            "reference_manifest": {"path": str(reference_manifest), "sha256": digest(reference_manifest)},
-            "possible_connections_result": {"path": str(connections), "sha256": digest(connections)},
-            "possible_coordination_result": {"path": str(coordination), "sha256": digest(coordination)},
+            "classification_observations": {"path": str(observations)},
+            "reference_manifest": {
+                "path": str(reference_manifest),
+                "sha256": digest(reference_manifest),
+            },
             "output": {
                 "confirmation_requests_path": str(confirmation_requests),
                 "classification_result_path": str(classification_result),
@@ -148,7 +175,9 @@ def execute_selection(
     output_format: str,
 ) -> tuple[dict, dict]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    selected_structure = output_dir / ("selected_structure.pdb" if output_format == "PDB" else "selected_structure.cif")
+    selected_structure = output_dir / (
+        "selected_structure.pdb" if output_format == "PDB" else "selected_structure.cif"
+    )
     spec = output_dir / "selection_spec.yaml"
     write_yaml(
         spec,
@@ -156,8 +185,14 @@ def execute_selection(
             "schema_version": 1,
             "task_id": f"real-selection-{structure.stem.lower()}",
             "workstream_id": "structure-preparation",
-            "source_structure": {"path": str(structure.resolve()), "sha256": digest(structure)},
-            "classification_result": {"path": str(classification_result.resolve()), "sha256": digest(classification_result)},
+            "source_structure": {
+                "path": str(structure.resolve()),
+                "sha256": digest(structure),
+            },
+            "classification_result": {
+                "path": str(classification_result.resolve()),
+                "sha256": digest(classification_result),
+            },
             "selected_model_id": "1",
             "selected_component_ids": selected_component_ids,
             "resolved_decision_ids": [],
@@ -190,7 +225,14 @@ def execute_selection(
             },
         },
     )
-    completed = run([sys.executable, str(SELECTION / "scripts/select_structure.py"), "--config", str(operation_config)])
+    completed = run(
+        [
+            sys.executable,
+            str(SELECTION / "scripts/select_structure.py"),
+            "--config",
+            str(operation_config),
+        ]
+    )
     assert completed.returncode == 0, completed.stderr
 
     validation_report = output_dir / "validation_report.yaml"
@@ -210,7 +252,14 @@ def execute_selection(
             "validation_result_path": str(validation_result),
         },
     )
-    completed = run([sys.executable, str(SELECTION_VALIDATOR / "scripts/validate_selection.py"), "--config", str(validator_config)])
+    completed = run(
+        [
+            sys.executable,
+            str(SELECTION_VALIDATOR / "scripts/validate_selection.py"),
+            "--config",
+            str(validator_config),
+        ]
+    )
     assert completed.returncode == 0, completed.stderr
     return (
         yaml.safe_load(manifest.read_text(encoding="utf-8")),
@@ -218,19 +267,20 @@ def execute_selection(
     )
 
 
-@pytest.fixture(scope="session")
-def shared_ccd_cache(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    return tmp_path_factory.mktemp("selection_real_ccd_cache")
-
-
 def test_real_1vns_selects_polymer_and_excludes_solvent_and_sulfate(
     tmp_path: Path,
-    shared_ccd_cache: Path,
 ) -> None:
     structure = REAL_PDB_DIR / "1VNS.pdb"
-    classification_path = build_real_classification(structure, tmp_path / "classification", shared_ccd_cache)
+    classification_path = build_real_classification(
+        structure,
+        tmp_path / "classification",
+    )
     classification = yaml.safe_load(classification_path.read_text(encoding="utf-8"))
-    polymer_ids = [group["component_id"] for group in classification["chain_groups"] if group["group_type"] == "POLYMER_CHAIN"]
+    polymer_ids = [
+        group["component_id"]
+        for group in classification["chain_groups"]
+        if group["group_type"] == "POLYMER_CHAIN"
+    ]
     assert polymer_ids
     manifest, validation = execute_selection(
         structure,
@@ -250,13 +300,24 @@ def test_real_1vns_selects_polymer_and_excludes_solvent_and_sulfate(
 
 def test_real_1a6m_selects_protein_and_heme_with_altlocs(
     tmp_path: Path,
-    shared_ccd_cache: Path,
 ) -> None:
     structure = REAL_PDB_DIR / "1A6M.pdb"
-    classification_path = build_real_classification(structure, tmp_path / "classification", shared_ccd_cache)
+    classification_path = build_real_classification(
+        structure,
+        tmp_path / "classification",
+    )
     classification = yaml.safe_load(classification_path.read_text(encoding="utf-8"))
-    polymer_ids = {group["component_id"] for group in classification["chain_groups"] if group["group_type"] == "POLYMER_CHAIN"}
-    heme_ids = {record["component_id"] for record in classification["residue_records"] if record["residue_name"] == "HEM" and record["presence_status"] == "OBSERVED"}
+    polymer_ids = {
+        group["component_id"]
+        for group in classification["chain_groups"]
+        if group["group_type"] == "POLYMER_CHAIN"
+    }
+    heme_ids = {
+        record["component_id"]
+        for record in classification["residue_records"]
+        if record["residue_name"] == "HEM"
+        and record["presence_status"] == "OBSERVED"
+    }
     selected = sorted(polymer_ids | heme_ids)
     assert polymer_ids and heme_ids
     manifest, validation = execute_selection(
@@ -270,15 +331,22 @@ def test_real_1a6m_selects_protein_and_heme_with_altlocs(
     assert manifest["cross_boundary_coordination_relations"] == []
     output = gemmi.read_structure(str(tmp_path / "selection/selected_structure.cif"))
     assert any(residue.name == "HEM" for chain in output[0] for residue in chain)
-    assert any(str(atom.altloc).strip() not in {"", "\x00"} for chain in output[0] for residue in chain for atom in residue)
+    assert any(
+        str(atom.altloc).strip() not in {"", "\x00"}
+        for chain in output[0]
+        for residue in chain
+        for atom in residue
+    )
 
 
 def test_real_1crn_all_components_round_trip_to_pdb(
     tmp_path: Path,
-    shared_ccd_cache: Path,
 ) -> None:
     structure = REAL_PDB_DIR / "1CRN.pdb"
-    classification_path = build_real_classification(structure, tmp_path / "classification", shared_ccd_cache)
+    classification_path = build_real_classification(
+        structure,
+        tmp_path / "classification",
+    )
     classification = yaml.safe_load(classification_path.read_text(encoding="utf-8"))
     selected = sorted(group["component_id"] for group in classification["chain_groups"])
     manifest, validation = execute_selection(
