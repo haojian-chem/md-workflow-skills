@@ -8,10 +8,10 @@
 IMPLEMENTATION: PRESENT
 LOCAL_AUTOMATED_SUITE: PASS
 REAL_AF3_ACCEPTANCE: PASS
-HOSTED_CI: PASS_FOR_IMPLEMENTATION_HEAD
-CCD_SEED_SYNC_WORKFLOW: READY_NOT_RUN
-REAL_1.2_TO_1.3_HARNESS: MIGRATED_NOT_RUN
-REAL_PDB_MMCIF_GROMACS: PENDING
+HOSTED_CI: PENDING_FOR_FINAL_HEAD
+CCD_SEED_COMPLETENESS_AND_HASH_VALIDATION: PASS
+REAL_1.2_TO_1.3_ACCEPTANCE: PASS
+REAL_PDB_MMCIF_GROMACS_REGRESSION: PENDING
 OVERALL: PRESENT_UNVALIDATED
 ```
 
@@ -28,17 +28,22 @@ OVERALL: PRESENT_UNVALIDATED
 ```text
 Python compile: PASS
 Draft 2020-12 schema meta-validation: PASS
-built-in CCD-compatible entries: 38 parsed and hash-matched
+built-in CCD-compatible entries: 57 parsed and hash-matched
+approved cofactor/ligand CCD seeds: 19 synced and independently verified
+CCD seed workflow run: 31106984398
 migrated Skill 1.2 automated suite: PASS (local)
 real AlphaFold Server CIF + job request acceptance: PASS (local)
-hosted implementation and authoring/closure CI: PASS
+hosted implementation and authoring/closure CI: PASS for pre-seed implementation head
 relation ID ordering/roles: PASS
 relation decision + topology regrouping: PASS
 current observations → final selection contract: PASS
 historical 1.2→1.3 opaque-ID regression: PASS
+real 1.2→1.3 selection acceptance: 3 PASS
+real selection workflow run: 31107196592
+real selection evidence artifact: 8970115209
 ```
 
-本地与 hosted 自动测试证明当前实现和已迁移 fixtures 一致，但不能替代尚未完成的真实 PDB/mmCIF/GROMACS 和完整下游选择证据。
+真实 1.2→1.3 验收覆盖官方 1VNS、1A6M 和 1CRN PDB 输入，执行当前 1.2 分类与关系检查、1.3 选择以及选择验证。该证据不能替代尚未完成的独立 PDB/mmCIF/GROMACS 回归矩阵。
 
 ## 当前实现范围
 
@@ -52,17 +57,15 @@ historical 1.2→1.3 opaque-ID regression: PASS
 
 ## 已知未闭合项
 
-1. 真实 PDB、mmCIF 和 GROMACS 尚未重跑；
-2. 完整真实 1.2→1.3 选择验收已迁移到当前契约，但尚未实际运行；
-3. 辅因子/配体批准列表及网页同步 workflow 已就绪，但 19 项 seed 尚未写入内置库并逐项验证；
-4. 上述真实证据通过后，仍需在合并前复核最终 PR checks。
+1. 独立真实 PDB、mmCIF 和 GROMACS 回归矩阵尚未重跑；
+2. CCD seed 与真实选择验收后的最终分支 head 尚需通过 hosted core CI；
+3. 合并前仍需复核最终 PR checks。
 
 ## 重新标记 PASS 的必要证据
 
 ```text
-real PDB + mmCIF + GROMACS
-real 1.2 → 1.3 selection acceptance
-CCD seed completeness and hash validation
+real PDB + mmCIF + GROMACS regression matrix
+hosted core CI success on the final branch head
 final PR checks on the merge candidate
 ```
 
