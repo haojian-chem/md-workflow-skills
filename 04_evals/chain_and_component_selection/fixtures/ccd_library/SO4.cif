@@ -1,0 +1,12 @@
+data_SO4
+_chem_comp.id SO4
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+SO4 "S" S .
+SO4 "O1" O .
+SO4 "O2" O .
+SO4 "O3" O .
+SO4 "O4" O .
