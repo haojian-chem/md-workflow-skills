@@ -1,0 +1,12 @@
+schema_version: "1.0"
+components:
+  HEM:
+    path: HEM.cif
+    category: HEME_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 9d0601bdfb7dab33955173679bb0ee8f8b8c8bbe6bc571870e478c87d0a80143
+  SO4:
+    path: SO4.cif
+    category: TEST_ONLY_INORGANIC_COMPONENT
+    source_type: RCSB_CCD_COMPONENT
+    sha256: e75790514c737444854f8ddd8ed9f487228e30b3f0fa89b1614d01af4ddb7e0f
