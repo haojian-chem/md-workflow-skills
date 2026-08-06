@@ -36,14 +36,16 @@ jobs:
 
           path = Path("02_validators/component_and_residue_classification_validator/scripts/sync_approved_ccd_seeds.py")
           text = path.read_text(encoding="utf-8")
-          old = '''    text = str(value).strip()
-              return None if not text or text in {".", "?"} else text
-          '''
-          new = '''    text = str(value).strip()
-              if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
-                  text = text[1:-1]
-              return None if not text or text in {".", "?"} else text
-          '''
+          old = (
+              "    text = str(value).strip()\n"
+              '    return None if not text or text in {".", "?"} else text\n'
+          )
+          new = (
+              "    text = str(value).strip()\n"
+              "    if len(text) >= 2 and text[0] == text[-1] and text[0] in (\"'\", chr(34)):\n"
+              "        text = text[1:-1]\n"
+              '    return None if not text or text in {".", "?"} else text\n'
+          )
           if old not in text:
               raise SystemExit("expected _clean implementation not found")
           path.write_text(text.replace(old, new, 1), encoding="utf-8")
