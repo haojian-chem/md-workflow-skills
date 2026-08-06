@@ -21,6 +21,8 @@ def _clean(value: str | None) -> str | None:
     if value is None:
         return None
     text = str(value).strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in ("'", chr(34)):
+        text = text[1:-1]
     return None if not text or text in {".", "?"} else text
 
 

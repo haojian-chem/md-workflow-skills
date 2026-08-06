@@ -1,0 +1,34 @@
+data_ADP
+_chem_comp.id ADP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ADP "PB" P .
+ADP "O1B" O .
+ADP "O2B" O .
+ADP "O3B" O .
+ADP "PA" P .
+ADP "O1A" O .
+ADP "O2A" O .
+ADP "O3A" O .
+ADP "O5'" O "O5*"
+ADP "C5'" C "C5*"
+ADP "C4'" C "C4*"
+ADP "O4'" O "O4*"
+ADP "C3'" C "C3*"
+ADP "O3'" O "O3*"
+ADP "C2'" C "C2*"
+ADP "O2'" O "O2*"
+ADP "C1'" C "C1*"
+ADP "N9" N .
+ADP "C8" C .
+ADP "N7" N .
+ADP "C5" C .
+ADP "C6" C .
+ADP "N6" N .
+ADP "N1" N .
+ADP "C2" C .
+ADP "N3" N .
+ADP "C4" C .

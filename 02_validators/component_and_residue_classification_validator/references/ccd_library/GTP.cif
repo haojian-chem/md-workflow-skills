@@ -1,0 +1,39 @@
+data_GTP
+_chem_comp.id GTP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+GTP "PG" P .
+GTP "O1G" O .
+GTP "O2G" O .
+GTP "O3G" O .
+GTP "O3B" O .
+GTP "PB" P .
+GTP "O1B" O .
+GTP "O2B" O .
+GTP "O3A" O .
+GTP "PA" P .
+GTP "O1A" O .
+GTP "O2A" O .
+GTP "O5'" O .
+GTP "C5'" C .
+GTP "C4'" C .
+GTP "O4'" O .
+GTP "C3'" C .
+GTP "O3'" O .
+GTP "C2'" C .
+GTP "O2'" O .
+GTP "C1'" C .
+GTP "N9" N .
+GTP "C8" C .
+GTP "N7" N .
+GTP "C5" C .
+GTP "C6" C .
+GTP "O6" O .
+GTP "N1" N .
+GTP "C2" C .
+GTP "N2" N .
+GTP "N3" N .
+GTP "C4" C .

@@ -1,0 +1,60 @@
+data_FAD
+_chem_comp.id FAD
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+FAD "PA" P "AP"
+FAD "O1A" O "AO1"
+FAD "O2A" O "AO2"
+FAD "O5B" O "AO5*"
+FAD "C5B" C "AC5*"
+FAD "C4B" C "AC4*"
+FAD "O4B" O "AO4*"
+FAD "C3B" C "AC3*"
+FAD "O3B" O "AO3*"
+FAD "C2B" C "AC2*"
+FAD "O2B" O "AO2*"
+FAD "C1B" C "AC1*"
+FAD "N9A" N "AN9"
+FAD "C8A" C "AC8"
+FAD "N7A" N "AN7"
+FAD "C5A" C "AC5"
+FAD "C6A" C "AC6"
+FAD "N6A" N "AN6"
+FAD "N1A" N "AN1"
+FAD "C2A" C "AC2"
+FAD "N3A" N "AN3"
+FAD "C4A" C "AC4"
+FAD "N1" N .
+FAD "C2" C .
+FAD "O2" O .
+FAD "N3" N .
+FAD "C4" C .
+FAD "O4" O .
+FAD "C4X" C "C4A"
+FAD "N5" N .
+FAD "C5X" C "C5A"
+FAD "C6" C .
+FAD "C7" C .
+FAD "C7M" C .
+FAD "C8" C .
+FAD "C8M" C .
+FAD "C9" C .
+FAD "C9A" C .
+FAD "N10" N .
+FAD "C10" C .
+FAD "C1'" C "C1*"
+FAD "C2'" C "C2*"
+FAD "O2'" O "O2*"
+FAD "C3'" C "C3*"
+FAD "O3'" O "O3*"
+FAD "C4'" C "C4*"
+FAD "O4'" O "O4*"
+FAD "C5'" C "C5*"
+FAD "O5'" O "O5*"
+FAD "P" P .
+FAD "O1P" O .
+FAD "O2P" O .
+FAD "O3P" O .

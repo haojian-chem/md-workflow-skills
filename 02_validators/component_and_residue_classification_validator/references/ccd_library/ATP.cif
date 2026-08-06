@@ -1,0 +1,38 @@
+data_ATP
+_chem_comp.id ATP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+ATP "PG" P .
+ATP "O1G" O .
+ATP "O2G" O .
+ATP "O3G" O .
+ATP "PB" P .
+ATP "O1B" O .
+ATP "O2B" O .
+ATP "O3B" O .
+ATP "PA" P .
+ATP "O1A" O .
+ATP "O2A" O .
+ATP "O3A" O .
+ATP "O5'" O "O5*"
+ATP "C5'" C "C5*"
+ATP "C4'" C "C4*"
+ATP "O4'" O "O4*"
+ATP "C3'" C "C3*"
+ATP "O3'" O "O3*"
+ATP "C2'" C "C2*"
+ATP "O2'" O "O2*"
+ATP "C1'" C "C1*"
+ATP "N9" N .
+ATP "C8" C .
+ATP "N7" N .
+ATP "C5" C .
+ATP "C6" C .
+ATP "N6" N .
+ATP "N1" N .
+ATP "C2" C .
+ATP "N3" N .
+ATP "C4" C .

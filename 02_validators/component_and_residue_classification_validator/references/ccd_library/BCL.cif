@@ -1,0 +1,73 @@
+data_BCL
+_chem_comp.id BCL
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+BCL "MG" MG .
+BCL "CHA" C .
+BCL "CHB" C .
+BCL "CHC" C .
+BCL "CHD" C .
+BCL "NA" N .
+BCL "C1A" C .
+BCL "C2A" C .
+BCL "C3A" C .
+BCL "C4A" C .
+BCL "CMA" C .
+BCL "CAA" C .
+BCL "CBA" C .
+BCL "CGA" C .
+BCL "O1A" O .
+BCL "O2A" O .
+BCL "NB" N .
+BCL "C1B" C .
+BCL "C2B" C .
+BCL "C3B" C .
+BCL "C4B" C .
+BCL "CMB" C .
+BCL "CAB" C .
+BCL "OBB" O .
+BCL "CBB" C .
+BCL "NC" N .
+BCL "C1C" C .
+BCL "C2C" C .
+BCL "C3C" C .
+BCL "C4C" C .
+BCL "CMC" C .
+BCL "CAC" C .
+BCL "CBC" C .
+BCL "ND" N .
+BCL "C1D" C .
+BCL "C2D" C .
+BCL "C3D" C .
+BCL "C4D" C .
+BCL "CMD" C .
+BCL "CAD" C .
+BCL "OBD" O .
+BCL "CBD" C .
+BCL "CGD" C .
+BCL "O1D" O .
+BCL "O2D" O .
+BCL "CED" C .
+BCL "C1" C .
+BCL "C2" C .
+BCL "C3" C .
+BCL "C4" C .
+BCL "C5" C .
+BCL "C6" C .
+BCL "C7" C .
+BCL "C8" C .
+BCL "C9" C .
+BCL "C10" C .
+BCL "C11" C .
+BCL "C12" C .
+BCL "C13" C .
+BCL "C14" C .
+BCL "C15" C .
+BCL "C16" C .
+BCL "C17" C .
+BCL "C18" C .
+BCL "C19" C .
+BCL "C20" C .

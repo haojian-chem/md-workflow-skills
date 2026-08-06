@@ -1,0 +1,73 @@
+data_BCB
+_chem_comp.id BCB
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+BCB "MG" MG .
+BCB "CHA" C .
+BCB "CHB" C .
+BCB "CHC" C .
+BCB "CHD" C .
+BCB "NA" N "N A"
+BCB "C1A" C .
+BCB "C2A" C .
+BCB "C3A" C .
+BCB "C4A" C .
+BCB "CMA" C .
+BCB "CAA" C .
+BCB "CBA" C .
+BCB "CGA" C .
+BCB "O1A" O .
+BCB "O2A" O .
+BCB "NB" N "N B"
+BCB "C1B" C .
+BCB "C2B" C .
+BCB "C3B" C .
+BCB "C4B" C .
+BCB "CMB" C .
+BCB "CAB" C .
+BCB "OBB" O .
+BCB "CBB" C .
+BCB "NC" N "N C"
+BCB "C1C" C .
+BCB "C2C" C .
+BCB "C3C" C .
+BCB "C4C" C .
+BCB "CMC" C .
+BCB "CAC" C .
+BCB "CBC" C .
+BCB "ND" N "N D"
+BCB "C1D" C .
+BCB "C2D" C .
+BCB "C3D" C .
+BCB "C4D" C .
+BCB "CMD" C .
+BCB "CAD" C .
+BCB "OBD" O .
+BCB "CBD" C .
+BCB "CGD" C .
+BCB "O1D" O .
+BCB "O2D" O .
+BCB "CED" C .
+BCB "C1" C .
+BCB "C2" C .
+BCB "C3" C .
+BCB "C4" C .
+BCB "C5" C .
+BCB "C6" C .
+BCB "C7" C .
+BCB "C8" C .
+BCB "C9" C .
+BCB "C10" C .
+BCB "C11" C .
+BCB "C12" C .
+BCB "C13" C .
+BCB "C14" C .
+BCB "C15" C .
+BCB "C16" C .
+BCB "C17" C .
+BCB "C18" C .
+BCB "C19" C .
+BCB "C20" C .

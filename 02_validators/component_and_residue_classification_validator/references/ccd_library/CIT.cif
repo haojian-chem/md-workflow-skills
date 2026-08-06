@@ -1,0 +1,20 @@
+data_CIT
+_chem_comp.id CIT
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+CIT "C1" C .
+CIT "O1" O .
+CIT "O2" O .
+CIT "C2" C .
+CIT "C3" C .
+CIT "O7" O .
+CIT "C4" C .
+CIT "C5" C .
+CIT "O3" O .
+CIT "O4" O .
+CIT "C6" C .
+CIT "O5" O .
+CIT "O6" O .

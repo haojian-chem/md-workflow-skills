@@ -197,3 +197,98 @@ components:
     category: STANDARD_AMINO_ACID
     source_type: SKILL_CUSTOM_COMPONENT
     sha256: 390f41105d4768c80fc1a9339978dea1a6b61590c9e3877bee6330d5d56a3d3d
+  AMP:
+    path: AMP.cif
+    category: NUCLEOTIDE_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 5de163e6c54eadf8b82a9e600cbac5cc4b20c4c30b211ef7e1cf2d1c23236210
+  ADP:
+    path: ADP.cif
+    category: NUCLEOTIDE_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 27c79d98e9abb07c7885b422b1b08f990484e3676fa30276dcf4324debd5a3ac
+  ATP:
+    path: ATP.cif
+    category: NUCLEOTIDE_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: ca6ebd12a90eb5a6488632646e52bf5cfe2df369d9bf7e8117f6a9b4dba9854c
+  GDP:
+    path: GDP.cif
+    category: NUCLEOTIDE_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: b35eec950ddc4510c1e57a2031a07a6cde4697bc9635a5bedec38026908cac26
+  GTP:
+    path: GTP.cif
+    category: NUCLEOTIDE_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: ec27570b507db7ab1e95c979fb5fe74fddc08e8d8888e37954ef335bd1ef68d8
+  FAD:
+    path: FAD.cif
+    category: REDOX_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 73f9740e255bdf6fed7e19abc5c0891b46ecd9eee755eeffc0eb87d3eb503739
+  NAD:
+    path: NAD.cif
+    category: REDOX_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 084030ecdb9f440ca85b4aa4403fa2d2979aa71890052b7a9b9c11dc994b50a4
+  NAP:
+    path: NAP.cif
+    category: REDOX_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: f96d43ab07ca9e6936a1ebf9079d6ce47f87c21e61b13c481b0661c5b6e232ba
+  NDP:
+    path: NDP.cif
+    category: REDOX_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: a7f5a45f800830a8fbd3ec665ed7f66fac28c2ac06b3a04fb1c7bfdf87ba7d76
+  HEM:
+    path: HEM.cif
+    category: HEME_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 9d0601bdfb7dab33955173679bb0ee8f8b8c8bbe6bc571870e478c87d0a80143
+  HEC:
+    path: HEC.cif
+    category: HEME_COFACTOR
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 41131256f84b0af6e8427fae5726b829970417767ef8d6df7625b9d99907d01e
+  PLM:
+    path: PLM.cif
+    category: FATTY_ACID
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 623bb06f484f3f8b43e34341df744f2c1bed4cc707e2f9c3283580230e1b476e
+  OLA:
+    path: OLA.cif
+    category: FATTY_ACID
+    source_type: RCSB_CCD_COMPONENT
+    sha256: d400326fe5003837e8c283204992c8bbd420c6fdc2c925ecdd8b6cbe90d942bc
+  MYR:
+    path: MYR.cif
+    category: FATTY_ACID
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 78c8e482918dc09621f5fc7c5ee235eaf586b9a28b8450f323b1faa64d34f226
+  CIT:
+    path: CIT.cif
+    category: METABOLITE
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 0f22d9607b78902037ada08371ff92bf2e2adf024d6859d46ac9f534aa729cdf
+  CLA:
+    path: CLA.cif
+    category: TETRAPYRROLE_PIGMENT
+    source_type: RCSB_CCD_COMPONENT
+    sha256: fb17d8e4aa24c277ebf69dd5dea96f8d999bdb3bd76d01fc7e213a111c6d799c
+  CHL:
+    path: CHL.cif
+    category: TETRAPYRROLE_PIGMENT
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 3991cf108ccda56a0b5b778826332b8a6bfbff0119b59c083380d499c5812af9
+  BCL:
+    path: BCL.cif
+    category: TETRAPYRROLE_PIGMENT
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 53857d3c080bf4949132c008fd72a3c28aa624f907ffbeb448f03a5317422ac5
+  BCB:
+    path: BCB.cif
+    category: TETRAPYRROLE_PIGMENT
+    source_type: RCSB_CCD_COMPONENT
+    sha256: 9459c08f4c6d776141cf376de019cdeb65da06f2ddfc0e0995d851d61fe3c9a5

@@ -1,0 +1,35 @@
+data_GDP
+_chem_comp.id GDP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+GDP "PB" P .
+GDP "O1B" O .
+GDP "O2B" O .
+GDP "O3B" O .
+GDP "O3A" O .
+GDP "PA" P .
+GDP "O1A" O .
+GDP "O2A" O .
+GDP "O5'" O .
+GDP "C5'" C .
+GDP "C4'" C .
+GDP "O4'" O .
+GDP "C3'" C .
+GDP "O3'" O .
+GDP "C2'" C .
+GDP "O2'" O .
+GDP "C1'" C .
+GDP "N9" N .
+GDP "C8" C .
+GDP "N7" N .
+GDP "C5" C .
+GDP "C6" C .
+GDP "O6" O .
+GDP "N1" N .
+GDP "C2" C .
+GDP "N2" N .
+GDP "N3" N .
+GDP "C4" C .

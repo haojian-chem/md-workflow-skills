@@ -1,0 +1,72 @@
+data_CLA
+_chem_comp.id CLA
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+CLA "MG" MG .
+CLA "CHA" C .
+CLA "CHB" C .
+CLA "CHC" C .
+CLA "CHD" C .
+CLA "NA" N "N A"
+CLA "C1A" C .
+CLA "C2A" C .
+CLA "C3A" C .
+CLA "C4A" C .
+CLA "CMA" C .
+CLA "CAA" C .
+CLA "CBA" C .
+CLA "CGA" C .
+CLA "O1A" O .
+CLA "O2A" O .
+CLA "NB" N "N B"
+CLA "C1B" C .
+CLA "C2B" C .
+CLA "C3B" C .
+CLA "C4B" C .
+CLA "CMB" C .
+CLA "CAB" C .
+CLA "CBB" C .
+CLA "NC" N "N C"
+CLA "C1C" C .
+CLA "C2C" C .
+CLA "C3C" C .
+CLA "C4C" C .
+CLA "CMC" C .
+CLA "CAC" C .
+CLA "CBC" C .
+CLA "ND" N "N D"
+CLA "C1D" C .
+CLA "C2D" C .
+CLA "C3D" C .
+CLA "C4D" C .
+CLA "CMD" C .
+CLA "CAD" C .
+CLA "OBD" O .
+CLA "CBD" C .
+CLA "CGD" C .
+CLA "O1D" O .
+CLA "O2D" O .
+CLA "CED" C .
+CLA "C1" C .
+CLA "C2" C .
+CLA "C3" C .
+CLA "C4" C .
+CLA "C5" C .
+CLA "C6" C .
+CLA "C7" C .
+CLA "C8" C .
+CLA "C9" C .
+CLA "C10" C .
+CLA "C11" C .
+CLA "C12" C .
+CLA "C13" C .
+CLA "C14" C .
+CLA "C15" C .
+CLA "C16" C .
+CLA "C17" C .
+CLA "C18" C .
+CLA "C19" C .
+CLA "C20" C .

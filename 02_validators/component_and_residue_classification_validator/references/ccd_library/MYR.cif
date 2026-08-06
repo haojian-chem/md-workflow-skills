@@ -1,0 +1,23 @@
+data_MYR
+_chem_comp.id MYR
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+MYR "C1" C .
+MYR "O1" O .
+MYR "O2" O .
+MYR "C2" C .
+MYR "C3" C .
+MYR "C4" C .
+MYR "C5" C .
+MYR "C6" C .
+MYR "C7" C .
+MYR "C8" C .
+MYR "C9" C .
+MYR "C10" C .
+MYR "C11" C .
+MYR "C12" C .
+MYR "C13" C .
+MYR "C14" C .

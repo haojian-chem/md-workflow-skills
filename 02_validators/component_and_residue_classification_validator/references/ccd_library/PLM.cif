@@ -1,0 +1,25 @@
+data_PLM
+_chem_comp.id PLM
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+PLM "C1" C .
+PLM "O1" O .
+PLM "O2" O .
+PLM "C2" C .
+PLM "C3" C .
+PLM "C4" C .
+PLM "C5" C .
+PLM "C6" C .
+PLM "C7" C .
+PLM "C8" C .
+PLM "C9" C .
+PLM "CA" C .
+PLM "CB" C .
+PLM "CC" C .
+PLM "CD" C .
+PLM "CE" C .
+PLM "CF" C .
+PLM "CG" C .

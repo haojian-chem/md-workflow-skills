@@ -1,0 +1,50 @@
+data_HEC
+_chem_comp.id HEC
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+HEC "FE" FE .
+HEC "CHA" C .
+HEC "CHB" C .
+HEC "CHC" C .
+HEC "CHD" C .
+HEC "NA" N "N A"
+HEC "C1A" C .
+HEC "C2A" C .
+HEC "C3A" C .
+HEC "C4A" C .
+HEC "CMA" C .
+HEC "CAA" C .
+HEC "CBA" C .
+HEC "CGA" C .
+HEC "O1A" O .
+HEC "O2A" O .
+HEC "NB" N "N B"
+HEC "C1B" C .
+HEC "C2B" C .
+HEC "C3B" C .
+HEC "C4B" C .
+HEC "CMB" C .
+HEC "CAB" C .
+HEC "CBB" C .
+HEC "NC" N "N C"
+HEC "C1C" C .
+HEC "C2C" C .
+HEC "C3C" C .
+HEC "C4C" C .
+HEC "CMC" C .
+HEC "CAC" C .
+HEC "CBC" C .
+HEC "ND" N "N D"
+HEC "C1D" C .
+HEC "C2D" C .
+HEC "C3D" C .
+HEC "C4D" C .
+HEC "CMD" C .
+HEC "CAD" C .
+HEC "CBD" C .
+HEC "CGD" C .
+HEC "O1D" O .
+HEC "O2D" O .

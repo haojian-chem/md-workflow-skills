@@ -1,0 +1,30 @@
+data_AMP
+_chem_comp.id AMP
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+AMP "P" P .
+AMP "O1P" O .
+AMP "O2P" O .
+AMP "O3P" O .
+AMP "O5'" O .
+AMP "C5'" C .
+AMP "C4'" C .
+AMP "O4'" O .
+AMP "C3'" C .
+AMP "O3'" O .
+AMP "C2'" C .
+AMP "O2'" O .
+AMP "C1'" C .
+AMP "N9" N .
+AMP "C8" C .
+AMP "N7" N .
+AMP "C5" C .
+AMP "C6" C .
+AMP "N6" N .
+AMP "N1" N .
+AMP "C2" C .
+AMP "N3" N .
+AMP "C4" C .

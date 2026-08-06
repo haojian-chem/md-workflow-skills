@@ -1,0 +1,27 @@
+data_OLA
+_chem_comp.id OLA
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+OLA "C1" C .
+OLA "O1" O .
+OLA "O2" O .
+OLA "C2" C .
+OLA "C3" C .
+OLA "C4" C .
+OLA "C5" C .
+OLA "C6" C .
+OLA "C7" C .
+OLA "C8" C .
+OLA "C9" C .
+OLA "C10" C .
+OLA "C11" C .
+OLA "C12" C .
+OLA "C13" C .
+OLA "C14" C .
+OLA "C15" C .
+OLA "C16" C .
+OLA "C17" C .
+OLA "C18" C .
