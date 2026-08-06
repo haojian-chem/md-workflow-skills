@@ -2,6 +2,11 @@ name: component-classification-v1-2-ccd-seeds
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - ".github/ccd-seed-sync-trigger"
 
 permissions:
   contents: write
