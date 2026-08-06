@@ -1,19 +1,20 @@
 # Built-in CCD-compatible reference library
 
-This directory is the fixed built-in component-reference root for Skill 1.2.
-`index.yaml` is authoritative; callers must not scan the directory or download
-missing entries. Each indexed component maps to one `<component_id>.cif` file
-and a verified SHA-256 value.
+This is the fixed built-in component-reference root for Skill 1.2.
+`index.yaml` is authoritative; runtime callers must not scan this directory or
+download missing entries. Each component maps to one `<component_id>.cif` and
+one verified SHA-256 value.
 
-The committed seed files contain only the component and atom-table fields used
-by the current heavy-atom comparison. Add or replace a component only through
-`scripts/add_ccd_reference.py`, with an explicit target library. That operation
-validates the CIF, derives the canonical component ID, verifies conflicts and
-updates `index.yaml` atomically. It never edits residue registries.
+Seed files retain only the component and atom-table fields required by the
+heavy-atom comparison. The approved cofactor/ligand set is defined once in
+`../approved_ccd_seed_manifest.yaml`. Use `scripts/add_ccd_reference.py` for one
+explicit component, or `scripts/sync_approved_ccd_seeds.py` for that approved
+set. Both validate IDs, CIF parsing, conflicts and hashes without editing
+residue registries.
 
-Additional libraries use the same flat layout and are listed explicitly in
+The webpage entry point is the manually dispatched
+`component-classification-v1-2-ccd-seeds` workflow. It is blocked on `main` and
+commits generated seeds only to the selected feature branch.
+
+Additional libraries use the same indexed flat layout and are declared in
 `classification_config.yaml` under `ccd.additional_library_paths`.
-
-The first implementation seeds amino acids, supported protonation variants,
-DNA/RNA residues and MSE/SEC/PYL. The larger cofactor/ligand seed set remains an
-explicit validation item before this redesigned 1.2 path can return to PASS.
