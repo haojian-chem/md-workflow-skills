@@ -1,0 +1,50 @@
+data_HEM
+_chem_comp.id HEM
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+HEM "CHA" C .
+HEM "CHB" C .
+HEM "CHC" C .
+HEM "CHD" C .
+HEM "C1A" C .
+HEM "C2A" C .
+HEM "C3A" C .
+HEM "C4A" C .
+HEM "CMA" C .
+HEM "CAA" C .
+HEM "CBA" C .
+HEM "CGA" C .
+HEM "O1A" O .
+HEM "O2A" O .
+HEM "C1B" C .
+HEM "C2B" C .
+HEM "C3B" C .
+HEM "C4B" C .
+HEM "CMB" C .
+HEM "CAB" C .
+HEM "CBB" C .
+HEM "C1C" C .
+HEM "C2C" C .
+HEM "C3C" C .
+HEM "C4C" C .
+HEM "CMC" C .
+HEM "CAC" C .
+HEM "CBC" C .
+HEM "C1D" C .
+HEM "C2D" C .
+HEM "C3D" C .
+HEM "C4D" C .
+HEM "CMD" C .
+HEM "CAD" C .
+HEM "CBD" C .
+HEM "CGD" C .
+HEM "O1D" O .
+HEM "O2D" O .
+HEM "NA" N .
+HEM "NB" N .
+HEM "NC" N .
+HEM "ND" N .
+HEM "FE" FE .
