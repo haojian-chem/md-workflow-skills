@@ -64,8 +64,17 @@ initialization:
   - business task creation
   - business structure parsing
   - initialization snapshot
-  validation_mode: CURRENT_PROTOCOL_COMPATIBILITY
-  note: R6 will replace this compatibility mode with candidate-only initialization validation after the validator/contract migration is implemented.
+  validation_mode: INIT_CANDIDATE_VALIDATION
+  validator: runtime_schema_validator
+  validator_cli_mode: FAST
+  candidate_scope:
+  - candidate project_state.yaml
+  - candidate initial Workstream state
+  logical_overlay_required: true
+  direct_references_only: true
+  business_file_validation: false
+  full_validation: false
+  validation_evidence: 04_evals/initialization_candidate_validation/VALIDATION.md
 request_actions:
   allowed:
   - INSPECT
@@ -129,13 +138,15 @@ record_ownership:
   ordinary_foreground_closure_rule: Manager supplies explicit semantic deltas and route progression; runtime_record_committer constructs candidates, runs one FAST validation, commits management records/state, and returns a compact receipt.
   project_state_ordinary_task_rewrite: false
 validation:
+  initialization: INIT_CANDIDATE_VALIDATION
   ordinary_changed_runtime_instances: FAST_ONCE_INSIDE_RUNTIME_RECORD_COMMITTER
   repeat_when_candidate_unchanged: false
   schema_consumed_by: deterministic_validator
   full_validation_only_when:
-  - authoritative_protocol_requires_it
   - recovery
   - schema_or_contract_change
+  - project_or_skill_root_change
+  - authoritative_protocol_requires_project_wide_audit
   - explicit_full_audit
 semantic_reentry_triggers:
 - blocking_decision
@@ -160,7 +171,8 @@ performance_guards:
 - no_authoring_corpus_read_on_normal_entry
 - no_business_structure_parsing_in_manager_entry_or_init
 - no_schema_field_by_field_llm_simulation
-- no_repeated_FULL_for_unchanged_candidate
+- no_FULL_during_NEW_initialization
+- no_repeat_validation_for_unchanged_candidate
 - no_repeat_read_to_explain_deterministic_tool_result
 - ordinary_task_mechanical_closure_uses_runtime_record_committer
 - clean_active_route_progression_uses_route_fast_path_evaluator
@@ -168,14 +180,14 @@ projection:
   generated: true
   source:
     path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
-    git_blob_sha: fbfb60fb3518025fae3a049283334c314c9af005
+    git_blob_sha: 00a80de6819734c1237f6866003faf420780f36d
   guarded_sources:
   - path: 00_manager/md_workflow_manager/SKILL.md
-    git_blob_sha: e3e1812ba357638a817b5f6ef2cecfd1b1b7c0ac
+    git_blob_sha: 1d3dd742f922847b64616a564cd93dd6f4580258
   - path: 00_manager/md_workflow_manager/references/project_initialization_protocol.md
-    git_blob_sha: 51f11a285fe3279c965c03d58877dc5a7144d161
+    git_blob_sha: 5894fab5449080d5709e3ce10a08292aaa3a56b3
   - path: 00_manager/md_workflow_manager/references/route_planning_protocol.md
     git_blob_sha: e3559215afb79ec0042c0a8880b84e439164eada
   - path: design_records/logging_and_record_system.md
-    git_blob_sha: 20a99f07b37db4bc48a63ad54f6fc3aab32983b5
+    git_blob_sha: 12ad36071779ff9fdb1fdb00caa20175fddba85f
   kind: manager
