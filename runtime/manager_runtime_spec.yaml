@@ -105,7 +105,10 @@ workflow_runtime:
     - semantic_route_revision_required
   execution:
     preferred_source: active_route_node_plus_compact_workflow_runtime_spec
-    active_route_fast_path_status: planned_not_active
+    active_route_fast_path_status: ACTIVE
+    fast_path_tool: route_fast_path_evaluator
+    fast_path_on_clean_terminal_result: true
+    semantic_trigger_behavior: REENTER_WORKFLOW
 backend_resolution:
   backend_order_is_not_global_priority: true
   rules:
@@ -121,10 +124,12 @@ record_ownership:
   manager_commit_paths:
   - 00_project_state/**
   - 00_project_records/**
-  mechanical_builder_status: planned_R4
-  current_compatibility_rule: Until R4 is active, use the existing minimal record closure but do not generate unchanged project state, snapshots, no-op route revisions, or repeated session writes.
+  mechanical_builder_status: ACTIVE
+  ordinary_foreground_closure_tool: runtime_record_committer
+  ordinary_foreground_closure_rule: Manager supplies explicit semantic deltas and route progression; runtime_record_committer constructs candidates, runs one FAST validation, commits management records/state, and returns a compact receipt.
+  project_state_ordinary_task_rewrite: false
 validation:
-  ordinary_changed_runtime_instances: FAST_ONCE
+  ordinary_changed_runtime_instances: FAST_ONCE_INSIDE_RUNTIME_RECORD_COMMITTER
   repeat_when_candidate_unchanged: false
   schema_consumed_by: deterministic_validator
   full_validation_only_when:
@@ -135,6 +140,7 @@ validation:
 semantic_reentry_triggers:
 - blocking_decision
 - route_affecting_evidence
+- conditional_evidence_changed
 - failure
 - artifact_interface_conflict
 - unexpected_output
@@ -156,11 +162,13 @@ performance_guards:
 - no_schema_field_by_field_llm_simulation
 - no_repeated_FULL_for_unchanged_candidate
 - no_repeat_read_to_explain_deterministic_tool_result
+- ordinary_task_mechanical_closure_uses_runtime_record_committer
+- clean_active_route_progression_uses_route_fast_path_evaluator
 projection:
   generated: true
   source:
     path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
-    git_blob_sha: bb52416f34501506eb2907a1d9db97fbf53bff75
+    git_blob_sha: fbfb60fb3518025fae3a049283334c314c9af005
   guarded_sources:
   - path: 00_manager/md_workflow_manager/SKILL.md
     git_blob_sha: e3e1812ba357638a817b5f6ef2cecfd1b1b7c0ac
