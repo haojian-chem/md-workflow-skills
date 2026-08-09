@@ -58,8 +58,8 @@ scripts/requirements.txt
 在启动 1.2 `AGENT_TASK` 前，Manager 按 compact Workflow runtime spec 调用 ACTIVE `runtime_dependency_preflight`：
 
 ```text
-task.yaml
-+ references/runtime_dependencies.yaml
+task identity
++ references/runtime_dependencies.json
 → runtime_dependency_preflight
 ```
 
@@ -70,6 +70,8 @@ task.yaml
 - `ERROR`：按 Tool failure 处理，不启动 1.2 Agent。
 
 该 runtime dependency gate 只检查解释器/包依赖，不执行科学分类、不读取 PDB 内容、不替代本 Skill 内部 Preflight。
+
+preflight Tool 必须仅依赖 Python 标准库；不能依赖它自己正在检查的 `PyYAML/jsonschema/referencing/gemmi`。
 
 Agent 启动后不得为了“保险”重复做相同的全量 Python dependency import/version probe；只有实际 import 与已通过 preflight 事实冲突时才作为 runtime environment drift 报错。
 
