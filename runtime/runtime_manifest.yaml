@@ -28,11 +28,11 @@ provenance:
   - path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
     git_blob_sha: 00a80de6819734c1237f6866003faf420780f36d
   - path: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
-    git_blob_sha: 81c3d9a5fa46f3292253993030e3378c1bb4f88f
+    git_blob_sha: 4d5a07bd3386390f482260ea4d6f13ddd6e32831
   - path: 00_manager/md_workflow_manager/references/stage_registry.yaml
     git_blob_sha: 8dfd745d7ed6c6322694e5752f40d821bea20cf7
   - path: 05_tools/tool_registry.yaml
-    git_blob_sha: 6222c800a855a28d5ac8d47f3a97ed1501f5ae81
+    git_blob_sha: 60ddc738592704efdda0f51679064cf9781ed945
   - path: 03_contracts/project_state.schema.yaml
     git_blob_sha: dfe6ebbef4bd7db247b713430e9d1d10c4910d64
   - path: 03_contracts/workstream_state.schema.yaml
