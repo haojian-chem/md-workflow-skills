@@ -3,7 +3,7 @@ name: runtime-projection-sync
 on:
   push:
     branches:
-      - skill-1-2-state-redesign
+      - main
     paths:
       - "AGENTS.md"
       - "00_authoring/runtime_projection_config.yaml"
