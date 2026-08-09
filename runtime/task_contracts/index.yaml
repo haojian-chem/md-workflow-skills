@@ -1,0 +1,41 @@
+schema_version: 1
+index_status: bootstrap_active
+
+purpose: >-
+  Runtime index of contract identities. Normal MD runtime should pass contract paths or
+  identifiers to deterministic validators/builders instead of loading schema bodies into LLM context.
+
+contracts:
+  project_state:
+    path: 03_contracts/project_state.schema.yaml
+    llm_reads_body_by_default: false
+  workstream_state:
+    path: 03_contracts/workstream_state.schema.yaml
+    llm_reads_body_by_default: false
+  workflow_route_fragment:
+    path: 03_contracts/workflow_route_fragment.schema.yaml
+    llm_reads_body_by_default: false
+  workflow_decision:
+    path: 03_contracts/workflow_decision.schema.yaml
+    llm_reads_body_by_default: false
+  subagent_task:
+    path: 03_contracts/subagent_task.schema.yaml
+    llm_reads_body_by_default: false
+  subagent_result:
+    path: 03_contracts/subagent_result.schema.yaml
+    llm_reads_body_by_default: false
+  confirmation_item:
+    path: 03_contracts/confirmation_item.schema.yaml
+    llm_reads_body_by_default: false
+
+consumer_policy:
+  schema_validation: registered_deterministic_tool
+  llm_schema_body_read_allowed_when:
+    - explicit_contract_debug
+    - schema_authoring_or_migration
+    - runtime_validator_reports_schema_contract_conflict
+
+notes:
+  - This index does not redefine schema fields.
+  - Contract authority remains in 03_contracts/.
+  - R4 builders may extend this index with builder identifiers without copying schema bodies.
