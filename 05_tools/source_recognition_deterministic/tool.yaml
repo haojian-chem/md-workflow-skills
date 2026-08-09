@@ -1,0 +1,85 @@
+schema_version: 1
+name: source_recognition_deterministic
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+semantic_owner:
+  skill: source_recognition
+  path: 02_operations/source_recognition/SKILL.md
+  guarded_git_blob_sha: 4dc1cd80fc8253c0100788135807f5f6b5865187
+entrypoint: run.py
+purpose:
+  - execute the deterministic default path of stage 1.1 source_recognition without creating a business Agent context
+  - preserve source_recognition Operation identity and return a subagent_result-v2-shaped responsibility result for R5/R4
+supported_scope:
+  candidate_source:
+    - task.current_valid_files entries with role starting `source_candidate`
+    - state must be present_unvalidated or present_validated according to shared file_record contract
+  formats:
+    - local PDB
+    - local mmCIF/CIF
+  selection:
+    - exactly one valid bounded candidate is selected automatically
+    - multiple valid candidates return a blocking confirmation item
+    - no valid candidate returns BLOCKED without copying
+  action:
+    - default copy into task work_directory using original basename
+    - identical existing destination is reused
+    - different existing destination returns blocking confirmation
+unsupported_scope:
+  - controlled source move requested by user
+  - network retrieval
+  - recursive unbounded project scan
+  - scientific structure quality judgment
+  - chain/component/altloc/completeness/protonation decisions
+fallback:
+  unsupported_semantic_request: AGENT_TASK
+inputs:
+  - shared subagent_task v2 task.yaml
+outputs:
+  responsibility_result: subagent_result v2 shape with logical operation skill_name `source_recognition`
+  business_report: <work_directory>/source_recognition_report.yaml
+  business_log: <work_directory>/source_recognition.log
+  artifact_candidate: STRUCTURE with present_unvalidated selected source copy on DONE
+permissions:
+  read:
+    - task.yaml
+    - task-authorized source_candidate files
+    - guarded source_recognition SKILL.md
+  write:
+    - task work_directory only
+  prohibited:
+    - 00_project_state/**
+    - 00_project_records/** except reading supplied task.yaml
+    - source candidate modification/deletion
+    - network
+semantic_guard:
+  behavior: source_recognition SKILL.md Git blob mismatch is a Tool error; runtime must not silently continue on stale deterministic semantics
+validation:
+  management_result_validation: performed later by ACTIVE runtime_record_committer FAST gate
+  copy_integrity: source and destination SHA-256 must match
+  input_signature_check: bounded basic PDB/CIF markers only; not scientific quality validation
+security:
+  network_access: false
+  symlink_source_rejected: true
+  symlink_write_parent_rejected: true
+  project_root_escape_rejected: true
+  unauthorized_read_write_rejected: true
+error_model:
+  DONE_or_BLOCKED_exit_code: 0
+  tool_failure_exit_code: 2
+compatibility:
+  minimum_python: '3.10'
+  dependencies:
+    - PyYAML
+tests:
+  path: 04_evals/source_recognition_deterministic/
+  evidence: 04_evals/source_recognition_deterministic/VALIDATION.md
+release:
+  active_by_default: false
+  activation_pending:
+    - unique-copy and reuse fixtures
+    - multiple/no-valid/destination-conflict fixtures
+    - permission negative fixture
+    - real R5 -> R4 integration fixture
+    - benchmark evidence
