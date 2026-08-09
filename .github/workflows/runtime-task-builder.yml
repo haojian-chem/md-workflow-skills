@@ -1,0 +1,29 @@
+name: runtime-task-builder
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '05_tools/runtime_task_builder/**'
+      - '04_evals/runtime_task_builder/**'
+      - '05_tools/source_recognition_deterministic/**'
+      - '05_tools/runtime_schema_validator/**'
+      - '03_contracts/**'
+      - 'runtime/workflows/structure_preparation.runtime.yaml'
+      - '.github/workflows/runtime-task-builder.yml'
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install PyYAML jsonschema referencing pytest
+      - name: Run acceptance tests
+        run: |
+          pytest -q 04_evals/runtime_task_builder/test_runtime_task_builder.py
