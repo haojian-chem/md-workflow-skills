@@ -1,178 +1,173 @@
 schema_version: 1
-spec_status: bootstrap_active
+spec_status: generated_active
 manager_name: md_workflow_manager
-
 authoritative_sources:
-  - 00_manager/md_workflow_manager/SKILL.md
-  - 00_manager/md_workflow_manager/references/project_initialization_protocol.md
-  - 00_manager/md_workflow_manager/references/route_planning_protocol.md
-  - design_records/logging_and_record_system.md
-  - 03_contracts/**
-
+- 00_manager/md_workflow_manager/SKILL.md
+- 00_manager/md_workflow_manager/references/project_initialization_protocol.md
+- 00_manager/md_workflow_manager/references/route_planning_protocol.md
+- design_records/logging_and_record_system.md
+- 03_contracts/**
 runtime_context:
   required_at_entry:
-    - project root identity
-    - project_state.yaml if present
-    - current Focus Workstream state if present
+  - project root identity
+  - project_state.yaml if present
+  - current Focus Workstream state if present
   load_only_when_needed:
-    - active route
-    - unresolved/resolved decisions relevant to current request
-    - active submissions relevant to current Focus
-    - current artifact-set summary
-    - current Workflow runtime spec
+  - active route
+  - unresolved/resolved decisions relevant to current request
+  - active submissions relevant to current Focus
+  - current artifact-set summary
+  - current Workflow runtime spec
   prohibited_by_default:
-    - PDB/mmCIF structure parsing during entry/init
-    - full project history scan
-    - authoring references
-    - schema body reading by LLM
-    - unrelated Workflow/Operation/Validator Skills
-
+  - PDB/mmCIF structure parsing during entry/init
+  - full project history scan
+  - authoring references
+  - schema body reading by LLM
+  - unrelated Workflow/Operation/Validator Skills
 entry_states:
-  - NEW
-  - RESUMABLE
-  - NEEDS_RECOVERY
-
+- NEW
+- RESUMABLE
+- NEEDS_RECOVERY
 entry_probe:
   inspect:
-    - project_state_presence_and_parseability
-    - project_root_exists
-    - skill_root_exists
-    - indexed_workstream_state_presence_if_applicable
-    - obvious_prior_business_output_presence_for_NEW_vs_RECOVERY
+  - project_state_presence_and_parseability
+  - project_root_exists
+  - skill_root_exists
+  - indexed_workstream_state_presence_if_applicable
+  - obvious_prior_business_output_presence_for_NEW_vs_RECOVERY
   do_not_inspect:
-    - structure scientific content
-    - chain/residue composition
-    - full artifact lineage
-    - all events/routes/tasks
-
+  - structure scientific content
+  - chain/residue composition
+  - full artifact lineage
+  - all events/routes/tasks
 barriers:
-  - ENTRY_INTERPRETABLE
-  - PROJECT_INITIALIZED_OR_RESUMABLE
-  - ROUTE_SCOPE_RESOLVED
-  - ACTIVE_ROUTE_AVAILABLE
-  - BUSINESS_EXECUTION
-
+- ENTRY_INTERPRETABLE
+- PROJECT_INITIALIZED_OR_RESUMABLE
+- ROUTE_SCOPE_RESOLVED
+- ACTIVE_ROUTE_AVAILABLE
+- BUSINESS_EXECUTION
 initialization:
   create:
-    - 00_project_state/
-    - 00_project_records/
-    - 01_structure_preparation/
-    - 02_topology_preparation/
-    - 03_md_preparation/
-    - 04_md_simulation/
-    - 05_analysis/
-    - initial project state
-    - initial Workstream state
-    - required initialization events
+  - 00_project_state/
+  - 00_project_records/
+  - 01_structure_preparation/
+  - 02_topology_preparation/
+  - 03_md_preparation/
+  - 04_md_simulation/
+  - 05_analysis/
+  - initial project state
+  - initial Workstream state
+  - required initialization events
   prohibited:
-    - Workflow loading
-    - route creation
-    - business task creation
-    - business structure parsing
-    - initialization snapshot
+  - Workflow loading
+  - route creation
+  - business task creation
+  - business structure parsing
+  - initialization snapshot
   validation_mode: CURRENT_PROTOCOL_COMPATIBILITY
-  note: >-
-    R6 will replace this compatibility mode with candidate-only initialization
-    validation after the validator/contract migration is implemented.
-
+  note: R6 will replace this compatibility mode with candidate-only initialization validation after the validator/contract migration is implemented.
 request_actions:
   allowed:
-    - INSPECT
-    - PLAN
-    - EXECUTE
+  - INSPECT
+  - PLAN
+  - EXECUTE
   composable: true
-
 route_scope:
   accepted_sources:
-    - explicit_user_endpoint
-    - resolved_decision
-    - explicit_continue_of_applicable_active_route
-    - explicit_continue_to_recorded_workstream_goal
+  - explicit_user_endpoint
+  - resolved_decision
+  - explicit_continue_of_applicable_active_route
+  - explicit_continue_to_recorded_workstream_goal
   ambiguous_phrases_do_not_define_endpoint:
-    - 开始处理
-    - 跑一下流程
-    - 测试一下项目
-    - continue_without_applicable_active_route
+  - 开始处理
+  - 跑一下流程
+  - 测试一下项目
+  - continue_without_applicable_active_route
   on_ambiguity: create_blocking_decision
-
 focus:
   target_types:
-    - PROJECT
-    - WORKSTREAM
+  - PROJECT
+  - WORKSTREAM
   priority:
-    - user_selected
-    - object_owner_workstream
-    - execution_or_write_target
-    - unclosed_foreground_task
-    - last_focus
-    - request_user_decision
-
+  - user_selected
+  - object_owner_workstream
+  - execution_or_write_target
+  - unclosed_foreground_task
+  - last_focus
+  - request_user_decision
 workflow_runtime:
   planning:
     preferred_source: compact_workflow_runtime_spec
     full_workflow_semantic_reentry_when:
-      - compact_spec_missing_or_stale
-      - condition_not_expressible
-      - artifact_interface_conflict
-      - semantic_route_revision_required
+    - compact_spec_missing_or_stale
+    - condition_not_expressible
+    - artifact_interface_conflict
+    - semantic_route_revision_required
   execution:
     preferred_source: active_route_node_plus_compact_workflow_runtime_spec
     active_route_fast_path_status: planned_not_active
-
 backend_resolution:
   backend_order_is_not_global_priority: true
   rules:
-    - when: node_allows_deterministic_and_required_capability_ACTIVE
-      use: DETERMINISTIC
-    - when: deterministic_preferred_but_capability_unavailable_and_agent_fallback_allowed
-      use: AGENT_TASK
-    - when: scientific_or_open_semantic_judgment_required
-      use: AGENT_TASK
-    - when: sequence_requested
-      use: BLOCKED_UNLESS_AGENT_SEQUENCE_ACTIVATED
-
+  - when: node_allows_deterministic_and_required_capability_ACTIVE
+    use: DETERMINISTIC
+  - when: deterministic_preferred_but_capability_unavailable_and_agent_fallback_allowed
+    use: AGENT_TASK
+  - when: scientific_or_open_semantic_judgment_required
+    use: AGENT_TASK
+  - when: sequence_requested
+    use: BLOCKED_UNLESS_AGENT_SEQUENCE_ACTIVATED
 record_ownership:
   manager_commit_paths:
-    - 00_project_state/**
-    - 00_project_records/**
+  - 00_project_state/**
+  - 00_project_records/**
   mechanical_builder_status: planned_R4
-  current_compatibility_rule: >-
-    Until R4 is active, use the existing minimal record closure but do not generate
-    unchanged project state, snapshots, no-op route revisions, or repeated session writes.
-
+  current_compatibility_rule: Until R4 is active, use the existing minimal record closure but do not generate unchanged project state, snapshots, no-op route revisions, or repeated session writes.
 validation:
   ordinary_changed_runtime_instances: FAST_ONCE
   repeat_when_candidate_unchanged: false
   schema_consumed_by: deterministic_validator
   full_validation_only_when:
-    - authoritative_protocol_requires_it
-    - recovery
-    - schema_or_contract_change
-    - explicit_full_audit
-
-semantic_reentry_triggers:
-  - blocking_decision
-  - route_affecting_evidence
-  - failure
-  - artifact_interface_conflict
-  - unexpected_output
-  - active_route_state_conflict
+  - authoritative_protocol_requires_it
   - recovery
-  - high_risk_or_irreversible_action
-
+  - schema_or_contract_change
+  - explicit_full_audit
+semantic_reentry_triggers:
+- blocking_decision
+- route_affecting_evidence
+- failure
+- artifact_interface_conflict
+- unexpected_output
+- active_route_state_conflict
+- recovery
+- high_risk_or_irreversible_action
 external_submission_states:
-  - PREPARED
-  - SUBMITTED
-  - RUNNING
-  - FINISHED_UNVERIFIED
-  - COMPLETED
-  - FAILED
-  - CANCELLED
-  - UNKNOWN
-
+- PREPARED
+- SUBMITTED
+- RUNNING
+- FINISHED_UNVERIFIED
+- COMPLETED
+- FAILED
+- CANCELLED
+- UNKNOWN
 performance_guards:
-  - no_authoring_corpus_read_on_normal_entry
-  - no_business_structure_parsing_in_manager_entry_or_init
-  - no_schema_field_by_field_llm_simulation
-  - no_repeated_FULL_for_unchanged_candidate
-  - no_repeat_read_to_explain_deterministic_tool_result
+- no_authoring_corpus_read_on_normal_entry
+- no_business_structure_parsing_in_manager_entry_or_init
+- no_schema_field_by_field_llm_simulation
+- no_repeated_FULL_for_unchanged_candidate
+- no_repeat_read_to_explain_deterministic_tool_result
+projection:
+  generated: true
+  source:
+    path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
+    git_blob_sha: bb52416f34501506eb2907a1d9db97fbf53bff75
+  guarded_sources:
+  - path: 00_manager/md_workflow_manager/SKILL.md
+    git_blob_sha: e3e1812ba357638a817b5f6ef2cecfd1b1b7c0ac
+  - path: 00_manager/md_workflow_manager/references/project_initialization_protocol.md
+    git_blob_sha: 51f11a285fe3279c965c03d58877dc5a7144d161
+  - path: 00_manager/md_workflow_manager/references/route_planning_protocol.md
+    git_blob_sha: e3559215afb79ec0042c0a8880b84e439164eada
+  - path: design_records/logging_and_record_system.md
+    git_blob_sha: 20a99f07b37db4bc48a63ad54f6fc3aab32983b5
+  kind: manager
