@@ -1,0 +1,46 @@
+name: source-recognition-deterministic
+
+on:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - "05_tools/source_recognition_deterministic/**"
+      - "04_evals/source_recognition_deterministic/**"
+      - "05_tools/runtime_record_committer/**"
+      - "05_tools/route_fast_path_evaluator/**"
+      - "02_operations/source_recognition/SKILL.md"
+      - "03_contracts/**"
+      - "runtime/workflows/structure_preparation.runtime.yaml"
+      - ".github/workflows/source-recognition-deterministic.yml"
+  pull_request:
+    paths:
+      - "05_tools/source_recognition_deterministic/**"
+      - "04_evals/source_recognition_deterministic/**"
+      - "05_tools/runtime_record_committer/**"
+      - "05_tools/route_fast_path_evaluator/**"
+      - "02_operations/source_recognition/SKILL.md"
+      - "03_contracts/**"
+      - "runtime/workflows/structure_preparation.runtime.yaml"
+      - ".github/workflows/source-recognition-deterministic.yml"
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install PyYAML jsonschema pytest
+      - name: Run acceptance tests
+        run: |
+          pytest -q 04_evals/source_recognition_deterministic/test_source_recognition_deterministic.py
+      - name: Run benchmark
+        run: |
+          python 04_evals/source_recognition_deterministic/benchmark_source_recognition_deterministic.py
