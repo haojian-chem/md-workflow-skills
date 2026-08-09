@@ -59,7 +59,7 @@ Purpose:
 - consume the structured classification produced by stage 1.2;
 - make explicit keep/remove decisions rather than inferring them from residue names alone.
 
-Status: planning; implementation has not started.
+Status: scientific planning pending; implementation has not started.
 
 ### 2.2 Completeness ordering rule
 
@@ -161,36 +161,77 @@ Top-level stage confirmed.
 
 Sub-stage decomposition: not planned in this file yet.
 
-## 7. Current planning state
+## 7. Runtime infrastructure priority
+
+Repeated test runs have shown that the current runtime architecture imposes excessive fixed orchestration cost. The main cost is repeated LLM-side reading and interpretation of static rules, contracts, records, and Workflow/Manager text rather than scientific computation, Linux I/O, PDB processing, or deterministic schema validation.
+
+This is treated as an architecture-wide runtime issue rather than an initialization-only issue.
+
+The adopted redesign baseline is recorded in:
+
+`00_authoring/RUNTIME_ORCHESTRATION_REDESIGN_PLAN.md`
+
+Confirmed direction:
+
+- separate authoring-time rules from minimal runtime rules;
+- keep Manager / Workflow / Operation / Validator responsibility boundaries;
+- do not require every responsibility boundary to create a separate LLM invocation;
+- prefer deterministic Tools for deterministic work;
+- allow explicit execution backends such as deterministic execution, one-Agent tasks, and context-continuous Agent sequences;
+- use active-route fast-path progression when no route-affecting evidence appears;
+- move mechanical record/state/event construction to deterministic builders/recorders;
+- reserve LLM reasoning for semantic decisions, ambiguity, exceptions, scientific judgment, recovery, and user interaction.
+
+Stage 1.3 remains the next scientific workflow stage, but detailed implementation is temporarily behind the runtime infrastructure redesign because adding further stages to the current orchestration model would compound the measured fixed-cost problem.
+
+## 8. Current planning state
 
 Confirmed:
 
 - top-level stages 1-5 and their numbering semantics;
 - 1.1 Structure source recognition;
 - 1.2 Component and residue classification;
-- 1.3 Chain and component selection as the next stage to plan;
+- 1.3 Chain and component selection as the next scientific stage;
 - baseline completeness information must precede selection;
 - completion/repair should target the selected system;
-- Stage 2 must not contain a separate generic special/custom-parameter stage.
+- Stage 2 must not contain a separate generic special/custom-parameter stage;
+- runtime orchestration redesign is the current infrastructure priority before further Stage 1 implementation.
 
 Still to freeze:
 
+- runtime/authoring separation model and generated runtime artifact ownership;
+- compact Manager and Workflow runtime specifications;
+- deterministic / Agent task / Agent sequence execution backend rules;
+- deterministic record/state commit model;
+- active-route fast-path rules;
+- initialization candidate-only validation mode;
+- 1.1/1.2 migration benchmark after runtime redesign;
 - exact 1.4+ structure-preparation stage boundaries;
 - detailed 1.3 contract, content map, write paths, dependencies, and work order;
 - exact Stage 2 sub-stage boundaries and naming;
 - exact Stage 3 sub-stage boundaries and naming;
 - all Stage 4 and Stage 5 sub-stage plans.
 
-## 8. Immediate next planning task
+## 9. Immediate next planning task
 
-The next planning artifact should be for stage `1.3 Chain and component selection`.
+Current order:
 
-Before implementation, freeze:
+```text
+Runtime orchestration redesign planning
+→ freeze the core runtime architecture
+→ implement the minimum runtime infrastructure
+→ migrate and benchmark initialization + 1.1 + 1.2
+→ confirm correctness and latency improvement
+→ resume detailed planning for stage 1.3 Chain and component selection
+```
 
-- stage boundary;
-- local contract;
-- content map;
-- upstream and downstream interfaces;
-- write paths;
-- work order;
-- completion and validation criteria.
+The runtime redesign plan should first freeze:
+
+- authoring vs runtime information boundaries;
+- runtime manifest/spec ownership;
+- execution backend selection rules;
+- deterministic record/state builder responsibilities;
+- conditions for route fast-path advancement vs Workflow re-entry;
+- performance measurement and acceptance criteria.
+
+After these are frozen and validated on initialization/1.1/1.2, stage 1.3 planning resumes with its own boundary, local contract, content map, upstream/downstream interfaces, write paths, work order, and validation criteria.
