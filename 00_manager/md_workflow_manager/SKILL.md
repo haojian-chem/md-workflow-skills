@@ -118,9 +118,11 @@ NEW | RESUMABLE | NEEDS_RECOVERY
 
 ### NEW
 
-仅适用于：没有可信状态，项目为空或只有初始输入，且没有明显旧业务产物。
+仅适用于：没有可信状态，项目为空或只有初始输入，且没有明显旧业务/管理产物。
 
 初始化只建立管理目录、初始 project state、首个 Workstream 和必要事件。业务输入内容由后续对应 Operation/Validator 检查。
+
+初始化候选 gate 使用 `INIT_CANDIDATE_VALIDATION`：ACTIVE `runtime_schema_validator --mode FAST` 只校验 candidate project state + initial Workstream state 及其直接引用；**NEW 初始化不执行 FULL**。
 
 初始化细节优先由 `runtime/manager_runtime_spec.yaml` 表达；只有初始化异常/调试时才读取 `references/project_initialization_protocol.md`。
 
@@ -198,7 +200,15 @@ Manager 仍负责跨 Workflow fragment/节点接口一致性与完整 route 的�
 
 普通执行优先读取当前 `*.runtime.yaml` 中该 node 的紧凑信息，而不是完整 Workflow。
 
-R5 fast-path 尚未正式激活前，route node 推进仍按当前 contract 生成/核验 execution decision；R5 激活后可在严格条件下跳过重复 Workflow LLM 重判。
+当前 R5 fast-path 已 ACTIVE。一个 task 得到终态结果后：
+
+- 若 gate/interface/lineage/condition/用户范围均有明确结构化事实，先调用 `route_fast_path_evaluator`；
+- `ADVANCE`：使用 evaluator 给出的 `next_route_position` 作为显式 route progression，不重新读取完整 Workflow；
+- `STOP_SCOPE`：停止本轮用户范围；
+- `REENTER_WORKFLOW`：仅此时进入完整 Workflow 语义判断；
+- `BLOCKED`：交回 Manager 处理状态冲突或 recovery。
+
+不得由 Manager 自己模拟 fast-path evaluator。
 
 # 执行后端
 
@@ -212,7 +222,7 @@ AGENT_TASK
 AGENT_SEQUENCE
 ```
 
-Manager 按 runtime spec 和 active Tool capability 解析后端：
+Manager 按 runtime spec 和 active Tool capability 解析后端。
 
 ### DETERMINISTIC
 
@@ -245,19 +255,29 @@ Manager 按 runtime spec 和 active Tool capability 解析后端：
 - 必要 Workstream state 更新；
 - 用户可见 closure。
 
-机械记录构造优先交给 deterministic builder/recorder。Manager LLM 只提供语义变化，不重复转写工具已经能够确定的字段。
+R4 `runtime_record_committer` 已 ACTIVE。普通前台 task 默认由它：
 
-在 R4 recorder 尚未 ACTIVE 前继续使用现有最小闭环，但不得额外生成无变化 project state、snapshot、route revision、逐 task session 增量或重复审计。
+```text
+显式 semantic delta + responsibility result + route progression
+→ candidate records/state
+→ one FAST validation
+→ controlled commit / rollback
+→ compact receipt
+```
+
+Manager LLM 不再手工重建 result/event/artifact/Workstream YAML，也不在 recorder 成功后重复 FAST。`project_state.yaml` 在普通 task 无项目级变化时不重写。
+
+外部 submission、长耗时、高风险/不可逆、recovery 和 route revision 仍按各自强化协议处理，不强行套用普通 R4 闭环。
 
 # 校验
 
-- 普通 changed runtime instances：一次 FAST；
-- FULL 只用于 runtime spec/权威协议明确列出的关键节点；
+- NEW 初始化：`INIT_CANDIDATE_VALIDATION`（restricted FAST candidate overlay）；
+- 普通 task：由 ACTIVE `runtime_record_committer` 内部执行一次 FAST；
+- FULL：仅用于 recovery、schema/contract/root 变化及其他权威协议明确的项目级审计节点；
 - schema/meta-validation 由 Tool 执行；
 - 已有有效 validation result 且 candidate 未变化时不重复；
-- Tool FAIL/ERROR 时不得宣称通过或降低 gate。
-
-NEW 初始化的最终 candidate validation 模式由 R6 单独收敛；当前实现保持与现有初始化协议兼容，直到 R6 migration 完成。
+- Tool FAIL/ERROR 时不得宣称通过或降低 gate；
+- 不通过“改跑 FULL”绕过 INIT/FAST failure。
 
 # 用户决定与异常
 
@@ -265,6 +285,7 @@ NEW 初始化的最终 candidate validation 模式由 R6 单独收敛；当前�
 
 - blocking decision；
 - route-affecting evidence；
+- conditional evidence 改变；
 - failure；
 - artifact-interface conflict；
 - unexpected output；
@@ -294,4 +315,4 @@ PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
 - 必要状态/记录已提交；
 - blocking decision 已展示；
 - 已完成 task 有精简 closure；
-- 未因“保险”重新读取无关 authoring corpus 或执行重复全量审计。
+- 未因“保险”重新读取无关 authoring corpus或执行重复全量审计。
