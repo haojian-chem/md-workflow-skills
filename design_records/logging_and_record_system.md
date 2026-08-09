@@ -229,9 +229,8 @@ PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
 
 ## 10. State snapshot
 
-只在以下关键节点创建：
+snapshot 只在存在明确恢复价值的关键节点创建：
 
-- 项目初始化完成；
 - Project root 或 Skill root 修改前；
 - 项目级恢复前后；
 - 重要 Workstream 创建；
@@ -239,6 +238,8 @@ PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
 - 首个长耗时外部任务提交后；
 - Workstream 完成、归档或放弃前；
 - 项目进入 NEEDS_RECOVERY。
+
+NEW 项目初始化完成时不创建 snapshot。首次权威 `project_state.yaml`、初始 Workstream state、初始化事件以及初始化事务的 candidate/backup/失败证据已经构成恢复锚点；在没有历史状态可回滚时复制一份初始化 snapshot 不增加有效恢复信息。
 
 普通 Operation/Validator 完成后不创建 snapshot。
 
@@ -284,7 +285,9 @@ FAST：
 - 一次 Tool 调用批量完成；
 - 不扫描完整项目历史。
 
-FULL 仅用于初始化、schema/contract 变化、恢复前后、root 变化、重要 Workstream、重大 artifact 谱系变化、首个外部长任务提交前、Workstream 终结或用户明确完整审计。
+FULL 仅用于初始化候选状态提交前、schema/contract 变化、恢复前后、root 变化、重要 Workstream、重大 artifact 谱系变化、首个外部长任务提交前、Workstream 终结或用户明确完整审计。
+
+初始化在 candidate 未变化且已有有效 FULL PASS 时不得重复 FULL；提交后只执行 `project_initialization_protocol.md` 定义的 lightweight post-commit verification。
 
 schema bundle hash 未变化且 cache 有效时，不重复 schema meta-validation。
 
