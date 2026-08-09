@@ -1,7 +1,7 @@
 schema_version: 1
 name: runtime_record_committer
 version: 0.1.0
-status: IMPLEMENTED
+status: ACTIVE
 owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
 entrypoint: commit_records.py
 purpose:
@@ -104,9 +104,17 @@ compatibility:
 tests:
   path: 04_evals/runtime_record_committer/
   evidence: 04_evals/runtime_record_committer/VALIDATION.md
+  result: 7 passed with real runtime_schema_validator integration
+  tested_code_blob_sha: 82653914f465344ee646d661cafeeef241055f7b
+  tested_test_blob_sha: 6631dba1e076cb04eb3fe71287fa75154df1d535
+  github_actions_run_id: 31307633657
+benchmark:
+  closure_median_ms: 437.781
+  closure_min_ms: 432.917
+  closure_max_ms: 474.280
+  validator_median_ms: 300.553
+  evidence: 04_evals/runtime_record_committer/VALIDATION.md
 release:
-  active_by_default: false
-  activation_pending:
-    - GitHub Actions acceptance tests with real runtime_schema_validator
-    - rollback fixture pass
-    - benchmark evidence
+  active_by_default: true
+  activated_at: '2026-08-09'
+  supported_default_path: ordinary foreground task closure only
