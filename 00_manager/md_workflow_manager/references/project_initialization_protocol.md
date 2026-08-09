@@ -2,139 +2,64 @@
 
 ## 1. 适用范围
 
-本协议仅用于 Manager 将入口状态判定为 `NEW` 后的项目基础初始化。
+本协议仅用于 Manager 将入口状态判定为 `NEW` 后的基础初始化。
 
-`NEW` 只是本轮入口判定。初始化完成后的持久项目状态必须为 `RESUMABLE`。
+`NEW` 只是入口判定；初始化完成后的持久状态必须为：
 
-初始化不负责：
+```text
+entry_state: RESUMABLE
+```
+
+初始化只建立项目管理骨架，不负责：
 
 - 解析路线终点；
-- 创建首条业务 route；
-- 调用 Workflow；
+- 创建业务 route；
+- 读取或调用 Workflow；
 - 创建业务 task；
-- 启动 Operation 或 Validator；
-- 创建初始化 state snapshot。
+- 启动 Operation / Validator；
+- 解析 PDB/mmCIF/AF3 CIF 内容；
+- 创建初始化 snapshot。
 
-NEW 初始化期间不得读取任何 Workflow 定义。Workflow、route planning protocol 和业务 Skill 只能在 `PROJECT_INITIALIZED` barrier 之后按实际请求加载。
+## 2. NEW 启动条件
 
-## 2. 启动条件
-
-仅当以下条件同时满足时自动初始化：
+只有以下条件同时满足时自动初始化：
 
 - Skill architecture root 已明确；
 - MD project root 已明确；
 - 没有可信可恢复状态；
-- 项目目录为空或只有初始输入；
-- 没有明显旧结构、拓扑、完整体系或模拟产物；
+- 项目为空或只有初始业务输入；
+- 没有明显旧结构处理、拓扑、完整体系、模拟或管理产物；
 - 没有目录所有权冲突；
 - 不需要用户确认破坏性操作。
 
-已有明显业务产物但缺少可信状态时，不得判为 NEW，应进入恢复。
+若已有明显业务/管理产物但无可信状态，不得通过初始化校验“顺便审计”，而应在入口阶段判为 `NEEDS_RECOVERY`。
 
-## 3. 初始化 capability 预检
+## 3. 必需 capability
 
-在创建候选状态或产生部分管理写入前，只确认初始化 hard gate 所需能力是否可运行，不执行完整业务审计。
-
-### 必需能力
+初始化只要求：
 
 ```text
-FULL_RUNTIME_VALIDATION
+INIT_CANDIDATE_VALIDATION
 CONTROLLED_STATE_COMMIT
 ```
 
-当前满足方式：
+当前实现：
 
-- `FULL_RUNTIME_VALIDATION`：使用 registry 中 `ACTIVE` 的 `runtime_schema_validator`；
-- `CONTROLLED_STATE_COMMIT`：使用本协议第 5 节定义的内建确定性提交路径；
-- `state_transaction` Tool 是后续优化，不是 NEW 初始化的强制依赖；其状态为 `DESIGNED` 不得阻塞初始化。
+- `INIT_CANDIDATE_VALIDATION`：ACTIVE `runtime_schema_validator` 的受限 FAST candidate overlay；
+- `CONTROLLED_STATE_COMMIT`：本协议第 6 节内建确定性提交路径；ACTIVE 状态事务 Tool 若以后提供，也可替代该路径。
 
-capability 预检只检查工具/内建路径的可用性、版本兼容性和必要路径，不提前运行 FULL validation。
+capability 预检只确认实现、版本和必要路径可用，不执行项目级审计。
 
-若必需能力缺失：
+## 4. 初始化候选包
 
-```text
-Current blocker:
-<missing capability>
-
-Pending after current barrier:
-<route scope / Workflow coverage / later inputs>
-```
-
-只有缺失的当前 capability 可以作为初始化停止原因。用户请求的路线终点是否明确、后续 Workflow 是否已连接，均在 `PROJECT_INITIALIZED` 之后处理，不得列为当前初始化 blocker。
-
-## 4. 初始化事务
-
-按固定顺序执行：
-
-1. 完成最小入口检查和 capability 预检；
-2. 记录入口检查结果，并准备 `ENTRY_STATE_EVALUATED: NEW`；
-3. 创建 `00_project_state/`、`00_project_records/` 和顶层业务阶段目录；
-4. 生成 project ID、首个 Workstream 和 Focus；
-5. 在候选路径生成 project state 与 Workstream state；
-6. 将候选 project state 的持久 `entry_state` 设为 `RESUMABLE`；
-7. 使用 `runtime_schema_validator --mode FULL` 和 candidate logical-path overlay 对当前候选初始化对象执行一次有效 FULL 校验；
-8. FULL PASS 后准备备份、回滚和受控提交；
-9. 通过内建确定性路径或 ACTIVE `state_transaction` 提交状态；
-10. 追加 `ENTRY_STATE_EVALUATED`；
-11. 追加 `PROJECT_INITIALIZED`；
-12. 执行 lightweight post-commit verification；
-13. 结束初始化，并独立进入请求与路线范围解析。
-
-`runtime_schema_validator` 必须显式使用：
+Manager 只生成两个状态候选：
 
 ```text
-Skill root 下的 03_contracts/
-MD project root 下的候选状态、正式状态与 cache
+candidate project_state.yaml
+candidate initial Workstream state
 ```
 
-不得把 MD project root 误当成 contracts 所在目录。
-
-### 4.1 FULL 次数规则
-
-初始化 gate 要求的是“一次有效 FULL PASS”，不是机械执行多轮 FULL。
-
-- candidate 内容未变化且已经获得有效 FULL PASS 时，不得再次执行 FULL；
-- Tool 调用参数错误、调用失败、返回空结果或其他未形成有效 validation result 的情况，不视为完成 FULL gate，修正调用后可重新运行；
-- FULL FAIL 后若修改了 candidate，必须对修改后的 candidate 重新运行 FULL；
-- 正式提交成功后不得为了保守复核再次执行 FULL；
-- post-commit 阶段只做第 4.2 节的轻量一致性核验。
-
-### 4.2 Lightweight post-commit verification
-
-受控提交和初始化事件写入后，只核验提交是否与已经通过 FULL 的 candidate 一致，不重复项目级 schema/reference 扫描。
-
-至少确认：
-
-- 正式 `project_state.yaml` 与初始 Workstream state 文件存在且可读取；
-- YAML/JSON 可解析；
-- project ID、Workstream ID、两个 root、`entry_state: RESUMABLE` 等初始化关键字段与已验证 candidate 一致；
-- 提交目标内容 hash 或等价确定性比较结果与已验证 candidate 一致；
-- `ENTRY_STATE_EVALUATED` 与 `PROJECT_INITIALIZED` 事件已成功追加且引用可定位；
-- 不存在提交失败留下的 candidate/backup 冲突信号。
-
-post-commit verification 不调用 `runtime_schema_validator --mode FULL`。发现不一致时进入 `NEEDS_RECOVERY`，不得通过重复 FULL 掩盖提交问题。
-
-## 5. 内建确定性状态提交路径
-
-在 `state_transaction` Tool 尚未 ACTIVE 时，Manager 使用本节作为已批准的确定性备用路径。该路径不是 LLM 自由推理校验，也不降低 FULL gate。
-
-固定顺序：
-
-1. 候选文件必须位于目标文件同一文件系统中的受控临时目录；
-2. FULL PASS 前不得改写正式 `project_state.yaml` 或 Workstream state；
-3. 对已有目标创建 `.bak` 或等价恢复副本；NEW 项目目标通常不存在，但仍检查同名冲突；
-4. 每个候选文件完整写入并关闭后，使用原子 rename/replace 提交到对应正式路径；
-5. 不通过复制后删除来模拟原子替换；
-6. 任一文件提交失败立即停止后续提交；
-7. 无正式文件被替换时返回 `BLOCKED`；
-8. 已发生部分提交时进入 `NEEDS_RECOVERY`，保留候选、备份和失败证据；
-9. 所有状态文件提交成功并通过 lightweight post-commit verification 后，初始化事务才算闭合。
-
-该路径只负责管理状态提交，不复制、不移动、不修改 PDB 或其他业务输入。
-
-## 6. 初始 Workstream
-
-初始 Workstream 必须处于未规划状态：
+初始 Workstream 必须是未规划状态：
 
 ```yaml
 current_position:
@@ -146,70 +71,134 @@ active_route_id: null
 active_task_id: null
 ```
 
-初始 purpose 可以概括研究对象或用户请求，但不得把未确认的路线终点写成既定目标。
+候选 project state：
 
-## 7. 初始化 barrier
+- 持久 `entry_state` 设为 `RESUMABLE`；
+- 索引首个 Workstream；
+- Focus 可安全解析；
+- 不包含尚未创建的 route/task/artifact/submission 引用。
 
-在 `PROJECT_INITIALIZED` 已提交且 lightweight post-commit verification 通过前，禁止：
+## 5. INIT_CANDIDATE_VALIDATION
+
+### 5.1 固定调用
+
+NEW 初始化不再执行 FULL。固定使用：
+
+```bash
+python <skill_root>/05_tools/runtime_schema_validator/validate.py \
+  --project-root <md_project_root> \
+  --contracts-dir <skill_root>/03_contracts \
+  --mode FAST \
+  --changed <candidate_project_state> <candidate_workstream_state> \
+  --logical-map <candidate_project_state>=00_project_state/project_state.yaml \
+  --logical-map <candidate_workstream_state>=00_project_state/workstreams/<workstream_id>.yaml
+```
+
+该 invocation profile 称为 `INIT_CANDIDATE_VALIDATION`；它不是新的 validator CLI mode。
+
+### 5.2 校验范围
+
+只验证：
+
+- 两个候选对象各自 schema；
+- 两个候选对象的直接引用；
+- candidate logical-path overlay 下的 project → Workstream state 路径关系；
+- 候选 Workstream 中若意外出现 route/task/artifact/decision/submission 引用，其直接引用必须可解释，否则失败。
+
+不验证：
+
+- PDB/mmCIF 或其他业务文件内容；
+- 全项目 route/task/artifact/decision/submission/event 历史；
+- 未列入 `--changed` 的 runtime object；
+- 路线范围或 Workflow 可用性。
+
+若 project root 内出现旧 runtime/business 产物，应由入口判定处理，而不是扩大 INIT candidate gate。
+
+### 5.3 重跑规则
+
+- candidate 未变化且已有有效 PASS：不得重复验证；
+- Tool 调用错误/空结果不算 PASS，修正 invocation 后可重跑；
+- candidate 修改后必须重新验证；
+- FAIL 不得通过改用 FULL、降低 gate 或 LLM 手工审计绕过。
+
+R6 验证证据：
+
+```text
+04_evals/initialization_candidate_validation/VALIDATION.md
+```
+
+## 6. 受控提交
+
+候选 PASS 后按固定顺序：
+
+1. candidate 位于与目标相同文件系统中的受控临时位置；
+2. PASS 前不得改写正式 `project_state.yaml` 或 Workstream state；
+3. 检查同名冲突；如已有目标，准备 `.bak` 或等价恢复副本；
+4. 完整写入并关闭候选文件；
+5. 使用原子 rename/replace 提交；
+6. 任一提交失败立即停止；
+7. 未发生正式替换时返回 `BLOCKED`；
+8. 已发生部分提交时进入 `NEEDS_RECOVERY`，保留候选、备份和失败证据。
+
+该提交路径只处理管理状态，不复制、移动或修改业务输入。
+
+## 7. 初始化事件与 lightweight verification
+
+状态提交成功后：
+
+1. 追加 `ENTRY_STATE_EVALUATED: NEW`；
+2. 追加 `PROJECT_INITIALIZED`；
+3. 做 lightweight post-commit verification；
+4. 初始化结束。
+
+post-commit 只确认：
+
+- 正式 project/Workstream state 存在且可解析；
+- project ID、Workstream ID、两个 root 与已验证 candidate 一致；
+- `entry_state: RESUMABLE`；
+- 正式文件 hash/确定性比较与 candidate 一致；
+- 两个初始化事件成功追加且可定位；
+- 无 candidate/backup 冲突信号。
+
+post-commit 不再执行 FAST/FULL schema 扫描。发现提交不一致时进入 `NEEDS_RECOVERY`。
+
+## 8. 初始化 barrier
+
+在 `PROJECT_INITIALIZED` 已提交且 lightweight verification 通过前，禁止：
 
 - 读取 Workflow 定义；
-- 调用 Workflow planning interface；
-- 调用 Workflow execution interface；
-- 创建 route record；
-- 创建 subagent task；
-- 创建前台临时子 Agent；
-- 启动 Operation 或 Validator。
+- route scope resolution；
+- Workflow planning/execution；
+- route record；
+- subagent task；
+- 前台业务 Agent；
+- Operation / Validator。
 
-`PROJECT_INITIALIZED` 只能在候选状态 FULL 校验通过并成功提交后追加，不得先写事件再补做校验。事件追加后的 post-commit verification 只核验提交一致性，不重新运行 FULL。
-
-## 8. Snapshot 策略
-
-NEW 初始化完成时不创建 state snapshot。
-
-原因：
-
-- 初始化状态本身就是首次权威状态，没有更早的可信状态可回滚；
-- candidate + FULL + controlled commit + `.bak`/失败证据已经覆盖初始化事务恢复需求；
-- `project_state.yaml`、初始 Workstream state 和初始化事件共同构成足够的恢复锚点；
-- 此时创建 snapshot 只会复制刚提交的状态并增加初始化 I/O 与记录复杂度。
-
-后续 snapshot 只在 `design_records/logging_and_record_system.md` 定义的真正恢复关键节点创建。
-
-## 9. 失败处理
-
-### capability 预检失败
-
-- 返回 `BLOCKED`；
-- `Current blocker` 只列缺失 capability；
-- 路线范围和 Workflow 覆盖列入 `Pending after current barrier`；
-- 不创建候选状态或部分管理目录。
-
-### FULL 或提交前失败
-
-- 返回 `BLOCKED`；
-- 保留结构化诊断；
-- 不记录 `PROJECT_INITIALIZED`；
-- 不进入业务流程。
-
-### 部分提交或 post-commit verification 异常
-
-- 项目进入 `NEEDS_RECOVERY`；
-- 停止新的写入型 task；
-- 保留候选、备份、事件和失败证据；
-- 不通过重复 FULL 代替恢复；
-- 按恢复流程重建一致状态。
-
-## 10. 初始化后的下一事件
-
-初始化完成后，Manager 才进入独立的请求与路线范围解析：
+初始化结束后才进入：
 
 ```text
 PROJECT_INITIALIZED
 → ROUTE_SCOPE_RESOLUTION
 ```
 
-此时才允许按需读取 `stage_registry.yaml`、`route_planning_protocol.md` 和实际涉及的 Workflow。
+路线歧义、Workflow 未连接和后续业务输入问题不得追溯为初始化 blocker。
 
-路线范围不明确时创建 blocking decision；范围明确后记录 `ROUTE_SCOPE_RESOLVED`。该过程不属于初始化事务。
+## 9. Snapshot
 
-后续 Workflow 未连接时，只能在路线规划到达对应边界后形成 `PARTIAL | BLOCKED`，不得追溯为初始化失败原因。
+NEW 初始化不创建 snapshot。
+
+首次权威 project state、初始 Workstream state、初始化事件以及 candidate/backup/失败证据已经构成恢复锚点；没有更早可信状态时复制 snapshot 不增加有效恢复信息。
+
+## 10. 失败处理
+
+### capability 缺失
+
+返回 `BLOCKED`，当前 blocker 只列缺失 capability；后续 route/Workflow 问题列为 pending。
+
+### candidate validation 失败
+
+返回 `BLOCKED`；不提交正式状态、不写 `PROJECT_INITIALIZED`、不进入业务流程。
+
+### 部分提交或 post-commit 异常
+
+进入 `NEEDS_RECOVERY`；停止新的写入型 task；保留候选、备份、事件和失败证据；不得通过重复验证掩盖事务问题。
