@@ -10,18 +10,18 @@ Baseline plan:
 
 ### R1 — Runtime / authoring separation
 
-Status: BOOTSTRAP_IMPLEMENTED
+Status: IMPLEMENTED_ACTIVE
 
 Completed:
 
 - root `AGENTS.md` reduced to mode routing + minimal universal runtime/safety rules;
 - authoring/development rules moved to `00_authoring/AUTHORING_RULES.md`;
-- real MD runtime explicitly prohibited from default-loading authoring corpus;
-- Manager runtime fallback to authoring sources limited to recovery/debug/conflict/stale-projection cases.
+- real MD runtime does not default-load authoring corpus;
+- Manager fallback to authoring sources limited to recovery/debug/conflict/stale-projection cases.
 
-Still required:
+Remaining validation:
 
-- validate real runner behavior with a fresh project timing test after R4-R7 migration.
+- final real-run timing benchmark after P5/P6 migration.
 
 ### R2 — Runtime manifest and compact Workflow specs
 
@@ -29,137 +29,173 @@ Status: IMPLEMENTED_ACTIVE
 
 Completed:
 
-- `runtime/runtime_manifest.yaml`;
-- `runtime/manager_runtime_spec.yaml`;
-- `runtime/task_contracts/index.yaml`;
-- `runtime/workflows/structure_preparation.runtime.yaml`;
-- machine-readable Manager and Workflow projection sources;
-- `00_authoring/runtime_projection_config.yaml`;
+- generated `runtime/runtime_manifest.yaml`;
+- generated `runtime/manager_runtime_spec.yaml`;
+- generated `runtime/task_contracts/index.yaml`;
+- generated `runtime/workflows/structure_preparation.runtime.yaml`;
+- machine-readable Manager/Workflow projection sources;
 - ACTIVE `runtime_projection_compiler 0.1.0`;
-- source-guard drift detection;
-- deterministic BUILD/CHECK modes;
-- generated-file byte-level verification against committed runtime files;
-- stage registry compact-spec-first invocation.
+- guarded-source drift detection;
+- deterministic BUILD/CHECK and CI projection check.
 
-Current runtime projection state:
+Current projection:
 
 ```text
 projection_status: generated_active
 projection_mode: deterministic_compiled
 ```
 
-Maintenance rule:
-
-- runtime files are generated and non-authoritative;
-- guarded authoring-source changes require explicit source-guard update and projection rebuild;
-- ordinary runtime should consume generated projections rather than authoring corpus.
-
 ### R3 — Execution backend model
 
-Status: SEMANTICS_FROZEN_BOOTSTRAP_ACTIVE
+Status: ACTIVE_WITH_AGENT_SEQUENCE_DISABLED
 
 Completed:
 
-- four-layer responsibility boundaries preserved;
-- responsibility boundary explicitly separated from Agent/process boundary;
-- `DETERMINISTIC | AGENT_TASK | AGENT_SEQUENCE` defined;
-- deterministic capability fallback rules defined;
-- AGENT_SEQUENCE eligibility defined conservatively;
-- AGENT_SEQUENCE remains `DISABLED_BY_DEFAULT` pending contract/tool/recovery support.
+- four responsibility layers preserved;
+- responsibility boundary separated from Agent/process boundary;
+- `DETERMINISTIC | AGENT_TASK | AGENT_SEQUENCE` semantics defined;
+- deterministic fallback rules active.
 
-Still required:
+Current restriction:
 
-- implement deterministic backend for suitable nodes, beginning with 1.1;
-- design/validate sequence contract before enabling AGENT_SEQUENCE.
+- `AGENT_SEQUENCE` remains `DISABLED_BY_DEFAULT` until sequence contract, multi-result transaction and recovery fixtures exist.
 
 ### R4 — Deterministic record/state commit path
 
-Status: DESIGN_FROZEN_IMPLEMENTATION_IN_PROGRESS
+Status: IMPLEMENTED_ACTIVE
 
-Protocol:
+Tool:
 
-`00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md`
+`runtime_record_committer 0.1.0 — ACTIVE`
 
-Registered capability:
+Evidence:
 
-`runtime_record_committer — DESIGNED`
+`04_evals/runtime_record_committer/VALIDATION.md`
 
-Current work:
+GitHub Actions:
 
-- implement Tool;
-- fixtures and rollback tests;
-- integrate `runtime_schema_validator FAST`;
-- benchmark Manager closure before/after.
+- run `31307633657`
+- 7 acceptance tests passed with real `runtime_schema_validator FAST` integration.
+
+Benchmark:
+
+```text
+ordinary closure median: 437.781 ms
+FAST validator median:  300.553 ms
+```
+
+Active scope:
+
+- ordinary foreground task result/event/artifact/decision/submission/Workstream-state closure;
+- project_state, route revision, recovery and reinforced external-task lifecycles remain outside v0.1 scope.
 
 ### R5 — Active-route fast path
 
-Status: DESIGN_FROZEN_IMPLEMENTATION_PENDING
+Status: IMPLEMENTED_ACTIVE
 
-Protocol:
+Tool:
 
-`00_manager/md_workflow_manager/references/route_fast_path_protocol.md`
+`route_fast_path_evaluator 0.1.0 — ACTIVE`
 
-Registered capability:
+Evidence:
 
-`route_fast_path_evaluator — DESIGNED`
+`04_evals/route_fast_path_evaluator/VALIDATION.md`
 
-Current runtime state:
+GitHub Actions:
 
-`ACTIVE_ROUTE_FAST_PATH = DISABLED`
+- run `31307887115`
+- 10 tests passed, including R5 -> R4 integration.
 
-Next work:
+Benchmark:
 
-- implement evaluator Tool;
-- REQUIRED/CONDITIONAL/user-scope/recovery fixtures;
-- integrate with R4 commit receipt;
-- benchmark 1.1 -> 1.2 progression.
+```text
+normal ADVANCE median: 18.395 ms
+```
+
+Clean normal path is now:
+
+```text
+terminal business result
+→ route_fast_path_evaluator
+→ explicit route progression
+→ runtime_record_committer + one FAST
+→ Workstream state commit
+```
+
+Full Workflow semantic re-entry occurs only on semantic triggers, conditional uncertainty, failure, decision, conflict or recovery.
 
 ### R6 — Initialization simplification
 
-Status: NOT_YET_MIGRATED
+Status: IMPLEMENTED_ACTIVE
 
-Current Manager runtime spec deliberately keeps initialization validation in compatibility mode.
+NEW initialization now uses:
 
-Next work:
+```text
+INIT_CANDIDATE_VALIDATION
+= runtime_schema_validator FAST
+  on candidate project_state + candidate initial Workstream state only
+  with logical-path overlay and direct references
+```
 
-- define candidate-only `INIT` validation or restricted existing mode;
-- remove FULL dependency from NEW initialization after validation equivalence is demonstrated;
-- ensure Manager entry/init never parses PDB/mmCIF business content;
-- benchmark fresh-project initialization.
+NEW initialization no longer runs FULL and does not parse PDB/mmCIF/business content.
+
+Evidence:
+
+`04_evals/initialization_candidate_validation/VALIDATION.md`
+
+GitHub Actions:
+
+- run `31308193808`
+- 7 tests passed.
+
+Cold fresh-project benchmark:
+
+```text
+validator internal median: 370.901 ms
+subprocess wall median:    491.979 ms
+```
+
+Runtime projection was rebuilt after migration and `runtime_projection_compiler --mode CHECK` passed in run `31308434362`.
 
 ### R7 — 1.1 / 1.2 migration and benchmark
 
-Status: NOT_STARTED
+Status: IN_PROGRESS
 
-Planned order:
+Current package:
 
-1. 1.1: add/activate deterministic source-recognition capability where semantics are fully deterministic;
-2. 1.2: move hard dependency checks before expensive Agent/rule loading;
-3. run initialization + 1.1 + 1.2 timing benchmark;
-4. compare scientific outputs, artifact semantics and recovery records with baseline.
+```text
+P5: 1.1 deterministic migration
+```
+
+Then:
+
+```text
+P6: 1.2 hard dependency preflight before Agent/rule loading
+→ end-to-end initialization + 1.1 + 1.2 benchmark
+```
 
 ## Current safety posture
 
-The redesign now has an ACTIVE deterministic runtime projection compiler, but task closure and route advancement still use compatibility paths.
+Active:
 
-Specifically:
+- generated compact runtime projection;
+- deterministic ordinary task closure;
+- deterministic active-route fast path;
+- candidate-only NEW initialization validation.
 
-- AGENT_SEQUENCE is disabled;
-- active-route fast path is disabled;
-- runtime record committer is DESIGNED, not ACTIVE;
-- runtime projection compiler is ACTIVE;
-- 1.1 deterministic backend still falls back to AGENT_TASK because its business capability is not yet registered ACTIVE;
-- existing validation/recovery guarantees remain in compatibility mode until R4-R7 migration tests pass.
+Still conservative:
+
+- `AGENT_SEQUENCE` disabled;
+- 1.1 remains AGENT_TASK fallback until its deterministic business Tool passes tests and becomes ACTIVE;
+- 1.2 remains AGENT_TASK and has not yet migrated hard dependency preflight.
 
 ## Immediate next implementation package
 
 ```text
-P2: runtime_record_committer
-→ P3: route_fast_path_evaluator
-→ P4: R6 initialization validation migration
-→ P5: 1.1 deterministic migration
+P5: source_recognition_deterministic
+→ rebuild structure Workflow runtime projection
 → P6: 1.2 dependency-preflight migration
-→ benchmark initialization + 1.1 + 1.2
+→ benchmark fresh initialization + 1.1 + 1.2
 ```
 
-Do not resume stage 1.3 implementation until this migration reaches a measured, stable runtime baseline.
+Stage 1.3 implementation remains paused until the migrated runtime baseline is measured and stable.
