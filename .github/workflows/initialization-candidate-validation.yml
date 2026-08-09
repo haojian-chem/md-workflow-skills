@@ -1,0 +1,35 @@
+name: initialization-candidate-validation
+
+on:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - "04_evals/initialization_candidate_validation/**"
+      - "05_tools/runtime_schema_validator/**"
+      - "03_contracts/**"
+      - ".github/workflows/initialization-candidate-validation.yml"
+  pull_request:
+    paths:
+      - "04_evals/initialization_candidate_validation/**"
+      - "05_tools/runtime_schema_validator/**"
+      - "03_contracts/**"
+      - ".github/workflows/initialization-candidate-validation.yml"
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install PyYAML jsonschema pytest
+      - name: Run initialization candidate validation tests
+        run: |
+          pytest -q 04_evals/initialization_candidate_validation/test_initialization_candidate_validation.py
