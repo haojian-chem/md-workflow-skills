@@ -1,7 +1,7 @@
 schema_version: 1
 name: runtime_project_initializer
 version: 0.1.0
-status: IMPLEMENTED
+status: ACTIVE
 owner: 00_manager/md_workflow_manager
 entrypoint: 05_tools/runtime_project_initializer/initialize.py
 purpose:
@@ -33,10 +33,9 @@ semantic_boundaries:
   - does not inspect PDB/mmCIF scientific content
   - does not choose scientific workflow goals
 release:
-  active_by_default: false
-  activation_pending:
-    - fresh-project fixture
-    - existing-state refusal fixture
-    - business-file noninspection fixture
-    - real FAST candidate validation fixture
-    - benchmark evidence
+  active_by_default: true
+  validation_evidence:
+    github_actions_run: 31339607898
+    acceptance_tests: 4
+    subprocess_wall_median_ms: 564.366
+    initializer_internal_median_ms: 503.962
