@@ -1,0 +1,80 @@
+schema_version: 1
+name: runtime_projection_compiler
+version: 0.1.0
+status: TESTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: compile_runtime.py
+purpose:
+  - deterministically compile compact runtime projections from machine-readable authoring sources
+  - prevent silent runtime projection drift with source guards
+  - keep schema bodies and large authoring documents out of ordinary runtime LLM context
+modes:
+  BUILD:
+    scope: generate or replace configured runtime projection files atomically
+    writes_runtime_projection: true
+  CHECK:
+    scope: compare configured runtime projection files against deterministic expected output
+    writes_runtime_projection: false
+inputs:
+  - skill_root
+  - runtime_projection_config path relative to skill_root
+  - mode BUILD|CHECK
+  - optional JSON result output path
+outputs:
+  format: json
+  fields:
+    - status
+    - mode
+    - guard_errors
+    - errors
+    - changed
+    - drift
+    - outputs
+    - elapsed_ms
+permissions:
+  read:
+    - AGENTS.md
+    - 00_authoring/runtime_projection_config.yaml
+    - configured Manager runtime source and guarded references
+    - configured Workflow runtime sources and guarded references
+    - 03_contracts/** configured in the projection index
+    - 00_manager/md_workflow_manager/references/stage_registry.yaml
+    - 05_tools/tool_registry.yaml
+  write:
+    - runtime/** only in BUILD mode
+side_effects:
+  project_authoritative_files_modified: false
+  authoring_sources_modified: false
+  runtime_projection_files_modified: BUILD only
+cache:
+  enabled: false
+source_guard:
+  identity: Git blob SHA-1 over exact source bytes
+  behavior:
+    - guarded source mismatch returns validation failure before any runtime output is written
+    - source guard updates are authoring decisions and are not performed automatically
+error_model:
+  pass_exit_code: 0
+  validation_failure_exit_code: 1
+  tool_failure_exit_code: 2
+compatibility:
+  minimum_python: '3.10'
+  dependencies:
+    - PyYAML
+security:
+  network_access: false
+  follows_source_symlinks: false
+  arbitrary_code_execution: false
+  output_escape_from_runtime_root: rejected
+tests:
+  path: 04_evals/runtime_projection_compiler/
+  evidence: 04_evals/runtime_projection_compiler/VALIDATION.md
+  result: 6 passed on synthetic executable fixtures
+benchmark:
+  evidence: 04_evals/runtime_projection_compiler/VALIDATION.md
+  synthetic_check_median_ms: 7.24
+release:
+  active_by_default: false
+  activation_pending:
+    - write generated projections from current real authoring sources
+    - run CHECK against the committed generated projections
