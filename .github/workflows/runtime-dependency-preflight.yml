@@ -1,0 +1,47 @@
+name: runtime-dependency-preflight
+
+on:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - "05_tools/runtime_dependency_preflight/**"
+      - "04_evals/runtime_dependency_preflight/**"
+      - "02_validators/component_and_residue_classification_validator/SKILL.md"
+      - "02_validators/component_and_residue_classification_validator/scripts/requirements.txt"
+      - "02_validators/component_and_residue_classification_validator/references/runtime_dependencies.json"
+      - "05_tools/runtime_record_committer/**"
+      - "03_contracts/**"
+      - ".github/workflows/runtime-dependency-preflight.yml"
+  pull_request:
+    paths:
+      - "05_tools/runtime_dependency_preflight/**"
+      - "04_evals/runtime_dependency_preflight/**"
+      - "02_validators/component_and_residue_classification_validator/SKILL.md"
+      - "02_validators/component_and_residue_classification_validator/scripts/requirements.txt"
+      - "02_validators/component_and_residue_classification_validator/references/runtime_dependencies.json"
+      - "05_tools/runtime_record_committer/**"
+      - "03_contracts/**"
+      - ".github/workflows/runtime-dependency-preflight.yml"
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test and stage 1.2 runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+          python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
+      - name: Run acceptance tests
+        run: |
+          pytest -q 04_evals/runtime_dependency_preflight/test_runtime_dependency_preflight.py
+      - name: Run benchmark
+        run: |
+          python 04_evals/runtime_dependency_preflight/benchmark_runtime_dependency_preflight.py
