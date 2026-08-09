@@ -7,13 +7,20 @@
 - [ ] 两个根目录已明确且有效；
 - [ ] 入口状态有直接证据；
 - [ ] 有明显旧业务产物但无可信状态时未判为 NEW；
+- [ ] 初始化只读取入口判定与初始化所需最小文件，没有预读 Workflow、route planning protocol 或业务 Skill；
 - [ ] 初始化 hard-gate capability 已在部分写入前完成预检；
+- [ ] capability 预检只检查可用性，没有提前执行 FULL；
 - [ ] `FULL_RUNTIME_VALIDATION` 有 ACTIVE Tool 或权威内建确定性路径；
 - [ ] `state_transaction` 未 ACTIVE 时使用已批准的内建提交路径，而非阻塞 NEW；
 - [ ] NEW 已自动初始化；
 - [ ] 初始化后持久 project state 为 RESUMABLE；
+- [ ] candidate 未变化时只执行了一次有效 FULL；
+- [ ] 已有有效 FULL PASS 后没有进行保守性重复 FULL；
+- [ ] 正式提交后只执行 lightweight post-commit verification；
 - [ ] `PROJECT_INITIALIZED` 只在候选状态校验和提交成功后记录；
-- [ ] 初始化没有创建 route、业务 task 或调用 Workflow。
+- [ ] NEW 初始化没有创建 state snapshot；
+- [ ] 初始化没有创建 route、业务 task 或调用 Workflow；
+- [ ] 只有 `PROJECT_INITIALIZED` barrier 通过后才加载 stage registry、route planning protocol 或 Workflow。
 
 ## 2. 路线范围与规划
 
@@ -41,6 +48,8 @@
 
 - [ ] 普通 task 只对 changed paths 执行一次 FAST；
 - [ ] 普通 task 未触发 FULL；
+- [ ] 初始化 FULL 只作用于 candidate logical-path overlay；
+- [ ] 初始化提交后未重新扫描完整项目历史或完整引用图；
 - [ ] schema hash/cache 命中时未重复 meta-validation；
 - [ ] 未用 LLM 模拟 FULL schema 或项目级引用校验；
 - [ ] 只调用 registry 中状态和版本适用的 Tool；
@@ -53,6 +62,7 @@
 
 - [ ] 普通 task 未机械写 TASK_PREPARED/TASK_STARTED；
 - [ ] 无变化的 project state、route、session 和 snapshot 未重写；
+- [ ] snapshot 只在存在明确恢复价值的关键节点创建；
 - [ ] 必要 artifact/decision/submission 已登记；
 - [ ] artifact validation status 有 Validator 证据；
 - [ ] 一条终态 task event 和目标 Workstream state 已落盘；
