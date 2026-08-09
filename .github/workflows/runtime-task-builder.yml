@@ -27,3 +27,6 @@ jobs:
       - name: Run acceptance tests
         run: |
           pytest -q 04_evals/runtime_task_builder/test_runtime_task_builder.py
+      - name: Run benchmark
+        run: |
+          python 04_evals/runtime_task_builder/benchmark_runtime_task_builder.py
