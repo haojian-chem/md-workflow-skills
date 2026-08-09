@@ -24,8 +24,8 @@ runtime_spec:
     - project_state.yaml if present
     - current Focus Workstream state if present
     load_only_when_needed:
-    - active route
-    - unresolved/resolved decisions relevant to current request
+    - active route directly referenced by active_route_id
+    - unresolved/resolved decision directly referenced by current state and relevant to current request
     - active submissions relevant to current Focus
     - current artifact-set summary
     - current Workflow runtime spec
@@ -35,6 +35,11 @@ runtime_spec:
     - authoring references
     - schema body reading by LLM
     - unrelated Workflow/Operation/Validator Skills
+    - full Manager protocol references on a normal runtime path
+    - manager_display_rules.md on a normal runtime path
+    - project_events.jsonl full-log reading when direct state/record IDs are available
+    - '*.bak.* scope/route/state files outside recovery'
+    normal_direct_record_rule: follow IDs already present in project/Workstream state instead of scanning logs or backups to rediscover them
   entry_states:
   - NEW
   - RESUMABLE
@@ -51,6 +56,7 @@ runtime_spec:
     - chain/residue composition
     - full artifact lineage
     - all events/routes/tasks
+    - backup snapshots unless recovery evidence is required
   barriers:
   - ENTRY_INTERPRETABLE
   - PROJECT_INITIALIZED_OR_RESUMABLE
@@ -58,6 +64,13 @@ runtime_spec:
   - ACTIVE_ROUTE_AVAILABLE
   - BUSINESS_EXECUTION
   initialization:
+    normal_path_self_contained_in_runtime_spec: true
+    normal_path_must_not_read_full_protocol: true
+    full_protocol_read_allowed_only_when:
+    - runtime_projection_missing_or_stale
+    - candidate_contract_conflict_not_expressible_by_compact_spec
+    - controlled_commit_failure_requires_recovery
+    - explicit_protocol_debug_or_audit
     create:
     - 00_project_state/
     - 00_project_records/
@@ -75,6 +88,78 @@ runtime_spec:
     - business task creation
     - business structure parsing
     - initialization snapshot
+    - project_initialization_protocol.md read on the normal NEW path
+    - route_planning_protocol.md read before initialization barrier completion
+    - manager_display_rules.md read for initialization
+    - project event-history scan
+    - backup-file read
+    candidate_templates:
+      project_state:
+        schema_version: 2
+        project:
+          project_id: DERIVE_STABLE_PROJECT_ID
+          skill_architecture_root: RESOLVED_SKILL_ROOT
+          md_project_root: RESOLVED_PROJECT_ROOT
+        entry_state: RESUMABLE
+        focus:
+          target_type: WORKSTREAM
+          workstream_id: INITIAL_WORKSTREAM_ID
+          reason: USER_SELECTED
+          selected_at: CURRENT_TIMESTAMP
+        related_workstreams: []
+        workstreams:
+        - workstream_id: INITIAL_WORKSTREAM_ID
+          state_path: 00_project_state/workstreams/<workstream_id>.yaml
+        pending_project_decision_ids: []
+        last_project_event_id: null
+        last_updated_by: md_workflow_manager
+        last_updated_at: CURRENT_TIMESTAMP
+      initial_workstream_state:
+        schema_version: 1
+        workstream_id: INITIAL_WORKSTREAM_ID
+        title: INITIAL_WORKSTREAM_TITLE
+        purpose: CURRENT_USER_GOAL_OR_GENERIC_INITIAL_MD_WORKSTREAM
+        origin:
+          parent_workstream_id: null
+          fork_reason: null
+          forked_from_artifact_set_ids: []
+        current_position:
+          workflow_name: null
+          substep: null
+          task_id: null
+        lifecycle_status: OPEN
+        activity_status: IDLE
+        hold_reason:
+          type: NONE
+          details: null
+          decision_id: null
+          dependency_workstream_id: null
+          required_artifact_set_id: null
+        active_route_id: null
+        active_task_id: null
+        current_artifact_set_ids:
+          structure: []
+          topology: []
+          system: []
+          md_input: []
+          md_output: []
+          analysis_result: []
+        pending_decision_ids: []
+        active_submission_ids: []
+        last_event_id: null
+        last_updated_by: md_workflow_manager
+        last_updated_at: CURRENT_TIMESTAMP
+    initialization_events:
+    - event_type: ENTRY_STATE_EVALUATED
+      scope: PROJECT
+      actor: MANAGER
+      workstream_id: null
+      semantic_summary: entry state evaluated as NEW
+    - event_type: PROJECT_INITIALIZED
+      scope: PROJECT
+      actor: MANAGER
+      workstream_id: null
+      semantic_summary: project management skeleton initialized
     validation_mode: INIT_CANDIDATE_VALIDATION
     validator: runtime_schema_validator
     validator_cli_mode: FAST
@@ -86,6 +171,23 @@ runtime_spec:
     business_file_validation: false
     full_validation: false
     validation_evidence: 04_evals/initialization_candidate_validation/VALIDATION.md
+    commit_order:
+    - validate unchanged candidate once
+    - controlled atomic state commit
+    - append ENTRY_STATE_EVALUATED and PROJECT_INITIALIZED events
+    - lightweight post-commit verification
+    post_commit_verify:
+    - project_state_and_initial_workstream_exist_and_parse
+    - project_id_workstream_id_and_roots_match_validated_candidates
+    - entry_state_is_RESUMABLE
+    - committed_state_matches_validated_candidate
+    - required_initialization_events_are_locatable
+    - no_candidate_or_backup_conflict_signal
+    post_commit_must_not:
+    - rerun FAST
+    - run FULL
+    - reread full protocol
+    - scan all event history
   request_actions:
     allowed:
     - INSPECT
@@ -93,6 +195,22 @@ runtime_spec:
     - EXECUTE
     composable: true
   route_scope:
+    normal_path_self_contained_in_runtime_spec: true
+    normal_path_must_not_read_full_protocol: true
+    normal_reads:
+    - current user request
+    - Focus Workstream state
+    - directly referenced relevant decision when present
+    - active route summary only for explicit continue
+    - compact stage/workflow runtime registry
+    normal_do_not_read:
+    - route_planning_protocol.md
+    - project_initialization_protocol.md
+    - manager_display_rules.md
+    - project_events.jsonl full history
+    - '*.bak.scope'
+    - '*.bak.route'
+    - Workflow business Skill body
     accepted_sources:
     - explicit_user_endpoint
     - resolved_decision
@@ -104,6 +222,31 @@ runtime_spec:
     - 测试一下项目
     - continue_without_applicable_active_route
     on_ambiguity: create_blocking_decision
+    planning_scope_shape:
+      start:
+        workflow_name: RESOLVED_FROM_COMPACT_STAGE_REGISTRY
+        substep: RESOLVED_OR_NULL
+        artifact_set_id: RESOLVED_OR_NULL
+        point_kind: CURRENT_OR_WORKFLOW_ENTRY_OR_SPECIFIC_SUBSTEP_OR_ARTIFACT
+      end:
+        workflow_name: RESOLVED_FROM_EXPLICIT_ENDPOINT
+        substep: RESOLVED_OR_NULL
+        artifact_set_id: RESOLVED_OR_NULL
+        point_kind: WORKFLOW_EXIT_OR_SPECIFIC_SUBSTEP_OR_ARTIFACT_OR_WORKSTREAM_GOAL_OR_PROJECT_END
+      stop_conditions: []
+      resolution_source: USER_REQUEST_OR_RESOLVED_DECISION_OR_ACTIVE_ROUTE_OR_RECORDED_WORKSTREAM_GOAL
+    explicit_same_workflow_node_range:
+      example: 1.1-1.2
+      resolve_from: runtime/workflows/<workflow>.runtime.yaml node_id values
+      protocol_read_required: false
+      workflow_skill_body_read_required: false
+      behavior: normalize start/end directly from compact node IDs, then construct route from compact node sequence
+    full_protocol_read_allowed_only_when:
+    - endpoint_semantics_not_representable_by_compact_spec
+    - cross_workflow_interface_conflict_requires_semantic_judgment
+    - route_revision_requires_semantic_judgment
+    - runtime_projection_missing_or_stale
+    - explicit_protocol_debug_or_audit
   focus:
     target_types:
     - PROJECT
@@ -155,7 +298,7 @@ runtime_spec:
     schema_consumed_by: deterministic_validator
     full_validation_only_when:
     - recovery
-    - schema_or_contract_change
+    - schema_or_contract change
     - project_or_skill_root_change
     - authoritative_protocol_requires_project_wide_audit
     - explicit_full_audit
@@ -185,5 +328,11 @@ runtime_spec:
   - no_FULL_during_NEW_initialization
   - no_repeat_validation_for_unchanged_candidate
   - no_repeat_read_to_explain_deterministic_tool_result
+  - no_full_manager_protocol_read_on_normal_NEW
+  - no_project_initialization_protocol_read_when_compact_template_is_sufficient
+  - no_route_planning_protocol_read_for_explicit_same_workflow_node_range
+  - no_manager_display_rules_read_on_normal_runtime
+  - no_backup_read_outside_recovery
+  - no_event_log_scan_when_direct_record_ids_are_available
   - ordinary_task_mechanical_closure_uses_runtime_record_committer
   - clean_active_route_progression_uses_route_fast_path_evaluator
