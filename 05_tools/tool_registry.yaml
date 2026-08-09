@@ -210,3 +210,31 @@ tools:
       - Unique-copy business internal median was 8.207 ms; process wall median was 69.448 ms.
       - Explicit controlled move requests and unsupported semantic cases fall back to AGENT_TASK.
       - Tool refuses to run if source_recognition SKILL.md no longer matches guarded semantic-owner blob.
+
+  - name: runtime_dependency_preflight
+    version: 0.1.0
+    status: ACTIVE
+    path: 05_tools/runtime_dependency_preflight
+    entrypoint: 05_tools/runtime_dependency_preflight/check.py
+    callers:
+      - md_workflow_manager
+      - structure_preparation_workflow
+    capabilities:
+      - pre-Agent Python import/distribution/version dependency checks from guarded JSON manifests
+      - structured PASS/BLOCKED/ERROR result without depending on checked third-party packages
+      - subagent_result-v2-shaped logical blocker responsibility result for Operation/Validator owners
+      - exact Git-blob guard for owner Skill and requirements source
+    read_paths:
+      - explicit dependency manifest inside skill root
+      - guarded owner Skill file
+      - guarded requirements file
+      - Python import/distribution metadata
+    write_paths: []
+    tests: 04_evals/runtime_dependency_preflight/
+    validation_evidence: 04_evals/runtime_dependency_preflight/VALIDATION.md
+    active_by_default: true
+    notes:
+      - Python standard-library-only implementation remains runnable when gemmi/PyYAML/jsonschema/referencing are missing.
+      - GitHub Actions run 31309006535 passed 6 tests including BLOCKED -> ACTIVE R4 WAITING/DEPENDENCY closure.
+      - Real stage-1.2 dependency preflight internal median was 167.951 ms; subprocess wall median was 228.170 ms.
+      - Does not install packages, inspect PDB content, execute scientific classification, or launch Agent contexts.
