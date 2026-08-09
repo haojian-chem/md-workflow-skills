@@ -32,7 +32,20 @@ runtime_spec:
     necessity: REQUIRED
     preferred_backend: DETERMINISTIC
     required_capability: source_recognition_deterministic
+    deterministic_tool: source_recognition_deterministic
+    deterministic_eligibility:
+    - bounded local source candidates are represented by task current_valid_files with role prefix source_candidate
+    - requested action is default copy or identical-destination reuse
+    - no explicit controlled move or unsupported semantic behavior is requested
+    deterministic_input_contract:
+      task_candidate_field: current_valid_files
+      candidate_role_prefix: source_candidate
+      candidate_state: present_unvalidated_or_present_validated
     fallback_backend: AGENT_TASK
+    fallback_when:
+    - controlled source move requested
+    - deterministic capability unavailable or semantic guard mismatch
+    - requested behavior outside deterministic Tool scope
     normal_next: '1.2'
     semantic_reentry_on:
     - multiple_valid_sources
@@ -138,7 +151,8 @@ runtime_spec:
     normal_next: workflow_exit
   backend_notes:
     AGENT_SEQUENCE_status: disabled_by_default
-    source_recognition_deterministic_status: capability_not_yet_registered
+    source_recognition_deterministic_status: ACTIVE
+    source_recognition_deterministic_validation: 04_evals/source_recognition_deterministic/VALIDATION.md
   route_fast_path:
     status: ACTIVE
     evaluator: route_fast_path_evaluator
