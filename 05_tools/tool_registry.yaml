@@ -152,24 +152,27 @@ tools:
 
   - name: route_fast_path_evaluator
     version: 0.1.0
-    status: DESIGNED
+    status: ACTIVE
     path: 05_tools/route_fast_path_evaluator
-    entrypoint: null
+    entrypoint: 05_tools/route_fast_path_evaluator/evaluate.py
     callers:
       - md_workflow_manager
     capabilities:
       - evaluate ADVANCE vs REENTER_WORKFLOW vs STOP_SCOPE vs BLOCKED
       - verify current route node and Workstream position consistency
-      - check direct gate/artifact/decision fast-path conditions
-      - produce compact route progression evidence
+      - check direct gate/artifact/decision/conditional fast-path conditions
+      - produce compact route progression evidence and explicit next route position
     read_paths:
       - explicit active route
       - explicit current Workstream state
       - explicit task/result terminal summary
       - runtime/workflows/**
+      - explicit evaluation context
     write_paths: []
     tests: 04_evals/route_fast_path_evaluator/
-    active_by_default: false
+    validation_evidence: 04_evals/route_fast_path_evaluator/VALIDATION.md
+    active_by_default: true
     design_protocol: 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
     notes:
       - Cannot make scientific judgments or create route revisions; semantic triggers return REENTER_WORKFLOW.
+      - GitHub Actions run 31307887115 passed 10 tests including R4 integration; median normal ADVANCE evaluation was 18.395 ms.
