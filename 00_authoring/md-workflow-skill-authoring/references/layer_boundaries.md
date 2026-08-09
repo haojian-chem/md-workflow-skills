@@ -1,169 +1,245 @@
-# MD Workflow 四层职责边界
+# MD Workflow 四层职责与执行后端边界
 
-本文件是 Manager、Workflow、Operation 和 Validator 职责边界的唯一权威定义。
+本文件是 Manager、Workflow、Operation、Validator **逻辑职责边界**的权威定义。
 
-## Manager
-
-唯一主工作：维护项目入口与初始化、项目索引、Workstream 状态、用户交互、路线、历史记录和临时子 Agent 生命周期。
-
-负责：
-
-- 确认 Skill 架构根目录和真实 MD 项目根目录；
-- 判断项目入口状态 `NEW | RESUMABLE | NEEDS_RECOVERY`；
-- 对 NEW 项目自动完成项目初始化；
-- 在初始化完成后独立解析请求动作和路线范围；
-- 路线终点模糊时创建用户 decision，不自行选择默认终点；
-- 解析可组合的 `INSPECT | PLAN | EXECUTE` 请求；
-- 选择项目级或 Workstream 级 Focus；
-- 创建、切换和恢复 Workstream；
-- 在范围明确后确定路线起点、终点和涉及的 Workflow；
-- 请求各 Workflow 返回本阶段 route fragment；
-- 核验相邻 fragment 的 artifact 接口并拼接 Workstream route；
-- 请求当前 Workflow 对 Focus Workstream 返回一个实时 decision；
-- 构建单个临时子 Agent 的 task unit；
-- 接收 `subagent_result`；
-- 汇总并持久化用户决策；
-- 记录外部 submission 和 artifact set；
-- 唯一提交 `00_project_state/` 与 `00_project_records/`；
-- 决定暂停、恢复、重试、重规划或再次请求 Workflow 判断。
-
-Manager 必须保持以下 barrier：
+核心原则：
 
 ```text
-PROJECT_INITIALIZED
-→ ROUTE_SCOPE_RESOLVED
-→ ROUTE_CREATED
-→ BUSINESS_TASK
+职责边界 ≠ LLM 调用边界 ≠ 进程边界
 ```
 
-- `PROJECT_INITIALIZED` 前不得调用 Workflow、创建 route 或业务 task；
-- `ROUTE_SCOPE_RESOLVED` 前不得请求 route fragment 或创建 route；
-- 有效 active route 不存在时不得创建业务 task。
+运行时可以通过确定性 Tool 或受控 Agent context 执行某一职责，但不得改变该职责的语义所有权。
 
-不得：
+## 1. Manager
 
-- 把 NEW 判定、初始化、范围解析、规划和执行合并成一个隐式动作；
-- 在 NEW 初始化时创建首条业务路线；
-- 因用户表述模糊而默认选择下一 task、当前 Workflow 结束、Workstream 目标或项目终点；
-- 自行编造 Workflow 内部步骤或业务条件；
-- 脱离 Workflow decision 自行选择局部 Operation/Validator；
-- 在主上下文执行大量局部文件解析、日志分析或科学判定；
-- 复制 Operation/Validator 的业务规则；
-- 同时运行多个前台 MD 临时子 Agent；
-- 因某个后台 MD 正在运行而自动切换 Focus；
-- 把项目整体“回退阶段”来覆盖已有下游结果；需要保留旧结果时应创建新 Workstream。
-
-## Workflow
-
-唯一主工作：定义一个阶段的局部流程，并为一个 Workstream 提供规划片段与实时下一步决定。
-
-### 规划接口
+唯一主工作：管理项目级语义与提交边界。
 
 负责：
 
-- 定义阶段内有序 substep；
-- 基于 Workstream 局部状态和已解析规划范围生成本阶段 route fragment；
-- 标记 `REQUIRED | CONDITIONAL` 步骤；
-- 声明入口要求、出口 artifact、前置条件、gate、假设和 blocker；
-- 返回 `workflow_route_fragment.schema.yaml`。
+- 两个 root 与项目入口状态；
+- Focus 和 Workstream；
+- route scope、跨 Workflow route 与 revision；
+- 用户决定；
+- 当前执行后端解析；
+- 外部 submission；
+- 恢复、暂停、重试、重规划；
+- `00_project_state/**` 与 `00_project_records/**` 的提交授权；
+- 用户可见状态与 closure。
 
-### 执行接口
+Manager 不负责：
 
-负责：
+- 结构/拓扑/模拟/分析业务操作；
+- 科学质量判断；
+- 根据阶段名编造 Workflow 内部步骤；
+- 用 LLM 逐字段模拟 schema/引用/序列化；
+- 因记录所有权而手工构造全部机械 YAML。
 
-- 读取 Focus Workstream 的当前位置、有效产物和已解决决定；
-- 判断执行、跳过、暂停、阻塞或阶段完成；
-- 指定一个 Operation、一个 Validator，或一个 Operation 与其专属 Validator 组成的 task unit；
-- 声明当前 task 的输入来源、预期输出和 gate；
-- 返回 `workflow_decision.schema.yaml`。
+Manager 的提交边界可以调用已批准 deterministic builder/recorder，但语义决定仍归 Manager。
 
-Workflow 不得：
+## 2. Workflow
 
-- 判断项目入口状态或初始化项目；
-- 解析用户的跨 Workflow 路线终点；
-- 在路线范围未解析时自行补全范围；
-- 拼接其他 Workflow 的 route fragment 或写完整 route record；
-- 选择跨 Workflow 起点、终点或整个项目的范围；
-- 执行 Operation 或 Validator；
-- 创建、管理或模拟子 Agent；
-- 直接向用户提问；
-- 修改业务文件或管理状态；
-- 复制子 Skill 的命令、算法、字段或详细判定标准；
-- 选择项目级 Focus；
-- 创建 Workstream；
-- 决定整个项目只存在一个当前阶段。
-
-Workflow 是可复用 Skill，不是 Agent。一个 Workstream 可以依次经过多个 Workflow。
-
-## Operation
-
-唯一主工作：执行一个明确、可验证的文件或命令操作。
+唯一主工作：拥有一个阶段的局部流程语义。
 
 负责：
 
-- 执行自身 preflight；
-- 在授权业务路径内创建、移动、修改或生成文件；
-- 运行规定命令；
-- 验证操作是否实际执行完成；
-- 将详细过程写入业务日志；
-- 按 `subagent_result` 返回精简 Operation result。
+- 阶段内有序 node/substep；
+- REQUIRED / CONDITIONAL；
+- entry/exit artifact requirements；
+- planning fragment；
+- route-affecting 条件和 blocker；
+- 当需要语义重判时给出当前 execution decision；
+- 声明 node 的 Operation/Validator 责任与允许的 execution backend preference。
 
-不得：
+Workflow 不负责：
 
-- 决定项目级或 Workflow 路线；
-- 创建其他子 Agent；
-- 直接向用户请求确认；
-- 修改未授权路径；
-- 修改 `00_project_state/` 或 `00_project_records/`；
-- 代替 Validator 给出独立质量判决。
+- 项目入口/初始化；
+- 跨 Workflow 起终点；
+- Focus/Workstream 创建；
+- 直接执行 Operation/Validator；
+- 修改业务或管理文件；
+- 直接向用户提问。
 
-## Validator
+compact Workflow runtime spec 是本 Workflow 权威定义的派生投影，不是第二套流程定义。
+
+## 3. Operation
+
+唯一主工作：执行一个明确、可验证的业务操作。
+
+负责：
+
+- task-local preflight；
+- 授权路径内的文件/命令操作；
+- 必要业务日志；
+- 操作是否实际完成的确定性/操作性核验；
+- Operation result 与 artifact candidates。
+
+Operation 不负责：
+
+- 项目/Workflow 路线；
+- 用户确认；
+- 管理目录提交；
+- 独立科学质量判决；
+- 创建嵌套 Agent。
+
+Operation 可以由 `DETERMINISTIC` Tool 或 Agent context 执行，但结果仍必须表示为 Operation responsibility。
+
+## 4. Validator
 
 唯一主工作：读取并检查目标对象，输出结构化判定。
 
 负责：
 
-- 读取目标文件和必要项目记录；
-- 执行确定的检查、识别或分类；
-- 区分“Validator 是否成功执行”与“被检查对象是否通过”；
-- 输出 outcome code、findings、gate 建议和决策请求；
-- 将详细结果写入授权的业务报告；
-- 按 `subagent_result` 返回精简 Validation result。
+- 目标和必要上下文读取；
+- 科学/技术检查、识别或分类；
+- 区分“Validator 是否成功执行”和“目标是否通过”；
+- outcome、findings、gate 建议与 decision request；
+- Validation result/report。
 
-不得：
+Validator 不负责：
 
-- 修改被验证的目标结构、拓扑或模拟结果；
-- 修复发现的问题；
-- 创建其他子 Agent；
-- 直接向用户提问；
-- 修改 `00_project_state/` 或 `00_project_records/`；
-- 将不确定自动等同为执行失败。
+- 修改被验证对象；
+- 自动修复；
+- 用户确认；
+- 管理目录提交；
+- 项目/Workflow 路线；
+- 嵌套 Agent。
 
-## 运行关系
+完全确定性的 Validator 可以由 Tool 后端执行；需要科学判断的 Validator 通常使用 Agent 后端。
+
+## 5. Tool
+
+Tool 是确定性执行组件，不是第五个决策层。
+
+Tool 可以承担：
+
+- parsing / hashing / copy / deterministic transform；
+- schema/reference validation；
+- deterministic record building；
+- controlled state commit；
+- 已冻结规则的确定性检查。
+
+Tool 不得：
+
+- 选择 Focus、route scope、route revision；
+- 作开放式科学判断；
+- 向用户提问；
+- 创建 Agent；
+- 降低 gate；
+- 超出 registry 权限写入。
+
+## 6. 执行后端模型
+
+运行时必须把逻辑 task/node 与执行后端分开表示。
+
+### DETERMINISTIC
+
+适用于同时满足：
+
+- 业务逻辑已冻结为确定性规则；
+- 不需要开放式科学判断或用户决定；
+- 所需 capability 有 `ACTIVE` Tool；
+- Tool 输出可以映射到对应 Operation/Validator result contract。
+
+不创建业务 Agent。
+
+### AGENT_TASK
+
+一个临时前台 Agent context 执行一个上下文有界 task unit：
 
 ```text
-项目入口：
-主智能体 + Manager
-→ entry state
-→ NEW 自动初始化（如适用）
-→ 独立路线范围解析
-
-路线规划：
-主智能体 + Manager
-→ 逐个读取涉及的 Workflow
-→ workflow route fragments
-→ Manager 拼接 Workstream route
-
-实际执行：
-主智能体
-├── Manager Skill
-├── 当前 Workflow Skill
-└── 最多一个前台临时子 Agent
-    ├── 一个 Operation
-    ├── 一个 Validator
-    └── 或 Operation → 专属 Validator
+OPERATION
+VALIDATOR
+OPERATION_WITH_VALIDATOR
 ```
 
-其他 Workstream 的 tmux 或调度任务可以在后台继续运行。它们不占用前台子 Agent 名额。
+这是当前兼容默认后端。
 
-Operation/Validator 不进行嵌套委派；Manager 是状态和记录的唯一提交者。
+### AGENT_SEQUENCE
+
+一个临时 Agent context 连续执行多个上下文连续 node/task，但每个 Operation/Validator 责任和结果必须保持独立。
+
+只有同时满足以下条件才可启用：
+
+- 同一 Workstream；
+- 同一 Workflow；
+- sequence contract 明确列出节点；
+- 不跨用户 decision barrier；
+- 不跨 route-changing branch；
+- 不跨外部 submission；
+- 不跨高风险/不可逆恢复锚点；
+- 不改变目录所有权边界；
+- 上一个节点输出直接构成下一个节点输入；
+- 中间每个节点仍可单独记录结果和 gate。
+
+在 sequence contract、校验和 fixture 未实现前：
+
+```text
+AGENT_SEQUENCE = DISABLED_BY_DEFAULT
+```
+
+不得为了省时间临时把多个节点塞进一个 Agent。
+
+## 7. 后端选择规则
+
+Workflow/runtime spec 可以声明：
+
+```text
+preferred_backend
+fallback_backend
+required_capability
+```
+
+Manager 只解析 capability 与已冻结 eligibility，不创造新的科学路由。
+
+典型顺序：
+
+```text
+preferred DETERMINISTIC
+  + ACTIVE capability
+  → DETERMINISTIC
+
+preferred DETERMINISTIC
+  + capability unavailable
+  + fallback AGENT_TASK allowed
+  → AGENT_TASK
+
+需要科学判断
+  → AGENT_TASK
+```
+
+后端变化不改变 Operation/Validator 的责任归属，也不改变 artifact/validation 语义。
+
+## 8. Runtime context 边界
+
+真实 MD runtime 优先读取 `runtime/**` 紧凑投影。
+
+完整 authoring references 只在：
+
+- runtime projection 缺失/失效；
+- 恢复；
+- contract/协议冲突；
+- 开发或审计
+
+时加载。
+
+任何层都不得把“为了遵守规则”解释成每次运行都全文读取全部权威设计文件。
+
+## 9. 管理与业务写权限
+
+Manager 控制：
+
+```text
+00_project_state/**
+00_project_records/**
+```
+
+Operation/Validator/业务 Agent 只写 task 授权业务路径。
+
+确定性 recorder/state Tool 可以在 Manager 明确授权且 registry 权限覆盖时写管理目录；这不改变 Manager 的所有权。
+
+## 10. 并发边界
+
+- 同时最多一个前台 MD Agent context；
+- `DETERMINISTIC` Tool 调用不占用业务 Agent 名额，但不得被用于绕过串行业务依赖；
+- 多个 tmux/调度系统外部任务可后台并存；
+- Operation/Validator/Tool 不创建嵌套 Agent。
