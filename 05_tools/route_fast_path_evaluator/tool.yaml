@@ -1,0 +1,70 @@
+schema_version: 1
+name: route_fast_path_evaluator
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: evaluate.py
+purpose:
+  - deterministically evaluate whether an already-planned active route can advance without full Workflow LLM re-entry
+  - preserve Workflow semantic ownership by returning REENTER_WORKFLOW whenever route semantics may have changed
+outputs:
+  decisions:
+    - ADVANCE
+    - REENTER_WORKFLOW
+    - STOP_SCOPE
+    - BLOCKED
+inputs:
+  - active route record
+  - current Workstream state
+  - terminal responsibility result
+  - compact Workflow runtime spec
+  - explicit evaluation context for gate/interface/conditional/recovery/high-risk facts
+semantic_boundaries:
+  - does not create or revise routes
+  - does not infer scientific gate status
+  - does not interpret free-form business logs
+  - does not skip unresolved CONDITIONAL nodes
+  - does not choose behavior when compact runtime information is missing or semantically stale
+fast_path_requirements:
+  - route and Workstream identity consistent
+  - task/result/route node identity consistent
+  - task status DONE and no failure/confirmation semantic trigger
+  - explicit gate_status PASS
+  - explicit artifact_interface_status MATCH
+  - artifact lineage interpretable
+  - no route-affecting or conditional evidence change
+  - no user instruction change
+  - no recovery or high-risk barrier
+  - next node inputs READY
+  - REQUIRED next node has NOT_APPLICABLE condition context
+  - CONDITIONAL next node has explicit TRUE condition status
+permissions:
+  read:
+    - explicit route record
+    - explicit Workstream state
+    - explicit terminal result
+    - runtime/workflows/** compact spec
+    - explicit evaluation context
+  write: []
+security:
+  network_access: false
+  arbitrary_code_execution: false
+  symlink_inputs_rejected: true
+error_model:
+  evaluated_decision_exit_code: 0
+  tool_failure_exit_code: 2
+compatibility:
+  minimum_python: '3.10'
+  dependencies:
+    - PyYAML
+tests:
+  path: 04_evals/route_fast_path_evaluator/
+  evidence: 04_evals/route_fast_path_evaluator/VALIDATION.md
+release:
+  active_by_default: false
+  activation_pending:
+    - REQUIRED and CONDITIONAL fixtures
+    - user scope stop fixture
+    - decision/failure/recovery negative fixtures
+    - R4 runtime_record_committer integration fixture
+    - benchmark evidence
