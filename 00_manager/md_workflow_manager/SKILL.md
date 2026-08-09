@@ -11,24 +11,33 @@ Manager 不承担 Operation 或 Validator 的业务工作。确定性 schema、�
 
 # 启动时读取
 
-按需读取：
+采用分层按需读取，不得因为进入 Manager 就一次性加载全部协议、Workflow、项目历史或科学文件。
+
+## A. 入口最小集
+
+每次进入项目只读取完成入口判定所需的最小集合：
 
 1. 项目根 `AGENTS.md`；
-2. `03_contracts/README.md` 与本轮适用 schema；
-3. `00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md`；
-4. `00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md`；
-5. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
-6. `05_tools/tool_registry.yaml`；
-7. `design_records/logging_and_record_system.md`；
-8. `references/project_initialization_protocol.md`；
-9. `references/stage_registry.yaml`；
-10. 发生路线范围解析、PLAN、route 创建或 revision 时读取 `references/route_planning_protocol.md`；
-11. 输出用户状态或 task closure 时读取 `references/manager_display_rules.md`；
-12. 需要完整运行核查时读取 `references/manager_runtime_checklist.md`；
-13. 项目索引、Focus Workstream state 及其 active route、decision、submission 和 artifact records；
-14. 规划时逐个读取涉及范围内的 Workflow，执行时只读取当前 Workflow。
+2. `03_contracts/README.md` 与入口状态直接涉及的 schema 名称/版本；
+3. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
+4. `05_tools/tool_registry.yaml`；
+5. `design_records/logging_and_record_system.md`；
+6. `references/project_initialization_protocol.md`；
+7. 已存在时读取 `project_state.yaml`、目标 Workstream state 及入口判定直接需要的索引/记录。
 
-不得一次性载入全部项目历史、科学日志、轨迹或无关 Skill。
+入口最小集不得预读 Workflow、route planning protocol、runtime subagent protocol、全部 contracts、全部 references、全部项目历史或业务 Skill。
+
+## B. 初始化后按动作追加
+
+只有通过 `PROJECT_INITIALIZED` barrier 或项目本来就是可信 RESUMABLE 后，才按实际动作追加：
+
+- 发生路线范围解析、PLAN、route 创建或 revision：读取 `references/stage_registry.yaml` 与 `references/route_planning_protocol.md`；
+- PLAN：逐个读取本轮范围涉及的 Workflow，不读取范围外 Workflow；
+- EXECUTE：只读取当前 Workflow；创建 task 前再读取 `00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md`、`runtime_subagent_protocol.md` 和本 task 适用 schema；
+- 输出用户状态或 task closure：读取 `references/manager_display_rules.md`；
+- 需要完整运行核查时：读取 `references/manager_runtime_checklist.md`。
+
+不得一次性载入全部项目历史、科学日志、轨迹或无关 Skill。已经由确定性 Tool 完成的 schema/reference 检查，不再由 Manager 为“保险”重复人工审计。
 
 # 使用边界
 
@@ -59,7 +68,8 @@ Manager 负责：
 Manager 不得：
 
 - 合并入口判定、初始化、范围解析、规划和执行；
-- 在初始化完成前调用 Workflow；
+- 在初始化完成前读取或调用 Workflow；
+- 为 NEW 初始化提前执行 route planning；
 - 在路线范围未明确时选择默认终点；
 - 在 active route 不存在或不适用时创建业务 task；
 - 根据阶段名称编造 Workflow 内部步骤；
@@ -71,7 +81,10 @@ Manager 不得：
 - 覆盖已有下游结果；
 - 自动重试失败 task、降低 gate 或跳过 Validator；
 - 对普通 task 执行 FULL validation；
+- 在已有有效 FULL PASS 且 candidate 未变化时重复 FULL；
+- 在初始化正式提交后再次执行保守性 FULL；
 - 用 LLM 模拟 FULL schema 或项目级引用校验；
+- 为 NEW 初始化创建无恢复价值的 state snapshot；
 - 静默完成前台 task 后直接启动下一 task。
 
 # 项目目录与权限
@@ -105,6 +118,8 @@ Tool 只能使用 registry 与自身 `tool.yaml` 声明的权限；cache 必须�
 
 最小检查仅读取清单和元数据，确认：状态可解析、schema 受支持、根目录有效、Workstream state 可定位、Focus 可解析、无冲突前台 task、无项目级阻断决定和明显目录所有权冲突。
 
+最小检查不是完整项目审计，不扫描全部 route、artifact、decision、submission、event 或业务目录。
+
 ## 入口状态
 
 ### NEW
@@ -113,7 +128,9 @@ Tool 只能使用 registry 与自身 `tool.yaml` 声明的权限；cache 必须�
 
 `NEW` 只是本轮入口判定。根目录明确且无冲突时自动初始化，不等待用户额外提示。
 
-初始化严格执行 `references/project_initialization_protocol.md`。初始化不创建 route、不调用 Workflow、不创建业务 task。
+初始化严格执行 `references/project_initialization_protocol.md`。初始化不读取/调用 Workflow，不解析 route scope，不创建 route，不创建业务 task，不创建初始化 snapshot。
+
+初始化只要求一个有效的 candidate FULL PASS。candidate 未变化且已有有效 PASS 时不得重复 FULL；正式提交后只执行 lightweight post-commit verification。
 
 `PROJECT_INITIALIZED` 是 planning/execution barrier。
 
@@ -252,7 +269,10 @@ FAST/FULL、schema cache、权限和 Tool 失败规则由 `deterministic_tool_pr
 Manager 只保留以下选择规则：
 
 - 普通 task 对 changed paths 执行一次 FAST；
-- 初始化、恢复和其他协议列明的关键生命周期节点使用 FULL；
+- NEW 初始化只对 candidate logical-path overlay 执行一次有效 FULL；
+- candidate 内容变化或前一次调用未形成有效 validation result 时，才允许重新运行初始化 FULL；
+- 初始化提交后只执行 `project_initialization_protocol.md` 定义的 lightweight post-commit verification；
+- 恢复和其他协议列明的关键生命周期节点使用 FULL；
 - 优先调用 registry 中 `ACTIVE` 且版本兼容的 Tool；
 - `IMPLEMENTED` 但未测试的 Tool 不作为默认生产路径；
 - Tool FAIL/ERROR 时不提交候选终态、不降低 gate、不忽略错误；
@@ -301,7 +321,7 @@ Workstream 级恢复可与不依赖该分支的其他 Workstream 并存；影响
 
 执行或审查时使用 `references/manager_runtime_checklist.md`。主文件只保留八个顶层 barrier：
 
-- 初始化完成前不调用 Workflow；
+- 初始化完成前不读取或调用 Workflow；
 - 路线范围明确前不创建 route；
 - active route 不适用时不创建 task；
 - task 必须来自当前 Workflow decision；
