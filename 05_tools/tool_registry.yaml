@@ -176,3 +176,37 @@ tools:
     notes:
       - Cannot make scientific judgments or create route revisions; semantic triggers return REENTER_WORKFLOW.
       - GitHub Actions run 31307887115 passed 10 tests including R4 integration; median normal ADVANCE evaluation was 18.395 ms.
+
+  - name: source_recognition_deterministic
+    version: 0.1.0
+    status: ACTIVE
+    path: 05_tools/source_recognition_deterministic
+    entrypoint: 05_tools/source_recognition_deterministic/run.py
+    callers:
+      - md_workflow_manager
+      - structure_preparation_workflow
+    logical_responsibility:
+      layer: operation
+      skill_name: source_recognition
+      semantic_owner: 02_operations/source_recognition/SKILL.md
+    capabilities:
+      - bounded local PDB/CIF/mmCIF source recognition
+      - deterministic unique-source selection
+      - default atomic copy and SHA-256 integrity verification
+      - identical-destination reuse
+      - deterministic source ambiguity and destination-conflict confirmation generation
+      - subagent_result-v2-shaped source_recognition responsibility result
+    read_paths:
+      - explicit task.yaml
+      - task-authorized source_candidate files
+      - 02_operations/source_recognition/SKILL.md for semantic guard
+    write_paths:
+      - task-authorized source_recognition business work_directory only
+    tests: 04_evals/source_recognition_deterministic/
+    validation_evidence: 04_evals/source_recognition_deterministic/VALIDATION.md
+    active_by_default: true
+    notes:
+      - GitHub Actions run 31308634688 passed 8 tests including deterministic 1.1 -> R5 -> R4 integration.
+      - Unique-copy business internal median was 8.207 ms; process wall median was 69.448 ms.
+      - Explicit controlled move requests and unsupported semantic cases fall back to AGENT_TASK.
+      - Tool refuses to run if source_recognition SKILL.md no longer matches guarded semantic-owner blob.
