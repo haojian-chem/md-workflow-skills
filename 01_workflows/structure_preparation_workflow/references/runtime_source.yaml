@@ -140,5 +140,10 @@ runtime_spec:
     AGENT_SEQUENCE_status: disabled_by_default
     source_recognition_deterministic_status: capability_not_yet_registered
   route_fast_path:
-    status: planned_R5_not_active
-    intended_rule: After R5 activation, a node with a clean terminal result and no semantic_reentry trigger may advance to normal_next without full Workflow LLM re-entry.
+    status: ACTIVE
+    evaluator: route_fast_path_evaluator
+    clean_terminal_result_action: evaluate_existing_active_route
+    on_ADVANCE: use_evaluator_next_route_position_as_explicit_R4_route_progression
+    on_REENTER_WORKFLOW: invoke_full_workflow_semantic_execution_logic
+    on_STOP_SCOPE: close_current_user_scope_without_starting_next_task
+    on_BLOCKED: return_to_Manager_for_state_or_recovery_handling
