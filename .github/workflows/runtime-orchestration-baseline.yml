@@ -1,0 +1,35 @@
+name: runtime-orchestration-baseline
+
+on:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - "04_evals/runtime_orchestration_baseline/**"
+      - "05_tools/source_recognition_deterministic/**"
+      - "05_tools/route_fast_path_evaluator/**"
+      - "05_tools/runtime_record_committer/**"
+      - "05_tools/runtime_dependency_preflight/**"
+      - "05_tools/runtime_schema_validator/**"
+      - "runtime/workflows/structure_preparation.runtime.yaml"
+      - "02_validators/component_and_residue_classification_validator/references/runtime_dependencies.json"
+      - ".github/workflows/runtime-orchestration-baseline.yml"
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+          python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
+      - name: Benchmark deterministic fixed path
+        run: |
+          python 04_evals/runtime_orchestration_baseline/benchmark_fixed_path.py
