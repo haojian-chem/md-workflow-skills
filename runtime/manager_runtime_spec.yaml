@@ -53,11 +53,26 @@ barriers:
 - ACTIVE_ROUTE_AVAILABLE
 - BUSINESS_EXECUTION
 initialization:
+  preferred_backend: DETERMINISTIC
+  initializer_tool:
+    status: ACTIVE
+    name: runtime_project_initializer
+    entrypoint: 05_tools/runtime_project_initializer/initialize.py
+    invocation: invoke once after entry probe returns NEW
+    expected_receipt_status: INITIALIZED
+    validation_evidence: 04_evals/runtime_project_initializer/
+  normal_execution:
+  - classify entry as NEW using metadata-only entry probe
+  - invoke runtime_project_initializer once
+  - consume compact initializer receipt
+  - continue only after receipt reports INITIALIZED and formal project state is RESUMABLE
+  - do not manually construct initialization YAML in Manager LLM context
+  on_initializer_BLOCKED: stop and surface the blocker; do not read full initialization protocol as a retry strategy
+  on_initializer_ERROR: stop with TOOL_FAILURE or NEEDS_RECOVERY according to committed side effects; do not silently fall back to manual LLM initialization
   normal_path_self_contained_in_runtime_spec: true
   normal_path_must_not_read_full_protocol: true
   full_protocol_read_allowed_only_when:
-  - runtime_projection_missing_or_stale
-  - candidate_contract_conflict_not_expressible_by_compact_spec
+  - runtime_projection_missing_or_stale_and_recovery_or_debug_is_required
   - controlled_commit_failure_requires_recovery
   - explicit_protocol_debug_or_audit
   create:
@@ -83,6 +98,7 @@ initialization:
   - project event-history scan
   - backup-file read
   candidate_templates:
+    purpose: compact fallback/reference for deterministic tooling; Manager LLM does not need to instantiate these fields when runtime_project_initializer is ACTIVE
     project_state:
       schema_version: 2
       project:
@@ -287,7 +303,7 @@ validation:
   schema_consumed_by: deterministic_validator
   full_validation_only_when:
   - recovery
-  - schema_or_contract change
+  - schema_or_contract_change
   - project_or_skill_root_change
   - authoritative_protocol_requires_project_wide_audit
   - explicit_full_audit
@@ -314,11 +330,13 @@ performance_guards:
 - no_authoring_corpus_read_on_normal_entry
 - no_business_structure_parsing_in_manager_entry_or_init
 - no_schema_field_by_field_llm_simulation
+- NEW_initialization_uses_runtime_project_initializer_when_ACTIVE
+- no_manual_llm_initialization_when_runtime_project_initializer_is_ACTIVE
 - no_FULL_during_NEW_initialization
 - no_repeat_validation_for_unchanged_candidate
 - no_repeat_read_to_explain_deterministic_tool_result
 - no_full_manager_protocol_read_on_normal_NEW
-- no_project_initialization_protocol_read_when_compact_template_is_sufficient
+- no_project_initialization_protocol_read_when_compact_template_or_initializer_is_sufficient
 - no_route_planning_protocol_read_for_explicit_same_workflow_node_range
 - no_manager_display_rules_read_on_normal_runtime
 - no_backup_read_outside_recovery
@@ -329,7 +347,7 @@ projection:
   generated: true
   source:
     path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
-    git_blob_sha: b331cbdbe83d9deb6efaddb6a0cfffac7669675f
+    git_blob_sha: c3c1897743ea49581b9f38acfc8f6872108fee3e
   guarded_sources:
   - path: 00_manager/md_workflow_manager/SKILL.md
     git_blob_sha: 1d3dd742f922847b64616a564cd93dd6f4580258
