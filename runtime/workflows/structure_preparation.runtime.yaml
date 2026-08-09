@@ -27,20 +27,33 @@ nodes:
   necessity: REQUIRED
   preferred_backend: DETERMINISTIC
   required_capability: source_recognition_deterministic
+  task_builder:
+    status: ACTIVE
+    tool: runtime_task_builder
+    timing: BEFORE_BACKEND_DISPATCH
+    input_source: explicit_bounded_local_source_paths
+    output: schema_valid_task_yaml
+    on_PASS: invoke_source_recognition_deterministic
+    on_ERROR: TOOL_FAILURE
   deterministic_tool: source_recognition_deterministic
   deterministic_eligibility:
-  - bounded local source candidates are represented by task current_valid_files with role prefix source_candidate
+  - one or more explicit bounded local PDB/CIF/mmCIF source paths are available
   - requested action is default copy or identical-destination reuse
   - no explicit controlled move or unsupported semantic behavior is requested
   deterministic_input_contract:
+    builder: runtime_task_builder
     task_candidate_field: current_valid_files
     candidate_role_prefix: source_candidate
     candidate_state: present_unvalidated_or_present_validated
   fallback_backend: AGENT_TASK
   fallback_when:
-  - controlled source move requested
-  - deterministic capability unavailable or semantic guard mismatch
-  - requested behavior outside deterministic Tool scope
+  - explicit controlled source move is requested and cannot be represented by the deterministic path
+  no_fallback_on:
+  - task packaging mismatch
+  - missing source_candidate file_record packaging
+  - deterministic capability unavailable
+  - runtime task builder failure
+  on_no_fallback_condition: TOOL_FAILURE_OR_MANAGER_DECISION
   normal_next: '1.2'
   semantic_reentry_on:
   - multiple_valid_sources
@@ -164,6 +177,8 @@ nodes:
   normal_next: workflow_exit
 backend_notes:
   AGENT_SEQUENCE_status: disabled_by_default
+  source_recognition_task_builder_status: ACTIVE
+  source_recognition_task_builder_validation: 04_evals/runtime_task_builder/
   source_recognition_deterministic_status: ACTIVE
   source_recognition_deterministic_validation: 04_evals/source_recognition_deterministic/VALIDATION.md
   component_classification_dependency_preflight_status: ACTIVE
@@ -180,7 +195,7 @@ projection:
   generated: true
   source:
     path: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
-    git_blob_sha: d784f559b390b91b81a07484352ce311263d1630
+    git_blob_sha: d216422e6751209381aa7af86c4f4d8a48bda070
   guarded_sources:
   - path: 01_workflows/structure_preparation_workflow/SKILL.md
     git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
