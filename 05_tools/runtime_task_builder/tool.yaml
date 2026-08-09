@@ -1,0 +1,54 @@
+schema_version: 1
+name: runtime_task_builder
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: 05_tools/runtime_task_builder/build_task.py
+purpose:
+  - build schema-valid business task.yaml records deterministically from an active route and bounded explicit inputs
+  - remove LLM-side schema reading and mechanical task serialization from normal runtime
+supported_scope:
+  - structure_preparation/source_recognition only in v0.1.0
+inputs:
+  - project_root
+  - active route record
+  - explicit bounded local source paths
+outputs:
+  - immutable source_recognition task.yaml
+  - compact builder receipt
+validation:
+  - candidate task is validated once with ACTIVE runtime_schema_validator FAST before atomic commit
+  - schema bodies are consumed by the deterministic validator, not by Manager LLM
+source_candidate_packaging:
+  record_location: task.current_valid_files
+  role: source_candidate
+  state: present_unvalidated
+  allowed_read_paths: exact bounded source paths
+security:
+  network_access: false
+  recursive_scan: false
+  source_must_be_inside_project_root: true
+  source_symlink_rejected: true
+  management_write_scope:
+    - 00_project_records/workstreams/<workstream_id>/tasks/<task_id>/task.yaml
+semantic_boundaries:
+  - does not choose among multiple candidates
+  - does not inspect scientific structure quality
+  - does not create or revise routes
+  - does not create artifacts, events, decisions, or Workstream state updates
+  - does not launch Agent contexts
+compatibility:
+  minimum_python: '3.10'
+  dependencies:
+    - PyYAML
+    - jsonschema through runtime_schema_validator
+tests:
+  path: 04_evals/runtime_task_builder/
+release:
+  active_by_default: false
+  activation_pending:
+    - unique source task fixture
+    - multiple candidate packaging fixture
+    - task schema validation fixture
+    - source_recognition deterministic integration fixture
+    - benchmark evidence
