@@ -21,11 +21,11 @@ Completed:
 
 Still required:
 
-- validate real runner behavior with a fresh project timing test.
+- validate real runner behavior with a fresh project timing test after R4-R7 migration.
 
 ### R2 — Runtime manifest and compact Workflow specs
 
-Status: BOOTSTRAP_IMPLEMENTED_COMPILER_PENDING
+Status: IMPLEMENTED_ACTIVE
 
 Completed:
 
@@ -33,14 +33,26 @@ Completed:
 - `runtime/manager_runtime_spec.yaml`;
 - `runtime/task_contracts/index.yaml`;
 - `runtime/workflows/structure_preparation.runtime.yaml`;
-- provenance links to authoritative sources;
-- stage registry updated for compact-spec-first invocation.
+- machine-readable Manager and Workflow projection sources;
+- `00_authoring/runtime_projection_config.yaml`;
+- ACTIVE `runtime_projection_compiler 0.1.0`;
+- source-guard drift detection;
+- deterministic BUILD/CHECK modes;
+- generated-file byte-level verification against committed runtime files;
+- stage registry compact-spec-first invocation.
 
-Still required:
+Current runtime projection state:
 
-- implement and activate `runtime_projection_compiler`;
-- add drift detection / generated-file validation;
-- replace `bootstrap_curated` with reproducible generated projection.
+```text
+projection_status: generated_active
+projection_mode: deterministic_compiled
+```
+
+Maintenance rule:
+
+- runtime files are generated and non-authoritative;
+- guarded authoring-source changes require explicit source-guard update and projection rebuild;
+- ordinary runtime should consume generated projections rather than authoring corpus.
 
 ### R3 — Execution backend model
 
@@ -62,7 +74,7 @@ Still required:
 
 ### R4 — Deterministic record/state commit path
 
-Status: DESIGN_FROZEN_IMPLEMENTATION_PENDING
+Status: DESIGN_FROZEN_IMPLEMENTATION_IN_PROGRESS
 
 Protocol:
 
@@ -72,7 +84,7 @@ Registered capability:
 
 `runtime_record_committer — DESIGNED`
 
-Next work:
+Current work:
 
 - implement Tool;
 - fixtures and rollback tests;
@@ -128,22 +140,21 @@ Planned order:
 
 ## Current safety posture
 
-The redesign currently changes runtime loading and orchestration semantics, but does not yet activate unimplemented fast paths or Tools.
+The redesign now has an ACTIVE deterministic runtime projection compiler, but task closure and route advancement still use compatibility paths.
 
 Specifically:
 
 - AGENT_SEQUENCE is disabled;
 - active-route fast path is disabled;
 - runtime record committer is DESIGNED, not ACTIVE;
-- runtime projection compiler is DESIGNED, not ACTIVE;
-- 1.1 deterministic backend falls back to AGENT_TASK because its capability is not yet registered ACTIVE;
+- runtime projection compiler is ACTIVE;
+- 1.1 deterministic backend still falls back to AGENT_TASK because its business capability is not yet registered ACTIVE;
 - existing validation/recovery guarantees remain in compatibility mode until R4-R7 migration tests pass.
 
 ## Immediate next implementation package
 
 ```text
-P1: runtime_projection_compiler
-→ P2: runtime_record_committer
+P2: runtime_record_committer
 → P3: route_fast_path_evaluator
 → P4: R6 initialization validation migration
 → P5: 1.1 deterministic migration
