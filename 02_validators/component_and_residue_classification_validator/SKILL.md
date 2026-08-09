@@ -16,6 +16,7 @@ description: 在结构准备工作流 1.2 中，对一个已选 model 执行组�
 科学语义：references/classification_rules.md
 字段与枚举：schemas/*.schema.yaml
 CLI 与模块边界：scripts/README.md
+Python 硬依赖：scripts/requirements.txt
 共享 task/result：03_contracts/*.schema.yaml
 ```
 
@@ -44,9 +45,37 @@ CLI 与模块边界：scripts/README.md
 
 `classification_observations.yaml` 是同一 `structure_sha256 + selected_model_id` 的当前状态。结构或 model 改变时必须建立新的 observations 文件；不得把旧决定迁移到新结构状态。
 
+# Runtime dependency gate
+
+1.2 的 Python 硬依赖由：
+
+```text
+scripts/requirements.txt
+```
+
+定义。普通 runtime 不得等到 1.2 Agent context 已创建、Skill/references/schemas 已大量载入后才发现缺少 `gemmi` 等硬依赖。
+
+在启动 1.2 `AGENT_TASK` 前，Manager 按 compact Workflow runtime spec 调用 ACTIVE `runtime_dependency_preflight`：
+
+```text
+task.yaml
++ references/runtime_dependencies.yaml
+→ runtime_dependency_preflight
+```
+
+结果：
+
+- `PASS`：才允许创建/启动 1.2 Agent context；进入本 Skill 的内部 Preflight；
+- `BLOCKED`：不得启动 1.2 Agent。preflight Tool 返回与本 Validator task identity 对齐的结构化 BLOCKED responsibility result，由 Manager/R4 记录为 dependency blocker；
+- `ERROR`：按 Tool failure 处理，不启动 1.2 Agent。
+
+该 runtime dependency gate 只检查解释器/包依赖，不执行科学分类、不读取 PDB 内容、不替代本 Skill 内部 Preflight。
+
+Agent 启动后不得为了“保险”重复做相同的全量 Python dependency import/version probe；只有实际 import 与已通过 preflight 事实冲突时才作为 runtime environment drift 报错。
+
 # Preflight
 
-执行前核验：
+通过 runtime dependency gate 后，执行本 Validator 内部 Preflight：
 
 1. task、Skill ref、allowed/forbidden paths 与共享 schema；
 2. STRUCTURE 为非 symlink 普通文件，声明 SHA-256、格式和 selected model 一致；
@@ -152,8 +181,11 @@ REFERENCE_CONFIGURATION_INVALID
 VALIDATOR_INTERNAL_FAILURE
 ```
 
+runtime dependency gate 的 BLOCKED outcome 不表示分类已经执行；它在 Agent 启动前终止本 task，并由 preflight responsibility result 明确记录依赖 blocker。
+
 1.2 task 只有在以下条件同时满足时闭合：
 
+- runtime dependency gate 已 PASS；
 - model 已明确，或已形成合法模型选择请求；
 - 所有适用检查均为 `COMPLETED` 或 `NOT_PERFORMED`；
 - relation result 与 observations 中 `check_outputs` 一致；
