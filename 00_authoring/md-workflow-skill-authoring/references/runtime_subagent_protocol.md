@@ -1,39 +1,74 @@
-# 串行临时子 Agent 协议
+# MD Workflow Runtime Execution Protocol
 
-## 目的
+本协议定义真实 MD runtime 中 Operation/Validator 的执行后端、Agent context 边界和最小任务信息。
 
-临时子 Agent 用于隔离大型结构文件、命令输出、详细日志、中间候选、局部排错和 Validator findings，减少主上下文污染。
+逻辑职责由 `layer_boundaries.md` 定义；本文件只定义**如何执行**。
 
-它不用于提高前台并行度。
+## 1. 总原则
 
-## Workstream 与并行边界
+```text
+职责边界 ≠ Agent 边界
+```
 
-- 一个项目可以存在多个 Workstream；
-- 多个 tmux 或调度系统外部任务可以同时运行；
-- 任意时刻最多一个前台 MD 临时子 Agent；
-- 外部任务运行不等于前台子 Agent 并行；
-- 临时子 Agent 不得创建或调用其他子 Agent。
+运行时支持：
 
-## 创建条件
+```text
+DETERMINISTIC
+AGENT_TASK
+AGENT_SEQUENCE
+```
 
-Manager 只有在以下条件全部满足时才创建临时子 Agent：
+任意时刻最多一个前台 MD Agent context。Tool 调用不是 Agent，但不得绕过业务依赖关系。
 
-- 项目已初始化或为可信 RESUMABLE；
-- 路线范围已明确；
-- active route 有效；
-- Focus 已解析为具体 Workstream；
-- Workflow 返回 `decision: EXECUTE`；
-- `next_task_unit` 符合 `workflow_decision.schema.yaml`；
-- 当前没有活动前台子 Agent；
-- 输入、工作目录和路径权限已解析；
-- 不可变 `task.yaml` 已写入；
-- task 包符合 `subagent_task.schema.yaml`。
+Operation/Validator 不创建或调用其他 Agent，也不直接向用户提问。
 
-简单项目索引读取可由主智能体完成，但不得绕过 Workflow 的业务路线。
+## 2. Backend resolution
 
-## 任务单元
+Manager 根据当前 route node / compact Workflow runtime spec 解析：
 
-一个临时子 Agent 只执行一个上下文连续任务单元：
+- logical task mode；
+- `preferred_backend`；
+- `fallback_backend`；
+- `required_capability`；
+- 当前 Tool registry capability；
+- blocking decision / recovery / risk 状态。
+
+Manager 不得为了性能临时发明 backend 或扩大 sequence。
+
+### 2.1 DETERMINISTIC
+
+仅当以下条件全部满足：
+
+- node 明确允许；
+- 所需 capability 有 ACTIVE Tool；
+- 输入已确定且有界；
+- 不要求开放式科学判断；
+- 不产生需要 Agent 解释才能判断是否成功的结果；
+- Tool 输出可被确定性映射为对应 Operation/Validator result。
+
+执行：
+
+```text
+route node
+→ Manager authorizes deterministic capability
+→ Tool
+→ structured Operation/Validator result candidate
+→ runtime validation / record commit
+```
+
+不创建业务子 Agent。
+
+Tool 缺失时：
+
+- 若 runtime spec 允许 `fallback_backend: AGENT_TASK`，使用 AGENT_TASK；
+- 否则返回 capability blocker；
+- 不在运行时临时开发 Tool。
+
+## 3. AGENT_TASK
+
+当前兼容默认后端。
+
+一个临时 Agent context 只执行一个明确的 task unit：
 
 ```text
 OPERATION
@@ -41,140 +76,188 @@ VALIDATOR
 OPERATION_WITH_VALIDATOR
 ```
 
-`OPERATION_WITH_VALIDATOR` 只用于专属 Validator 需要共享前一 Operation 即时上下文的情况。
+`OPERATION_WITH_VALIDATOR` 仅用于专属 Validator 必须共享前一 Operation 即时上下文的情况。
 
-即使在同一子 Agent 中连续执行：
+即使同一 Agent 连续执行 Operation + Validator：
 
-- Operation 和 Validator 职责仍分离；
-- Validator 不得修改被验证对象；
-- 两部分结果必须分别记录；
-- 不能合并成模糊的“成功”。
+- 两种职责保持分离；
+- Validator 不修改被验证对象；
+- 两部分 result 分开；
+- artifact candidate 与 validation outcome 不合并成模糊“成功”。
 
-独立 Validator 和阶段终检 Validator 使用单独 task unit。
+### 3.1 Agent 创建前条件
 
-## 最小任务包
+- 项目为可信 `RESUMABLE` 或已初始化；
+- Focus Workstream 唯一；
+- active route/node 可定位；
+- 当前 node 允许 AGENT_TASK；
+- 没有活动前台 Agent；
+- 输入、工作目录和权限已解析；
+- blocking decision 已解决；
+- task identity 已分配。
 
-Manager 只传递当前 task 所需信息：
+### 3.2 最小 Agent context
 
-- task ID、Workstream ID、Workflow 名称和 route ID；
-- task unit mode；
-- Operation/Validator Skill 名称和路径；
-- 项目根与工作目录；
-- 允许读取、允许写入和禁止访问路径；
+只传递当前 task 必需信息：
+
+- task / Workstream / Workflow / route-node identity；
+- task mode；
+- Operation/Validator Skill path；
+- project root 与 work directory；
+- allowed read/write 和 forbidden paths；
 - 当前有效输入；
 - 精简上游摘要；
 - resolved decisions；
-- 必需输出与详细日志目标；
-- 返回 contract。
+- 必需输出；
+- detail log/report path；
+- 返回 contract/version identifier。
 
-不得传入完整对话、全部项目日志、全部 Workstream 状态或无关 Skill。
+不得传入：
 
-## 管理目录写权限
+- 完整对话；
+- 全部项目日志；
+- 全部 Workstream 状态；
+- authoring corpus；
+- 无关 Skill；
+- schema 正文，除非该 Agent 的任务就是 schema/contract 调试。
 
-临时子 Agent 不得直接修改：
+当前 Skill 自身可以读取其运行必需的局部 `references/`、`scripts/README` 或 local schema；不得因为启动 Agent 就读取全局 authoring references。
+
+## 4. AGENT_SEQUENCE
+
+目标：对上下文连续、语义稳定的多个 node 复用一个 Agent context，减少重复启动和静态规则重读。
+
+### 4.1 Eligibility
+
+必须同时满足：
+
+- 同一 Workstream；
+- 同一 Workflow；
+- sequence 由明确 contract/route projection 列出；
+- 所有节点顺序确定；
+- 中间没有用户 decision barrier；
+- 中间没有 route-changing branch；
+- 没有外部 submission；
+- 没有高风险/不可逆 checkpoint；
+- 不跨目录所有权边界；
+- 上游输出直接进入下一节点；
+- 每个节点仍能独立产生 task/result/gate evidence；
+- 任一节点 BLOCKED/FAILED 时 sequence 立即终止。
+
+### 4.2 当前启用状态
+
+在以下能力实现并验证之前：
+
+```text
+AGENT_SEQUENCE = DISABLED_BY_DEFAULT
+```
+
+所需前置：
+
+- sequence contract；
+- deterministic eligibility validator；
+- multi-result record/commit support；
+- interruption/recovery fixtures；
+- route-node provenance tests。
+
+因此当前 runtime 不得直接把多个普通 task 合并为 sequence。
+
+## 5. 管理目录写权限
+
+业务 Agent 不得直接修改：
 
 ```text
 00_project_state/**
 00_project_records/**
 ```
 
-子 Agent 只能：
+Agent 只能写：
 
-- 在授权业务目录写 Operation 输出；
-- 在授权位置写详细日志、报告和结果数据；
-- 返回符合 `subagent_result.schema.yaml` 的结构化结果。
+- task 授权业务路径；
+- 详细业务日志/报告；
+- 明确授权的候选输出。
 
-Manager 是状态、事件、route、task result、decision、submission、artifact 和 snapshot 的唯一提交者。
+结构化管理记录由 Manager 提交边界处理；R4 完成后优先由 deterministic recorder 构造。
 
-## 返回要求
+## 6. 返回信息
 
-子 Agent 返回：
+AGENT_TASK 至少返回：
 
-- task ID、Workstream ID 和 task unit mode；
-- 总体终态；
+- identity；
+- task mode；
+- terminal status；
 - 精简执行摘要；
-- 分开的 Operation result 与 Validation result；
+- 分开的 Operation result / Validation result；
 - artifact candidates；
 - confirmation items；
-- warnings 或 failure；
-- 详细日志和报告路径；
-- 下一步建议。
+- warnings/failure；
+- detail log/report paths。
 
-详细中间信息必须落盘，不得完整回灌主上下文。
+详细中间过程落盘，不完整回灌 Manager 上下文。
 
-## 用户交互
+DETERMINISTIC backend 必须生成等价的结构化 responsibility result，使下游不依赖“结果来自 Agent 还是 Tool”。
 
-子 Agent 不直接向用户提问。
+## 7. Decision handling
 
-需要确认时：
+Agent/Tool 不直接问用户。
 
-1. 完成仍可安全完成的部分；
-2. 返回 `confirmation_items`；
-3. Manager 创建或更新 decision record；
-4. Manager 向用户展示；
-5. 用户决定由 Manager 落盘；
-6. Manager 更新 Workstream，并重新进行范围解析、规划或 Workflow 判断。
-
-是否需要确认由非空 decision request 及其 `blocking` 字段表达，不维护重复布尔字段。
-
-## 普通前台 task 生命周期
-
-普通前台 task 指短耗时、当前进程内完成、无外部 submission 且无难以恢复的高风险副作用。
+需要用户决定时：
 
 ```text
-Workflow 返回 EXECUTE
-→ Manager 写 task.yaml
-→ 创建一个临时子 Agent
-→ 子 Agent 执行并写业务日志
-→ 子 Agent 返回 subagent_result
-→ Manager 校验并写 result.yaml
-→ 必要时注册 artifact/decision/submission
-→ Manager 追加一条终态 event
-→ Manager 原子更新目标 Workstream state
-→ Manager 输出 task closure summary
-→ 释放子 Agent 上下文
-→ 再次请求 Workflow
+result confirmation_items
+→ Manager
+→ decision record
+→ user
+→ resolved decision
+→ route/workflow re-evaluation as needed
 ```
 
-普通 task 默认不需要：
+非空 blocking decision 会终止当前普通推进/sequence。
 
-- `TASK_PREPARED`；
-- `TASK_STARTED`；
-- 执行前把 Workstream 改为 EXECUTING；
-- 无变化的 project state 更新；
-- Manager session 逐 task 写入；
+## 8. 普通 task closure
+
+当前 R4 recorder 未完成前，兼容闭环为：
+
+```text
+execute backend
+→ structured result candidate
+→ one applicable FAST validation
+→ commit necessary result/artifact/event/state
+→ visible closure
+```
+
+不得机械增加：
+
+- TASK_PREPARED/TASK_STARTED（普通短 task）；
+- 无变化 project state；
 - snapshot；
-- 无变化 route revision。
+- 无变化 route revision；
+- 逐 task Manager session rewrite；
+- 重复 FULL；
+- 为解释 Tool 已确定结果而再次全文读取 authoring source。
 
-`task.yaml` 存在但 `result.yaml` 缺失时，恢复流程必须将其视为未闭环 task，而不是假定未启动或已完成。
+R4 完成后，机械 result/event/artifact/state 构造交由 deterministic recorder。
 
-## 强化预记录生命周期
+## 9. 强化预记录
 
-以下 task 必须在副作用前建立恢复锚点：
+以下情况仍要求副作用前建立恢复锚点：
 
 - 外部 submission；
 - 长耗时 task；
 - 高风险或不可逆操作；
-- 中断后必须准确区分“未启动”和“已启动”的 task；
-- Workflow/Operation 明确要求预提交记录。
+- 中断后必须区分未启动/已启动；
+- Workflow/Operation 明确要求 checkpoint。
 
-```text
-写 task.yaml
-→ TASK_PREPARED
-→ Workstream EXECUTING
-→ 必要时 TASK_STARTED
-→ 创建子 Agent并产生副作用
-→ result/相关记录/终态 event
-→ 更新 Workstream
-→ 输出 task closure summary
-```
+该规则不因执行后端改变。
 
-## Task closure 可见性
+## 10. 性能约束
 
-每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，Manager 必须在下一前台子 Agent 启动前输出用户可见的精简结果。
+Agent context 隔离的目标是减少主上下文污染，不是让每个几秒钟确定性动作都强制产生一次 LLM lifecycle。
 
-该摘要不是新的结构化记录或确认 gate。
+运行时应优先：
 
-宿主支持中间可见消息时，输出后可继续既定范围；宿主不支持时，本轮以 closure summary 结束，下一 task 留待后续交互。
+1. DETERMINISTIC capability；
+2. 最小 AGENT_TASK context；
+3. 未来经验证的 AGENT_SEQUENCE；
 
-不能依赖已结束子 Agent 的内部记忆。所有可复用信息必须进入业务文件、结构化记录或当前状态。
+同时保持科学 gate、权限和恢复语义不变。
