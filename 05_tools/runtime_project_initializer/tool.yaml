@@ -1,0 +1,42 @@
+schema_version: 1
+name: runtime_project_initializer
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_manager/md_workflow_manager
+entrypoint: 05_tools/runtime_project_initializer/initialize.py
+purpose:
+  - deterministically initialize a NEW MD project management skeleton
+  - avoid Manager LLM reads of initialization protocol, schema bodies, logging design, or backup records on the normal path
+inputs:
+  - project_root
+  - optional project_id
+  - optional workstream_id/title/purpose
+outputs:
+  - 00_project_state/project_state.yaml
+  - 00_project_state/workstreams/<workstream_id>.yaml
+  - 00_project_records/events/project_events.jsonl with ENTRY_STATE_EVALUATED and PROJECT_INITIALIZED
+  - compact JSON receipt
+validation:
+  - build candidate project/workstream states on the same filesystem
+  - validate candidate states once with runtime_schema_validator FAST logical overlay
+  - no FULL validation
+  - no post-commit schema rerun
+security:
+  network_access: false
+  business_structure_parsing: false
+  existing_project_state_overwrite: false
+  backup_scan: false
+semantic_boundaries:
+  - only valid after Manager entry probe classifies the project as NEW
+  - does not resolve route scope
+  - does not create routes/tasks/artifacts/decisions/submissions
+  - does not inspect PDB/mmCIF scientific content
+  - does not choose scientific workflow goals
+release:
+  active_by_default: false
+  activation_pending:
+    - fresh-project fixture
+    - existing-state refusal fixture
+    - business-file noninspection fixture
+    - real FAST candidate validation fixture
+    - benchmark evidence
