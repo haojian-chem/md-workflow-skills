@@ -1,0 +1,112 @@
+schema_version: 1
+name: runtime_record_committer
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: commit_records.py
+purpose:
+  - deterministically close ordinary foreground tasks without Manager LLM rebuilding management YAML
+  - construct result, terminal event, explicit artifact/decision/submission records and Workstream state candidates
+  - run one ACTIVE runtime_schema_validator FAST gate before controlled commit
+scope:
+  ordinary_foreground_task_closure: true
+  project_state_updates: false
+  route_revision: false
+  recovery_semantics: false
+inputs:
+  commit_request:
+    schema_version: 1
+    required:
+      - task_identity
+      - workstream_id
+      - route_id
+      - route_node_id
+      - execution_backend
+      - responsibility_result
+      - semantic_state_delta
+      - artifact_updates
+      - decision_updates
+      - submission_updates
+      - route_progression
+      - allowed_management_paths
+    semantic_rules:
+      - responsibility_result must already be a complete subagent_result-v2-shaped responsibility result
+      - semantic_state_delta may only set lifecycle_status, activity_status, hold_reason or active_route_id
+      - artifact validation_status and validator_task_id are explicit inputs and are never inferred
+      - decision and submission records must be supplied as complete explicit records
+      - route_progression is explicit KEEP or SET; the Tool does not choose the next node
+outputs:
+  format: json
+  receipt_fields:
+    - status
+    - task_id
+    - workstream_id
+    - changed_paths
+    - terminal_event_id
+    - artifact_record_ids
+    - decision_record_ids
+    - submission_record_ids
+    - workstream_state_changed
+    - project_state_changed
+    - validation_status
+    - next_route_position
+    - warnings
+    - elapsed_ms
+permissions:
+  read:
+    - current task.yaml for the target task
+    - target Workstream state
+    - explicit business artifact candidate files
+    - existing project event log for event-ID conflict check
+    - 03_contracts/** through runtime_schema_validator
+  write:
+    - 00_project_records/workstreams/<workstream_id>/tasks/<task_id>/result.yaml
+    - 00_project_records/workstreams/<workstream_id>/artifacts/** when explicitly requested
+    - 00_project_records/workstreams/<workstream_id>/decisions/** when explicitly requested
+    - 00_project_records/workstreams/<workstream_id>/submissions/** when explicitly requested
+    - 00_project_records/events/project_events.jsonl
+    - 00_project_state/workstreams/<workstream_id>.yaml
+    - 00_project_records/.runtime_record_committer/** temporary candidates
+  prohibited:
+    - 00_project_state/project_state.yaml
+    - route records
+    - snapshots
+    - business files
+validation:
+  tool: runtime_schema_validator
+  mode: FAST
+  calls_per_closure: 1
+  changed_scope: candidate result/records/Workstream state/new terminal event only
+transaction:
+  candidate_first: true
+  immutable_record_collision: error
+  event_append_rollback: truncate_to_precommit_size
+  workstream_state_commit_order: last
+  rollback:
+    - restore Workstream state if replaced
+    - truncate or remove appended event
+    - remove newly committed immutable records
+security:
+  network_access: false
+  arbitrary_code_execution: false
+  management_path_authorization_required: true
+  path_escape_rejected: true
+  symlink_management_targets_rejected: true
+error_model:
+  pass_exit_code: 0
+  validation_failure_exit_code: 1
+  tool_failure_exit_code: 2
+compatibility:
+  minimum_python: '3.10'
+  dependencies:
+    - PyYAML
+    - jsonschema via runtime_schema_validator
+tests:
+  path: 04_evals/runtime_record_committer/
+  evidence: 04_evals/runtime_record_committer/VALIDATION.md
+release:
+  active_by_default: false
+  activation_pending:
+    - GitHub Actions acceptance tests with real runtime_schema_validator
+    - rollback fixture pass
+    - benchmark evidence
