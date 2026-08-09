@@ -118,9 +118,9 @@ tools:
 
   - name: runtime_record_committer
     version: 0.1.0
-    status: DESIGNED
+    status: ACTIVE
     path: 05_tools/runtime_record_committer
-    entrypoint: null
+    entrypoint: 05_tools/runtime_record_committer/commit_records.py
     callers:
       - md_workflow_manager
     capabilities:
@@ -128,22 +128,27 @@ tools:
       - terminal event construction
       - artifact/decision/submission record construction from explicit semantic inputs
       - Workstream state delta application
-      - candidate FAST validation integration
-      - controlled management-record commit
+      - one candidate FAST validation integration
+      - controlled management-record commit with rollback
       - compact commit receipt
     read_paths:
-      - 03_contracts/**
-      - 00_project_state/**
-      - 00_project_records/**
-      - explicit business result references
+      - 03_contracts/** through runtime_schema_validator
+      - target Workstream state and immutable task record
+      - existing event log
+      - explicit business artifact candidate files
     write_paths:
-      - 00_project_state/**
-      - 00_project_records/**
+      - 00_project_state/workstreams/**
+      - 00_project_records/workstreams/**
+      - 00_project_records/events/project_events.jsonl
+      - 00_project_records/.runtime_record_committer/**
     tests: 04_evals/runtime_record_committer/
-    active_by_default: false
+    validation_evidence: 04_evals/runtime_record_committer/VALIDATION.md
+    active_by_default: true
     design_protocol: 00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md
     notes:
-      - Must not infer scientific validation, route revision, or user decisions from prose.
+      - ACTIVE only for ordinary foreground task closure in v0.1.0.
+      - Does not update project_state, revise routes, infer scientific validation, or decide recovery semantics.
+      - GitHub Actions run 31307633657 passed 7 acceptance tests with the real runtime_schema_validator; median closure time was 437.781 ms.
 
   - name: route_fast_path_evaluator
     version: 0.1.0
