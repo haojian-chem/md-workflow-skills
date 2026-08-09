@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "owner_skill": {
+    "skill_name": "component_and_residue_classification_validator",
+    "path": "02_validators/component_and_residue_classification_validator/SKILL.md",
+    "expected_git_blob_sha": "1df2456afc4fa2f2049694b08a1882d56e98f784",
+    "task_unit_mode": "VALIDATOR"
+  },
+  "requirements_source": {
+    "path": "02_validators/component_and_residue_classification_validator/scripts/requirements.txt",
+    "expected_git_blob_sha": "ad30e72e69fa3f9d2037d2b3f04a38b268405f87"
+  },
+  "dependencies": [
+    {
+      "import_name": "gemmi",
+      "distribution_name": "gemmi",
+      "version_spec": ">=0.7,<0.8"
+    },
+    {
+      "import_name": "yaml",
+      "distribution_name": "PyYAML",
+      "version_spec": ">=6,<7"
+    },
+    {
+      "import_name": "jsonschema",
+      "distribution_name": "jsonschema",
+      "version_spec": ">=4.20,<5"
+    },
+    {
+      "import_name": "referencing",
+      "distribution_name": "referencing",
+      "version_spec": ">=0.30,<1"
+    }
+  ],
+  "blocked_outcome": {
+    "outcome_code": "MISSING_RUNTIME_DEPENDENCY",
+    "summary": "Stage 1.2 runtime dependencies are missing or version-incompatible; scientific classification was not started."
+  }
+}
