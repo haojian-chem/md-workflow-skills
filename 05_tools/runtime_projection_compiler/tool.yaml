@@ -1,7 +1,7 @@
 schema_version: 1
 name: runtime_projection_compiler
 version: 0.1.0
-status: TESTED
+status: ACTIVE
 owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
 entrypoint: compile_runtime.py
 purpose:
@@ -69,12 +69,18 @@ security:
 tests:
   path: 04_evals/runtime_projection_compiler/
   evidence: 04_evals/runtime_projection_compiler/VALIDATION.md
-  result: 6 passed on synthetic executable fixtures
+  result: 6 passed on executable synthetic fixtures
+  tested_code_blob_sha: 49af3734bb20a194e8e6ac6af8c798bc2f95d1bf
+  tested_test_blob_sha: c4447339cd351a981ff5f938e670f7a0b7e4b899
 benchmark:
   evidence: 04_evals/runtime_projection_compiler/VALIDATION.md
-  synthetic_check_median_ms: 7.24
+  synthetic_check_median_ms: 6.684
 release:
-  active_by_default: false
-  activation_pending:
-    - write generated projections from current real authoring sources
-    - run CHECK against the committed generated projections
+  active_by_default: true
+  activated_at: '2026-08-09'
+  activation_evidence:
+    - executable BUILD/CHECK fixtures passed
+    - source guard negative fixture passed
+    - output escape negative fixture passed
+    - idempotent BUILD fixture passed
+    - CHECK benchmark recorded
