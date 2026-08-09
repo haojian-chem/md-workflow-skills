@@ -1,0 +1,76 @@
+schema_version: 1
+name: runtime_dependency_preflight
+version: 0.1.0
+status: IMPLEMENTED
+owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
+entrypoint: check.py
+purpose:
+  - check declared Python runtime dependencies before expensive business Agent context creation
+  - return a structured preflight blocker aligned to the target logical Operation/Validator identity when dependencies are missing or incompatible
+implementation:
+  python_dependencies: standard_library_only
+  manifest_format: JSON
+  reason: the Tool must remain runnable even when PyYAML/jsonschema/referencing/gemmi are the missing dependencies being diagnosed
+inputs:
+  - skill_root
+  - dependency manifest inside skill_root
+  - task_id
+  - workstream_id
+  - task_unit_mode
+manifest_contract:
+  schema_version: 1
+  required:
+    - owner_skill with guarded path/blob/skill_name/task_unit_mode
+    - requirements_source with guarded path/blob
+    - dependencies with import_name/distribution_name/version_spec
+  supported_version_specifiers:
+    - '>='
+    - '<='
+    - '>'
+    - '<'
+    - '=='
+outputs:
+  PASS:
+    - dependency status/version list
+    - responsibility_result: null
+  BLOCKED:
+    - missing/incompatible dependency list
+    - subagent_result-v2-shaped BLOCKED responsibility result using the logical owner Skill identity
+  ERROR:
+    - Tool/source-guard/configuration failure
+semantic_boundaries:
+  - does not install packages
+  - does not launch Agent contexts
+  - does not read business PDB/mmCIF content
+  - does not execute scientific validation
+  - does not decide retry/recovery policy
+permissions:
+  read:
+    - dependency manifest
+    - guarded owner Skill file
+    - guarded requirements source
+    - Python environment import/distribution metadata
+  write: []
+security:
+  network_access: false
+  arbitrary_shell_execution: false
+  manifest_must_be_inside_skill_root: true
+  guarded_source_mismatch: ERROR
+error_model:
+  PASS_or_BLOCKED_exit_code: 0
+  tool_failure_exit_code: 2
+compatibility:
+  minimum_python: '3.10'
+  dependencies: []
+tests:
+  path: 04_evals/runtime_dependency_preflight/
+  evidence: 04_evals/runtime_dependency_preflight/VALIDATION.md
+release:
+  active_by_default: false
+  activation_pending:
+    - real stage-1.2 manifest PASS fixture
+    - missing dependency fixture
+    - incompatible version fixture
+    - source-guard fixture
+    - R4 dependency-blocker integration fixture
+    - benchmark evidence
