@@ -238,3 +238,30 @@ tools:
       - GitHub Actions run 31309006535 passed 6 tests including BLOCKED -> ACTIVE R4 WAITING/DEPENDENCY closure.
       - Real stage-1.2 dependency preflight internal median was 167.951 ms; subprocess wall median was 228.170 ms.
       - Does not install packages, inspect PDB content, execute scientific classification, or launch Agent contexts.
+
+  - name: runtime_task_builder
+    version: 0.1.0
+    status: ACTIVE
+    path: 05_tools/runtime_task_builder
+    entrypoint: 05_tools/runtime_task_builder/build_task.py
+    callers:
+      - md_workflow_manager
+      - structure_preparation_workflow
+    capabilities:
+      - deterministic source_recognition task.yaml construction from active route and bounded explicit local sources
+      - source_candidate file_record packaging
+      - candidate FAST schema validation before atomic task commit
+      - compact task-build receipt
+    read_paths:
+      - explicit active route
+      - explicit bounded local source files
+      - runtime/workflows/structure_preparation.runtime.yaml
+      - 03_contracts/** through runtime_schema_validator
+    write_paths:
+      - 00_project_records/workstreams/**/tasks/**/task.yaml
+    tests: 04_evals/runtime_task_builder/
+    active_by_default: true
+    notes:
+      - GitHub Actions run 31336417680 passed 5 acceptance tests including builder -> source_recognition_deterministic integration.
+      - Subprocess wall median was 336.715 ms; runtime_schema_validator internal median was 133.047 ms.
+      - v0.1.0 supports source_recognition only; expansion to other nodes requires separate acceptance evidence.
