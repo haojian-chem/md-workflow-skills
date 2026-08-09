@@ -22,11 +22,11 @@ provenance:
   - path: 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
     git_blob_sha: 84662e8dba32577ca336afcba2183c705b5ce91c
   - path: 00_manager/md_workflow_manager/SKILL.md
-    git_blob_sha: e3e1812ba357638a817b5f6ef2cecfd1b1b7c0ac
+    git_blob_sha: 1d3dd742f922847b64616a564cd93dd6f4580258
   - path: 01_workflows/structure_preparation_workflow/SKILL.md
     git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
   - path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
-    git_blob_sha: fbfb60fb3518025fae3a049283334c314c9af005
+    git_blob_sha: 00a80de6819734c1237f6866003faf420780f36d
   - path: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
     git_blob_sha: 81c3d9a5fa46f3292253993030e3378c1bb4f88f
   - path: 00_manager/md_workflow_manager/references/stage_registry.yaml
