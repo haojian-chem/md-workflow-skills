@@ -61,6 +61,24 @@ runtime_spec:
     necessity: REQUIRED
     preferred_backend: AGENT_TASK
     fallback_backend: null
+    pre_agent_dependency_gate:
+      status: ACTIVE
+      tool: runtime_dependency_preflight
+      manifest: 02_validators/component_and_residue_classification_validator/references/runtime_dependencies.json
+      timing: BEFORE_AGENT_CONTEXT
+      on_PASS:
+        launch_backend: AGENT_TASK
+      on_BLOCKED:
+        launch_agent: false
+        responsibility_result_source: runtime_dependency_preflight
+        closure_tool: runtime_record_committer
+        semantic_state_delta:
+          activity_status: WAITING
+          hold_reason_type: DEPENDENCY
+        route_progression: KEEP
+      on_ERROR:
+        launch_agent: false
+        action: TOOL_FAILURE
     normal_next: '1.3'
     semantic_reentry_on:
     - model_selection_required
@@ -153,6 +171,8 @@ runtime_spec:
     AGENT_SEQUENCE_status: disabled_by_default
     source_recognition_deterministic_status: ACTIVE
     source_recognition_deterministic_validation: 04_evals/source_recognition_deterministic/VALIDATION.md
+    component_classification_dependency_preflight_status: ACTIVE
+    component_classification_dependency_preflight_validation: 04_evals/runtime_dependency_preflight/VALIDATION.md
   route_fast_path:
     status: ACTIVE
     evaluator: route_fast_path_evaluator
