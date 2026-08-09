@@ -1,0 +1,28 @@
+name: runtime-project-initializer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '05_tools/runtime_project_initializer/**'
+      - '04_evals/runtime_project_initializer/**'
+      - '05_tools/runtime_schema_validator/**'
+      - '03_contracts/**'
+      - '00_manager/md_workflow_manager/references/project_initialization_protocol.md'
+      - '.github/workflows/runtime-project-initializer.yml'
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install PyYAML jsonschema referencing pytest
+      - name: Run acceptance tests
+        run: pytest -q 04_evals/runtime_project_initializer/test_runtime_project_initializer.py
+      - name: Run benchmark
+        run: python 04_evals/runtime_project_initializer/benchmark_runtime_project_initializer.py
