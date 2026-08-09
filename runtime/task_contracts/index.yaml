@@ -44,4 +44,4 @@ projection:
   generated: true
   source:
     path: 00_authoring/runtime_projection_config.yaml
-    git_blob_sha: b9c88bc6dfba1ca32fb6a91968878f77afa311e1
+    git_blob_sha: 4000b55450bff4fa1502065748f3af8d9feed07b
