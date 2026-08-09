@@ -1,5 +1,5 @@
 schema_version: 1
-branch_label: skill-1-2-state-redesign
+branch_label: main
 runtime_root: runtime
 manifest_output: runtime_manifest.yaml
 manager:
@@ -57,6 +57,9 @@ manifest:
       - design_records/**
       - 03_contracts/*.schema.yaml bodies
       - full Manager references
+      - manager_display_rules.md
+      - project_events.jsonl full history when direct record IDs are available
+      - backup scope/route/state files outside recovery
       - unrelated Workflow SKILL.md files
       - unrelated Operation/Validator Skills
       - full project history
@@ -84,7 +87,12 @@ manifest:
       - recovery_fixtures
   foreground_agent_limit: 1
   runtime_guards:
+  - normal_NEW_initialization_uses_ACTIVE_runtime_project_initializer
+  - do_not_manually_construct_initialization_state_when_initializer_is_ACTIVE
   - do_not_parse_business_structure_content_during_manager_entry_or_initialization
+  - do_not_read_full_initialization_or_route_protocol_on_normal_compact_runtime_path
+  - do_not_read_backup_records_outside_recovery
+  - do_not_scan_project_event_history_when_direct_state_or_record_ids_are_available
   - do_not_read_schema_bodies_when_a_registered_validator_can_consume_them
   - do_not_repeat_authoring_reads_for_rules_already_projected_here
   - do_not_enable_AGENT_SEQUENCE_until_activation_requirements_pass
