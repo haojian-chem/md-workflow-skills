@@ -1,0 +1,53 @@
+name: runtime-record-committer
+
+on:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - "05_tools/runtime_record_committer/**"
+      - "04_evals/runtime_record_committer/**"
+      - "05_tools/runtime_schema_validator/**"
+      - "03_contracts/**"
+      - ".github/workflows/runtime-record-committer.yml"
+  pull_request:
+    paths:
+      - "05_tools/runtime_record_committer/**"
+      - "04_evals/runtime_record_committer/**"
+      - "05_tools/runtime_schema_validator/**"
+      - "03_contracts/**"
+      - ".github/workflows/runtime-record-committer.yml"
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install PyYAML jsonschema pytest
+      - name: Run acceptance tests
+        run: |
+          set -o pipefail
+          mkdir -p runtime_record_committer_output
+          pytest -q 04_evals/runtime_record_committer/test_runtime_record_committer.py \
+            2>&1 | tee runtime_record_committer_output/pytest.log
+      - name: Run benchmark
+        run: |
+          set -o pipefail
+          python 04_evals/runtime_record_committer/benchmark_runtime_record_committer.py \
+            2>&1 | tee runtime_record_committer_output/benchmark.log
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-record-committer-${{ github.run_id }}
+          path: runtime_record_committer_output/
+          if-no-files-found: error
+          retention-days: 30
