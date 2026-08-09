@@ -1,7 +1,7 @@
 schema_version: 1
 name: runtime_task_builder
 version: 0.1.0
-status: IMPLEMENTED
+status: ACTIVE
 owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
 entrypoint: 05_tools/runtime_task_builder/build_task.py
 purpose:
@@ -45,10 +45,10 @@ compatibility:
 tests:
   path: 04_evals/runtime_task_builder/
 release:
-  active_by_default: false
-  activation_pending:
-    - unique source task fixture
-    - multiple candidate packaging fixture
-    - task schema validation fixture
-    - source_recognition deterministic integration fixture
-    - benchmark evidence
+  active_by_default: true
+  activation_evidence:
+    github_actions_run: 31336417680
+    acceptance_tests: 5
+    acceptance_status: PASS
+    subprocess_wall_median_ms: 336.715
+    runtime_schema_validator_internal_median_ms: 133.047
