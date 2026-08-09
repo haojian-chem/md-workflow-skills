@@ -1,5 +1,6 @@
 schema_version: 1
 status: draft
+
 tools:
   - name: runtime_schema_validator
     version: 0.1.0
@@ -29,6 +30,7 @@ tools:
     notes:
       - Executable fixtures passed and FAST/FULL benchmark recorded on 2026-07-23.
       - Manager end-to-end integration remains pending but does not block Tool activation.
+
   - name: state_transaction
     version: 0.1.0
     status: DESIGNED
@@ -48,7 +50,8 @@ tools:
     tests: 04_evals/state_transaction/
     active_by_default: false
     notes:
-      - Optional optimization; NEW initialization uses the documented built-in controlled atomic file commit path until this Tool becomes ACTIVE.
+      - Optional lower-level transaction capability; R4 runtime_record_committer may reuse or supersede part of this design.
+
   - name: incremental_reference_checker
     version: 0.1.0
     status: DESIGNED
@@ -66,6 +69,7 @@ tools:
     write_paths: []
     tests: 04_evals/incremental_reference_checker/
     active_by_default: false
+
   - name: task_closure_renderer
     version: 0.1.0
     status: DESIGNED
@@ -81,3 +85,83 @@ tools:
     write_paths: []
     tests: 04_evals/task_closure_renderer/
     active_by_default: false
+
+  - name: runtime_projection_compiler
+    version: 0.1.0
+    status: DESIGNED
+    path: 05_tools/runtime_projection_compiler
+    entrypoint: null
+    callers:
+      - md-workflow-tool-authoring
+      - md-workflow-skill-authoring
+    capabilities:
+      - compile authoritative authoring sources into compact runtime projections
+      - record source Git blob/hash provenance
+      - detect runtime projection drift
+      - validate runtime manifest/spec references
+    read_paths:
+      - AGENTS.md
+      - 00_manager/**
+      - 01_workflows/**
+      - 00_authoring/**
+      - 03_contracts/**
+      - 05_tools/tool_registry.yaml
+    write_paths:
+      - runtime/**
+    tests: 04_evals/runtime_projection_compiler/
+    active_by_default: false
+    notes:
+      - Bootstrap runtime projections are currently curated manually and remain non-authoritative until this Tool is ACTIVE.
+
+  - name: runtime_record_committer
+    version: 0.1.0
+    status: DESIGNED
+    path: 05_tools/runtime_record_committer
+    entrypoint: null
+    callers:
+      - md_workflow_manager
+    capabilities:
+      - deterministic task result record construction
+      - terminal event construction
+      - artifact/decision/submission record construction from explicit semantic inputs
+      - Workstream state delta application
+      - candidate FAST validation integration
+      - controlled management-record commit
+      - compact commit receipt
+    read_paths:
+      - 03_contracts/**
+      - 00_project_state/**
+      - 00_project_records/**
+      - explicit business result references
+    write_paths:
+      - 00_project_state/**
+      - 00_project_records/**
+    tests: 04_evals/runtime_record_committer/
+    active_by_default: false
+    design_protocol: 00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md
+    notes:
+      - Must not infer scientific validation, route revision, or user decisions from prose.
+
+  - name: route_fast_path_evaluator
+    version: 0.1.0
+    status: DESIGNED
+    path: 05_tools/route_fast_path_evaluator
+    entrypoint: null
+    callers:
+      - md_workflow_manager
+    capabilities:
+      - evaluate ADVANCE vs REENTER_WORKFLOW vs STOP_SCOPE vs BLOCKED
+      - verify current route node and Workstream position consistency
+      - check direct gate/artifact/decision fast-path conditions
+      - produce compact route progression evidence
+    read_paths:
+      - explicit active route
+      - explicit current Workstream state
+      - explicit task/result terminal summary
+      - runtime/workflows/**
+    write_paths: []
+    tests: 04_evals/route_fast_path_evaluator/
+    active_by_default: false
+    design_protocol: 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
+    notes:
+      - Cannot make scientific judgments or create route revisions; semantic triggers return REENTER_WORKFLOW.
