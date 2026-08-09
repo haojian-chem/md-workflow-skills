@@ -1,0 +1,57 @@
+name: route-fast-path-evaluator
+
+on:
+  push:
+    branches:
+      - skill-1-2-state-redesign
+    paths:
+      - "05_tools/route_fast_path_evaluator/**"
+      - "04_evals/route_fast_path_evaluator/**"
+      - "05_tools/runtime_record_committer/**"
+      - "04_evals/runtime_record_committer/**"
+      - "runtime/workflows/structure_preparation.runtime.yaml"
+      - "03_contracts/**"
+      - ".github/workflows/route-fast-path-evaluator.yml"
+  pull_request:
+    paths:
+      - "05_tools/route_fast_path_evaluator/**"
+      - "04_evals/route_fast_path_evaluator/**"
+      - "05_tools/runtime_record_committer/**"
+      - "04_evals/runtime_record_committer/**"
+      - "runtime/workflows/structure_preparation.runtime.yaml"
+      - "03_contracts/**"
+      - ".github/workflows/route-fast-path-evaluator.yml"
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install PyYAML jsonschema pytest
+      - name: Run acceptance tests
+        run: |
+          set -o pipefail
+          mkdir -p route_fast_path_output
+          pytest -q 04_evals/route_fast_path_evaluator/test_route_fast_path_evaluator.py \
+            2>&1 | tee route_fast_path_output/pytest.log
+      - name: Run benchmark
+        run: |
+          set -o pipefail
+          python 04_evals/route_fast_path_evaluator/benchmark_route_fast_path_evaluator.py \
+            2>&1 | tee route_fast_path_output/benchmark.log
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-fast-path-${{ github.run_id }}
+          path: route_fast_path_output/
+          if-no-files-found: error
+          retention-days: 30
