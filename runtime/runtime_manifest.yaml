@@ -32,7 +32,7 @@ provenance:
   - path: 00_manager/md_workflow_manager/references/stage_registry.yaml
     git_blob_sha: 8dfd745d7ed6c6322694e5752f40d821bea20cf7
   - path: 05_tools/tool_registry.yaml
-    git_blob_sha: 8d3e7cafaa317ba78a905b3bde3d2b0515ddfb18
+    git_blob_sha: fd96a873733ac56062fa548a1717542e20a54e2a
   - path: 03_contracts/project_state.schema.yaml
     git_blob_sha: dfe6ebbef4bd7db247b713430e9d1d10c4910d64
   - path: 03_contracts/workstream_state.schema.yaml
