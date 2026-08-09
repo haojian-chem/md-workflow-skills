@@ -1,91 +1,84 @@
 ---
 name: md_workflow_manager
-description: 管理真实 MD 项目的入口、初始化、Workstream、Focus、跨 Workflow 路线、串行临时子 Agent、项目状态、确定性校验、用户决策和外部任务。用于检查、规划、执行、续跑或恢复 MD 工作流；不执行具体结构、拓扑、模拟或分析业务操作。
+description: 管理真实 MD 项目的入口、Workstream、路线、执行后端、状态记录、用户决定和恢复；运行时优先消费 runtime 紧凑投影，不执行结构、拓扑、模拟或分析业务操作。
 ---
 
 # 目标
 
-统一管理真实 MD 项目的入口状态、路线范围、Workstream、Focus、Workflow 接口、最多一个前台临时子 Agent、外部任务、产物谱系、用户决策和可恢复记录。
+Manager 负责真实 MD 项目的语义管理边界：项目入口、Focus、Workstream、跨 Workflow 路线、执行后端选择、用户决定、恢复和管理记录提交。
 
-Manager 不承担 Operation 或 Validator 的业务工作。确定性 schema、引用、事务和渲染优先交给已注册 Tool，不由 LLM 逐字段模拟。
+Manager 不承担 Operation/Validator 的业务工作，也不应通过反复读取静态设计文档来模拟确定性 schema、引用、序列化或事务。
 
-# 启动时读取
+# Runtime 启动
 
-采用分层按需读取，不得因为进入 Manager 就一次性加载全部协议、Workflow、项目历史或科学文件。
+真实 MD 项目运行时默认只读取：
 
-## A. 入口最小集
+1. 根 `AGENTS.md`；
+2. `runtime/runtime_manifest.yaml`；
+3. `runtime/manager_runtime_spec.yaml`；
+4. 已存在时的 `00_project_state/project_state.yaml`；
+5. 当前 Focus Workstream state；
+6. 本轮直接需要的 active route / decision / submission / artifact 摘要。
 
-每次进入项目只读取完成入口判定所需的最小集合：
+正常 runtime **不得默认读取**：
 
-1. 项目根 `AGENTS.md`；
-2. `03_contracts/README.md` 与入口状态直接涉及的 schema 名称/版本；
-3. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
-4. `05_tools/tool_registry.yaml`；
-5. `design_records/logging_and_record_system.md`；
-6. `references/project_initialization_protocol.md`；
-7. 已存在时读取 `project_state.yaml`、目标 Workstream state 及入口判定直接需要的索引/记录。
+- `00_authoring/**`；
+- `design_records/**`；
+- 完整 Manager references；
+- `03_contracts/*.schema.yaml` 正文；
+- 无关 Workflow 或业务 Skill；
+- 全项目历史和科学日志。
 
-入口最小集不得预读 Workflow、route planning protocol、runtime subagent protocol、全部 contracts、全部 references、全部项目历史或业务 Skill。
+以下情况才允许按 runtime manifest 回退读取权威 source：
 
-## B. 初始化后按动作追加
+- runtime projection 缺失、版本不兼容或 provenance 失效；
+- 项目进入 `NEEDS_RECOVERY`；
+- runtime spec 与实际状态/contract 冲突；
+- route 需要语义重规划且 compact spec 信息不足；
+- Tool/contract 调试；
+- 用户明确要求完整架构审计。
 
-只有通过 `PROJECT_INITIALIZED` barrier 或项目本来就是可信 RESUMABLE 后，才按实际动作追加：
-
-- 发生路线范围解析、PLAN、route 创建或 revision：读取 `references/stage_registry.yaml` 与 `references/route_planning_protocol.md`；
-- PLAN：逐个读取本轮范围涉及的 Workflow，不读取范围外 Workflow；
-- EXECUTE：只读取当前 Workflow；创建 task 前再读取 `00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md`、`runtime_subagent_protocol.md` 和本 task 适用 schema；
-- 输出用户状态或 task closure：读取 `references/manager_display_rules.md`；
-- 需要完整运行核查时：读取 `references/manager_runtime_checklist.md`。
-
-不得一次性载入全部项目历史、科学日志、轨迹或无关 Skill。已经由确定性 Tool 完成的 schema/reference 检查，不再由 Manager 为“保险”重复人工审计。
+schema 由确定性 Tool 消费；Manager LLM 不为“保险”逐字段重读 schema。
 
 # 使用边界
 
-用于：初始化、检查、规划、执行、续跑、恢复、创建参数/对照/重复/测试 Workstream，以及管理结构准备、拓扑准备、MD 准备、MD 模拟和分析流程。
+用于：
 
-不用作：一般 MD 问答、单个业务命令执行、业务文件修改、科学质量判定、Skill/Tool 编写窗口管理。
+- `INSPECT | PLAN | EXECUTE`；
+- `NEW | RESUMABLE | NEEDS_RECOVERY` 入口管理；
+- Focus 与 Workstream 生命周期；
+- route scope、跨 Workflow route 和 revision；
+- 执行后端选择；
+- 用户决定与异常处理；
+- 外部 submission 状态；
+- `00_project_state/**` 与 `00_project_records/**` 的提交授权。
 
-# 核心职责
+不用作：
 
-Manager 负责：
+- 一般 MD 问答；
+- 结构/拓扑/MDP/轨迹业务修改；
+- 科学质量判定；
+- Skill/Tool 编写。
 
-- 解析可组合的 `INSPECT | PLAN | EXECUTE`；
-- 判断 `NEW | RESUMABLE | NEEDS_RECOVERY`；
-- 对 NEW 自动初始化；
-- 在初始化后独立解析路线范围；
-- 选择 `PROJECT | WORKSTREAM` Focus；
-- 管理 Workstream 生命周期；
-- 请求 Workflow 返回 route fragment 或当前 execution decision；
-- 拼接 route，并在必要时创建 revision；
-- 构建一个 task unit 并串行调用一个临时子 Agent；
-- 核验 subagent result；
-- 调用适用的已注册 Tool；
-- 唯一提交 `00_project_state/**` 和 `00_project_records/**`；
-- 以最小必要写入维护恢复能力；
-- 在每个前台 task 闭环后向用户输出精简结果；
-- 决定暂停、恢复、重试或重新规划。
+# 核心 barrier
 
-Manager 不得：
+```text
+ENTRY_INTERPRETABLE
+→ PROJECT_INITIALIZED / RESUMABLE
+→ ROUTE_SCOPE_RESOLVED
+→ ACTIVE_ROUTE_AVAILABLE
+→ BUSINESS_EXECUTION
+```
 
-- 合并入口判定、初始化、范围解析、规划和执行；
-- 在初始化完成前读取或调用 Workflow；
-- 为 NEW 初始化提前执行 route planning；
-- 在路线范围未明确时选择默认终点；
-- 在 active route 不存在或不适用时创建业务 task；
-- 根据阶段名称编造 Workflow 内部步骤；
-- 脱离 Workflow decision 选择 Operation/Validator；
-- 同时创建多个前台子 Agent或嵌套委派；
-- 在主上下文解析大型业务文件；
-- 直接修改结构、拓扑、MDP、轨迹或分析结果；
-- 因后台任务存在而自动切换 Focus；
-- 覆盖已有下游结果；
-- 自动重试失败 task、降低 gate 或跳过 Validator；
-- 对普通 task 执行 FULL validation；
-- 在已有有效 FULL PASS 且 candidate 未变化时重复 FULL；
-- 在初始化正式提交后再次执行保守性 FULL；
-- 用 LLM 模拟 FULL schema 或项目级引用校验；
-- 为 NEW 初始化创建无恢复价值的 state snapshot；
-- 静默完成前台 task 后直接启动下一 task。
+硬规则：
+
+- NEW 初始化完成前不进入 Workflow 业务执行；
+- route scope 未明确时不创建业务 route；
+- active route 不存在或不适用时不创建业务执行单元；
+- 不根据阶段名编造 Workflow 内部步骤；
+- 不自动重试失败、降低 gate 或跳过 Validator；
+- 同时最多一个前台 MD Agent context；
+- 后台 tmux/调度任务不自动改变 Focus。
 
 # 项目目录与权限
 
@@ -100,192 +93,190 @@ Manager 不得：
 └── 05_analysis/
 ```
 
-Manager 可创建管理目录和顶层阶段目录，但不创建业务结果。Operation/Validator 只能写 task 授权路径。
+Manager 控制以下目录的提交边界：
 
-Tool 只能使用 registry 与自身 `tool.yaml` 声明的权限；cache 必须可删除、可重建且非权威。
+```text
+00_project_state/**
+00_project_records/**
+```
 
-# 项目进入
+Operation/Validator 只能写 task 授权业务路径。
 
-## 根目录与最小检查
+“Manager controls commit”不等于“Manager LLM 手工生成全部 YAML”。已批准 deterministic builder/recorder 可在 Manager 授权下构造和提交机械记录。
 
-分别确认或读取 Skill architecture root 与 MD project root。
+# 项目入口
 
-- 首次且无可信状态时确认一次；
-- 有效状态下自动读取并核验；
-- 路径缺失、移动或冲突时进入恢复；
-- 更新根目录不得隐式迁移业务文件；
-- 每次用户状态摘要显示两个根目录。
+## 最小入口检查
 
-最小检查仅读取清单和元数据，确认：状态可解析、schema 受支持、根目录有效、Workstream state 可定位、Focus 可解析、无冲突前台 task、无项目级阻断决定和明显目录所有权冲突。
+只使用文件/目录元数据和最小状态对象判断：
 
-最小检查不是完整项目审计，不扫描全部 route、artifact、decision、submission、event 或业务目录。
+```text
+NEW | RESUMABLE | NEEDS_RECOVERY
+```
 
-## 入口状态
+入口检查不解析 PDB/mmCIF 内容，不扫描全部 route/artifact/event 历史，也不执行科学检查。
 
 ### NEW
 
-仅当没有可读状态、目录为空或只有初始输入，且没有明显旧业务产物时使用。
+仅适用于：没有可信状态，项目为空或只有初始输入，且没有明显旧业务产物。
 
-`NEW` 只是本轮入口判定。根目录明确且无冲突时自动初始化，不等待用户额外提示。
+初始化只建立管理目录、初始 project state、首个 Workstream 和必要事件。业务输入内容由后续对应 Operation/Validator 检查。
 
-初始化严格执行 `references/project_initialization_protocol.md`。初始化不读取/调用 Workflow，不解析 route scope，不创建 route，不创建业务 task，不创建初始化 snapshot。
-
-初始化只要求一个有效的 candidate FULL PASS。candidate 未变化且已有有效 PASS 时不得重复 FULL；正式提交后只执行 lightweight post-commit verification。
-
-`PROJECT_INITIALIZED` 是 planning/execution barrier。
+初始化细节优先由 `runtime/manager_runtime_spec.yaml` 表达；只有初始化异常/调试时才读取 `references/project_initialization_protocol.md`。
 
 ### RESUMABLE
 
-项目索引可信且当前目标可安全解释。NEW 初始化完成后的持久 project state 也使用 `entry_state: RESUMABLE`。
+项目状态可解释，当前目标可以安全继续。
 
 ### NEEDS_RECOVERY
 
-状态损坏或不兼容、根目录不明、索引或引用冲突、目录所有权冲突、artifact 版本冲突、外部状态不可解释，或旧项目存在大量产物但无可信记录时使用。
+状态、根目录、索引、artifact lineage、目录所有权或外部任务事实无法安全解释时使用。恢复完成前不创建新的写入型业务执行。
 
-项目级恢复完成前不创建新的写入型 task。
+# 请求与路线范围
 
-# 初始化后的请求与路线范围
+请求动作可以组合：
 
-- NEW 必须先完成 `PROJECT_INITIALIZED`；
-- RESUMABLE 完成入口检查后进入本节；
-- NEEDS_RECOVERY 恢复前不得规划或执行。
+```text
+INSPECT
+PLAN
+EXECUTE
+```
 
-请求动作：
+纯 INSPECT 不要求 route scope。
 
-- `INSPECT`：读取并核验状态与记录；科学判断交给 Validator；
-- `PLAN`：范围明确后创建或修订 route；
-- `EXECUTE`：范围明确且 active route 有效时推进。
+PLAN/EXECUTE 的终点必须来自：
 
-纯 INSPECT 不要求路线范围。
+- 用户明确指定；
+- resolved decision；
+- 用户明确继续一个仍适用的 active route；
+- 用户明确按已记录 Workstream 目标继续。
 
-路线范围解析严格执行 `references/route_planning_protocol.md`：
+没有这些证据时，不默认补成“下一步”“当前 Workflow 结束”或“项目终点”，而是形成 blocking decision。
 
-- 终点必须来自用户明确指定、resolved decision、用户明确继续有效 active route，或用户明确按已记录 Workstream 目标继续；
-- “开始处理”“跑一下流程”“测试一下项目”和无 active route 时的“继续”不构成明确终点；
-- 终点不明确时创建 blocking decision，记录 `ROUTE_SCOPE_REQUESTED`，将 Workstream 置为 `WAITING / USER_DECISION` 并向用户确认；
-- 不得默认选择下一 task、下一 gate、当前 Workflow 结束、Workstream 目标或项目终点；
-- 范围落盘后记录 `ROUTE_SCOPE_RESOLVED`，再进入 PLAN。
+正常 scope 解析使用 `runtime/manager_runtime_spec.yaml`；复杂歧义、跨 Workflow 冲突或 revision 调试时才读取完整 route planning protocol。
 
 # Focus 与 Workstream
 
 一个 Manager 运行周期只有一个主要 Focus：
 
-- `PROJECT`：全项目检查、恢复、多分支汇总或全局冲突；
-- `WORKSTREAM`：具体分支规划、执行、恢复或决定处理。
-
-Focus 选择优先级：用户指定 → 指定对象所属分支 → 本轮执行目标 → 未闭环前台 task → 最近 Focus → 仍不唯一则确认。
-
-后台任务不自动改变 Focus。
-
-Workstream 使用稳定 ID：
-
 ```text
-ws_0001_<slug>
+PROJECT | WORKSTREAM
 ```
 
-首个 Workstream 可在初始化时创建，但范围解析前 `active_route_id: null`。
+Focus 优先级：用户指定 → 指定对象所属 Workstream → 本轮写入/执行目标 → 未闭环前台任务 → 最近 Focus → 仍不唯一则确认。
 
-当前步骤未闭合、无有效下游依赖、未开始 EM/NVT/NPT/MD、无需保留旧版本且修改不影响其他结果时，可以在原 Workstream 修正。
+已有有效下游产物、模拟已开始、需要保留旧版本/比较方案，或上游修改会使旧结果失效时创建新 Workstream；否则可在尚未闭环且无下游依赖的原 Workstream 内修正。
 
-已有下游产物、模拟已开始、需要保留版本或比较方案，或上游修改可能使结果失效时，必须创建新 Workstream。新 Workstream 不自动触发 route。
+# Workflow runtime
 
-# Workflow 规划接口
+## PLAN
 
-进入 PLAN 前必须满足：
+优先读取：
 
-- 项目已初始化或为可信 RESUMABLE；
-- Focus Workstream 已确定；
-- 范围已通过 `ROUTE_SCOPE_RESOLVED` 或有效 active route 明确；
-- 不处于项目级恢复。
+- `runtime/runtime_manifest.yaml` 中的 stage registry projection；
+- 本轮涉及的 `runtime/workflows/<workflow>.runtime.yaml`。
 
-严格执行 `references/route_planning_protocol.md`：
+compact runtime spec 信息足够时，不读取完整 Workflow `SKILL.md`。
 
-1. 读取起点、终点和停止条件；
-2. 按 stage registry 确定 Workflow 范围；
-3. 串行请求已连接 Workflow 返回 fragment；
-4. 核验相邻 artifact 接口；
-5. 拼接并写 route record；
-6. 未连接 Workflow 在边界形成 `PARTIAL | BLOCKED`。
+只有以下情况进入完整 Workflow 语义规划：
 
-路线是动态投影，不是硬执行队列。仅在实际变化时创建 revision。
+- runtime spec 标记 `semantic_planning_required`；
+- 条件/接口无法由 compact spec 表达；
+- runtime projection 缺失或 provenance 失效；
+- route revision 需要新的科学/语义判断。
 
-# Workflow 执行接口
+Manager 仍负责跨 Workflow fragment/节点接口一致性与完整 route 的提交。
+
+## EXECUTE
 
 推进前确认：
 
-- 项目已初始化或为可信 RESUMABLE；
-- 路线范围已解析；
-- `active_route_id` 非空且适用；
-- 当前执行位置位于 route 范围内。
+- active route 存在且适用；
+- 当前 route node 可定位；
+- 当前 Workstream 不处于 blocking recovery/decision；
+- node 所需输入可定位。
 
-只加载当前 Workflow，并请求一个：
+普通执行优先读取当前 `*.runtime.yaml` 中该 node 的紧凑信息，而不是完整 Workflow。
 
-```text
-EXECUTE | SKIP | PAUSE | COMPLETE | BLOCKED
-```
+R5 fast-path 尚未正式激活前，route node 推进仍按当前 contract 生成/核验 execution decision；R5 激活后可在严格条件下跳过重复 Workflow LLM 重判。
 
-- `EXECUTE`：创建一个 task unit；
-- `SKIP`：必须有有效证据；
-- `PAUSE/BLOCKED`：持久化必要决定或状态，不创建子 Agent；
-- `COMPLETE`：核验 gate 和出口 artifact；达到终点则停止，否则进入下一已连接 Workflow。
+# 执行后端
 
-Decision 与 active route 不一致时，先 revision；无法解释时暂停或恢复。
+逻辑 Operation/Validator 职责与执行后端分离。
 
-# 临时子 Agent 与 task 闭环
-
-允许：
+候选后端：
 
 ```text
-OPERATION
-VALIDATOR
-OPERATION_WITH_VALIDATOR
+DETERMINISTIC
+AGENT_TASK
+AGENT_SEQUENCE
 ```
 
-组合模式仅用于 Operation 与专属 Validator 共享即时上下文，两部分职责和结果必须分离。
+Manager 按 runtime spec 和 active Tool capability 解析后端：
 
-严格执行 `runtime_subagent_protocol.md`、`subagent_task.schema.yaml` 和 `subagent_result.schema.yaml`。
+### DETERMINISTIC
 
-普通 task 使用 `design_records/logging_and_record_system.md` 定义的最小同步闭环：
+仅当：
 
-```text
-task.yaml
-→ subagent execution
-→ candidate result/related records/state
-→ one FAST validation
-→ commit
-→ one terminal task event
-→ Workstream state
-→ visible task closure
-```
+- node 明确标记可确定性执行；
+- 所需 capability 有 `ACTIVE` Tool；
+- 不需要科学判断、用户决定或开放式解释。
 
-普通 task 不机械写 `TASK_PREPARED`、`TASK_STARTED`、无变化 project state、session 增量、snapshot 或 route revision。
+此模式不创建业务子 Agent。
 
-外部 submission、长耗时、高风险、不可逆或中断后必须区分是否已启动的 task，使用强化预记录闭环。
+### AGENT_TASK
 
-# 校验与 Tool
+当前默认语义后端。一个前台 Agent context 执行一个明确 Operation、Validator 或共享即时上下文的 Operation+Validator 单元。
 
-FAST/FULL、schema cache、权限和 Tool 失败规则由 `deterministic_tool_protocol.md` 定义。
+### AGENT_SEQUENCE
 
-Manager 只保留以下选择规则：
+架构已允许，但在 sequence contract / eligibility validation 未实现前保持 `DISABLED_BY_DEFAULT`。不得仅为省时间私自串联多个 node。
 
-- 普通 task 对 changed paths 执行一次 FAST；
-- NEW 初始化只对 candidate logical-path overlay 执行一次有效 FULL；
-- candidate 内容变化或前一次调用未形成有效 validation result 时，才允许重新运行初始化 FULL；
-- 初始化提交后只执行 `project_initialization_protocol.md` 定义的 lightweight post-commit verification；
-- 恢复和其他协议列明的关键生命周期节点使用 FULL；
-- 优先调用 registry 中 `ACTIVE` 且版本兼容的 Tool；
-- `IMPLEMENTED` 但未测试的 Tool 不作为默认生产路径；
-- Tool FAIL/ERROR 时不提交候选终态、不降低 gate、不忽略错误；
-- Tool 不可用时使用已批准的确定性备用程序或返回 blocker；
-- 不得用 LLM 逐字段检查替代 FULL。
+具体边界见 runtime manifest 和 `runtime_subagent_protocol.md`；正常 runtime 不需要每次全文读取该协议。
 
-# 用户决定、artifact 与外部任务
+# Task 与记录闭环
 
-decision request 由 Manager 统一持久化和展示。用户原始决定落盘后，再进行范围解析、重规划或重新请求 Workflow。
+业务执行完成后必须保留：
 
-仅在 artifact candidate、新 validation status、失效或 supersedes 关系变化时写 artifact record。未经 Validator 证据不得标为 `VALIDATED`。
+- 可定位的 task identity；
+- Operation/Validator 各自结果；
+- 必要 artifact/decision/submission；
+- 一个终态 event；
+- 必要 Workstream state 更新；
+- 用户可见 closure。
 
-外部 submission 必须经过：
+机械记录构造优先交给 deterministic builder/recorder。Manager LLM 只提供语义变化，不重复转写工具已经能够确定的字段。
+
+在 R4 recorder 尚未 ACTIVE 前继续使用现有最小闭环，但不得额外生成无变化 project state、snapshot、route revision、逐 task session 增量或重复审计。
+
+# 校验
+
+- 普通 changed runtime instances：一次 FAST；
+- FULL 只用于 runtime spec/权威协议明确列出的关键节点；
+- schema/meta-validation 由 Tool 执行；
+- 已有有效 validation result 且 candidate 未变化时不重复；
+- Tool FAIL/ERROR 时不得宣称通过或降低 gate。
+
+NEW 初始化的最终 candidate validation 模式由 R6 单独收敛；当前实现保持与现有初始化协议兼容，直到 R6 migration 完成。
+
+# 用户决定与异常
+
+以下情况必须退出普通快速路径并进入 Manager/Workflow 语义判断：
+
+- blocking decision；
+- route-affecting evidence；
+- failure；
+- artifact-interface conflict；
+- unexpected output；
+- active route 与实际状态不一致；
+- recovery；
+- 高风险或不可逆动作。
+
+子 Agent/Tool 不直接向用户提问，由 Manager 统一展示并持久化 decision。
+
+# 外部任务
+
+外部 submission 状态：
 
 ```text
 PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
@@ -295,37 +286,12 @@ PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
 
 另有 `CANCELLED | UNKNOWN`。tmux/job 消失不能直接判定成功。
 
-# 状态、恢复与结束
+# 结束
 
-状态和记录写入严格执行 `design_records/logging_and_record_system.md`。候选对象通过适用 FAST/FULL 后才能提交；不可变记录不得覆盖。
+本轮结束前确保：
 
-项目级恢复暂停新的写入型 task，读取状态、备份、事件和记录，生成候选状态与差异，并在恢复前后执行 FULL。
-
-Workstream 级恢复可与不依赖该分支的其他 Workstream 并存；影响 Focus、共享依赖或目录所有权时升级为项目级恢复。
-
-失败不自动重试、不降低 gate、不跳过 verifier。用户批准重试后使用新 task ID；替代方案需要 route revision。
-
-暂停条件包括：范围未明确、blocking decision、缺少输入、恢复要求、初始化失败、Tool FAIL/ERROR、task 失败、高风险操作、用户终点、Workflow 未连接，或外部任务运行且无其他安全步骤。
-
-本轮结束前确保：必要状态和记录已落盘、无活动前台子 Agent、task closure 已显示、Manager session 已完成。
-
-# 用户展示
-
-严格执行 `references/manager_display_rules.md`。
-
-每个前台 task 进入 `DONE | BLOCKED | FAILED` 后，必须在下一前台 task 前输出 closure summary。该摘要不是 confirmation gate。
-
-完整 route 只在首次创建或实际变化时展示。
-
-# 自检
-
-执行或审查时使用 `references/manager_runtime_checklist.md`。主文件只保留八个顶层 barrier：
-
-- 初始化完成前不读取或调用 Workflow；
-- 路线范围明确前不创建 route；
-- active route 不适用时不创建 task；
-- task 必须来自当前 Workflow decision；
-- 同时最多一个前台子 Agent；
-- 子 Agent 不写管理目录；
-- 候选对象通过适用校验后才提交；
-- task closure 在下一前台 task 前显示。
+- 无活动前台 Agent context；
+- 必要状态/记录已提交；
+- blocking decision 已展示；
+- 已完成 task 有精简 closure；
+- 未因“保险”重新读取无关 authoring corpus 或执行重复全量审计。
