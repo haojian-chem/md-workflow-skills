@@ -26,7 +26,7 @@ provenance:
   - path: 01_workflows/structure_preparation_workflow/SKILL.md
     git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
   - path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
-    git_blob_sha: 00a80de6819734c1237f6866003faf420780f36d
+    git_blob_sha: b331cbdbe83d9deb6efaddb6a0cfffac7669675f
   - path: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
     git_blob_sha: d216422e6751209381aa7af86c4f4d8a48bda070
   - path: 00_manager/md_workflow_manager/references/stage_registry.yaml
