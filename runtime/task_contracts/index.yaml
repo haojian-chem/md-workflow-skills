@@ -1,41 +1,47 @@
 schema_version: 1
-index_status: bootstrap_active
-
-purpose: >-
-  Runtime index of contract identities. Normal MD runtime should pass contract paths or
-  identifiers to deterministic validators/builders instead of loading schema bodies into LLM context.
-
+index_status: generated_active
+purpose: Runtime index of contract identities. Normal MD runtime passes contract paths or identifiers to deterministic validators/builders instead of loading schema bodies into LLM context.
 contracts:
   project_state:
     path: 03_contracts/project_state.schema.yaml
+    git_blob_sha: dfe6ebbef4bd7db247b713430e9d1d10c4910d64
     llm_reads_body_by_default: false
   workstream_state:
     path: 03_contracts/workstream_state.schema.yaml
+    git_blob_sha: e5df0acfa00fd637086d20d1fecfd0d170be31fc
     llm_reads_body_by_default: false
   workflow_route_fragment:
     path: 03_contracts/workflow_route_fragment.schema.yaml
+    git_blob_sha: 7caab2b7a55c6eae504860f04a1f7a8d3d3e5a17
     llm_reads_body_by_default: false
   workflow_decision:
     path: 03_contracts/workflow_decision.schema.yaml
+    git_blob_sha: 21a51f986f2076986fcf863be7a82a3d8f619a04
     llm_reads_body_by_default: false
   subagent_task:
     path: 03_contracts/subagent_task.schema.yaml
+    git_blob_sha: 0a8b1f4ad897d61c9efe5d444e94a9deac0d0db7
     llm_reads_body_by_default: false
   subagent_result:
     path: 03_contracts/subagent_result.schema.yaml
+    git_blob_sha: 6f943dd0e570922594f42b64803def6f01ccaf9a
     llm_reads_body_by_default: false
   confirmation_item:
     path: 03_contracts/confirmation_item.schema.yaml
+    git_blob_sha: a81a7e9bdfeca5c8f5b2342ea094453686e30213
     llm_reads_body_by_default: false
-
 consumer_policy:
   schema_validation: registered_deterministic_tool
   llm_schema_body_read_allowed_when:
-    - explicit_contract_debug
-    - schema_authoring_or_migration
-    - runtime_validator_reports_schema_contract_conflict
-
+  - explicit_contract_debug
+  - schema_authoring_or_migration
+  - runtime_validator_reports_schema_contract_conflict
 notes:
-  - This index does not redefine schema fields.
-  - Contract authority remains in 03_contracts/.
-  - R4 builders may extend this index with builder identifiers without copying schema bodies.
+- This index does not redefine schema fields.
+- Contract authority remains in 03_contracts/.
+- R4 builders may extend this index with builder identifiers without copying schema bodies.
+projection:
+  generated: true
+  source:
+    path: 00_authoring/runtime_projection_config.yaml
+    git_blob_sha: b9c88bc6dfba1ca32fb6a91968878f77afa311e1
