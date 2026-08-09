@@ -1,157 +1,148 @@
 schema_version: 1
-spec_status: bootstrap_active
+spec_status: generated_active
 workflow_name: structure_preparation_workflow
 stage_id: structure_preparation
 project_directory: 01_structure_preparation
-
 authoritative_source:
   path: 01_workflows/structure_preparation_workflow/SKILL.md
-  git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
-
 entry_requirement:
   artifact_type: STRUCTURE_OR_RAW_STRUCTURE_INPUT
-
 exit_requirement:
   artifact_type: VALIDATED_STRUCTURE
   next_workflow_hint: topology_preparation_workflow
-
 normal_runtime_rule:
   use_this_spec_before_full_workflow_skill: true
   full_workflow_semantic_reentry_when:
-    - runtime_spec_missing_or_stale
-    - route_condition_not_expressible
-    - route_revision_requires_semantic_judgment
-    - state_or_artifact_conflict
-
+  - runtime_spec_missing_or_stale
+  - route_condition_not_expressible
+  - route_revision_requires_semantic_judgment
+  - state_or_artifact_conflict
 nodes:
-  - node_id: 1.1
-    name: source_recognition
-    logical_mode: OPERATION
-    operation: source_recognition
-    validator: null
-    work_directory: 01_structure_preparation/01_source_recognition
-    necessity: REQUIRED
-    preferred_backend: DETERMINISTIC
-    required_capability: source_recognition_deterministic
-    fallback_backend: AGENT_TASK
-    normal_next: 1.2
-    semantic_reentry_on:
-      - multiple_valid_sources
-      - source_conflict
-      - overwrite_or_move_decision
-      - failure
-
-  - node_id: 1.2
-    name: component_and_residue_classification
-    logical_mode: VALIDATOR
-    operation: null
-    validator: component_and_residue_classification_validator
-    work_directory: 01_structure_preparation/02_component_and_residue_classification
-    necessity: REQUIRED
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.3
-    semantic_reentry_on:
-      - model_selection_required
-      - classification_decision_required
-      - relation_decision_required
-      - failure
-      - route_affecting_classification
-
-  - node_id: 1.3
-    name: chain_and_component_selection
-    logical_mode: OPERATION_WITH_VALIDATOR
-    operation: chain_and_component_selection
-    validator: chain_and_component_selection_validator
-    work_directory: 01_structure_preparation/03_chain_and_component_selection
-    necessity: REQUIRED
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.4
-    precondition:
-      - classification_result_available
-      - blocking_selection_decisions_resolved
-    semantic_reentry_on:
-      - user_selection_required
-      - split_structure_requested
-      - failure
-      - route_affecting_selection
-
-  - node_id: 1.4
-    name: altloc_occupancy_resolution
-    logical_mode: OPERATION_WITH_VALIDATOR
-    operation: altloc_occupancy_resolution
-    validator: altloc_occupancy_validator
-    work_directory: 01_structure_preparation/04_altloc_occupancy_resolution
-    necessity: CONDITIONAL
-    condition: trusted_evidence_indicates_altloc_or_occupancy_issue
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.5
-
-  - node_id: 1.5
-    name: completeness_check
-    logical_mode: VALIDATOR
-    operation: null
-    validator: structure_completeness_validator
-    work_directory: 01_structure_preparation/05_completeness_check
-    necessity: REQUIRED
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.6
-
-  - node_id: 1.6
-    name: missing_region_completion
-    logical_mode: OPERATION_WITH_VALIDATOR
-    operation: missing_region_completion
-    validator: missing_region_completion_validator
-    work_directory: 01_structure_preparation/06_missing_region_completion
-    necessity: CONDITIONAL
-    condition: completeness_report_requires_completion_or_repair
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.7
-
-  - node_id: 1.7
-    name: protein_protonation_assignment
-    logical_mode: OPERATION_WITH_VALIDATOR
-    operation: protein_protonation_assignment
-    validator: protein_protonation_validator
-    work_directory: 01_structure_preparation/07_protein_protonation_assignment
-    necessity: CONDITIONAL
-    condition: retained_system_contains_target_protein_sites
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.8
-
-  - node_id: 1.8
-    name: reorder_and_mapping
-    logical_mode: OPERATION_WITH_VALIDATOR
-    operation: structure_reorder_and_mapping
-    validator: structure_mapping_validator
-    work_directory: 01_structure_preparation/08_reorder_and_mapping
-    necessity: REQUIRED
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: 1.9
-
-  - node_id: 1.9
-    name: validation
-    logical_mode: VALIDATOR
-    operation: null
-    validator: structure_preparation_validator
-    work_directory: 01_structure_preparation/09_validation
-    necessity: REQUIRED
-    preferred_backend: AGENT_TASK
-    fallback_backend: null
-    normal_next: workflow_exit
-
+- node_id: '1.1'
+  name: source_recognition
+  logical_mode: OPERATION
+  operation: source_recognition
+  validator: null
+  work_directory: 01_structure_preparation/01_source_recognition
+  necessity: REQUIRED
+  preferred_backend: DETERMINISTIC
+  required_capability: source_recognition_deterministic
+  fallback_backend: AGENT_TASK
+  normal_next: '1.2'
+  semantic_reentry_on:
+  - multiple_valid_sources
+  - source_conflict
+  - overwrite_or_move_decision
+  - failure
+- node_id: '1.2'
+  name: component_and_residue_classification
+  logical_mode: VALIDATOR
+  operation: null
+  validator: component_and_residue_classification_validator
+  work_directory: 01_structure_preparation/02_component_and_residue_classification
+  necessity: REQUIRED
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.3'
+  semantic_reentry_on:
+  - model_selection_required
+  - classification_decision_required
+  - relation_decision_required
+  - failure
+  - route_affecting_classification
+- node_id: '1.3'
+  name: chain_and_component_selection
+  logical_mode: OPERATION_WITH_VALIDATOR
+  operation: chain_and_component_selection
+  validator: chain_and_component_selection_validator
+  work_directory: 01_structure_preparation/03_chain_and_component_selection
+  necessity: REQUIRED
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.4'
+  precondition:
+  - classification_result_available
+  - blocking_selection_decisions_resolved
+  semantic_reentry_on:
+  - user_selection_required
+  - split_structure_requested
+  - failure
+  - route_affecting_selection
+- node_id: '1.4'
+  name: altloc_occupancy_resolution
+  logical_mode: OPERATION_WITH_VALIDATOR
+  operation: altloc_occupancy_resolution
+  validator: altloc_occupancy_validator
+  work_directory: 01_structure_preparation/04_altloc_occupancy_resolution
+  necessity: CONDITIONAL
+  condition: trusted_evidence_indicates_altloc_or_occupancy_issue
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.5'
+- node_id: '1.5'
+  name: completeness_check
+  logical_mode: VALIDATOR
+  operation: null
+  validator: structure_completeness_validator
+  work_directory: 01_structure_preparation/05_completeness_check
+  necessity: REQUIRED
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.6'
+- node_id: '1.6'
+  name: missing_region_completion
+  logical_mode: OPERATION_WITH_VALIDATOR
+  operation: missing_region_completion
+  validator: missing_region_completion_validator
+  work_directory: 01_structure_preparation/06_missing_region_completion
+  necessity: CONDITIONAL
+  condition: completeness_report_requires_completion_or_repair
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.7'
+- node_id: '1.7'
+  name: protein_protonation_assignment
+  logical_mode: OPERATION_WITH_VALIDATOR
+  operation: protein_protonation_assignment
+  validator: protein_protonation_validator
+  work_directory: 01_structure_preparation/07_protein_protonation_assignment
+  necessity: CONDITIONAL
+  condition: retained_system_contains_target_protein_sites
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.8'
+- node_id: '1.8'
+  name: reorder_and_mapping
+  logical_mode: OPERATION_WITH_VALIDATOR
+  operation: structure_reorder_and_mapping
+  validator: structure_mapping_validator
+  work_directory: 01_structure_preparation/08_reorder_and_mapping
+  necessity: REQUIRED
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: '1.9'
+- node_id: '1.9'
+  name: validation
+  logical_mode: VALIDATOR
+  operation: null
+  validator: structure_preparation_validator
+  work_directory: 01_structure_preparation/09_validation
+  necessity: REQUIRED
+  preferred_backend: AGENT_TASK
+  fallback_backend: null
+  normal_next: workflow_exit
 backend_notes:
   AGENT_SEQUENCE_status: disabled_by_default
   source_recognition_deterministic_status: capability_not_yet_registered
-
 route_fast_path:
   status: planned_R5_not_active
-  intended_rule: >-
-    After R5 activation, a node with a clean terminal result and no semantic_reentry
-    trigger may advance to normal_next without full Workflow LLM re-entry.
+  intended_rule: After R5 activation, a node with a clean terminal result and no semantic_reentry trigger may advance to normal_next without full Workflow LLM re-entry.
+projection:
+  generated: true
+  source:
+    path: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
+    git_blob_sha: 89313c693e5df15569d7a34701420bcaa8167eca
+  guarded_sources:
+  - path: 01_workflows/structure_preparation_workflow/SKILL.md
+    git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
+  kind: workflow
