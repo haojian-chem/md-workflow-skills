@@ -265,3 +265,32 @@ tools:
       - GitHub Actions run 31336417680 passed 5 acceptance tests including builder -> source_recognition_deterministic integration.
       - Subprocess wall median was 336.715 ms; runtime_schema_validator internal median was 133.047 ms.
       - v0.1.0 supports source_recognition only; expansion to other nodes requires separate acceptance evidence.
+
+  - name: runtime_project_initializer
+    version: 0.1.0
+    status: ACTIVE
+    path: 05_tools/runtime_project_initializer
+    entrypoint: 05_tools/runtime_project_initializer/initialize.py
+    callers:
+      - md_workflow_manager
+    capabilities:
+      - deterministic NEW-project management skeleton initialization
+      - candidate project/workstream state construction
+      - INIT_CANDIDATE_VALIDATION through runtime_schema_validator FAST
+      - controlled atomic state commit
+      - initialization event creation
+      - lightweight post-commit verification
+    read_paths:
+      - project-root metadata only
+      - 00_manager/md_workflow_manager/references/project_initialization_protocol.md for semantic guard only
+      - 03_contracts/** through runtime_schema_validator
+    write_paths:
+      - 00_project_state/** for new-project initialization only
+      - 00_project_records/events/project_events.jsonl for initialization events
+      - stage directories created by initialization
+    tests: 04_evals/runtime_project_initializer/
+    active_by_default: true
+    notes:
+      - GitHub Actions run 31339607898 passed 4 acceptance tests including invalid-business-file noninspection and final runtime-object validation.
+      - Subprocess wall median was 564.366 ms; initializer internal median was 503.962 ms.
+      - Does not resolve route scope, create routes/tasks/artifacts/decisions/submissions, inspect PDB/mmCIF scientific content, scan backups, or run FULL validation.
