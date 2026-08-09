@@ -1,68 +1,80 @@
 schema_version: 1
-projection_status: bootstrap_active
-projection_mode: bootstrap_curated
-
-purpose: >-
-  Compact runtime entry for real MD projects. This projection minimizes LLM-side
-  loading of authoring documents while preserving links to authoritative sources.
-
+projection_status: generated_active
+projection_mode: deterministic_compiled
+purpose: Compact runtime entry for real MD projects. This projection minimizes LLM-side loading of authoring documents while preserving links to authoritative sources.
 authority:
   runtime_is_source_of_truth: false
   authoritative_sources_remain_in_authoring_tree: true
   silent_runtime_only_semantic_changes_forbidden: true
-
 provenance:
-  branch: skill-1-2-state-redesign
+  branch_label: skill-1-2-state-redesign
   sources:
-    - path: AGENTS.md
-      git_blob_sha: cc61249fa5eae1bc1cbc60ff66dde59a4e634d83
-    - path: 00_manager/md_workflow_manager/SKILL.md
-      git_blob_sha: e3e1812ba357638a817b5f6ef2cecfd1b1b7c0ac
-    - path: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-      git_blob_sha: 7df527dcf9c883c284f0640ca4861550c874a15b
-    - path: 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
-      git_blob_sha: e561779db0bc62f1c2b3c241a8a611852a40e2c8
-    - path: 00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md
-      git_blob_sha: d0a86a3564da1c86fd71d5f30ed819acac0be91c
-    - path: 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
-      git_blob_sha: 84662e8dba32577ca336afcba2183c705b5ce91c
-    - path: 00_manager/md_workflow_manager/references/stage_registry.yaml
-      git_blob_sha: 8dfd745d7ed6c6322694e5752f40d821bea20cf7
-    - path: 05_tools/tool_registry.yaml
-      git_blob_sha: ec443617825786f6c7fd393f38b9d031ad53a1c1
-    - path: 01_workflows/structure_preparation_workflow/SKILL.md
-      git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
-
+  - path: 00_authoring/runtime_projection_config.yaml
+    git_blob_sha: b9c88bc6dfba1ca32fb6a91968878f77afa311e1
+  - path: AGENTS.md
+    git_blob_sha: cc61249fa5eae1bc1cbc60ff66dde59a4e634d83
+  - path: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+    git_blob_sha: 7df527dcf9c883c284f0640ca4861550c874a15b
+  - path: 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
+    git_blob_sha: e561779db0bc62f1c2b3c241a8a611852a40e2c8
+  - path: 00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md
+    git_blob_sha: d0a86a3564da1c86fd71d5f30ed819acac0be91c
+  - path: 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
+    git_blob_sha: 84662e8dba32577ca336afcba2183c705b5ce91c
+  - path: 00_manager/md_workflow_manager/SKILL.md
+    git_blob_sha: e3e1812ba357638a817b5f6ef2cecfd1b1b7c0ac
+  - path: 01_workflows/structure_preparation_workflow/SKILL.md
+    git_blob_sha: b2214b92c197ca5b3e3f15425fb179a45846530e
+  - path: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
+    git_blob_sha: bb52416f34501506eb2907a1d9db97fbf53bff75
+  - path: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
+    git_blob_sha: 89313c693e5df15569d7a34701420bcaa8167eca
+  - path: 00_manager/md_workflow_manager/references/stage_registry.yaml
+    git_blob_sha: 8dfd745d7ed6c6322694e5752f40d821bea20cf7
+  - path: 05_tools/tool_registry.yaml
+    git_blob_sha: 99ffd0b7102977957bb6cd3ffa8f7eab912e3efe
+  - path: 03_contracts/project_state.schema.yaml
+    git_blob_sha: dfe6ebbef4bd7db247b713430e9d1d10c4910d64
+  - path: 03_contracts/workstream_state.schema.yaml
+    git_blob_sha: e5df0acfa00fd637086d20d1fecfd0d170be31fc
+  - path: 03_contracts/workflow_route_fragment.schema.yaml
+    git_blob_sha: 7caab2b7a55c6eae504860f04a1f7a8d3d3e5a17
+  - path: 03_contracts/workflow_decision.schema.yaml
+    git_blob_sha: 21a51f986f2076986fcf863be7a82a3d8f619a04
+  - path: 03_contracts/subagent_task.schema.yaml
+    git_blob_sha: 0a8b1f4ad897d61c9efe5d444e94a9deac0d0db7
+  - path: 03_contracts/subagent_result.schema.yaml
+    git_blob_sha: 6f943dd0e570922594f42b64803def6f01ccaf9a
+  - path: 03_contracts/confirmation_item.schema.yaml
+    git_blob_sha: a81a7e9bdfeca5c8f5b2342ea094453686e30213
 runtime_entry:
   manager_spec: runtime/manager_runtime_spec.yaml
   contract_index: runtime/task_contracts/index.yaml
   tool_registry: 05_tools/tool_registry.yaml
   workflow_specs:
     structure_preparation_workflow: runtime/workflows/structure_preparation.runtime.yaml
-
 loading_policy:
   real_md_runtime_default:
     load:
-      - AGENTS.md
-      - runtime/runtime_manifest.yaml
-      - runtime/manager_runtime_spec.yaml
-      - project current state needed for the request
+    - AGENTS.md
+    - runtime/runtime_manifest.yaml
+    - runtime/manager_runtime_spec.yaml
+    - project current state needed for the request
     do_not_load_by_default:
-      - 00_authoring/**
-      - design_records/**
-      - 03_contracts/*.schema.yaml bodies
-      - full Manager references
-      - unrelated Workflow SKILL.md files
-      - unrelated Operation/Validator Skills
-      - full project history
+    - 00_authoring/**
+    - design_records/**
+    - 03_contracts/*.schema.yaml bodies
+    - full Manager references
+    - unrelated Workflow SKILL.md files
+    - unrelated Operation/Validator Skills
+    - full project history
   fallback_authoring_read_allowed_when:
-    - runtime_projection_missing
-    - runtime_projection_provenance_invalid
-    - runtime_contract_conflict
-    - project_needs_recovery
-    - semantic_route_replanning_not_expressible_by_compact_spec
-    - explicit_architecture_audit_or_debug
-
+  - runtime_projection_missing
+  - runtime_projection_provenance_invalid
+  - runtime_contract_conflict
+  - project_needs_recovery
+  - semantic_route_replanning_not_expressible_by_compact_spec
+  - explicit_architecture_audit_or_debug
 execution_backends:
   DETERMINISTIC:
     status: enabled_when_required_capability_is_ACTIVE
@@ -74,50 +86,40 @@ execution_backends:
     status: disabled_by_default
     creates_foreground_agent: true
     activation_requires:
-      - sequence_contract
-      - eligibility_validator
-      - multi_result_commit_support
-      - recovery_fixtures
-
+    - sequence_contract
+    - eligibility_validator
+    - multi_result_commit_support
+    - recovery_fixtures
 foreground_agent_limit: 1
-
-orchestration_capabilities:
-  runtime_projection_compiler: DESIGNED
-  runtime_record_committer: DESIGNED
-  route_fast_path_evaluator: DESIGNED
-  active_route_fast_path: DISABLED_UNTIL_EVALUATOR_ACTIVE
-
 stage_registry_projection:
-  - stage_id: structure_preparation
-    workflow_name: structure_preparation_workflow
-    project_directory: 01_structure_preparation
-    connection_status: connected
-    runtime_spec: runtime/workflows/structure_preparation.runtime.yaml
-  - stage_id: topology_preparation
-    workflow_name: topology_preparation_workflow
-    project_directory: 02_topology_preparation
-    connection_status: planned
-    runtime_spec: null
-  - stage_id: md_preparation
-    workflow_name: md_preparation_workflow
-    project_directory: 03_md_preparation
-    connection_status: planned
-    runtime_spec: null
-  - stage_id: md_simulation
-    workflow_name: md_simulation_workflow
-    project_directory: 04_md_simulation
-    connection_status: planned
-    runtime_spec: null
-  - stage_id: analysis
-    workflow_name: analysis_workflow
-    project_directory: 05_analysis
-    connection_status: planned
-    runtime_spec: null
-
+- stage_id: structure_preparation
+  workflow_name: structure_preparation_workflow
+  project_directory: 01_structure_preparation
+  connection_status: connected
+  runtime_spec: runtime/workflows/structure_preparation.runtime.yaml
+- stage_id: topology_preparation
+  workflow_name: topology_preparation_workflow
+  project_directory: 02_topology_preparation
+  connection_status: planned
+  runtime_spec: null
+- stage_id: md_preparation
+  workflow_name: md_preparation_workflow
+  project_directory: 03_md_preparation
+  connection_status: planned
+  runtime_spec: null
+- stage_id: md_simulation
+  workflow_name: md_simulation_workflow
+  project_directory: 04_md_simulation
+  connection_status: planned
+  runtime_spec: null
+- stage_id: analysis
+  workflow_name: analysis_workflow
+  project_directory: 05_analysis
+  connection_status: planned
+  runtime_spec: null
 runtime_guards:
-  - do_not_parse_business_structure_content_during_manager_entry_or_initialization
-  - do_not_read_schema_bodies_when_a_registered_validator_can_consume_them
-  - do_not_repeat_authoring_reads_for_rules_already_projected_here
-  - do_not_enable_AGENT_SEQUENCE_until_activation_requirements_pass
-  - do_not_enable_active_route_fast_path_until_evaluator_is_ACTIVE
-  - do_not_treat_runtime_projection_as_independent_authority
+- do_not_parse_business_structure_content_during_manager_entry_or_initialization
+- do_not_read_schema_bodies_when_a_registered_validator_can_consume_them
+- do_not_repeat_authoring_reads_for_rules_already_projected_here
+- do_not_enable_AGENT_SEQUENCE_until_activation_requirements_pass
+- do_not_treat_runtime_projection_as_independent_authority
