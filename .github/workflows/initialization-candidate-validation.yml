@@ -33,3 +33,6 @@ jobs:
       - name: Run initialization candidate validation tests
         run: |
           pytest -q 04_evals/initialization_candidate_validation/test_initialization_candidate_validation.py
+      - name: Benchmark cold candidate validation
+        run: |
+          python 04_evals/initialization_candidate_validation/benchmark_initialization_candidate_validation.py
