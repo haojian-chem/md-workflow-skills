@@ -88,30 +88,33 @@ tools:
 
   - name: runtime_projection_compiler
     version: 0.1.0
-    status: DESIGNED
+    status: ACTIVE
     path: 05_tools/runtime_projection_compiler
-    entrypoint: null
+    entrypoint: 05_tools/runtime_projection_compiler/compile_runtime.py
     callers:
       - md-workflow-tool-authoring
       - md-workflow-skill-authoring
     capabilities:
-      - compile authoritative authoring sources into compact runtime projections
-      - record source Git blob/hash provenance
+      - compile authoritative machine-readable authoring sources into compact runtime projections
+      - enforce guarded-source Git blob identities before writes
+      - record source Git blob provenance
       - detect runtime projection drift
-      - validate runtime manifest/spec references
+      - validate runtime manifest/spec references and output-root confinement
     read_paths:
       - AGENTS.md
       - 00_manager/**
       - 01_workflows/**
-      - 00_authoring/**
-      - 03_contracts/**
+      - 00_authoring/runtime_projection_config.yaml
+      - 03_contracts/** configured by the projection
       - 05_tools/tool_registry.yaml
     write_paths:
       - runtime/**
     tests: 04_evals/runtime_projection_compiler/
-    active_by_default: false
+    validation_evidence: 04_evals/runtime_projection_compiler/VALIDATION.md
+    active_by_default: true
     notes:
-      - Bootstrap runtime projections are currently curated manually and remain non-authoritative until this Tool is ACTIVE.
+      - Executable BUILD/CHECK, drift, source-guard, path-safety and idempotency fixtures passed on 2026-08-09.
+      - Runtime projections are generated and remain non-authoritative; semantic authority stays in guarded authoring sources.
 
   - name: runtime_record_committer
     version: 0.1.0
