@@ -1,9 +1,10 @@
-schema_version: 3
+schema_version: 4
 skill_name: source_recognition
 skill_type: operation
 skill_path: 02_operations/source_recognition
-contract_status: draft
-content_ownership_status: draft
+architecture: lightweight_runtime_v2
+status: lightweight_step_interface_refactored_tool_interface_pending
+
 owned_content:
   bounded_candidate_discovery_and_selection:
     owner: 02_operations/source_recognition/SKILL.md
@@ -15,28 +16,49 @@ owned_content:
     owner: 02_operations/source_recognition/SKILL.md
   destination_conflict_and_reuse_rules:
     owner: 02_operations/source_recognition/SKILL.md
+  lightweight_object_requirements:
+    owner: 02_operations/source_recognition/SKILL.md
+  lightweight_reuse_conditions:
+    owner: 02_operations/source_recognition/SKILL.md
+  lightweight_validation_requirements:
+    owner: 02_operations/source_recognition/SKILL.md
+  lightweight_official_results:
+    owner: 02_operations/source_recognition/SKILL.md
   local_preflight_execution_and_cleanup:
     owner: 02_operations/source_recognition/SKILL.md
+
 external_references:
-- purpose: layer_boundary
-  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-  access: reference_only
-- purpose: runtime_subagent_protocol
-  owner: 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
-  access: reference_only
-- purpose: runtime_task_contract
-  owner: 03_contracts/subagent_task.schema.yaml
-  access: reference_only
-- purpose: runtime_result_contract
-  owner: 03_contracts/subagent_result.schema.yaml
-  access: reference_only
-- purpose: confirmation_item_contract
-  owner: 03_contracts/confirmation_item.schema.yaml
-  access: reference_only
-- purpose: examples_and_test_fixtures
-  owner: 04_evals/source_recognition/fixtures/
-  access: reference_only
-  status: present
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: authoring_reference
+  - purpose: structure_preparation_stage_mapping
+    owner: 01_workflows/structure_preparation_workflow/SKILL.md
+    access: reference_only
+  - purpose: project_runtime_entry
+    owner: AGENTS.md
+    access: reference_only
+  - purpose: deterministic_implementation_candidate
+    owner: 05_tools/source_recognition_deterministic/
+    access: reference_only
+    status: legacy_interface_requires_lightweight_adaptation
+  - purpose: examples_and_test_fixtures
+    owner: 04_evals/source_recognition/fixtures/
+    access: reference_only
+    status: legacy_fixtures_revalidation_required
+
+legacy_dependencies:
+  status: frozen_not_default_runtime
+  items:
+    - 03_contracts/subagent_task.schema.yaml
+    - 03_contracts/subagent_result.schema.yaml
+    - 03_contracts/confirmation_item.schema.yaml
+    - runtime_task_builder
+    - runtime_record_committer
+    - route_fast_path_evaluator
+  rule: source_recognition_must_not_construct_or_require_these_for_lightweight_execution
+
 notes:
-- Default source handling is byte copy with SHA-256 verification. Moving requires a resolved user decision and explicit write permission for the source path.
-- Contract remains draft until schema-valid fixtures and Manager integration tests pass.
+  - Default handling remains byte copy with SHA-256 verification; moving requires explicit user authorization for the concrete source file.
+  - 1.1 official results are the recognized/copied structure file and source_recognition_report.yaml.
+  - 1.1 reuse is based on source content hash, verified destination hash, compatible request semantics, and absence of an explicit redo request.
+  - Historical source_recognition_deterministic v0.1.0 remains scientifically useful but its task.yaml/subagent-result interface is not a Lightweight Runtime default path.
