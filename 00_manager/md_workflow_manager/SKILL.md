@@ -65,9 +65,11 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 
 额外读取必须由当前管理动作的明确需求触发。
 
-# Lightweight records 初始化
+# Lightweight 项目初始化
 
-如果这是一个新的 Lightweight Runtime 项目，且 `00_project_records/` 尚不存在，则只建立：
+新的 Lightweight Runtime 项目初始化时，Manager 只建立稳定的项目骨架，不建立任何任务专属执行目录。
+
+记录目录：
 
 ```text
 00_project_records/
@@ -76,7 +78,34 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 └── tasks/
 ```
 
-初始 `task_index.md` 只需要标题；初始 `project_result_index.md` 只需要标题。
+对于 planning index 已定义的 Workflow / Step，可以同时建立稳定的阶段目录和子环节基础目录，例如：
+
+```text
+01_structure_preparation/
+├── 01_source_recognition/
+├── 02_component_and_residue_classification/
+├── 03_chain_and_component_selection/
+├── 04_altloc_occupancy_resolution/
+├── 05_completeness_check/
+├── 06_missing_region_completion/
+├── 07_protein_protonation_assignment/
+├── 08_reorder_and_mapping/
+└── 09_validation/
+```
+
+初始化到这一层即停止。
+
+不得在初始化或新建任务时创建：
+
+```text
+<base_work_directory>/T001/
+<base_work_directory>/T002/
+...
+```
+
+`Txxxx/` 任务专属执行目录由 Task Execution Agent 在真正需要执行该子环节时创建。
+
+如果该子环节通过已有结果复用直接闭合，则无需为了目录整齐而创建空的本任务 `Txxxx/` 目录。
 
 不得同时初始化 Legacy Runtime 的 `00_project_state/`、Workstream、route、event、runtime task/result 等对象。
 
@@ -127,7 +156,8 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 
 1. 在 `task_index.md` 登记任务；
 2. 创建 `tasks/Txxxx.md`；
-3. 根据用户目标与 `workflow_plan_index.yaml` 写入初始子环节计划。
+3. 根据用户目标与 `workflow_plan_index.yaml` 写入初始子环节计划；
+4. 只在任务单中记录每个子环节未来使用的任务专属工作目录路径，不创建这些 `Txxxx/` 目录。
 
 # 初始规划
 
@@ -139,7 +169,9 @@ Manager 的规划结果直接写入任务单的 `计划与进度`，不创建独
 
 规划时：
 
-- 使用 `workflow_plan_index.yaml` 中已经定义的子环节顺序、名称、标准工作目录和条件标记；
+- 使用 `workflow_plan_index.yaml` 中已经定义的子环节顺序、名称、基础工作目录和条件标记；
+- 每个子环节的任务专属工作目录按 `<base_work_directory>/<task_id>/` 记录；
+- Manager 只记录该路径，不创建该目录；
 - 不读取全部 Workflow / Step Skill；
 - 不提前查询 `project_result_index.md`；
 - 不提前执行科学检查来决定条件环节；
@@ -171,8 +203,10 @@ Manager 的规划结果直接写入任务单的 `计划与进度`，不创建独
 <当前已知对象；若需由前序结果确定，则写“待前序环节确定”>
 
 工作目录：
-`<project_root>/<标准工作目录>/`
+`<project_root>/<base_work_directory>/T001/`
 ```
+
+这里的工作目录是当前任务为该子环节预留的执行位置。Manager 写入路径，但不负责创建目录。
 
 子环节状态只有：
 
@@ -206,9 +240,11 @@ Task Execution Agent 可以在任务内部：
 - 更新任务单；
 - 根据已有科学结果增删或调整后续子环节；
 - 用户在执行对话中明确改变任务范围时，直接修改任务计划；
+- 真正需要执行某子环节时创建该环节的 `<base_work_directory>/<task_id>/`；
+- 如果复用已有正式结果则不创建无用的本任务子目录；
 - 任务完成或用户明确终止时，同步更新 `task_index.md`。
 
-因此，Manager 不垄断任务单后续修改权。
+因此，Manager 不垄断任务单后续修改权，也不承担任务专属科研目录的创建职责。
 
 # 重新规划与项目级管理
 
