@@ -1,318 +1,258 @@
 ---
 name: md_workflow_manager
-description: 管理真实 MD 项目的入口、Workstream、路线、执行后端、状态记录、用户决定和恢复；运行时优先消费 runtime 紧凑投影，不执行结构、拓扑、模拟或分析业务操作。
+description: 轻量管理真实 MD 项目的任务定位、任务创建、初始规划和项目级任务整理；通过 task index 与 task sheet 向独立的 Task Execution Agent 对话交接，不执行具体科研子环节。
 ---
 
 # 目标
 
-Manager 负责真实 MD 项目的语义管理边界：项目入口、Focus、Workstream、跨 Workflow 路线、执行后端选择、用户决定、恢复和管理记录提交。
+Manager 是 Lightweight Runtime v2 的项目管理入口。
 
-Manager 不承担 Operation/Validator 的业务工作，也不应通过反复读取静态设计文档来模拟确定性 schema、引用、序列化或事务。
+它只负责：
 
-# Runtime 启动
+- 定位已有任务；
+- 创建新任务；
+- 为新任务生成初始子环节计划；
+- 用户明确要求时重新规划或整理任务；
+- 维护任务索引中的项目级任务信息；
+- 将任务通过任务单交接给独立的 Task Execution Agent 对话。
 
-真实 MD 项目运行时默认只读取：
+Manager 不负责普通子环节执行、复用判定、Operation/Validator 调度闭环或逐步运行时状态维护。
 
-1. 根 `AGENTS.md`；
-2. `runtime/runtime_manifest.yaml`；
-3. `runtime/manager_runtime_spec.yaml`；
-4. 已存在时的 `00_project_state/project_state.yaml`；
-5. 当前 Focus Workstream state；
-6. 本轮直接需要的 active route / decision / submission / artifact 摘要。
+# 默认记录体系
 
-正常 runtime **不得默认读取**：
-
-- `00_authoring/**`；
-- `design_records/**`；
-- 完整 Manager references；
-- `03_contracts/*.schema.yaml` 正文；
-- 无关 Workflow 或业务 Skill；
-- 全项目历史和科学日志。
-
-以下情况才允许按 runtime manifest 回退读取权威 source：
-
-- runtime projection 缺失、版本不兼容或 provenance 失效；
-- 项目进入 `NEEDS_RECOVERY`；
-- runtime spec 与实际状态/contract 冲突；
-- route 需要语义重规划且 compact spec 信息不足；
-- Tool/contract 调试；
-- 用户明确要求完整架构审计。
-
-schema 由确定性 Tool 消费；Manager LLM 不为“保险”逐字段重读 schema。
-
-# 使用边界
-
-用于：
-
-- `INSPECT | PLAN | EXECUTE`；
-- `NEW | RESUMABLE | NEEDS_RECOVERY` 入口管理；
-- Focus 与 Workstream 生命周期；
-- route scope、跨 Workflow route 和 revision；
-- 执行后端选择；
-- 用户决定与异常处理；
-- 外部 submission 状态；
-- `00_project_state/**` 与 `00_project_records/**` 的提交授权。
-
-不用作：
-
-- 一般 MD 问答；
-- 结构/拓扑/MDP/轨迹业务修改；
-- 科学质量判定；
-- Skill/Tool 编写。
-
-# 核心 barrier
+真实项目默认只使用：
 
 ```text
-ENTRY_INTERPRETABLE
-→ PROJECT_INITIALIZED / RESUMABLE
-→ ROUTE_SCOPE_RESOLVED
-→ ACTIVE_ROUTE_AVAILABLE
-→ BUSINESS_EXECUTION
+<project_root>/00_project_records/
+├── task_index.md
+├── project_result_index.md
+└── tasks/
+    ├── T001.md
+    ├── T002.md
+    └── ...
 ```
 
-硬规则：
+其中：
 
-- NEW 初始化完成前不进入 Workflow 业务执行；
-- route scope 未明确时不创建业务 route；
-- active route 不存在或不适用时不创建业务执行单元；
-- 不根据阶段名编造 Workflow 内部步骤；
-- 不自动重试失败、降低 gate 或跳过 Validator；
-- 同时最多一个前台 MD Agent context；
-- 后台 tmux/调度任务不自动改变 Focus。
+- `task_index.md`：只用于任务导航；
+- `tasks/Txxxx.md`：任务计划、进度和最小恢复上下文；
+- `project_result_index.md`：按子环节登记正式结果的位置，不保存当前任务或当前环节状态。
 
-# 项目目录与权限
+Legacy Runtime 的 project state、Workstream、route、event、runtime task/result 等记录不是默认依赖。
+
+# 最小启动
+
+进入真实 MD 项目时，先确认 Skill root 与 MD project root 不混淆。
+
+正常 Manager 启动只读取：
+
+1. `<project_root>/00_project_records/task_index.md`；
+2. 确定目标任务后，对应的 `<project_root>/00_project_records/tasks/Txxxx.md`。
+
+只有创建新任务或用户明确要求重新规划时，才读取：
+
+`references/workflow_plan_index.yaml`
+
+默认不得为了“了解项目状态”而读取：
+
+- `project_result_index.md`；
+- 其他无关任务单；
+- 具体 Step / Operation / Validator Skill；
+- 整个项目目录；
+- `runtime/**`；
+- Legacy project state / route / event / Workstream records；
+- 完整历史日志。
+
+额外读取必须由当前管理动作的明确需求触发。
+
+# Lightweight records 初始化
+
+如果这是一个新的 Lightweight Runtime 项目，且 `00_project_records/` 尚不存在，则只建立：
 
 ```text
-<project_root>/
-├── 00_project_state/
-├── 00_project_records/
-├── 01_structure_preparation/
-├── 02_topology_preparation/
-├── 03_md_preparation/
-├── 04_md_simulation/
-└── 05_analysis/
+00_project_records/
+├── task_index.md
+├── project_result_index.md
+└── tasks/
 ```
 
-Manager 控制以下目录的提交边界：
+初始 `task_index.md` 只需要标题；初始 `project_result_index.md` 只需要标题。
+
+不得同时初始化 Legacy Runtime 的 `00_project_state/`、Workstream、route、event、runtime task/result 等对象。
+
+如果已有项目只有 Legacy Runtime 记录，不要默认全量扫描或一比一转换；仅在需要继续旧项目时按当前目标恢复必要信息。
+
+# 任务定位
+
+优先级：
+
+1. 用户明确指定任务 ID；
+2. 用户明确指定可唯一匹配的任务名称；
+3. 当前对话已经明确绑定的任务；
+4. 仍无法唯一确定时，向用户确认。
+
+不得为了猜测“继续哪个任务”而遍历所有任务单。
+
+任务级状态只有：
 
 ```text
-00_project_state/**
-00_project_records/**
+未完成
+已完成
+已终止
 ```
 
-Operation/Validator 只能写 task 授权业务路径。
+`task_index.md` 不记录当前子环节、当前对象、阻塞原因或运行日志。
 
-“Manager controls commit”不等于“Manager LLM 手工生成全部 YAML”。已批准 deterministic builder/recorder 可在 Manager 授权下构造和提交机械记录。
+# 新建任务规则
 
-# 项目入口
+默认优先把用户的操作放回已有任务。
 
-## 最小入口检查
+以下行为本身不创建新任务：
 
-只使用文件/目录元数据和最小状态对象判断：
+- 检查；
+- 解释；
+- 排错；
+- 重新查看已有结果；
+- 继续已有子环节；
+- 在已有任务内重做某个子环节。
+
+只有以下情况创建新任务：
+
+- 用户提出新的独立工作目标；
+- 用户显式要求另建任务。
+
+新任务 ID 使用当前项目中下一个可用的 `TNNN`。
+
+创建任务时：
+
+1. 在 `task_index.md` 登记任务；
+2. 创建 `tasks/Txxxx.md`；
+3. 根据用户目标与 `workflow_plan_index.yaml` 写入初始子环节计划。
+
+# 初始规划
+
+Manager 的规划结果直接写入任务单的 `计划与进度`，不创建独立 route object。
+
+规划只回答：
+
+> 为完成用户当前任务，需要先列出哪些子环节？
+
+规划时：
+
+- 使用 `workflow_plan_index.yaml` 中已经定义的子环节顺序、名称、标准工作目录和条件标记；
+- 不读取全部 Workflow / Step Skill；
+- 不提前查询 `project_result_index.md`；
+- 不提前执行科学检查来决定条件环节；
+- 无证据时可以先列入条件环节，后续由 Task Execution Agent 根据实际结果删除；
+- 对规划索引尚未定义内部步骤的 Workflow，不得编造步骤。
+
+任务单不单独维护 `起点`、`终点`、`输入` 或 `route`。当前任务计划范围完全由 `计划与进度` 中实际列出的子环节定义。
+
+# Task Sheet 格式
+
+新任务单至少包含：
+
+```markdown
+# T001 — <任务名称>
+
+状态：未完成
+
+## 任务目标
+
+<用户希望完成的工作>
+
+## 计划与进度
+
+### 1.x <子环节名称>
+
+状态：待执行
+
+对象：
+<当前已知对象；若需由前序结果确定，则写“待前序环节确定”>
+
+工作目录：
+`<project_root>/<标准工作目录>/`
+```
+
+子环节状态只有：
 
 ```text
-NEW | RESUMABLE | NEEDS_RECOVERY
+待执行
+未完成
+已完成
 ```
 
-入口检查不解析 PDB/mmCIF 内容，不扫描全部 route/artifact/event 历史，也不执行科学检查。
+未来子环节的对象尚未形成时，不得猜测具体文件路径。
 
-### NEW
+# 与 Task Execution Agent 的交接
 
-仅适用于：没有可信状态，项目为空或只有初始输入，且没有明显旧业务/管理产物。
+Manager 与 Task Execution Agent 视为不同对话。
 
-初始化只建立管理目录、初始 project state、首个 Workstream 和必要事件。业务输入内容由后续对应 Operation/Validator 检查。
-
-初始化候选 gate 使用 `INIT_CANDIDATE_VALIDATION`：ACTIVE `runtime_schema_validator --mode FAST` 只校验 candidate project state + initial Workstream state 及其直接引用；**NEW 初始化不执行 FULL**。
-
-初始化细节优先由 `runtime/manager_runtime_spec.yaml` 表达；只有初始化异常/调试时才读取 `references/project_initialization_protocol.md`。
-
-### RESUMABLE
-
-项目状态可解释，当前目标可以安全继续。
-
-### NEEDS_RECOVERY
-
-状态、根目录、索引、artifact lineage、目录所有权或外部任务事实无法安全解释时使用。恢复完成前不创建新的写入型业务执行。
-
-# 请求与路线范围
-
-请求动作可以组合：
+默认交互模型是一次性交接：
 
 ```text
-INSPECT
-PLAN
-EXECUTE
+Manager
+→ 定位 / 创建任务
+→ 初始规划
+→ 写入 Txxxx.md
+→ Task Execution Agent 连续推进任务
 ```
 
-纯 INSPECT 不要求 route scope。
+Manager 不在每个子环节完成后重新接管，不作为普通运行时调度器。
 
-PLAN/EXECUTE 的终点必须来自：
+Task Execution Agent 可以在任务内部：
 
-- 用户明确指定；
-- resolved decision；
-- 用户明确继续一个仍适用的 active route；
-- 用户明确按已记录 Workstream 目标继续。
+- 连续执行多个子环节；
+- 更新任务单；
+- 根据已有科学结果增删或调整后续子环节；
+- 用户在执行对话中明确改变任务范围时，直接修改任务计划；
+- 任务完成或用户明确终止时，同步更新 `task_index.md`。
 
-没有这些证据时，不默认补成“下一步”“当前 Workflow 结束”或“项目终点”，而是形成 blocking decision。
+因此，Manager 不垄断任务单后续修改权。
 
-正常 scope 解析使用 `runtime/manager_runtime_spec.yaml`；复杂歧义、跨 Workflow 冲突或 revision 调试时才读取完整 route planning protocol。
+# 重新规划与项目级管理
 
-# Focus 与 Workstream
+以下场景可重新使用 Manager：
 
-一个 Manager 运行周期只有一个主要 Focus：
+- 用户明确要求重新规划已有任务；
+- 用户希望创建另一项任务；
+- 用户需要在多个任务之间进行项目级整理、定位或选择；
+- 用户主动回到 Manager 对话处理项目管理问题。
 
-```text
-PROJECT | WORKSTREAM
-```
+重新规划时直接修改任务单中尚未完成的计划，不建立 route revision 对象。
 
-Focus 优先级：用户指定 → 指定对象所属 Workstream → 本轮写入/执行目标 → 未闭环前台任务 → 最近 Focus → 仍不唯一则确认。
+已经实际执行并形成有意义历史的子环节，不应仅为了整理计划而删除。
 
-已有有效下游产物、模拟已开始、需要保留旧版本/比较方案，或上游修改会使旧结果失效时创建新 Workstream；否则可在尚未闭环且无下游依赖的原 Workstream 内修正。
+# Legacy Runtime
 
-# Workflow runtime
+以下机制在 Lightweight Runtime v2 中视为 Legacy / frozen，不作为普通 Manager 依赖：
 
-## PLAN
+- `project_state`；
+- `workstream_state`；
+- route / route revision；
+- runtime task/result；
+- project event；
+- artifact state machine；
+- runtime projection orchestration；
+- task closure transaction。
 
-优先读取：
+旧文件和工具可以暂时保留，但 Manager 不为兼容它们创建新的双写层。
 
-- `runtime/runtime_manifest.yaml` 中的 stage registry projection；
-- 本轮涉及的 `runtime/workflows/<workflow>.runtime.yaml`。
+# 安全边界
 
-compact runtime spec 信息足够时，不读取完整 Workflow `SKILL.md`。
+- 不修改 `01_sources/` 中的来源文件；
+- 未经用户授权，不删除、覆盖或批量移动已有科研文件；
+- 破坏性或不可逆的项目级操作必须向用户确认；
+- 不自动通过单位计费的期刊数据库下载文献；
+- Manager 不以“全面了解”为理由扫描无关文件。
 
-只有以下情况进入完整 Workflow 语义规划：
+# Manager 输出
 
-- runtime spec 标记 `semantic_planning_required`；
-- 条件/接口无法由 compact spec 表达；
-- runtime projection 缺失或 provenance 失效；
-- route revision 需要新的科学/语义判断。
+创建或重新规划任务后，向用户简要展示：
 
-Manager 仍负责跨 Workflow fragment/节点接口一致性与完整 route 的提交。
+- 任务 ID 与名称；
+- 当前任务状态；
+- 已写入任务单的预计子环节序列；
+- 任务单路径。
 
-## EXECUTE
-
-推进前确认：
-
-- active route 存在且适用；
-- 当前 route node 可定位；
-- 当前 Workstream 不处于 blocking recovery/decision；
-- node 所需输入可定位。
-
-普通执行优先读取当前 `*.runtime.yaml` 中该 node 的紧凑信息，而不是完整 Workflow。
-
-当前 R5 fast-path 已 ACTIVE。一个 task 得到终态结果后：
-
-- 若 gate/interface/lineage/condition/用户范围均有明确结构化事实，先调用 `route_fast_path_evaluator`；
-- `ADVANCE`：使用 evaluator 给出的 `next_route_position` 作为显式 route progression，不重新读取完整 Workflow；
-- `STOP_SCOPE`：停止本轮用户范围；
-- `REENTER_WORKFLOW`：仅此时进入完整 Workflow 语义判断；
-- `BLOCKED`：交回 Manager 处理状态冲突或 recovery。
-
-不得由 Manager 自己模拟 fast-path evaluator。
-
-# 执行后端
-
-逻辑 Operation/Validator 职责与执行后端分离。
-
-候选后端：
-
-```text
-DETERMINISTIC
-AGENT_TASK
-AGENT_SEQUENCE
-```
-
-Manager 按 runtime spec 和 active Tool capability 解析后端。
-
-### DETERMINISTIC
-
-仅当：
-
-- node 明确标记可确定性执行；
-- 所需 capability 有 `ACTIVE` Tool；
-- 不需要科学判断、用户决定或开放式解释。
-
-此模式不创建业务子 Agent。
-
-### AGENT_TASK
-
-当前默认语义后端。一个前台 Agent context 执行一个明确 Operation、Validator 或共享即时上下文的 Operation+Validator 单元。
-
-### AGENT_SEQUENCE
-
-架构已允许，但在 sequence contract / eligibility validation 未实现前保持 `DISABLED_BY_DEFAULT`。不得仅为省时间私自串联多个 node。
-
-具体边界见 runtime manifest 和 `runtime_subagent_protocol.md`；正常 runtime 不需要每次全文读取该协议。
-
-# Task 与记录闭环
-
-业务执行完成后必须保留：
-
-- 可定位的 task identity；
-- Operation/Validator 各自结果；
-- 必要 artifact/decision/submission；
-- 一个终态 event；
-- 必要 Workstream state 更新；
-- 用户可见 closure。
-
-R4 `runtime_record_committer` 已 ACTIVE。普通前台 task 默认由它：
-
-```text
-显式 semantic delta + responsibility result + route progression
-→ candidate records/state
-→ one FAST validation
-→ controlled commit / rollback
-→ compact receipt
-```
-
-Manager LLM 不再手工重建 result/event/artifact/Workstream YAML，也不在 recorder 成功后重复 FAST。`project_state.yaml` 在普通 task 无项目级变化时不重写。
-
-外部 submission、长耗时、高风险/不可逆、recovery 和 route revision 仍按各自强化协议处理，不强行套用普通 R4 闭环。
-
-# 校验
-
-- NEW 初始化：`INIT_CANDIDATE_VALIDATION`（restricted FAST candidate overlay）；
-- 普通 task：由 ACTIVE `runtime_record_committer` 内部执行一次 FAST；
-- FULL：仅用于 recovery、schema/contract/root 变化及其他权威协议明确的项目级审计节点；
-- schema/meta-validation 由 Tool 执行；
-- 已有有效 validation result 且 candidate 未变化时不重复；
-- Tool FAIL/ERROR 时不得宣称通过或降低 gate；
-- 不通过“改跑 FULL”绕过 INIT/FAST failure。
-
-# 用户决定与异常
-
-以下情况必须退出普通快速路径并进入 Manager/Workflow 语义判断：
-
-- blocking decision；
-- route-affecting evidence；
-- conditional evidence 改变；
-- failure；
-- artifact-interface conflict；
-- unexpected output；
-- active route 与实际状态不一致；
-- recovery；
-- 高风险或不可逆动作。
-
-子 Agent/Tool 不直接向用户提问，由 Manager 统一展示并持久化 decision。
-
-# 外部任务
-
-外部 submission 状态：
-
-```text
-PREPARED → SUBMITTED → RUNNING → FINISHED_UNVERIFIED
-                                      ↓
-                              COMPLETED | FAILED
-```
-
-另有 `CANCELLED | UNKNOWN`。tmux/job 消失不能直接判定成功。
-
-# 结束
-
-本轮结束前确保：
-
-- 无活动前台 Agent context；
-- 必要状态/记录已提交；
-- blocking decision 已展示；
-- 已完成 task 有精简 closure；
-- 未因“保险”重新读取无关 authoring corpus或执行重复全量审计。
+不展示 Legacy route、transaction、event 或内部 orchestration 信息。
