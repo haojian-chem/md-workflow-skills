@@ -1,99 +1,111 @@
 ---
 name: <workflow-skill-name>
-description: <阶段路线片段与执行决策用途和触发边界>。
+description: <科研阶段边界、子环节关系和 Step→Skill 映射用途>。
 ---
 
 # 目标
 
+说明本 Workflow 要把什么类型的科研对象推进到什么阶段完成状态。
+
 # 职责边界
 
-Workflow 是可复用阶段 Skill，不是 Agent，不执行子 Skill，不创建 Workstream，不选择项目 Focus，也不拼接跨 Workflow 完整路线。
+Workflow 是阶段级科研规则与 Step 映射，不是 Agent，也不是 route/decision dispatcher。
 
-# 共同输入
+不负责：
 
-读取 Focus Workstream 的：
+- 创建或修改 Task Sheet；
+- 返回 route fragment / workflow decision；
+- 维护 Workstream / active route / event；
+- 执行具体 Operation / Validator；
+- 定义具体 Step 的 reuse conditions；
+- 复制 Step 的算法与详细科学规则。
 
-- 当前 Workflow 与 substep；
-- 当前有效 artifact set；
-- 已解决人工决策；
-- active route；
-- 阶段 gate 状态。
+# 阶段目录
 
-状态接口：
+列出稳定 Step 基础目录，例如：
 
-`03_contracts/workstream_state.schema.yaml`
+```text
+<workflow_directory>/
+├── <step_01_base_directory>/
+├── <step_02_base_directory>/
+└── ...
+```
+
+基础目录不是完成证据。
 
 # Substep registry
 
-每个 substep 至少声明：
+每个 Step 至少声明：
 
 ```yaml
 step_id:
-task_unit_mode: OPERATION | VALIDATOR | OPERATION_WITH_VALIDATOR
-operation:
-validator:
-necessity: REQUIRED | CONDITIONAL
-condition:
-work_directory:
-prerequisites: []
-expected_outputs: []
-gate_requirements: []
+name:
+base_work_directory:
+conditional: true | false
+skills:
+  operation:
+  validator:
 ```
 
-# 规划接口
+不在这里重复具体 Step 的输入、reuse、preflight、输出 schema 或执行命令。
 
-根据本 Workflow 范围返回：
+# 阶段内科学关系
 
-`03_contracts/workflow_route_fragment.schema.yaml`
-
-必须说明：
-
-- 起点和终点；
-- REQUIRED 与 CONDITIONAL steps；
-- entry requirements；
-- exit artifacts；
-- assumptions；
-- unresolved items；
-- blockers。
-
-# 执行接口
-
-对当前 Workstream 每次只返回一个决定：
+按真正有用的上下游关系说明：
 
 ```text
-EXECUTE
-SKIP
-PAUSE
-COMPLETE
-BLOCKED
+上游 Step 的哪个正式结果
+→ 下游 Step 如何消费
 ```
 
-`EXECUTE` 只能指定一个 task unit：
+如果某个 Step 的结果会影响后续 conditional Step，只说明关系；具体判断条件归对应 Step Skill。
 
-```text
-OPERATION
-VALIDATOR
-OPERATION_WITH_VALIDATOR
-```
+# 条件 Step
 
-Operation 与 Validator 组合仅用于专属配套验证；Workflow 不执行它们。
+列出本阶段的 conditional Steps。
 
-返回必须符合：
+规则：
 
-`03_contracts/workflow_decision.schema.yaml`
+- 初始计划中无充分证据时可以保留；
+- Task Execution Agent 到达相关判断点后依据当前 Step Skill 和正式结果增删；
+- 确认不需要且尚未执行的 Step 直接从 Task Sheet 删除；
+- 不生成 SKIP / route revision 对象。
 
-# Gate
+# 复用边界
 
-# 条件步骤
+Workflow 不定义通用 reuse conditions。
 
-# 续跑、已有结果与路线修订信号
-
-- 仅判断当前 Workstream；
-- 条件步骤无证据时保留，不提前删除；
-- 不把项目视为只有一个当前阶段；
-- 不覆盖其他 Workstream 的有效下游结果；
-- 发现 active route 过期时返回修订理由，不直接写 route record。
+每个 Step 开始时由 Task Execution Agent 读取当前 Step Skill，并按该 Skill 的 reuse conditions 判断。
 
 # 阶段完成条件
 
+明确什么实际科学验证结果代表本 Workflow 完成。
+
+不得用：
+
+- 目录存在；
+- 文件名存在；
+- 某 Step 曾经执行过；
+
+替代真正的阶段完成条件。
+
+# Legacy
+
+以下不是 Lightweight Workflow 默认接口：
+
+```text
+Workstream
+workflow_route_fragment
+workflow_decision
+active route
+route revision
+runtime task unit
+```
+
 # 自检
+
+- [ ] 只拥有阶段级科学边界与 Step 映射；
+- [ ] 未复制具体 Step 科学规则；
+- [ ] 未创建 route / decision / Workstream 接口；
+- [ ] conditional Step 关系明确；
+- [ ] 最终完成条件来自真实验证结果。
