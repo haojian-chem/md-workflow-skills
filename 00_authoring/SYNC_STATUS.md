@@ -10,7 +10,8 @@ Manager core: refactored
 Repository root runtime entry: aligned to Lightweight Runtime v2
 Dedicated Task Execution Agent Skill: not required; root AGENTS.md defines execution behavior
 Structure preparation Workflow: lightweight refactor complete
-1.1 / 1.2 / 1.3 lightweight step interface migration: pending
+1.1 source recognition: lightweight step interface refactored; revalidation pending
+1.2 / 1.3 lightweight step interface migration: pending
 Legacy Workstream / route / event / runtime projection: frozen, not default runtime
 ```
 
@@ -40,9 +41,11 @@ Structure preparation Workflow 当前权威位置：
 # 当前科学 Skill 基线
 
 ```text
+1.1 source recognition: Lightweight interface complete, scientific behavior retained, runtime revalidation pending
 1.2 component/residue classification: present_unvalidated
 1.3 chain/component selection: PASS（沿用 2026-07-31 验收，需针对 1.2 变更及 Lightweight 接口重跑）
 runtime_schema_validator: ACTIVE_LEGACY，不再是 Lightweight 普通任务默认依赖
+source_recognition_deterministic v0.1.0: ACTIVE_LEGACY_INTERFACE，Lightweight 显式路径接口待适配
 ```
 
 1.2 当前状态重构已实现；迁移后的本地自动测试与真实 AF3 输入验收通过。hosted CI、真实 PDB/mmCIF/GROMACS、完整 1.2→1.3 选择回归及批准辅因子/配体 CCD seed 仍未闭合，因此科学状态保持 `present_unvalidated`。
@@ -61,6 +64,14 @@ runtime_schema_validator: ACTIVE_LEGACY，不再是 Lightweight 普通任务默�
   - 1.1–1.9 到实际 Operation/Validator Skill 的映射；
   - 阶段内科学关系；
   - 条件步骤对动态 Task Sheet 的影响；
+- 1.1 `source_recognition` 已迁移到统一 Lightweight step 接口：
+  - `object requirements`
+  - `reuse conditions`
+  - `validation requirements`
+  - `official results`
+- 1.1 不再依赖 Legacy `subagent_task / subagent_result / Workstream / route / runtime closure`；
+- 1.1 official results 确定为归位后的结构文件和 `source_recognition_report.yaml`；
+- 历史 `source_recognition_deterministic` v0.1.0 已标记为 Legacy-interface only，避免因旧 `task.yaml` 接口重新引入旧 Runtime；
 - 未删除 Legacy Runtime 文件或工具。
 
 # 1.2 / 1.3 权威位置
@@ -87,13 +98,11 @@ runtime_schema_validator: ACTIVE_LEGACY，不再是 Lightweight 普通任务默�
 
 ## Lightweight Runtime
 
-- 为 1.1、1.2、1.3 明确并接入统一的：
-  - `object requirements`
-  - `reuse conditions`
-  - `validation requirements`
-  - `official results`
-- 确认 1.1 / 1.2 / 1.3 在 Task Execution Agent 下不再依赖 runtime task、route、event、record committer 等 Legacy closure；
+- 迁移 1.2 到统一 Lightweight step 接口；
+- 迁移 1.3 Operation + Validator 到统一 Lightweight step 接口；
+- 验证 1.1 Task Sheet / Result Index 的真实行为和 1.1→1.2 跨对话 handoff；
 - 验证任务单创建、跨对话恢复、连续多子环节执行、结果复用和计划动态调整；
+- 后续决定是否把 `source_recognition_deterministic` 改为直接接受明确候选路径和工作目录；
 - 再决定 Legacy Runtime 的归档或删除策略。
 
 ## 1.2 / 1.3 科学验证
