@@ -1,6 +1,6 @@
 ---
 name: source_recognition
-description: Lightweight Runtime v2 的 1.1 Source recognition。对任务单中明确且有界的本地 PDB/mmCIF/CIF 候选进行识别和选择，默认安全复制到结构准备目录并校验 SHA-256；不下载结构、不修改结构内容，也不依赖 Legacy runtime task/result/route/event 闭环。
+description: Lightweight Runtime v2 的 1.1 Source recognition。对任务单中明确且有界的本地 PDB/mmCIF/CIF 候选进行识别和选择，默认安全复制到当前任务专属的 1.1 工作目录并校验 SHA-256；不下载结构、不修改结构内容，也不依赖 Legacy runtime task/result/route/event 闭环。
 ---
 
 # 目标
@@ -9,7 +9,7 @@ description: Lightweight Runtime v2 的 1.1 Source recognition。对任务单中
 
 - 识别当前 1.1 对象中给出的本地结构候选；
 - 在无歧义时确定一个来源；
-- 默认复制到 `01_structure_preparation/01_source_recognition/`；
+- 默认复制到 `01_structure_preparation/01_source_recognition/<task_id>/`；
 - 校验源文件和目标文件 SHA-256 一致；
 - 保存来源、目标和候选检查信息；
 - 产生可供后续环节直接消费和跨任务复用的正式结果。
@@ -57,6 +57,12 @@ description: Lightweight Runtime v2 的 1.1 Source recognition。对任务单中
 
 相同 basename 不能作为复用依据；SHA-256 是内容等价性的主要依据。
 
+如果确认直接复用已有 1.1 正式结果：
+
+- 当前任务直接引用来源任务的正式结构和报告；
+- 不复制一份新的结果；
+- 不要求创建当前任务自己的 `01_source_recognition/<task_id>/` 空目录。
+
 ## Execution rules
 
 执行规则见下文“候选检查”“选择”“归位”和“冲突处理”。
@@ -77,14 +83,16 @@ description: Lightweight Runtime v2 的 1.1 Source recognition。对任务单中
 
 ## Official results
 
-1.1 的正式结果为：
+当当前任务实际执行新的 1.1 时，正式结果位于当前任务专属工作目录：
 
 1. 选定并归位后的结构文件：
-   `01_structure_preparation/01_source_recognition/<source_basename>`
+   `01_structure_preparation/01_source_recognition/<task_id>/<source_basename>`
 2. 来源识别报告：
-   `01_structure_preparation/01_source_recognition/source_recognition_report.yaml`
+   `01_structure_preparation/01_source_recognition/<task_id>/source_recognition_report.yaml`
 
 两者都应在当前 Task Sheet 的 1.1 `主要结果` 中记录完整路径，并登记到 `project_result_index.md` 的 1.1 部分。
+
+如果当前任务直接复用另一任务的 1.1 正式结果，则 `主要结果` 和 result index 来源信息直接指向已有正式文件，不生成本任务副本。
 
 普通 debug log、临时文件和 shell 输出不是 official results。
 
@@ -193,12 +201,32 @@ source label 是来源描述，不影响结构科学质量判断。
 
 # 文件归位
 
+## 目录所有权
+
+1.1 的稳定基础目录是：
+
+```text
+<project_root>/01_structure_preparation/01_source_recognition/
+```
+
+该基础目录可以在项目初始化时已经存在。
+
+当前任务的实际执行目录是 Task Sheet 中记录的：
+
+```text
+<project_root>/01_structure_preparation/01_source_recognition/<task_id>/
+```
+
+Manager 只记录该路径，不创建 `<task_id>/`。
+
+Task Execution Agent 必须先完成本环节的复用判断；只有确认不能直接复用、确实需要执行新的 1.1 时，才创建当前任务专属目录。不得顺带创建其他任务或未来子环节的任务目录。
+
 ## 默认：复制
 
 选定来源后，默认字节复制到：
 
 ```text
-<project_root>/01_structure_preparation/01_source_recognition/<source_basename>
+<project_root>/01_structure_preparation/01_source_recognition/<task_id>/<source_basename>
 ```
 
 硬规则：
@@ -211,17 +239,17 @@ source label 是来源描述，不影响结构科学质量判断。
 - 复制后计算 destination SHA-256；
 - 两者必须相同。
 
-需要创建工作目录时，只创建当前 1.1 标准工作目录，不顺带建立未来阶段目录。
-
 ## 已有目标
 
-如果目标文件已存在：
+如果当前任务专属目录中的目标文件已存在：
 
 - SHA-256 与源相同：直接复用该已有目标，不重复复制；
 - SHA-256 与源不同：不覆盖，向用户说明冲突并确认后续处理；
 - 目标不可读或无法安全核验：停止写入，本环节记为 `未完成`。
 
 不能为了绕开冲突而自动添加后缀生成一个新的正式文件名。
+
+其他任务目录中的同名文件不属于当前任务目标冲突；它们通过跨任务 reuse 机制判断是否可以直接复用，而不是被当前任务覆盖。
 
 ## 受控移动
 
@@ -243,35 +271,38 @@ source label 是来源描述，不影响结构科学质量判断。
 
 - 当前任务单中的子环节确实是 1.1；
 - 当前 `对象` 给出了明确且有界的候选；
-- 工作目录是当前任务允许使用的 1.1 目录；
+- Task Sheet 工作目录符合 `<project_root>/01_structure_preparation/01_source_recognition/<task_id>/`；
+- 复用检查已经完成，且当前确实需要执行新的 1.1；
 - 来源文件不会被默认修改或删除；
 - 没有待解决的多候选歧义；
-- 没有要求覆盖不同内容目标；
+- 没有要求覆盖当前任务目录中的不同内容目标；
 - move 请求已有明确授权。
 
 Preflight 不通过时不产生业务写入。
 
 # 执行流程
 
-1. 读取当前 Task Sheet 中 1.1 的对象和工作目录；
+1. 读取当前 Task Sheet 中 1.1 的对象和预留工作目录；
 2. 读取本 Skill；
 3. 查询 `project_result_index.md` 中已有 1.1 结果并按 reuse conditions 判断；
-4. 如果不能复用，收集当前有界候选；
-5. 检查基础格式并计算 SHA-256；
-6. 唯一选择来源，存在歧义时询问用户；
-7. 检查目标冲突；
-8. 默认复制，或在明确授权下受控移动；
-9. 核验 source/destination SHA-256；
-10. 写 `source_recognition_report.yaml`；
-11. 按 Validation requirements 做最终核验；
-12. 更新当前 Task Sheet；
-13. 将 official results 登记到 `project_result_index.md`。
+4. 如果可以复用，直接引用已有正式结果并更新 Task Sheet，不创建当前任务目录；
+5. 如果不能复用，收集当前有界候选；
+6. 检查基础格式并计算 SHA-256；
+7. 唯一选择来源，存在歧义时询问用户；
+8. 创建当前任务专属 1.1 工作目录；
+9. 检查当前任务目录中的目标冲突；
+10. 默认复制，或在明确授权下受控移动；
+11. 核验 source/destination SHA-256；
+12. 写 `source_recognition_report.yaml`；
+13. 按 Validation requirements 做最终核验；
+14. 更新当前 Task Sheet；
+15. 将 official results 登记到 `project_result_index.md`。
 
 # 来源识别报告
 
-正式报告路径：
+当前任务实际执行时的正式报告路径：
 
-`01_structure_preparation/01_source_recognition/source_recognition_report.yaml`
+`01_structure_preparation/01_source_recognition/<task_id>/source_recognition_report.yaml`
 
 建议内容：
 
@@ -284,7 +315,7 @@ source_label: PDB_LOCAL
 source_path: /absolute/path/to/source.pdb
 source_sha256: <sha256>
 action: COPIED | MOVED | REUSED_IDENTICAL_COPY
-destination_path: /absolute/project/path/01_structure_preparation/01_source_recognition/source.pdb
+destination_path: /absolute/project/path/01_structure_preparation/01_source_recognition/T001/source.pdb
 destination_sha256: <sha256>
 candidates: []
 excluded_candidates: []
@@ -313,12 +344,14 @@ warnings: []
 - 全部候选无效：记录排除理由并保持 `未完成`；
 - 已有结果复用核验失败：不得把旧结果标记为当前任务完成依据，重新执行或询问用户。
 
-恢复时继续使用同一个 1.1 任务块，不创建 attempt task 或 Legacy recovery state。
+恢复时继续使用同一个 1.1 任务块和同一个任务专属工作目录，不创建 attempt task 或 Legacy recovery state。
 
 # 自检
 
 - [ ] 当前对象范围明确且有界；
 - [ ] 已执行 1.1 复用检查；
+- [ ] 可复用时未创建空的本任务 1.1 目录；
+- [ ] 需要执行时工作目录为当前 `<task_id>/` 专属目录；
 - [ ] 未扫描整个项目；
 - [ ] 默认复制而非移动；
 - [ ] 未修改或删除受保护源文件；
