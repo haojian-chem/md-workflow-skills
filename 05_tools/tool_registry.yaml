@@ -179,37 +179,36 @@ tools:
 
   - name: source_recognition_deterministic
     version: 0.1.0
-    status: ACTIVE
+    status: ACTIVE_LEGACY_INTERFACE
     path: 05_tools/source_recognition_deterministic
     entrypoint: 05_tools/source_recognition_deterministic/run.py
     callers:
-      - md_workflow_manager
-      - structure_preparation_workflow
+      - legacy_md_workflow_runtime
     logical_responsibility:
       layer: operation
       skill_name: source_recognition
       semantic_owner: 02_operations/source_recognition/SKILL.md
     capabilities:
-      - bounded local PDB/CIF/mmCIF source recognition
+      - bounded local PDB/CIF/mmCIF source recognition for the frozen Legacy task.yaml interface
       - deterministic unique-source selection
       - default atomic copy and SHA-256 integrity verification
       - identical-destination reuse
       - deterministic source ambiguity and destination-conflict confirmation generation
-      - subagent_result-v2-shaped source_recognition responsibility result
+      - Legacy subagent_result-v2-shaped responsibility result
     read_paths:
-      - explicit task.yaml
+      - explicit Legacy task.yaml
       - task-authorized source_candidate files
-      - 02_operations/source_recognition/SKILL.md for semantic guard
+      - guarded source_recognition SKILL.md for semantic guard
     write_paths:
-      - task-authorized source_recognition business work_directory only
+      - Legacy task-authorized source_recognition work_directory only
     tests: 04_evals/source_recognition_deterministic/
     validation_evidence: 04_evals/source_recognition_deterministic/VALIDATION.md
-    active_by_default: true
+    active_by_default: false
     notes:
-      - GitHub Actions run 31308634688 passed 8 tests including deterministic 1.1 -> R5 -> R4 integration.
+      - GitHub Actions run 31308634688 passed 8 tests for the frozen Legacy interface including deterministic 1.1 -> R5 -> R4 integration.
       - Unique-copy business internal median was 8.207 ms; process wall median was 69.448 ms.
-      - Explicit controlled move requests and unsupported semantic cases fall back to AGENT_TASK.
-      - Tool refuses to run if source_recognition SKILL.md no longer matches guarded semantic-owner blob.
+      - The current tool semantic guard intentionally becomes stale after the Lightweight source_recognition Skill refactor and therefore prevents accidental default use.
+      - Lightweight adaptation must accept explicit bounded source paths/work directory directly and be separately revalidated before reactivation.
 
   - name: runtime_dependency_preflight
     version: 0.1.0
