@@ -1,5 +1,5 @@
 schema_version: 4
-status: lightweight_runtime_v2_global_entry_aligned_step_migration_pending
+status: lightweight_runtime_v2_structure_workflow_refactored_step_migration_pending
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
@@ -15,7 +15,7 @@ runtime_architecture:
     task_execution_agent:
       role: continuous_multi_step_task_execution
       manager_roundtrip_between_steps: false
-      dedicated_runtime_interface_status: pending
+      dedicated_runtime_interface_status: not_required_root_agents_rules_apply
   scientific_layers:
     workflow: 01_workflows
     operation: 02_operations
@@ -70,7 +70,7 @@ skills:
   - name: structure_preparation_workflow
     layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: legacy_runtime_interface_present_lightweight_refactor_pending
+    status: lightweight_workflow_refactored_step_interfaces_pending
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
 
   - name: source_recognition
@@ -175,7 +175,7 @@ tools:
       status: LEGACY_DESIGNED_FROZEN
 
 migration_next:
-  - define_task_execution_agent_runtime_interface
-  - refactor_structure_preparation_workflow_for_lightweight_execution
   - migrate_1_1_1_2_1_3_to_step_reuse_official_result_interface
-  - validate_cross_dialog_task_recovery_and_result_reuse
+  - validate_task_sheet_creation_and_cross_dialog_recovery
+  - validate_multi_step_execution_and_result_reuse
+  - continue_structure_preparation_step_implementation_after_1_3
