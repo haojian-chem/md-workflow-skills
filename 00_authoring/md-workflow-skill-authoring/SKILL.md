@@ -1,40 +1,64 @@
 ---
 name: md-workflow-skill-authoring
-description: 设计、拆分、编写或重构本项目的 MD manager、workflow、operation、validator Skill 时使用；同时约束 Workstream 路线、串行临时子 Agent 接口、确定性 Tool 调用边界和网页端多窗口文件所有权。不要用于运行具体 MD 任务或直接维护共享 Tool。
+description: 设计、拆分、编写或重构本项目的 MD Manager、Workflow、Operation、Validator Skill 时使用。默认面向 Lightweight Runtime v2；保留科研职责分层、内容唯一归属、按需读取、确定性 Tool 边界和多窗口文件所有权，不再把 Legacy Workstream/route/task-result/event 运行时接口写入新 Skill。
 ---
 
 # 目标
 
-将 MD 工作流需求转化为职责清晰、内容不重复、接口一致的 Skills，并保证：
+将 MD 工作流需求转化为职责清晰、内容不重复、可直接被 Task Execution Agent 使用的科研 Skills。
 
-- Workflow 是可复用阶段 Skill，不是 Agent；
-- Workflow 规划时返回本阶段 route fragment，执行时返回一个当前 decision；
-- Workstream 表示真实项目中的具体工作分支；
-- Manager 负责跨 Workflow 范围、fragment 拼接和 route record；
-- Manager 可串行创建一个上下文连续 task unit；
-- task unit 可以是 Operation、Validator 或 Operation 与专属 Validator；
-- 临时子 Agent 用于隔离上下文，不用于前台并行；
-- 多个 Workstream 和多个外部 tmux/调度任务可以并存；
-- 确定性 Tool 不成为第五个决策层；
-- 重复、缓慢或易不一致的确定性逻辑通过 `tool_request` 交给 Tool Authoring；
-- 网页端多个编写窗口与运行时子 Agent 完全分离。
+当前默认架构为：
+
+```text
+Manager 对话
+→ Task Sheet
+→ Task Execution Agent 对话
+→ 当前 Step 所需 Skill
+   ├─ Operation
+   ├─ Validator
+   └─ 必要的 deterministic Tool
+```
+
+逻辑上的 Manager / Workflow / Operation / Validator 职责继续保留，但不要求对应为多层 LLM 调度链。
+
+本 Authoring Skill 的目标是保证：
+
+- Manager 只承担任务定位、创建、初始规划和项目级管理；
+- Workflow 保存阶段科学边界、子环节关系和 Step→Skill 映射，而不是 route/decision dispatcher；
+- Operation 执行明确业务操作；
+- Validator 执行检查、分类或独立质量判定；
+- Task Execution Agent 可以在一个长期执行对话中连续推进多个子环节；
+- 每个当前 Step 只加载真正需要的 Skill、reference 和文件；
+- Step 的复用和正式结果定义明确；
+- 不重新引入 Workstream、route、event、runtime task/result、artifact state machine 或 transaction closure 作为普通任务依赖；
+- 确定性 Tool 只承担确定性动作，不成为第五个科学决策层；
+- 网页端多个编写窗口与真实运行对话完全分离。
 
 # 启动前检查
 
-读取：
+Authoring / maintenance 开始时读取：
 
 1. 项目根 `AGENTS.md`；
-2. `00_authoring/SYNC_STATUS.md`；
-3. `00_authoring/skill_inventory.yaml`；
-4. `00_authoring/file_ownership.yaml`；
-5. 目标 Skill 的 content map；
-6. 目标窗口的 work order；
-7. `03_contracts/README.md` 与适用 schema；
-8. 相关上下游 Skill；
-9. 涉及路线规划时读取 `00_manager/md_workflow_manager/references/route_planning_protocol.md`；
-10. 涉及确定性 Tool 时读取 `references/deterministic_tool_protocol.md` 和 `05_tools/tool_registry.yaml`。
+2. `00_authoring/AUTHORING_RULES.md`；
+3. `00_authoring/lightweight_runtime_v2_spec.md`；
+4. `00_authoring/SYNC_STATUS.md`；
+5. `00_authoring/skill_inventory.yaml`；
+6. `00_authoring/file_ownership.yaml`；
+7. 目标 Skill 的 content map；
+8. 与当前改动直接相关的上下游 Skill / draft / validation evidence。
 
-先列出：
+仅在确实涉及相应内容时再读取：
+
+- `references/layer_boundaries.md`：需要确认职责边界；
+- `references/content_ownership_and_deduplication.md`：需要拆分或去重；
+- `references/progressive_disclosure.md`：主 Skill 内容过长；
+- `references/multi_window_authoring_protocol.md`：多窗口并行编写；
+- `references/deterministic_tool_protocol.md` 与 `05_tools/tool_registry.yaml`：确实涉及共享 Tool；
+- `03_contracts/**`、`runtime/**`、`runtime_subagent_protocol.md`、`runtime_record_commit_protocol.md`：只有 Legacy 维护、旧项目迁移或明确历史兼容审计时读取。
+
+普通 Lightweight Skill 撰写不得把 Legacy contracts 作为默认启动依赖。
+
+提出或实施修改前先列出：
 
 ```text
 已做过
@@ -42,109 +66,216 @@ description: 设计、拆分、编写或重构本项目的 MD manager、workflow
 仍未验证
 ```
 
-缺少 content map、work order、适用共享 contract 或唯一写入权限时，返回 BLOCKED。
+若新方案与已失败/已否定方案本质等价，且没有新证据改变前提，不重复实施。
 
-# 步骤 1：确定层级
+# 步骤 1：确定职责层级
 
-需要区分 manager、workflow、operation、validator 时，读取：
+需要区分层级时读取：
 
 `references/layer_boundaries.md`
 
-输出：
+至少明确：
 
 ```yaml
 skill_name:
-skill_layer:
+skill_layer: manager | workflow | operation | validator
 primary_job:
 nearest_neighbor_skills: []
 responsibility_conflicts: []
 deterministic_tool_candidates: []
 ```
 
-一个 Skill 同时承担多个层级主职责时，先拆分。
+一个 Skill 同时拥有多个层级的主职责时，应先拆分；但“逻辑职责拆分”不等于必须建立额外 Agent 对话。
 
-Tool 不是 Skill 层级。Tool 只执行确定性逻辑，不能承担下一步、路线、Focus、用户决策或科学判断。
+Tool 不是 Skill 层级。Tool 只执行确定性程序，不能承担研究对象选择、科学判断、任务范围或用户意图解释。
 
-# 步骤 2：确认运行时关系
+# 步骤 2：确认 Lightweight Runtime 关系
 
-涉及 Manager、Workflow、Workstream、临时子 Agent 或 Tool 时，读取：
+默认真实运行关系：
 
-- `references/runtime_subagent_protocol.md`；
-- `references/deterministic_tool_protocol.md`；
-- `00_manager/md_workflow_manager/references/route_planning_protocol.md`。
+```text
+Manager
+→ 写入 / 定位 Txxxx.md
+→ 一次性交接给 Task Execution Agent
+→ Task Execution Agent 从任务单确定当前 Step
+→ 加载当前 Step 所需 Skill
+→ 执行 / 验证 / 复用
+→ 更新 Txxxx.md 与 project_result_index.md
+→ 继续下一 Step
+```
 
 必须满足：
 
-- Workflow 规划时只返回自身阶段的 route fragment；
-- Workflow 执行时只对一个 Workstream 返回一个当前 decision；
-- Manager 负责起终点、跨 Workflow 拼接、Focus、状态和记录；
-- Manager 不得自行编造 Workflow 内部步骤；
-- 任意时刻最多一个前台 MD 临时子 Agent；
-- task unit 只能是 Operation、Validator 或 Operation 与其专属 Validator；
-- Operation 与 Validator 的结果必须分开；
-- 子 Agent 不再委派；
-- 子 Agent 不直接修改项目状态和记录目录；
-- 多个外部 MD 任务可并存，但不高频轮询；
-- Tool 只执行注册的确定性程序；
-- Tool 不向用户提问、不创建 Agent、不作科学判决。
+- Manager 与 Task Execution Agent 默认是不同对话；
+- 普通子环节之间不回 Manager 调度；
+- 不为 Task Execution Agent 单独再增加一层通用编排 Skill；
+- Workflow 不返回 `workflow_route_fragment` 或 `workflow_decision`；
+- Workflow 不维护 Workstream、active route、artifact state 或 event；
+- 当前 Step 的用户确认由当前 Task Execution Agent 在执行对话中直接提出；
+- Operation / Validator / Tool 本身不建立新的 Agent 层；
+- 用户在执行对话中明确调整任务范围时，可直接修改 Task Sheet；
+- 任务完成或用户明确终止时，Task Execution Agent 可同步更新 `task_index.md`。
 
-# 步骤 3：冻结局部 contract
+# 步骤 3：冻结当前 Skill 的局部接口
 
-在编写正文前确认：
+在正文前先明确当前 Skill 真正拥有的内容。
 
-```yaml
-skill_name:
-skill_layer:
-job:
-trigger_when: []
-do_not_trigger_when: []
-required_inputs: []
-conditional_inputs: []
-optional_inputs: []
-outputs: []
-side_effects: []
-write_paths: []
-read_paths: []
-forbidden_paths: []
-blocking_conditions: []
-user_confirmation_conditions: []
-done_when: []
-upstream_dependencies: []
-downstream_consumers: []
-shared_contracts: []
-workstream_effects: []
-record_effects: []
-tool_dependencies: []
-tool_requests: []
-```
+## Manager
 
-Workflow 还必须冻结：
+至少冻结：
 
 ```yaml
-planning_interface:
-  contract: 03_contracts/workflow_route_fragment.schema.yaml
-  entry_requirements: []
-  exit_artifacts: []
-  conditional_steps: []
-execution_interface:
-  contract: 03_contracts/workflow_decision.schema.yaml
-  decisions: [EXECUTE, SKIP, PAUSE, COMPLETE, BLOCKED]
+purpose:
+task_location_rules:
+new_task_boundary:
+initial_planning_inputs:
+task_sheet_write_rules:
+project_level_management_rules:
+minimal_reads: []
+forbidden_default_reads: []
 ```
 
-共享状态和接口只引用 `03_contracts/`。
+Manager 不拥有具体 Step 的科学输入、reuse conditions、validation requirements 或 official results。
 
-# 步骤 4：识别 Tool 候选
+## Workflow
 
-满足以下任一条件时，不应继续把逻辑写成长篇自然语言执行规则：
+至少冻结：
 
-- 同一确定性逻辑重复出现；
-- LLM 执行明显慢于程序；
-- 自然语言结果容易不一致；
-- 需要 cache、批量或增量处理；
-- 需要原子写入、事务或回滚；
-- 需要稳定 benchmark。
+```yaml
+purpose:
+stage_goal:
+ordered_substeps: []
+step_to_skill_mapping: []
+conditional_steps: []
+stage_scientific_relations: []
+stage_completion_condition:
+```
 
-生成：
+Workflow 可以描述阶段内科学依赖和“某结果可能导致后续条件 Step 删除/保留”，但具体判定条件归对应 Step Skill。
+
+Workflow 不建立 planning fragment、execution decision、route revision、Workstream state 或 runtime task unit。
+
+## Step-facing Operation / Validator
+
+任何直接承担某个 Workflow 子环节执行的 Skill，或一组配套 Operation + Validator，必须**合计**明确以下统一接口：
+
+```text
+1. purpose
+2. object requirements
+3. reuse conditions
+4. execution rules
+5. validation requirements
+6. official results
+```
+
+单一 Skill 独立完成 Step 时，由该 Skill 全部定义。
+
+Operation + 专属 Validator 配套时，必须在 content map 中明确唯一 owner，避免两份文件重复：
+
+- Operation 通常拥有 `purpose / object requirements / reuse conditions / execution rules / official results`；
+- Validator 通常拥有独立 `validation requirements` 和验证报告；
+- 如实际职责不同，可调整 owner，但同一规则只能有一个权威位置。
+
+Validator-only Step 则由 Validator 直接拥有完整 Step 接口。
+
+# 步骤 4：设计复用规则
+
+Reuse 发生在**子环节真正开始时**，不是任务创建时。
+
+Step Skill 只定义真正决定本 Step 输出是否仍有效的少数条件，例如：
+
+- 输入结构 SHA；
+- selected model；
+- retain selection；
+- pH / protonation method；
+- force field；
+- residue definition / parameter source；
+- 影响结果的人工科学决定。
+
+统一判定：
+
+```text
+明确等价 → 自动复用
+明确不等价 → 正常执行
+信息不足无法判断 → 当前 Task Execution Agent 询问用户
+用户明确要求重做 / 对照 → 跳过自动复用
+```
+
+不得只因文件名相同、目录已有文件或任务名称相似就复用。
+
+复用另一任务的结果时直接引用其正式结果，不为了“本任务完整”复制一份新的副本。
+
+# 步骤 5：设计目录与 official results
+
+每个 Step 使用两级目录：
+
+```text
+<base_work_directory>/
+└── <task_id>/
+```
+
+例如：
+
+```text
+01_structure_preparation/02_component_and_residue_classification/
+└── T001/
+```
+
+规则：
+
+- `workflow_plan_index.yaml` 和 Workflow 只保存/描述 Step 基础目录；
+- 项目初始化可以建立稳定 Step 基础目录；
+- Manager 在 Task Sheet 中记录 `<base_work_directory>/<task_id>/` 预留路径；
+- Manager 不创建 `Txxxx/` 任务执行目录；
+- Task Execution Agent 进入当前 Step 后先做 reuse 检查；
+- 只有确实需要本地执行时才创建当前任务目录；
+- 直接复用已有结果时不创建空目录；
+- 不同任务固定文件名输出必须隔离在各自 `<task_id>/` 下。
+
+每个 Step Skill 必须区分：
+
+```text
+official results
+vs
+internal/intermediate/debug/recovery files
+```
+
+只有 `official results` 登记到 `project_result_index.md`。
+
+正式结果描述必须足以让下游 Skill 直接定位和消费，而不需要重新读取上游全过程。
+
+# 步骤 6：设计用户确认与未完成状态
+
+普通科学歧义由当前 Task Execution Agent 在当前执行对话中确认，不返回 Manager 走 decision record。
+
+Skill 应明确：
+
+- 哪些情况可以自动判断；
+- 哪些情况必须让用户选择；
+- 确认前哪些写入禁止发生；
+- 确认结果如何进入当前 Step 的正式/恢复材料。
+
+Task Sheet 子环节状态只使用：
+
+```text
+待执行
+未完成
+已完成
+```
+
+依赖缺失、等待用户决定、可重试失败等都保持 `未完成`，必要原因写入简短执行记录；不要重新引入 BLOCKED / WAITING / FAILED 状态机作为 Task Sheet 状态。
+
+# 步骤 7：识别 Tool 候选
+
+满足以下任一条件时考虑共享 Tool：
+
+- 同一确定性逻辑跨 Skill 重复；
+- 脚本明显比 LLM 更快、更稳定；
+- 需要可靠 parsing / hashing / transformation；
+- 需要稳定原子写入或结构化校验；
+- 需要可重复测试与 benchmark。
+
+Tool request 至少说明：
 
 ```yaml
 tool_request:
@@ -158,25 +289,36 @@ tool_request:
   side_effects: []
 ```
 
-然后交由：
+交由：
 
 `00_authoring/md-workflow-tool-authoring/SKILL.md`
 
-业务 Skill 可以声明 Tool 依赖和失败处理，但不得在运行 task 中临时生成或修改共享 Tool。
+新 Tool 默认应接受明确业务输入和路径，不为了兼容旧 Runtime 强制要求 `task.yaml`、route、event、runtime receipt 或 transaction closure。
 
-# 步骤 5：建立内容归属
+不要因为“可以写 Tool”就把简单的一次性管理动作工具化。此前已经验证：旧 Runtime 的主要延迟来自多层 LLM 编排，不来自几百毫秒级确定性脚本。
+
+# 步骤 8：建立内容唯一归属
 
 使用：
 
 `assets/content_map.template.yaml`
 
-详细规则见：
+详细规则：
 
 `references/content_ownership_and_deduplication.md`
 
-每个概念只能有一个 owner。完整路线拼接规则归 Manager；阶段内 route fragment 归相应 Workflow；确定性 Tool 边界归 `deterministic_tool_protocol.md`；具体 Tool contract 归其 `tool.yaml`。
+核心要求：
 
-# 步骤 6：设计 Skill 文件结构
+- 当前 `SKILL.md` 保存当前职责的执行/判定主线；
+- 长科学规则和 registry 放 `references/`；
+- 当前 Skill 独有的结构化文件约束放 `schemas/`；
+- 当前 Skill 独有且不值得共享的程序放 `scripts/`；
+- 跨 Skill 可复用程序放 `05_tools/`；
+- Workflow 不复制 Step 科学细节；
+- Step 不复制上游 Skill 的算法，只消费正式结果；
+- Lightweight Runtime 规则引用 `00_authoring/lightweight_runtime_v2_spec.md`，不在各 Skill 重写整套运行时设计。
+
+# 步骤 9：设计文件结构
 
 按需创建：
 
@@ -186,52 +328,75 @@ tool_request:
 ├── references/
 ├── schemas/
 ├── scripts/
-├── assets/
-└── agents/
+└── assets/
 ```
 
-仅创建实际需要的目录。Skill 内 `scripts/` 只用于该 Skill 独有且不应共享的辅助逻辑；跨 Skill 重复使用的程序应进入 `05_tools/`。
+只创建实际需要的目录。
 
-`agents/openai.yaml` 仅用于 Skill 元数据、调用策略或 Tool 依赖，不用于定义开发子 Agent。
+不因为旧架构历史自动创建：
+
+```text
+agents/
+runtime projection
+local copies of shared task/result schemas
+```
+
+如果某 Skill 需要专用辅助 Agent 元数据，必须有当前明确需求；不得把网页编写窗口或 Task Execution Agent 写成 Skill 内嵌子 Agent。
 
 渐进披露规则见 `references/progressive_disclosure.md`。
 
-# 步骤 7：分配网页窗口
+# 步骤 10：编写
 
-使用 `assets/window_work_order.template.md`，规则见 `references/multi_window_authoring_protocol.md`。
-
-每个窗口必须有互斥的 `write_paths`。共享文件和 `05_tools/tool_registry.yaml` 仅由主窗口修改。
-
-# 步骤 8：编写
-
-选择模板：
+选择当前 Lightweight 模板：
 
 - `assets/manager_skill.template.md`
 - `assets/workflow_skill.template.md`
 - `assets/operation_skill.template.md`
 - `assets/validator_skill.template.md`
 
-要求：
+编写要求：
 
-- 使用命令式步骤；
-- 区分必需、条件和可选输入；
-- 明确读写边界；
-- 说明已有结果、Workstream 分支和续跑；
-- Workflow 同时描述 planning fragment 与 execution decision；
-- 条件步骤标记 REQUIRED/CONDITIONAL，不在无证据时提前删除；
-- 确认项返回 Manager；
-- 不复制共享 contract；
-- 仅在实际需要时读取特定 reference；
-- 明确 Tool 名称、版本要求、输入输出和失败处理；
-- 未测试 Tool 不得声明为默认生产依赖；
-- 不将网页窗口写成 Agent；
-- 不将 Workflow 写成 Agent；
-- 不引入多个前台 MD 子 Agent；
-- 不把多个外部任务并存误写成前台 Agent 并行。
+- 先写职责边界，再写流程；
+- Step-facing Skill 明确六项统一接口；
+- 明确任务专属工作目录语义；
+- 明确 reuse 在本 Step 开始时检查；
+- 明确 official results；
+- 明确用户确认条件；
+- 明确 Preflight，但不要把 Preflight 扩展成通用 runtime engine；
+- 只在实际需要时读取 reference / schema；
+- 复杂可复现操作保存真实脚本/config，而不是全局命令流水日志；
+- 不复制共享运行架构；
+- 不生成 route、Workstream、event、runtime task/result 或 transaction closure 的新依赖；
+- 不预读未来 Step；
+- 不以“全面了解”为理由扫描整个项目。
 
-# 步骤 9：检查
+# 步骤 11：多窗口编写
 
-运行：
+仅在确实采用多个网页窗口并行 authoring 时读取：
+
+`references/multi_window_authoring_protocol.md`
+
+每个窗口必须有互斥 `write_paths`。
+
+共享文件，例如：
+
+```text
+AGENTS.md
+00_authoring/AUTHORING_RULES.md
+00_authoring/lightweight_runtime_v2_spec.md
+skill_inventory.yaml
+file_ownership.yaml
+共享 content maps
+05_tools/tool_registry.yaml
+```
+
+仍由主窗口统一修改。
+
+网页窗口不是运行时 Agent。
+
+# 步骤 12：检查与评测
+
+现有静态脚本可以继续用于 Markdown、重复内容、content map 等不依赖 Legacy Runtime 的检查，例如：
 
 ```bash
 python 00_authoring/md-workflow-skill-authoring/scripts/validate_md_skill.py \
@@ -240,55 +405,39 @@ python 00_authoring/md-workflow-skill-authoring/scripts/validate_md_skill.py \
 python 00_authoring/md-workflow-skill-authoring/scripts/detect_cross_file_duplication.py \
   <skill-directory>
 
-python 00_authoring/md-workflow-skill-authoring/scripts/validate_architecture_separation.py \
-  <project-root>
-
 python 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py \
   <project-root>
 ```
 
-修改 `03_contracts/` 后还需运行 authoring 级全量检查：
+任何仍以 Workstream/route/subagent contract 为成功条件的旧检查，在迁移前只能作为 Legacy 检查，不能反过来否定已经冻结的 Lightweight 规则。
 
-```bash
-python 00_authoring/md-workflow-skill-authoring/scripts/validate_contracts.py \
-  <project-root>
-```
+行为评测至少覆盖当前 Skill 实际适用的：
 
-该 authoring 检查不应被普通运行时 task 重复调用。运行时 schema 校验由注册 Tool 的 FAST/FULL 模式处理。
-
-# 步骤 10：评测
-
-示例和夹具统一放入：
-
-`04_evals/<skill-name>/fixtures/`
-
-至少覆盖：
-
-- 正向与负向触发；
+- 正向执行；
 - 最近邻边界；
-- 必需或条件输入缺失；
-- BLOCKED 与 FAILED；
-- 用户决策请求；
-- 已有结果、Workstream 分支与续跑；
-- Focus 选择；
-- Workflow route fragment；
-- fragment 拼接与未连接 Workflow 边界；
-- Workflow execution decision；
-- 三种 task unit；
-- Operation 与 Validator 结果分离；
-- 外部任务 FINISHED_UNVERIFIED；
-- 子 Agent 禁止写管理目录；
-- Tool dependency 不可用、FAIL 和版本不兼容；
-- 普通 task 只使用 FAST，不机械触发 FULL。
+- 输入缺失；
+- 用户确认；
+- 复用成功；
+- 明确不可复用；
+- 无法判断复用等价性；
+- 用户显式重做；
+- task-scoped 工作目录隔离；
+- 直接复用时不创建空任务目录；
+- official results 登记；
+- 跨对话恢复；
+- 当前结果导致后续条件 Step 增删；
+- Tool 不可用时的合理回退；
+- 不写 Legacy runtime records。
+
+Workflow 评测应重点检查阶段映射和科学关系，不再要求 route fragment / workflow decision fixtures。
 
 # 交付
 
-网页窗口返回：
+Authoring 对话返回：
 
 ```yaml
 status: DRAFTED | REVIEW_REQUIRED | BLOCKED
 skill_name:
-window_id:
 owned_paths: []
 created_files: []
 modified_files: []
@@ -297,7 +446,6 @@ validation:
   warnings: []
 duplication_findings: []
 tool_requests: []
-contract_change_requests: []
 open_questions: []
 next_action:
 ```
@@ -305,11 +453,14 @@ next_action:
 # 完成条件
 
 - 层级和单一职责已确认；
-- 局部 contract 与 content map 已确认；
+- 当前 Skill 与 Lightweight Runtime v2 一致；
+- Step-facing 接口六项内容完整且 owner 唯一；
+- task-scoped 目录与 reuse-before-create 规则正确；
+- official results 明确；
+- 用户确认边界明确；
 - 文件所有权无冲突；
-- Workflow planning/execution、Workstream、Manager 和子 Agent 边界正确；
-- Tool 候选已交给 Tool Authoring，而非嵌入业务 Skill；
-- Tool 依赖不承担决策或科学判断；
-- 主文件与附属文件无重复定义；
-- 静态检查和行为评测通过；
-- 未出现开发子 Agent、嵌套委派或多个前台 MD 子 Agent 残留。
+- 主文件、reference、schema、scripts 无高风险重复；
+- Tool 候选没有重新承担科学决策或 Runtime orchestration；
+- 未重新引入普通 Workstream / route / event / runtime task-result / transaction 依赖；
+- 静态检查和适用行为评测完成；
+- 未把网页编写窗口、Workflow 或 Task Execution Agent误写成新的嵌套 Agent 层。
