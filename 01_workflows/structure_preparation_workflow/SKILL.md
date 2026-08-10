@@ -37,7 +37,9 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 - 返回 `workflow_route_fragment` 或 `workflow_decision`；
 - 根据目录存在与否推断子环节完成。
 
-# 阶段目录
+# 阶段目录与任务隔离
+
+结构准备的稳定基础目录为：
 
 ```text
 01_structure_preparation/
@@ -52,15 +54,38 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 └── 09_validation/
 ```
 
-目录是子环节的标准工作位置，不是完成证据。
+这些目录可以在项目初始化时建立到子环节基础目录这一层。
+
+不同任务的实际执行结果必须隔离在任务专属子目录：
+
+```text
+<base_work_directory>/<task_id>/
+```
+
+例如：
+
+```text
+01_structure_preparation/02_component_and_residue_classification/T001/
+01_structure_preparation/02_component_and_residue_classification/T005/
+```
+
+Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `Txxxx/`。
+
+`Txxxx/` 由 Task Execution Agent 在确认当前环节不能直接复用、确实需要执行时创建。若当前环节直接复用已有正式结果，则不要求创建空的本任务目录。
+
+目录存在不是完成证据。
 
 # 子环节到 Skill 的映射
 
 ## 1.1 Source recognition
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/01_source_recognition`
+
+任务执行目录：
+
+`01_structure_preparation/01_source_recognition/<task_id>`
 
 当前执行 Skill：
 
@@ -72,9 +97,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.2 Component and residue classification
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/02_component_and_residue_classification`
+
+任务执行目录：
+
+`01_structure_preparation/02_component_and_residue_classification/<task_id>`
 
 当前执行 Skill：
 
@@ -86,9 +115,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.3 Chain and component selection
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/03_chain_and_component_selection`
+
+任务执行目录：
+
+`01_structure_preparation/03_chain_and_component_selection/<task_id>`
 
 当前执行 Skill：
 
@@ -101,9 +134,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.4 Altloc occupancy resolution
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/04_altloc_occupancy_resolution`
+
+任务执行目录：
+
+`01_structure_preparation/04_altloc_occupancy_resolution/<task_id>`
 
 当前执行 Skill：
 
@@ -118,9 +155,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.5 Completeness check
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/05_completeness_check`
+
+任务执行目录：
+
+`01_structure_preparation/05_completeness_check/<task_id>`
 
 当前执行 Skill：
 
@@ -132,9 +173,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.6 Missing region completion
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/06_missing_region_completion`
+
+任务执行目录：
+
+`01_structure_preparation/06_missing_region_completion/<task_id>`
 
 当前执行 Skill：
 
@@ -149,9 +194,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.7 Protein protonation assignment
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/07_protein_protonation_assignment`
+
+任务执行目录：
+
+`01_structure_preparation/07_protein_protonation_assignment/<task_id>`
 
 当前执行 Skill：
 
@@ -166,9 +215,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.8 Reorder and mapping
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/08_reorder_and_mapping`
+
+任务执行目录：
+
+`01_structure_preparation/08_reorder_and_mapping/<task_id>`
 
 当前执行 Skill：
 
@@ -181,9 +234,13 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 
 ## 1.9 Validation
 
-工作目录：
+基础工作目录：
 
 `01_structure_preparation/09_validation`
+
+任务执行目录：
+
+`01_structure_preparation/09_validation/<task_id>`
 
 当前执行 Skill：
 
@@ -270,7 +327,8 @@ Task Execution Agent 在执行过程中根据：
 1. 读取当前子环节 Skill；
 2. 在 `project_result_index.md` 中检索该环节已有正式结果；
 3. 按当前 Skill 定义的 reuse conditions 判断是否等价；
-4. 明确等价则自动复用；明确不等价则正常执行；信息不足时询问用户；用户明确要求重做时跳过自动复用。
+4. 明确等价则自动复用；明确不等价则正常执行；信息不足时询问用户；用户明确要求重做时跳过自动复用；
+5. 只有确定需要执行时才创建当前任务的 `<base_work_directory>/<task_id>/`。
 
 本 Workflow 不因为“同一阶段已有文件”就判定可以复用。
 
@@ -283,6 +341,8 @@ Task Execution Agent 在执行过程中根据：
 - 更新当前 `Txxxx.md` 中该子环节的状态、对象、工作目录、主要结果和必要执行记录；
 - 将该子环节定义的正式结果登记到 `project_result_index.md`；
 - 根据结果调整后续任务计划。
+
+如果当前任务是通过复用已有结果完成该环节，`主要结果` 可以直接指向来源任务的正式结果；本任务不需要复制文件或创建空目录。
 
 本 Workflow 自身不生成额外 route、decision、event、artifact registry 或 closure record。
 
@@ -305,6 +365,8 @@ Legacy 材料仍可保留用于历史、旧项目迁移或明确的 Legacy 维�
 - [ ] 当前任务由 `Txxxx.md` 定位，而不是 Workstream / active route；
 - [ ] 只为当前子环节解析实际 Skill；
 - [ ] 未预读未来子环节的业务 Skill；
+- [ ] Manager 只记录任务专属目录路径，未创建 `Txxxx/` 执行目录；
+- [ ] 当前任务目录只在确实需要执行该子环节时由 Task Execution Agent 创建；
 - [ ] 未重新定义具体子环节的科学算法、reuse conditions 或 official results；
 - [ ] 条件环节根据实际证据动态增删，而不是生成 SKIP / route revision；
 - [ ] 未创建 Workflow decision、route fragment、event 或 runtime task；
