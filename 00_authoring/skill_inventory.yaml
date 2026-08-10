@@ -1,5 +1,5 @@
 schema_version: 4
-status: lightweight_runtime_v2_structure_workflow_refactored_step_migration_pending
+status: lightweight_runtime_v2_structure_workflow_and_1_1_refactored_1_2_1_3_pending
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
@@ -70,13 +70,13 @@ skills:
   - name: structure_preparation_workflow
     layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: lightweight_workflow_refactored_step_interfaces_pending
+    status: lightweight_workflow_refactored_step_interfaces_1_2_1_3_pending
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
 
   - name: source_recognition
     layer: operation
     path: 02_operations/source_recognition
-    status: scientific_logic_retained_lightweight_step_interface_pending
+    status: lightweight_step_interface_refactored_revalidation_pending
     content_map: 00_authoring/content_maps/source_recognition.yaml
 
   - name: component_and_residue_classification_validator
@@ -167,6 +167,9 @@ tools:
     - name: runtime_schema_validator
       status: ACTIVE_LEGACY
       validation_evidence: 04_evals/runtime_schema_validator/VALIDATION.md
+    - name: source_recognition_deterministic
+      status: ACTIVE_LEGACY_INTERFACE_LIGHTWEIGHT_ADAPTATION_PENDING
+      validation_evidence: 04_evals/source_recognition_deterministic/VALIDATION.md
     - name: state_transaction
       status: LEGACY_DESIGNED_FROZEN
     - name: incremental_reference_checker
@@ -175,7 +178,7 @@ tools:
       status: LEGACY_DESIGNED_FROZEN
 
 migration_next:
-  - migrate_1_1_1_2_1_3_to_step_reuse_official_result_interface
-  - validate_task_sheet_creation_and_cross_dialog_recovery
-  - validate_multi_step_execution_and_result_reuse
-  - continue_structure_preparation_step_implementation_after_1_3
+  - migrate_1_2_to_lightweight_step_reuse_official_result_interface
+  - migrate_1_3_operation_and_validator_to_lightweight_step_interface
+  - validate_1_1_task_sheet_and_result_index_behavior
+  - validate_cross_dialog_recovery_and_1_1_to_1_2_handoff
