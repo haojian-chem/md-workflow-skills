@@ -3,56 +3,44 @@ skill_name: structure_preparation_workflow
 skill_type: workflow
 skill_path: 01_workflows/structure_preparation_workflow
 architecture: lightweight_runtime_v2
-status: lightweight_workflow_refactored_step_interfaces_pending
+status: lightweight_refactored_revalidation_pending
 
 owned_content:
-  stage_goal_and_scientific_boundary:
+  stage_goal_and_completion_criteria:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
-  current_step_to_operation_validator_skill_mapping:
+  ordered_substeps_and_skill_mapping:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
-  within_stage_scientific_relationships:
+  stage_internal_scientific_relationships:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
-  conditional_step_relationships_and_dynamic_plan_effects:
+  conditional_step_effect_on_dynamic_task_sheet:
+    owner: 01_workflows/structure_preparation_workflow/SKILL.md
+  task_scoped_work_directory_pattern:
     owner: 01_workflows/structure_preparation_workflow/SKILL.md
 
 external_references:
   - purpose: lightweight_runtime_architecture
     owner: 00_authoring/lightweight_runtime_v2_spec.md
-    access: authoring_reference
-  - purpose: manager_initial_planning_catalog
+    access: reference_only
+  - purpose: manager_planning_catalog
     owner: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
     access: reference_only
-  - purpose: task_execution_runtime_entry
-    owner: AGENTS.md
+  - purpose: examples_and_test_fixtures
+    owner: 04_evals/structure_preparation_workflow/fixtures/
     access: reference_only
-  - purpose: operation_and_validator_scientific_rules
-    owner: 02_operations/ and 02_validators/
-    access: current_step_only
+    status: legacy_fixtures_revalidation_pending
 
-legacy_material:
+legacy_interfaces:
   status: frozen_not_default_runtime
-  files:
-    - 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
-    - runtime/workflows/structure_preparation.runtime.yaml
-    - 03_contracts/workflow_route_fragment.schema.yaml
-    - 03_contracts/workflow_decision.schema.yaml
-    - 03_contracts/workstream_state.schema.yaml
-    - 00_manager/md_workflow_manager/references/route_planning_protocol.md
-  rule: retained_for_history_migration_or_explicit_legacy_maintenance_only
-
-not_owned_by_workflow:
-  - manager_initial_task_planning
-  - task_sheet_current_state
-  - project_result_index_current_result_registration
-  - step_reuse_conditions
-  - step_official_results
-  - operation_algorithm
-  - validator_algorithm
-  - user_task_scope_management
-  - workstream_route_event_transaction_orchestration
+  items:
+    - workstream_local_route_fragment_generation
+    - workflow_route_fragment.schema.yaml
+    - workflow_decision.schema.yaml
+    - one_decision_execution
+    - active_route_progression
+    - route_revision_signal
 
 notes:
-  - Manager initial planning uses workflow_plan_index.yaml and does not need to load this Workflow Skill.
-  - Task Execution Agent may read this Workflow only to resolve the current step mapping or stage relationship, then loads only the current step's required Skill.
-  - Ordinary execution does not return workflow_route_fragment or workflow_decision objects.
-  - 1.1/1.2/1.3 still require migration to the common lightweight step interface: object requirements, reuse conditions, validation requirements, and official results.
+  - Manager uses workflow_plan_index.yaml for initial Task Sheet planning and does not load this Workflow for ordinary planning.
+  - Task Execution Agent reads this Workflow only when it needs step-to-Skill mapping or stage-internal scientific relationships.
+  - Stable step base directories may be created during project initialization; task-specific `<task_id>/` directories are created by the Task Execution Agent only when local execution is required.
+  - Direct reuse of an existing result does not require an empty task-specific directory.
