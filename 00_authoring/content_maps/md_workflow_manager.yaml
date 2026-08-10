@@ -3,7 +3,7 @@ skill_name: md_workflow_manager
 skill_type: manager
 skill_path: 00_manager/md_workflow_manager
 architecture: lightweight_runtime_v2
-status: manager_core_refactored_global_entry_alignment_pending
+status: manager_core_and_global_entry_aligned_task_execution_interface_pending
 
 owned_content:
   task_location_and_identification:
@@ -27,6 +27,9 @@ external_references:
   - purpose: lightweight_runtime_architecture
     owner: 00_authoring/lightweight_runtime_v2_spec.md
     access: authoring_reference
+  - purpose: repository_runtime_entry
+    owner: AGENTS.md
+    access: reference_only
   - purpose: repository_authoring_rules
     owner: 00_authoring/AUTHORING_RULES.md
     access: authoring_reference
@@ -57,4 +60,5 @@ notes:
   - `task_index.md` is task navigation only; `Txxxx.md` is the current task plan and recovery context.
   - `project_result_index.md` is organized by step and contains result locations, not current-step state.
   - The planning index contains only step order, names, work directories, and conditional markers; it must not grow into a compact scientific Workflow Skill.
-  - Root AGENTS.md, global authoring rules, inventory, and runtime projection still describe the legacy architecture and require separate alignment before Lightweight Runtime v2 is treated as repository-wide default.
+  - Root `AGENTS.md` and authoring rules now select Lightweight Runtime v2 as the default architecture.
+  - A dedicated Task Execution Agent runtime interface and lightweight scientific Step migrations are still pending; Manager refactor alone does not make 1.1-1.3 fully migrated.
