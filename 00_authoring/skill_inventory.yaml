@@ -1,5 +1,5 @@
 schema_version: 4
-status: lightweight_runtime_v2_structure_workflow_1_1_1_2_refactored_1_3_pending
+status: lightweight_runtime_v2_authoring_guide_aligned_structure_workflow_1_1_1_2_refactored_1_3_draft_pending
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
@@ -58,7 +58,7 @@ skills:
   - name: md-workflow-skill-authoring
     layer: authoring
     path: 00_authoring/md-workflow-skill-authoring
-    status: lightweight_alignment_pending
+    status: lightweight_authoring_guide_core_and_templates_aligned_revalidation_pending
     content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
 
   - name: md-workflow-tool-authoring
@@ -94,13 +94,13 @@ skills:
   - name: chain_and_component_selection
     layer: operation
     path: 02_operations/chain_and_component_selection
-    status: passed_2026_07_31_revalidate_after_1_2_change_lightweight_interface_pending
+    status: redesign_draft_recorded_current_implementation_incomplete_lightweight_migration_pending
     content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
 
   - name: chain_and_component_selection_validator
     layer: validator
     path: 02_validators/chain_and_component_selection_validator
-    status: passed_2026_07_31_revalidate_after_1_2_change_lightweight_interface_pending
+    status: historical_2026_07_31_pass_not_current_redesign_current_implementation_incomplete
     content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
 
   - name: altloc_occupancy_resolution
@@ -187,7 +187,9 @@ tools:
       status: LEGACY_DESIGNED_FROZEN
 
 migration_next:
-  - migrate_1_3_operation_and_validator_to_lightweight_step_interface
+  - revalidate_lightweight_skill_authoring_guide_and_static_checks
+  - continue_1_3_design_from_authoring_draft_before_touching_current_implementation
+  - migrate_1_3_operation_and_validator_only_after_design_is_frozen
   - validate_1_1_and_1_2_task_scoped_directory_behavior
   - validate_cross_dialog_recovery_and_1_1_to_1_2_to_1_3_handoff
   - validate_result_reuse_without_empty_task_directories
