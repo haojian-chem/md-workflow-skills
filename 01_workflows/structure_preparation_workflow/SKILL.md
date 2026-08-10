@@ -1,68 +1,41 @@
 ---
 name: structure_preparation_workflow
-description: 为一个 Focus Workstream 规划结构准备阶段的 route fragment，并在执行时根据当前位置、有效产物、用户决定和 gate 返回一个当前 task unit decision。该 Skill 不执行 Operation/Validator、不创建子 Agent、不修改项目或业务文件。
+description: 定义 Lightweight Runtime v2 下结构准备阶段的科学边界、子环节关系，以及 1.1–1.9 到实际 Operation/Validator Skill 的映射。该 Skill 不维护 route、Workstream、runtime decision 或事务闭环，也不替代具体子环节 Skill 的科学执行规则。
 ---
 
 # 目标
 
-将一个 Workstream 从原始结构输入推进到经过最终验证、可供 `topology_preparation` 使用的 STRUCTURE artifact set。
+将结构对象从来源识别推进到经过最终验证、可供后续 topology preparation 使用的结构结果。
 
-本 Workflow 提供两个接口：
+本 Workflow 在 Lightweight Runtime v2 中只承担两类职责：
 
-- 规划：返回 `workflow_route_fragment.schema.yaml`；
-- 执行：返回 `workflow_decision.schema.yaml`。
+1. 说明结构准备阶段内各子环节之间的科学关系；
+2. 将任务单中的 `1.1`–`1.9` 映射到当前环节真正需要加载的 Operation / Validator Skill。
 
-它不执行 task、不管理子 Agent、不直接与用户交互。
+Manager 的初始任务规划使用：
 
-# 输入
+`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
 
-Manager 必须提供共同输入：
+不需要读取本 Workflow 来生成初始 Task Sheet。
 
-- `workstream_id`；
-- 符合 `workstream_state.schema.yaml` 的当前 Workstream state；
-- 当前有效 STRUCTURE artifact set 和必要报告引用；
-- 已解决 decision 摘要；
-- 目标 Skill 可用性；
-- 项目根和本阶段工作目录；
-- 用户步骤级覆盖指令，如有。
+# Runtime 使用方式
 
-规划接口还必须提供：
+Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象。
 
-- 本 Workflow 内的起点与终点；
-- Workstream 目标和用户约束；
-- 已知条件、假设和跨阶段出口要求。
+当需要确认当前子环节对应的实际 Skill 或阶段内关系时，可读取本 Workflow，然后只加载当前子环节需要的 Skill。
 
-执行接口还必须提供：
+正常运行不要求每完成一个子环节都重新经过 Workflow decision 或返回 Manager。
 
-- 当前 active route；
-- 当前预计下一 step；
-- 当前 task/result、artifact 和 Validator evidence。
+本 Workflow 不：
 
-缺少 Workstream ID、范围或必要状态时返回 BLOCKED，不得自行假定完整从头到尾执行。
-
-# 职责边界
-
-负责：
-
-- 定义结构准备阶段的有序 substep；
-- 为本阶段生成 REQUIRED/CONDITIONAL route fragment；
-- 声明入口要求、出口 artifact、条件、假设和 blocker；
-- 判断 Focus Workstream 当前位于哪个 substep；
-- 根据有效 artifact、报告和已解决决定选择一个下一 task unit；
-- 判断跳过、暂停、阻塞或阶段完成；
-- 声明下一 task unit 的输入、输出和 gate。
-
-不得：
-
-- 拼接其他 Workflow 或写完整 route record；
-- 选择跨 Workflow 起点、终点或 Focus；
-- 执行 Operation 或 Validator；
-- 创建或管理子 Agent；
-- 修改结构、状态或记录；
-- 直接向用户提问；
-- 创建 Workstream 或切换全局阶段；
-- 复制子 Skill 的命令、算法或详细领域判定标准；
-- 根据目录存在直接推断任务完成。
+- 创建或修改任务单；
+- 查询或修改 `project_result_index.md`；
+- 执行复用等价性判断；
+- 执行 Operation / Validator；
+- 创建子 Agent；
+- 维护 Workstream、route、event、artifact state 或 transaction；
+- 返回 `workflow_route_fragment` 或 `workflow_decision`；
+- 根据目录存在与否推断子环节完成。
 
 # 阶段目录
 
@@ -79,255 +52,261 @@ Manager 必须提供共同输入：
 └── 09_validation/
 ```
 
-目录只在相应 task 实际执行时由 Operation/Validator 按权限创建。目录存在不是完成证据。
+目录是子环节的标准工作位置，不是完成证据。
 
-# Substep registry
+# 子环节到 Skill 的映射
 
-## 1. source_recognition
+## 1.1 Source recognition
 
-目标：识别并选定初始 PDB/mmCIF/AF3 CIF 等结构来源，建立首个 STRUCTURE artifact candidate。
+工作目录：
+
+`01_structure_preparation/01_source_recognition`
+
+当前执行 Skill：
+
+`02_operations/source_recognition/SKILL.md`
+
+逻辑职责：`OPERATION`
+
+---
+
+## 1.2 Component and residue classification
+
+工作目录：
+
+`01_structure_preparation/02_component_and_residue_classification`
+
+当前执行 Skill：
+
+`02_validators/component_and_residue_classification_validator/SKILL.md`
+
+逻辑职责：`VALIDATOR`
+
+---
+
+## 1.3 Chain and component selection
+
+工作目录：
+
+`01_structure_preparation/03_chain_and_component_selection`
+
+当前执行 Skill：
+
+- `02_operations/chain_and_component_selection/SKILL.md`
+- `02_validators/chain_and_component_selection_validator/SKILL.md`
+
+逻辑职责：`OPERATION + VALIDATOR`
+
+---
+
+## 1.4 Altloc occupancy resolution
+
+工作目录：
+
+`01_structure_preparation/04_altloc_occupancy_resolution`
+
+当前执行 Skill：
+
+- `02_operations/altloc_occupancy_resolution/SKILL.md`
+- `02_validators/altloc_occupancy_validator/SKILL.md`
+
+逻辑职责：`OPERATION + VALIDATOR`
+
+该环节为条件环节。
+
+---
+
+## 1.5 Completeness check
+
+工作目录：
+
+`01_structure_preparation/05_completeness_check`
+
+当前执行 Skill：
+
+`02_validators/structure_completeness_validator/SKILL.md`
+
+逻辑职责：`VALIDATOR`
+
+---
+
+## 1.6 Missing region completion
+
+工作目录：
+
+`01_structure_preparation/06_missing_region_completion`
+
+当前执行 Skill：
+
+- `02_operations/missing_region_completion/SKILL.md`
+- `02_validators/missing_region_completion_validator/SKILL.md`
+
+逻辑职责：`OPERATION + VALIDATOR`
+
+该环节为条件环节。
+
+---
+
+## 1.7 Protein protonation assignment
+
+工作目录：
+
+`01_structure_preparation/07_protein_protonation_assignment`
+
+当前执行 Skill：
+
+- `02_operations/protein_protonation_assignment/SKILL.md`
+- `02_validators/protein_protonation_validator/SKILL.md`
+
+逻辑职责：`OPERATION + VALIDATOR`
+
+该环节为条件环节。
+
+---
+
+## 1.8 Reorder and mapping
+
+工作目录：
+
+`01_structure_preparation/08_reorder_and_mapping`
+
+当前执行 Skill：
+
+- `02_operations/structure_reorder_and_mapping/SKILL.md`
+- `02_validators/structure_mapping_validator/SKILL.md`
+
+逻辑职责：`OPERATION + VALIDATOR`
+
+---
+
+## 1.9 Validation
+
+工作目录：
+
+`01_structure_preparation/09_validation`
+
+当前执行 Skill：
+
+`02_validators/structure_preparation_validator/SKILL.md`
+
+逻辑职责：`VALIDATOR`
+
+# 阶段内科学关系
+
+## 1.1 → 1.2
+
+1.1 确定本任务后续处理使用的结构来源。1.2 对该结构进行链、组分、残基和关系分类。
+
+1.2 不应通过重新做 source recognition 来恢复 1.1 的过程；需要来源信息时消费 1.1 的正式结果。
+
+## 1.2 → 1.3
+
+1.2 的正式分类结果是 1.3 理解 chain / component / residue 层级信息的上游依据。
+
+1.3 不重新定义 1.2 已建立的分类标识和关系语义。
+
+## 1.3 → 后续结构处理
+
+1.3 确定后续实际保留和处理的结构内容。若 1.3 产生新的结构结果，后续结构相关环节以相应结果作为对象，而不是继续默认使用 1.3 之前的结构。
+
+## 1.4
+
+1.4 只在当前保留结构存在需要处理的 altloc / occupancy 问题时需要执行。
+
+如果进入该环节前已有充分证据确认不需要处理，Task Execution Agent 可从尚未执行的任务计划中删除 1.4；具体判断依据由 1.4 Skill 定义，而不是由本 Workflow 重复定义。
+
+## 1.5 → 1.6
+
+1.5 检查结构完整性。1.6 是否需要保留在后续计划中，应依据 1.5 的正式结果决定。
+
+如果 1.5 明确不需要 missing-region completion，则删除尚未执行的 1.6；如果结果要求补全或修复，则保留或加入 1.6。
+
+## 1.6 → 后续结构处理
+
+如果 1.6 改变了结构，后续结构相关环节必须使用补全后的结果对象。不得因为任务单最初填写了旧对象而继续处理旧结构。
+
+## 1.7
+
+1.7 是否需要执行由当前体系和质子化处理需求决定。具体适用条件、方法和用户确认要求由 1.7 Skill 定义。
+
+如果 1.7 改变结构或残基状态，后续环节使用其正式结果对象。
+
+## 1.8 → 1.9
+
+1.8 整理最终结构顺序、编号和映射，使结构及映射关系进入可验证状态。
+
+1.9 对结构准备阶段的最终结果执行阶段级验证。只有 1.9 的实际验证要求满足，才能把结构准备视为完成；目录存在或上游步骤曾执行不能替代 1.9。
+
+# 条件环节与动态任务计划
+
+结构准备阶段当前条件环节为：
 
 ```text
-mode: OPERATION
-operation: source_recognition
-validator: null
-work_directory: 01_structure_preparation/01_source_recognition
-necessity: REQUIRED
+1.4 altloc_occupancy_resolution
+1.6 missing_region_completion
+1.7 protein_protonation_assignment
 ```
 
-完成证据：Operation result 为 DONE，且 Manager 已注册可定位的 STRUCTURE artifact set；该 artifact 可以是 UNVALIDATED。
+Manager 在初始规划时可以在未有充分证据时先列出这些环节。
 
-## 2. component_and_residue_classification
+Task Execution Agent 在执行过程中根据：
 
-目标：识别链、组分、残基类别、标准生物聚合物、相连非标准残基、独立非标准组分和协调候选。
+- 当前子环节的正式结果；
+- 当前 Skill 的科学规则；
+- 用户在当前执行对话中的明确要求；
 
-```text
-mode: VALIDATOR
-operation: null
-validator: component_and_residue_classification_validator
-work_directory: 01_structure_preparation/02_component_and_residue_classification
-necessity: REQUIRED
-```
+直接增删或调整后续尚未执行子环节。
 
-完成证据：Validator 执行成功且分类报告存在。不确定项可以产生 decision request，不自动视为 Validator 执行失败。
+确认不需要的未执行环节直接从 Task Sheet 删除，不写 `NOT_APPLICABLE` / `SKIP` 状态，也不生成 route revision。
 
-## 3. chain_and_component_selection
+已经实际执行过并形成任务历史的环节不得为了整理计划而静默删除。
 
-目标：按用户决定和分类结果保留、删除、拆分或单独处理链与组分。
+# 复用边界
 
-```text
-mode: OPERATION_WITH_VALIDATOR
-operation: chain_and_component_selection
-validator: chain_and_component_selection_validator
-work_directory: 01_structure_preparation/03_chain_and_component_selection
-necessity: REQUIRED
-```
+本 Workflow 不定义通用 reuse conditions。
 
-前置 gate：分类报告可用；所有 blocking 选择决定已解决。
+每个子环节真正开始时，由 Task Execution Agent：
 
-## 4. altloc_occupancy_resolution
+1. 读取当前子环节 Skill；
+2. 在 `project_result_index.md` 中检索该环节已有正式结果；
+3. 按当前 Skill 定义的 reuse conditions 判断是否等价；
+4. 明确等价则自动复用；明确不等价则正常执行；信息不足时询问用户；用户明确要求重做时跳过自动复用。
 
-目标：处理保留体系中的 altLoc/occupancy 冲突。
+本 Workflow 不因为“同一阶段已有文件”就判定可以复用。
 
-```text
-mode: OPERATION_WITH_VALIDATOR
-operation: altloc_occupancy_resolution
-validator: altloc_occupancy_validator
-work_directory: 01_structure_preparation/04_altloc_occupancy_resolution
-necessity: CONDITIONAL
-condition: 有可信检查证据表明存在待处理 altLoc/occupancy 问题
-```
+# 结果与记录
 
-无问题且有可信证据时执行接口返回 SKIP。
+具体子环节 Skill 定义自己的 `official results`。
 
-## 5. completeness_check
+子环节完成或复用后，由 Task Execution Agent：
 
-目标：检查残基、重原子和连接完整性，并识别需要补全或修复的区域。
+- 更新当前 `Txxxx.md` 中该子环节的状态、对象、工作目录、主要结果和必要执行记录；
+- 将该子环节定义的正式结果登记到 `project_result_index.md`；
+- 根据结果调整后续任务计划。
 
-```text
-mode: VALIDATOR
-operation: null
-validator: structure_completeness_validator
-work_directory: 01_structure_preparation/05_completeness_check
-necessity: REQUIRED
-```
+本 Workflow 自身不生成额外 route、decision、event、artifact registry 或 closure record。
 
-完成证据：报告明确给出无需补全、需要补全或需要人工决定的 outcome。
+# Legacy
 
-## 6. missing_region_completion
+以下旧接口已经冻结，不属于 Lightweight Runtime v2 的普通执行路径：
 
-目标：按已确认的残基范围和策略补全或修复缺失区域。
+- Workstream-local route fragment planning；
+- one-decision execution interface；
+- `workflow_route_fragment.schema.yaml`；
+- `workflow_decision.schema.yaml`；
+- active route progression；
+- route revision signal；
+- runtime projection 驱动的 Workflow dispatch。
 
-```text
-mode: OPERATION_WITH_VALIDATOR
-operation: missing_region_completion
-validator: missing_region_completion_validator
-work_directory: 01_structure_preparation/06_missing_region_completion
-necessity: CONDITIONAL
-condition: 完整性报告要求补全或修复，且 blocking 决定已解决
-```
-
-报告明确无需补全时执行接口返回 SKIP。
-
-## 7. protein_protonation_assignment
-
-目标：确定并应用需要处理的 His/Asp/Glu 等蛋白质质子化状态。
-
-```text
-mode: OPERATION_WITH_VALIDATOR
-operation: protein_protonation_assignment
-validator: protein_protonation_validator
-work_directory: 01_structure_preparation/07_protein_protonation_assignment
-necessity: CONDITIONAL
-condition: 保留体系含需要判定和应用质子化状态的蛋白质残基
-```
-
-无蛋白质或没有目标时，基于分类和检查证据返回 SKIP。
-
-## 8. reorder_and_mapping
-
-目标：按项目规范重排结构，整理编号并生成原结构到最终结构的映射。
-
-```text
-mode: OPERATION_WITH_VALIDATOR
-operation: structure_reorder_and_mapping
-validator: structure_mapping_validator
-work_directory: 01_structure_preparation/08_reorder_and_mapping
-necessity: REQUIRED
-```
-
-完成证据：新 STRUCTURE artifact candidate 与映射文件存在，Validator 确认映射一致。
-
-## 9. validation
-
-目标：核验结构准备阶段的最终结构和必要记录是否满足进入拓扑准备的 gate。
-
-```text
-mode: VALIDATOR
-operation: null
-validator: structure_preparation_validator
-work_directory: 01_structure_preparation/09_validation
-necessity: REQUIRED
-```
-
-完成证据：Validator 允许进入下一阶段，且对应 STRUCTURE artifact set 已由 Manager 标记为 VALIDATED。
-
-# 规划接口：route fragment
-
-Manager 请求规划时，本 Workflow：
-
-1. 根据起点和终点裁剪 substep registry；
-2. 保留范围内所有 REQUIRED steps；
-3. 保留所有尚不能由证据排除的 CONDITIONAL steps；
-4. 为每一步声明 task unit mode、Skill ref、工作目录、前置要求、预期输出和 gate；
-5. 声明入口 requirements；
-6. 声明出口为经过最终验证的 STRUCTURE artifact；
-7. 标记尚未实现 Skill、缺失入口 artifact 或范围冲突形成的 blocker；
-8. 返回 `workflow_route_fragment.schema.yaml`。
-
-## Fragment 状态
-
-- `COMPLETE`：请求范围内所有步骤均可表达，且无 blocker；
-- `PARTIAL`：可规划一部分，但某个条件、Skill 或边界尚未解析；
-- `BLOCKED`：在入口即无法形成安全片段。
-
-规划接口不根据当前不完整 evidence 提前决定条件步骤一定执行或一定跳过。
-
-本 Workflow 的 `next_workflow_hint` 为 `topology_preparation_workflow`，要求输入 VALIDATED STRUCTURE artifact。下一 Workflow 是否连接由 Manager 和 stage registry 判断。
-
-# 执行接口：当前 decision
-
-## 当前位置判断
-
-仅根据：
-
-1. Workstream `current_position`；
-2. active route 的范围和预计下一 step；
-3. Manager 登记的 task/result；
-4. artifact set 与 Validator report；
-5. 已解决 decision。
-
-禁止仅按目录编号、文件时间或目录是否存在推断。
-
-若 state 与记录矛盾，返回 BLOCKED，理由为 Workstream 需要恢复；不得自行修复状态。
-
-## EXECUTE
-
-每次只返回一个 `next_task_unit`。必须声明 task ID、mode、Operation/Validator Skill ref、工作目录、required inputs、expected outputs 和 gate requirements。
-
-目标 Skill 未实现或不可用时，不得返回可执行 task；返回 BLOCKED 并说明缺失 Skill。
-
-## SKIP
-
-只在以下情况使用：
-
-- active route 将该步骤标为 CONDITIONAL；
-- 有报告或已验证 artifact 证明步骤不适用；
-- 已有等价且仍有效的结果。
-
-返回被跳过 substep 和证据。Manager 记录后再次调用本 Workflow。
-
-## PAUSE
-
-用于尚未解决但可由用户或外部条件解除的暂停，例如 blocking decision 或缺失用户输入。返回 confirmation items 或明确依赖，不返回 task unit。
-
-## BLOCKED
-
-用于输入状态不可解释、必要 Skill 缺失、前置 artifact/report 缺失、gate 冲突或需要恢复。
-
-不得把业务对象“不通过”自动等同为 Workflow 执行失败；应根据 Validator outcome 返回修复 task、decision 或阻塞理由。
-
-## COMPLETE
-
-仅当：
-
-- 本轮 route 终点已达到；或
-- validation 已通过、最终 STRUCTURE artifact 为 VALIDATED，且阶段目标完成。
-
-Workflow 只返回本范围或本阶段完成；Manager 决定进入下一 Workflow 或结束本轮。
-
-# Route revision signal
-
-以下结果可能使 active route 过期：
-
-- 分类发现额外人工选择；
-- completeness report 决定是否进入补全；
-- 补全或质子化产生新结构版本；
-- Validator 要求返回前一 substep；
-- 用户改变终点；
-- artifact 被 INVALIDATED 或 SUPERSEDED；
-- Skill 可用性变化。
-
-本 Workflow 返回修订理由和新的 fragment；不直接写 route record。
-
-# 返回
-
-规划时只返回一个符合：
-
-`03_contracts/workflow_route_fragment.schema.yaml`
-
-执行时只返回一个符合：
-
-`03_contracts/workflow_decision.schema.yaml`
-
-共同要求：
-
-- `workstream_id` 必须等于 Focus Workstream；
-- `workflow_name` 固定为 `structure_preparation_workflow`；
-- 不返回 subagent result；
-- 不执行或汇总多个 task；
-- 不直接更新 project/workstream state。
+Legacy 材料仍可保留用于历史、旧项目迁移或明确的 Legacy 维护，但不得在普通 Task Execution 中加载它们。
 
 # 自检
 
-- [ ] 只读取一个 Focus Workstream 的局部状态；
-- [ ] 规划时返回本 Workflow 的 fragment，未跨阶段拼接；
-- [ ] REQUIRED 与 CONDITIONAL 步骤已区分；
-- [ ] 条件步骤未在无证据时提前删除；
-- [ ] 执行时只返回一个当前 decision；
-- [ ] 未执行或模拟子 Skill；
-- [ ] 未创建子 Agent；
-- [ ] 未向用户直接提问；
-- [ ] 未根据目录存在推断完成；
-- [ ] 组合 task 仅用于专属 Validator；
-- [ ] 最终阶段完成要求 VALIDATED STRUCTURE artifact。
+- [ ] 当前任务由 `Txxxx.md` 定位，而不是 Workstream / active route；
+- [ ] 只为当前子环节解析实际 Skill；
+- [ ] 未预读未来子环节的业务 Skill；
+- [ ] 未重新定义具体子环节的科学算法、reuse conditions 或 official results；
+- [ ] 条件环节根据实际证据动态增删，而不是生成 SKIP / route revision；
+- [ ] 未创建 Workflow decision、route fragment、event 或 runtime task；
+- [ ] 未要求普通子环节结束后返回 Manager；
+- [ ] 最终结构准备完成仍以 1.9 的实际验证结果为依据。
