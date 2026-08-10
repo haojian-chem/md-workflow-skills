@@ -1,116 +1,60 @@
-schema_version: 3
+schema_version: 4
 skill_name: md_workflow_manager
 skill_type: manager
 skill_path: 00_manager/md_workflow_manager
-contract_status: draft
-content_ownership_status: draft
+architecture: lightweight_runtime_v2
+status: manager_core_refactored_global_entry_alignment_pending
+
 owned_content:
-  requested_action_and_focus_resolution:
+  task_location_and_identification:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  project_entry_state_and_recovery_routing:
+  lightweight_record_initialization:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  project_initialization_transaction_and_barrier:
-    owner: 00_manager/md_workflow_manager/references/project_initialization_protocol.md
-  post_initialization_route_scope_resolution:
-    owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
-  workstream_creation_selection_and_lifecycle:
+  task_creation_rules:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  cross_workflow_fragment_composition_and_route_revision:
-    owner: 00_manager/md_workflow_manager/references/route_planning_protocol.md
-  workflow_planning_and_execution_interface_consumption:
+  initial_task_planning:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  user_interaction_and_decision_aggregation:
+  task_sheet_creation_and_manager_handoff:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  serial_task_unit_subagent_invocation:
+  explicit_task_replanning_and_project_level_task_management:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  runtime_fast_full_validation_selection:
+  manager_minimal_read_policy:
     owner: 00_manager/md_workflow_manager/SKILL.md
-  external_submission_and_artifact_registration:
-    owner: 00_manager/md_workflow_manager/SKILL.md
-  stage_registry_and_workflow_connections:
-    owner: 00_manager/md_workflow_manager/references/stage_registry.yaml
-  manager_user_display_rules:
-    owner: 00_manager/md_workflow_manager/references/manager_display_rules.md
-  manager_runtime_checklist:
-    owner: 00_manager/md_workflow_manager/references/manager_runtime_checklist.md
+  workflow_step_planning_catalog:
+    owner: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
+
 external_references:
-  - purpose: layer_boundary
-    owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-    access: reference_only
-  - purpose: runtime_subagent_protocol
-    owner: 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
-    access: reference_only
-  - purpose: deterministic_tool_protocol
-    owner: 00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md
-    access: reference_only
-  - purpose: deterministic_tool_registry
-    owner: 05_tools/tool_registry.yaml
-    access: reference_only
-  - purpose: runtime_schema_validator
-    owner: 05_tools/runtime_schema_validator/
-    access: reference_only
-    status: active_default_runtime_dependency
-  - purpose: shared_contract_index
-    owner: 03_contracts/README.md
-    access: reference_only
-  - purpose: shared_runtime_types
-    owner: 03_contracts/common_types.schema.yaml
-    access: reference_only
-  - purpose: workflow_route_fragment_contract
-    owner: 03_contracts/workflow_route_fragment.schema.yaml
-    access: reference_only
-  - purpose: workflow_decision_contract
-    owner: 03_contracts/workflow_decision.schema.yaml
-    access: reference_only
-  - purpose: subagent_task_contract
-    owner: 03_contracts/subagent_task.schema.yaml
-    access: reference_only
-  - purpose: subagent_result_contract
-    owner: 03_contracts/subagent_result.schema.yaml
-    access: reference_only
-  - purpose: decision_request_contract
-    owner: 03_contracts/confirmation_item.schema.yaml
-    access: reference_only
-  - purpose: project_state_contract
-    owner: 03_contracts/project_state.schema.yaml
-    access: reference_only
-  - purpose: workstream_state_contract
-    owner: 03_contracts/workstream_state.schema.yaml
-    access: reference_only
-  - purpose: project_event_contract
-    owner: 03_contracts/project_event.schema.yaml
-    access: reference_only
-  - purpose: manager_session_contract
-    owner: 03_contracts/manager_session.schema.yaml
-    access: reference_only
-  - purpose: route_record_contract
-    owner: 03_contracts/route_record.schema.yaml
-    access: reference_only
-  - purpose: decision_record_contract
-    owner: 03_contracts/decision_record.schema.yaml
-    access: reference_only
-  - purpose: submission_record_contract
-    owner: 03_contracts/submission_record.schema.yaml
-    access: reference_only
-  - purpose: artifact_set_contract
-    owner: 03_contracts/artifact_set.schema.yaml
-    access: reference_only
-  - purpose: state_snapshot_contract
-    owner: 03_contracts/state_snapshot.schema.yaml
-    access: reference_only
-  - purpose: confirmed_project_state_design
-    owner: design_records/manager_and_project_structure_decisions.md
-    access: reference_only
-  - purpose: confirmed_logging_design
-    owner: design_records/logging_and_record_system.md
-    access: reference_only
-  - purpose: examples_and_test_fixtures
-    owner: 04_evals/md_workflow_manager/fixtures/
-    access: reference_only
-    status: present
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: authoring_reference
+  - purpose: repository_authoring_rules
+    owner: 00_authoring/AUTHORING_RULES.md
+    access: authoring_reference
+
+legacy_manager_material:
+  status: frozen_not_default_runtime
+  files:
+    - 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
+    - 00_manager/md_workflow_manager/references/project_initialization_protocol.md
+    - 00_manager/md_workflow_manager/references/route_planning_protocol.md
+    - 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
+    - 00_manager/md_workflow_manager/references/stage_registry.yaml
+    - 00_manager/md_workflow_manager/references/manager_runtime_checklist.md
+    - 00_manager/md_workflow_manager/references/manager_display_rules.md
+  rule: retained_for_legacy_history_only_and_not_loaded_by_normal_lightweight_manager
+
+not_owned_by_manager:
+  - step_scientific_execution
+  - reuse_equivalence_judgment
+  - operation_logic
+  - validator_logic
+  - project_result_index_step_registration
+  - ordinary_task_execution_agent_progression
+  - legacy_route_transaction_event_or_workstream_orchestration
+
 notes:
-  - Manager main file retains only top-level responsibilities, barriers and runtime routing.
-  - Initialization transaction details and the full runtime checklist are progressively disclosed through references.
-  - Ordinary tasks use FAST validation; FULL is reserved for initialization, recovery, contract changes and critical lifecycle nodes.
-  - Model reasoning-strength routing is intentionally not part of this contract.
-  - Runtime schema validator 0.1.0 is ACTIVE; Manager end-to-end integration remains pending.
+  - Manager and Task Execution Agent are expected to run in different conversations; ordinary execution does not bounce back through Manager between steps.
+  - `task_index.md` is task navigation only; `Txxxx.md` is the current task plan and recovery context.
+  - `project_result_index.md` is organized by step and contains result locations, not current-step state.
+  - The planning index contains only step order, names, work directories, and conditional markers; it must not grow into a compact scientific Workflow Skill.
+  - Root AGENTS.md, global authoring rules, inventory, and runtime projection still describe the legacy architecture and require separate alignment before Lightweight Runtime v2 is treated as repository-wide default.
