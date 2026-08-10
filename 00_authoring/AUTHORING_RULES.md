@@ -1,8 +1,14 @@
 # MD Workflow Authoring Rules
 
-本文件保存 Skill/Tool 设计、实现、审查和多窗口协作规则。它属于 **AUTHORING_ONLY** 材料。
+本文件保存 Skill / Tool 设计、实现、审查和多窗口协作规则，属于 **AUTHORING_ONLY** 材料。
 
-真实 MD 项目运行时不得默认读取本文件；只有用户正在编写、修改、审查 Skill/Tool、contract、runtime spec 或架构规则时才读取。
+真实 MD 项目运行时不得默认读取本文件。
+
+当前默认目标架构为 **Lightweight Runtime v2**，权威规格：
+
+`00_authoring/lightweight_runtime_v2_spec.md`
+
+旧的 Workstream / route / event / runtime projection / transaction 架构已冻结为 Legacy，不再作为新 Skill 重构的默认目标。
 
 ## 1. 开发与运行分离
 
@@ -10,64 +16,69 @@
 
 - 用户可以在网页端打开多个独立窗口；
 - 每个窗口只编写被分配的 Skill 或互斥文件范围；
-- 网页窗口不是运行时 Agent；
-- 项目中不得为编写窗口创建开发子 Agent 角色或配置。
+- 网页编写窗口不是运行时 Agent；
+- 修改前必须先确认当前文件所有权和同步状态。
 
 ### Tool 开发
 
 - 共享 Tool 统一位于 `05_tools/`；
 - Tool 生成、修改、测试、注册、升级和废弃由 `00_authoring/md-workflow-tool-authoring/SKILL.md` 管理；
-- 业务 Skill 可以提出 `tool_request`，但不得在运行中的业务 task 内临时修改共享 Tool；
-- 未测试 Tool 不得标记为 `ACTIVE` 或作为默认生产路径。
+- 业务 Skill 可以提出 `tool_request`，但不得在真实业务 task 中临时修改共享 Tool；
+- 未测试 Tool 不得标记为 `ACTIVE` 或作为默认生产路径；
+- Tool 只承担确定性动作，不承担科学选择、用户意图解析或开放式判断。
 
-### Runtime layer 开发
+### Runtime 开发
 
-- `runtime/**` 是由权威 authoring sources 派生的紧凑运行时投影，不是第二套独立设计源；
-- runtime spec 的语义变更必须先修改对应权威 source，再重新生成/同步 runtime projection；
-- 在自动 compiler 尚未实现前允许 `bootstrap_curated` 投影，但必须记录 source paths 与 Git blob provenance；
-- 不允许只改 `runtime/**` 而不检查对应权威 source 是否需要同步。
+Lightweight Runtime v2 的默认记录层只有：
 
-## 2. 权威文件
+```text
+00_project_records/task_index.md
+00_project_records/project_result_index.md
+00_project_records/tasks/Txxxx.md
+```
 
-跨 Skill 的状态、Focus、Workflow route fragment、Workflow decision、task unit、子 Agent 返回、项目与 Workstream 状态、事件、路线、决策、submission、artifact set 和 snapshot 由：
+不得为普通任务重新引入第二套等价的 route、event、artifact state、Workstream state 或 transaction state。
 
-`03_contracts/`
+`runtime/**` 及围绕其建立的 projection compiler / runtime contracts 属于 Legacy。除旧项目迁移、Legacy 调试或明确清理工作外，不继续为 Lightweight Runtime 新增依赖。
 
-定义。入口索引为：
+## 2. 当前权威文件
 
-`03_contracts/README.md`
+运行时架构原则：
 
-跨 Workflow 路线规划规则由：
+`00_authoring/lightweight_runtime_v2_spec.md`
 
-`00_manager/md_workflow_manager/references/route_planning_protocol.md`
+Manager 任务管理与初始规划：
 
-定义。
+```text
+00_manager/md_workflow_manager/SKILL.md
+00_manager/md_workflow_manager/references/workflow_plan_index.yaml
+```
 
-四层职责、运行时子 Agent 协议、确定性 Tool 协议、内容归属和多窗口编写规则由：
+具体科研职责：
 
-`00_authoring/md-workflow-skill-authoring/references/`
+```text
+01_workflows/
+02_operations/
+02_validators/
+```
 
-定义。
-
-项目记录/恢复设计由：
-
-`design_records/`
-
-定义。
-
-Tool 注册状态、版本、入口和权限由：
+Tool 注册状态、版本和入口：
 
 `05_tools/tool_registry.yaml`
 
-定义。
+Legacy contracts：
 
-具体 Skill 和 Tool 只能引用，不得复制并重新定义共享规则。
+`03_contracts/`
 
-`runtime/**` 只能保存上述权威文件的紧凑运行时投影与 provenance。
+Legacy runtime projection：
 
-## 3. 四层职责与 Tool 边界
+`runtime/`
 
-逻辑职责保持：
+Legacy 文件可以保留作为历史和迁移依据，但不得因为其仍存在就把旧接口继续复制到新 Skill。
+
+## 3. 逻辑层与运行对话边界
+
+科研内容仍按以下逻辑职责组织：
 
 ```text
 Manager
@@ -76,73 +87,204 @@ Operation
 Validator
 ```
 
-Tool 是确定性程序，不是第五个决策层。
+Tool 是确定性程序，不是第五个科学决策层。
 
-职责边界不自动等于 LLM 调用边界。运行时执行后端可以是：
-
-```text
-DETERMINISTIC
-AGENT_TASK
-AGENT_SEQUENCE
-```
-
-具体语义由 `runtime_subagent_protocol.md` 和 runtime projection 定义。
-
-Workflow 不执行 Operation/Validator，不创建项目 Focus，不创建 Workstream，也不拼接其他 Workflow。
-
-Manager 不得根据阶段名称自行编造 Workflow 内部步骤，也不得脱离 execution decision/active-route fast-path 规则自行选择局部业务步骤。
-
-Tool 不得向用户提问、创建 Agent、降低 gate 或修改注册权限之外的路径。
-
-## 4. 路线规划规则
-
-- 每个 Workflow 只生成自身阶段的 `workflow_route_fragment`；
-- Manager 解析起点、终点和停止条件；
-- Manager 按 stage registry 确定涉及的 Workflow；
-- 相邻 fragment 的 exit artifact 必须满足下一 fragment 的 entry requirement；
-- 条件步骤标记 `REQUIRED | CONDITIONAL`；
-- 无证据时不得提前删除条件步骤；
-- 未连接 Workflow 在边界形成 `PARTIAL | BLOCKED`，不得虚构内部步骤；
-- route record 创建后不可覆盖，修订通过新 route 和 `supersedes` 表达；
-- execution evidence 与 active route 冲突时必须进入 Workflow/Manager 语义重判或暂停；
-- 预计路线是动态投影，不是硬编码批处理队列。
-
-## 5. 项目状态、记录与确定性校验
-
-Manager 是以下目录的唯一提交授权者：
+但逻辑职责不再要求同等数量的 LLM 调度层。默认真实运行模式是：
 
 ```text
-00_project_state/**
-00_project_records/**
+Manager 对话
+→ 创建 / 定位任务并写初始 Task Sheet
+→ 一次性交接
+→ Task Execution Agent 对话
+→ 按当前子环节加载必要 Skill
+→ 必要时调用 Operation / Validator / Tool
 ```
 
-Operation 和 Validator：
+Manager 与 Task Execution Agent 默认是不同对话；普通任务执行不应在每个子环节之间来回调用 Manager。
 
-- 只能在 task unit 授权的业务路径写入；
-- 不得修改项目状态或结构化历史记录；
-- 只返回候选 artifact、决策请求和详细业务日志路径。
+Workflow / Operation / Validator 应优先作为科研 SOP、执行规则和验证能力存在，而不是要求运行时模拟 BPM 引擎。
 
-“Manager owns records”表示 Manager 控制提交边界，不要求 Manager LLM 手工构造全部 YAML。机械记录构造应优先由确定性 builder/recorder 完成。
+## 4. Manager 与任务规划规则
 
-外部任务从 `RUNNING` 结束后必须先进入 `FINISHED_UNVERIFIED`，完成输出核验后才能标记为 `COMPLETED` 或 `FAILED`。
+Manager 只负责：
 
-runtime schema 校验原则：
+- 定位已有任务；
+- 创建新任务；
+- 为新任务生成初始子环节计划；
+- 用户明确要求时重新规划或整理任务；
+- 项目级任务导航。
+
+初始规划只使用 `workflow_plan_index.yaml` 中的轻量信息：
 
 ```text
-FAST：普通 changed runtime instances + 直接引用
-FULL：恢复、contract/schema 变化和明确关键生命周期节点
+Workflow 顺序
+子环节编号
+子环节名称
+标准工作目录
+是否 conditional
 ```
 
-NEW 初始化的最终校验模式由 runtime redesign 的 R6 冻结；不得因为旧文档历史习惯机械执行 FULL。
+规划索引不得包含科学判断、reuse conditions、validator 规则、软件依赖、命令或详细输入输出 schema。
 
-- 普通 task 不得执行 FULL contract validation；
-- schema 文件 hash 未变化且 cache 有效时，不重复 schema meta-validation；
-- 不得用 LLM 逐字段模拟 schema 或全项目引用校验；
-- Tool cache 是非权威数据，必须可删除和重建。
+Task Sheet 不维护 start / end / route。任务当前范围就是 `计划与进度` 中实际列出的子环节。
 
-## 6. 修改前回顾
+## 5. Task Sheet 与执行期计划
 
-提出或实施新方案前，先列出：
+任务单固定保存：
+
+```text
+任务标题
+任务状态
+任务目标
+
+每个子环节：
+- 状态
+- 对象
+- 工作目录
+- 主要结果（完成后）
+- 执行记录（仅必要时）
+```
+
+任务级状态只允许：
+
+```text
+未完成 | 已完成 | 已终止
+```
+
+子环节状态只允许：
+
+```text
+待执行 | 未完成 | 已完成
+```
+
+Task Execution Agent 可以：
+
+- 连续推进多个子环节；
+- 根据当前科研结果增删或调整后续子环节；
+- 根据用户在执行对话中的明确要求扩展或缩小任务计划；
+- 任务完成或用户明确终止时同步更新 `task_index.md`。
+
+确认不需要且尚未实际执行的子环节直接从计划删除，不增加 `NOT_APPLICABLE` 类状态。
+
+已经实际执行过并形成任务历史的环节不得为了整理计划而静默删除。
+
+## 6. Result Index 与复用
+
+`project_result_index.md` 是跨任务、跨对话的**结果检索索引**，不是项目 summary、artifact registry 或当前状态文件。
+
+一级按子环节组织：
+
+```text
+环节
+→ 具体结果描述
+→ 正式结果文件完整路径
+→ 来源任务
+```
+
+不要求稳定对象 ID，也不建立 version registry。
+
+每个子环节 Skill 应明确：
+
+```text
+purpose
+object requirements
+reuse conditions
+execution rules
+validation requirements
+official results
+```
+
+其中 `official results` 决定完成后哪些正式文件进入 Task Sheet 和 `project_result_index.md`。
+
+每个子环节真正开始时才检查复用：
+
+```text
+无候选结果 → 正常执行
+明确等价 → 自动复用
+明确不等价 → 正常执行
+信息不足无法判断 → 询问用户
+用户明确要求重做 → 跳过自动复用
+```
+
+复用等价性的科学条件由当前子环节 Skill 定义，不由 Manager 或通用 Runtime state machine 统一猜测。
+
+## 7. 最小读取规则
+
+真实运行必须遵守按需读取。
+
+Manager 默认只读：
+
+```text
+task_index.md
+目标 Txxxx.md
+```
+
+创建或显式重新规划时再读 planning index。
+
+Task Execution Agent 默认按以下顺序读取：
+
+```text
+目标 Txxxx.md
+→ 当前子环节 Skill
+→ project_result_index.md 中与该环节有关的候选结果定位
+→ 当前对象
+→ 当前 Skill 明确要求的其他输入
+```
+
+不得默认：
+
+- 预读未来子环节 Skill；
+- 扫描所有任务单；
+- 扫描整个项目目录；
+- 重读上游全部 Skill 和执行全过程；
+- 加载 Legacy state / route / event / runtime records；
+- 因为“可能有用”而扩大上下文。
+
+任何额外读取必须由当前动作的明确需求触发。
+
+## 8. 执行记录原则
+
+Task Sheet 中的 `执行记录` 只保存对恢复和后续判断有意义的关键事件，例如：
+
+- 用户关键决定；
+- 复用来源；
+- 异常及其处理结果；
+- 当前未完成原因；
+- 后续计划为什么调整；
+- 结果为什么重新生成或替换。
+
+不记录逐命令流水账、普通 `ls/cat/grep`、Skill 加载过程或临时文件操作。
+
+需要复现的复杂科研操作优先保存实际脚本、配置文件和软件输入文件。
+
+## 9. Legacy Runtime 冻结规则
+
+以下内容默认视为 `Legacy / frozen`：
+
+```text
+project_state
+workstream_state
+route / route revision
+runtime task / result
+project_events
+artifact state machine
+runtime projection
+transaction closure
+围绕上述对象建立的默认 runtime schema / evaluator / committer / initializer
+```
+
+规则：
+
+- 不立即删除；
+- 不继续为 Lightweight Runtime 新增兼容层；
+- 新项目不默认生成 Legacy records；
+- 旧项目首次接管时只提取继续工作真正需要的信息，不做一比一历史迁移；
+- Lightweight Runtime 建立后不再双写旧 records；
+- Scientific Skills 和真正有用的 deterministic tools 不因 Runtime 冻结而废弃。
+
+## 10. 修改前回顾
+
+提出或实施新方案前，先明确：
 
 ```text
 已做过
@@ -150,74 +292,72 @@ NEW 初始化的最终校验模式由 runtime redesign 的 R6 冻结；不得因
 仍未验证
 ```
 
-若新方案与已失败方案重复或本质等价，且没有新证据改变前提，不得再次执行。
+若新方案与已失败或已否定方案本质等价，且没有新证据改变前提，不得再次执行。
 
-## 7. 内容唯一归属
+## 11. 内容唯一归属
 
-一条规则只能有一个权威位置：
+一条规则只保留一个权威位置：
 
-- 项目模式路由与最小通用安全规则：根 `AGENTS.md`；
-- authoring/development 规则：本文件及 authoring references；
-- 跨 Skill 接口：`03_contracts/`；
-- 跨 Workflow 路线拼接：Manager route planning protocol；
-- 确定性 Tool 运行边界：`deterministic_tool_protocol.md`；
-- Tool 注册与版本：`05_tools/tool_registry.yaml`；
-- 阶段内路线片段和执行逻辑：对应 Workflow `SKILL.md`；
-- 当前 Operation/Validator 的执行逻辑：当前 `SKILL.md`；
+- 项目模式路由与最小通用运行原则：根 `AGENTS.md`；
+- Lightweight Runtime 架构：`00_authoring/lightweight_runtime_v2_spec.md`；
+- authoring / development 规则：本文件；
+- Manager 运行职责：`00_manager/md_workflow_manager/SKILL.md`；
+- Manager 初始规划目录：`workflow_plan_index.yaml`；
+- 当前 Workflow 科研阶段语义：对应 Workflow `SKILL.md`；
+- 当前 Operation / Validator 执行或验证逻辑：当前 `SKILL.md`；
 - 当前 Tool 的输入输出、权限和实现：当前 `tool.yaml` 与实现文件；
 - 当前 Skill 独有领域数据：当前 `references/`；
 - 当前 Skill 独有输出结构：当前 `schemas/`；
-- 示例与评测夹具：`04_evals/<skill-or-tool-name>/fixtures/`；
-- 真实 MD runtime 的紧凑投影：`runtime/**`，仅派生不独立拥有设计语义。
+- 示例与评测：`04_evals/<skill-or-tool-name>/`；
+- Legacy 跨 Skill contracts：`03_contracts/`；
+- Legacy runtime projection：`runtime/**`。
 
-其他文件只引用，不复述完整定义。
+不得把 Legacy route / state / transaction 语义重新复制到 Lightweight Skill 中。
 
-## 8. 多窗口文件所有权
+## 12. 多窗口文件所有权
 
-- 新窗口开始前读取 `00_authoring/SYNC_STATUS.md`、`skill_inventory.yaml`、`file_ownership.yaml`、目标 content map、work order 和适用 contracts；
-- 涉及 Workflow 或路线时读取 route planning protocol；
-- 涉及 Tool 时读取 deterministic tool protocol 和 tool registry；
-- 涉及 runtime projection 时读取对应 source 与 `runtime/runtime_manifest.yaml`；
+新窗口开始前按任务需要读取：
+
+```text
+00_authoring/SYNC_STATUS.md
+00_authoring/skill_inventory.yaml
+00_authoring/file_ownership.yaml
+目标 content map
+目标 Skill / Tool 权威 references
+```
+
+规则：
+
 - 同一文件同一时间只有一个编写窗口；
 - 一个 Skill 或 Tool 目录默认只有一个编写窗口；
-- `AGENTS.md`、`03_contracts/`、authoring references、Manager references、design records、content maps、inventory、ownership 表、runtime manifest 和 tool registry 只由主窗口修改；
+- `AGENTS.md`、authoring shared references、Manager references、content maps、inventory、ownership 表、Legacy contracts、Legacy runtime manifest 和 tool registry 只由主窗口修改；
 - 写入路径重叠时不得同时编写；
-- 共享 contract 的变更由业务窗口提交请求，主窗口统一裁决。
+- 共享接口变更由主窗口统一裁决。
 
-## 9. Workstream 分支规则
+只有明确维护 Legacy Runtime 时才要求读取旧 route protocol、runtime projection 或相关 contract；普通 Lightweight 重构不为“保险”加载它们。
 
-已生成有效下游产物、已启动 EM/NVT/NPT/MD、需要保留旧参数或需要比较方案时，不得把项目唯一阶段“回退”并覆盖旧结果。
-
-应从明确 artifact 节点创建新 Workstream。
-
-只有当前步骤尚未闭合、没有有效下游依赖且修改不会影响其他结果时，才允许在原 Workstream 内修正。
-
-## 10. 权限与安全
+## 13. 权限与安全
 
 - 不修改 `01_sources/` 中的来源文件；
-- source recognition 默认复制源结构并校验 SHA-256；只有明确用户授权和 source write permission 同时存在时才允许移动；
+- source recognition 默认复制源结构并校验来源；只有明确用户授权和 source write permission 同时存在时才允许移动；
 - 不自动通过单位计费的期刊数据库下载文献；
 - 未经授权，不删除、覆盖或批量移动项目文件；
-- 破坏性或不可逆操作由 Manager 汇总后请求用户确认；
-- Workflow、Operation、Validator、Tool 和临时子 Agent 均不直接向用户请求确认；
+- 破坏性或不可逆动作必须在执行前取得用户确认；
+- Tool 不直接向用户提问；需要确认时由当前用户可见的 Manager 或 Task Execution Agent 对话处理；
 - 默认 Tool 不访问网络，也不得嵌入 LLM 调用；
-- 写入型 Tool 必须使用候选文件、校验、备份/回滚和受控提交。
+- 写入型 Tool 必须限制在明确授权路径，并避免静默覆盖有效科研结果。
 
-## 11. Authoring 完成定义
+## 14. Lightweight 重构完成定义
 
-Skill、Tool 或 runtime projection 只有在适用条件满足后才可通过：
+一个 Skill 完成 Lightweight Runtime 迁移至少应满足：
 
-- 层级/Tool/执行后端边界已确认；
-- 局部 contract/content map 或 tool.yaml 已确认；
-- 文件所有权无冲突；
-- Workflow planning/execution、Workstream、Manager 和执行后端语义正确；
-- Tool 不承担语义决策或科学判断；
-- route fragment、route record 与 task-unit 接口一致；
-- 状态和记录写权限正确；
-- 静态检查无 error；
-- 无未解释的高风险重复；
-- 正向、负向、边界、分支、恢复和失败评测完成；
-- Tool 的 cache、权限、版本、benchmark 和回退路径已验证；
-- runtime projection 可追溯到权威 source 且不存在静默漂移；
-- 上下游接口一致；
-- 未重新引入嵌套委派或多个前台 MD Agent。
+- 不依赖普通 route / event / Workstream / transaction closure；
+- 当前科研职责边界明确；
+- 当前子环节对象要求明确；
+- reuse conditions 明确；
+- official results 明确；
+- 必要 Operation / Validator / Tool 的调用边界明确；
+- Task Execution Agent 可以只加载当前环节所需内容完成工作；
+- 结果可写回 Task Sheet 并登记到 `project_result_index.md`；
+- 正向、负向、复用、用户确认和失败/继续场景有相应验证；
+- 不重新引入多层 LLM orchestration 或 minute-scale 管理开销。
