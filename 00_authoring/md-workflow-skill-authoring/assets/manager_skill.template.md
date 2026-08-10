@@ -1,6 +1,6 @@
 ---
 name: <manager-skill-name>
-description: <全局 MD 项目、入口初始化、Workstream、路线、状态和记录管理用途及触发边界>。
+description: <任务定位、任务创建、初始规划和项目级任务管理用途及触发边界>。
 ---
 
 # 目标
@@ -11,117 +11,138 @@ description: <全局 MD 项目、入口初始化、Workstream、路线、状态�
 
 `00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md`
 
-# 输入与请求动作
+Manager 只承担任务管理，不执行具体科研 Step。
 
-- 解析可组合的 `INSPECT | PLAN | EXECUTE`；
-- 确认 Skill root 与 Project root；
-- 确定项目级或 Workstream 级 Focus。
-
-# 项目与 Workstream 状态
-
-引用：
-
-- `03_contracts/project_state.schema.yaml`
-- `03_contracts/workstream_state.schema.yaml`
-
-# 项目入口、初始化与恢复
-
-处理：
+# 默认记录体系
 
 ```text
-NEW
-RESUMABLE
-NEEDS_RECOVERY
+00_project_records/
+├── task_index.md
+├── project_result_index.md
+└── tasks/
+    └── Txxxx.md
 ```
 
-- `NEW` 只表示入口判定；
-- NEW 项目在根目录明确且无冲突时自动初始化；
-- 初始化不创建 route 或业务 task；
-- `PROJECT_INITIALIZED` 前不得调用 Workflow；
-- 区分项目级恢复与 Workstream 级恢复。
+说明各文件的最小职责，不建立第二套 route/state/event 记录。
 
-# 初始化后的路线范围解析
+# 最小读取
 
-路线范围解析是独立事件，不属于 NEW 初始化，也不等于 PLAN。
-
-- 明确终点：记录 `ROUTE_SCOPE_RESOLVED`；
-- 模糊终点：创建 blocking decision，记录 `ROUTE_SCOPE_REQUESTED`；
-- 不得默认选择下一 task、当前 Workflow 结束、Workstream 目标或项目终点；
-- `ROUTE_SCOPE_RESOLVED` 前不得请求 route fragment 或创建 route。
-
-# 路线规划循环
-
-读取：
-
-`00_manager/md_workflow_manager/references/route_planning_protocol.md`
-
-1. 读取已经解析的起点、终点和停止条件；
-2. 按 stage registry 确定涉及的 Workflow；
-3. 逐个请求 `workflow_route_fragment.schema.yaml`；
-4. 核验相邻 fragment 的 artifact 接口；
-5. 拼接并写入 `route_record.schema.yaml`；
-6. 未连接 Workflow 在边界形成 PARTIAL/BLOCKED，不虚构内部步骤。
-
-# Workflow 执行循环
-
-执行前确认：
+默认只读取：
 
 ```text
-PROJECT_INITIALIZED
-→ ROUTE_SCOPE_RESOLVED
-→ ROUTE_CREATED
+task_index.md
+→ 目标 Txxxx.md
 ```
 
-1. 解析 Focus Workstream；
-2. 只加载当前 Workflow；
-3. 请求符合 `workflow_decision.schema.yaml` 的一个决定；
-4. 比较 decision 与 active route；
-5. 因新证据不一致时先创建 route revision；
-6. 若 `EXECUTE`，写入 task record 并构建 `subagent_task`；
-7. 串行创建一个临时子 Agent；
-8. 核验 `subagent_result`；
-9. 写入 task result、event、artifact、decision 或 submission record；
-10. 原子更新 Workstream 和项目状态；
-11. 再次请求当前 Workflow。
+创建或显式重新规划任务时再读取 planning index。
 
-# Workstream
+明确禁止默认读取的科研 Skill、结果索引、Legacy records 和全项目扫描。
 
-- 创建、选择、分支和结束 Workstream；
-- 初始化时创建 Workstream 不自动创建 route；
-- 路线属于 Workstream；
-- route fragment 由各 Workflow 产生；
-- 完整 route 由 Manager 拼接；
-- 路线修订创建新文件，不覆盖旧路线。
+# 项目初始化
 
-# 用户决策
+- 建立 Lightweight records；
+- 可以建立稳定 Workflow / Step 基础目录；
+- 不建立 `<base_work_directory>/<task_id>/`；
+- 不建立 Legacy project_state / Workstream / route / event / runtime task-result。
 
-- 子 Agent 不直接向用户提问；
-- Manager 创建和解决 decision record；
-- 路线范围模糊时由 Manager 请求用户决定；
-- 不使用与 `confirmation_items` 重复的确认布尔字段。
+# 任务定位
 
-# 外部任务
+说明：
 
-- 支持 tmux 和调度系统；
-- 多个外部任务可并存；
-- 不高频轮询；
-- `FINISHED_UNVERIFIED` 必须经过输出核验后才能进入终态。
+- 明确 Task ID；
+- 明确可唯一匹配名称；
+- 当前 Manager 对话已绑定任务；
+- 无法唯一确定时询问用户。
 
-# 状态和记录写入
+不得遍历所有 Task Sheet 猜测当前任务。
 
-Manager 是以下目录的唯一提交者：
+# 新任务边界
+
+说明哪些操作继续已有任务，哪些情况才创建新的独立 Task。
+
+# 初始规划
+
+使用：
+
+`references/workflow_plan_index.yaml`
+
+只规划：
+
+- Step 顺序；
+- Step 名称；
+- 基础目录；
+- conditional 标记。
+
+不得预读具体 Step Skill、预先执行科学判断或查询全部 reuse。
+
+# Task Sheet
+
+示例：
+
+```markdown
+# T001 — <任务名称>
+
+状态：未完成
+
+## 任务目标
+
+<目标>
+
+## 计划与进度
+
+### 1.x <Step 名称>
+
+状态：待执行
+
+对象：
+<已知对象或“待前序环节确定”>
+
+工作目录：
+`<project_root>/<base_work_directory>/T001/`
+```
+
+Manager 写入任务专属目录路径，但不创建该目录。
+
+# 与 Task Execution Agent 交接
 
 ```text
-00_project_state/**
-00_project_records/**
+Manager
+→ 定位 / 创建任务
+→ 初始规划
+→ 写入 Txxxx.md
+→ 一次性交接
+→ Task Execution Agent 连续执行
 ```
 
-读取 `03_contracts/README.md` 中全部 Manager contracts。
+普通 Step 之间不回 Manager。
+
+# 重新规划与项目级管理
+
+说明：
+
+- 用户明确要求重新规划；
+- 创建另一任务；
+- 多任务项目级整理；
+- 用户主动返回 Manager 对话。
 
 # 用户展示
 
-始终展示两个根目录、Focus、当前位置、route scope、route planning status、预计下一任务、当前决策、后台任务和其他活动 Workstream 摘要。
+创建/重新规划后只展示：
 
-# 失败与恢复
+- Task ID / 名称；
+- Task 状态；
+- 当前计划 Step 序列；
+- Task Sheet 路径。
+
+不展示 Legacy route / transaction / event。
+
+# 安全边界
 
 # 自检
+
+- [ ] 未执行科研 Step；
+- [ ] 未查询 Step reuse；
+- [ ] 未创建任务专属科研目录；
+- [ ] 未创建 Workstream / route / event / runtime task-result；
+- [ ] 未预读全部 Step Skill；
+- [ ] 已完成一次性交接所需 Task Sheet。
