@@ -1,10 +1,21 @@
-schema_version: 3
+schema_version: 4
 skill_name: component_and_residue_classification_validator
 skill_type: validator
 skill_path: 02_validators/component_and_residue_classification_validator
-contract_status: draft
-content_ownership_status: aligned_revalidation_required
+architecture: lightweight_runtime_v2
+status: lightweight_interface_refactored_scientific_revalidation_required
+
 owned_content:
+  lightweight_object_requirements:
+    owner: 02_validators/component_and_residue_classification_validator/SKILL.md
+  lightweight_reuse_conditions:
+    owner: 02_validators/component_and_residue_classification_validator/SKILL.md
+  lightweight_validation_requirements:
+    owner: 02_validators/component_and_residue_classification_validator/SKILL.md
+  lightweight_official_results:
+    owner: 02_validators/component_and_residue_classification_validator/SKILL.md
+  task_scoped_work_directory_and_output_policy:
+    owner: 02_validators/component_and_residue_classification_validator/SKILL.md
   local_execution_flow_and_model_branching:
     owner: 02_validators/component_and_residue_classification_validator/SKILL.md
   classification_semantics:
@@ -49,19 +60,30 @@ owned_content:
     owner: 02_validators/component_and_residue_classification_validator/references/independent_nonstandard_residue_registry.yaml
   local_contracts:
     owner: 02_validators/component_and_residue_classification_validator/schemas/
-  shared_result_wrapper:
+  legacy_shared_result_wrapper:
     owner: 02_validators/component_and_residue_classification_validator/scripts/build_subagent_result.py
+
 external_references:
-  - {purpose: layer_boundary, owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md, access: reference_only}
-  - {purpose: runtime_task_contract, owner: 03_contracts/subagent_task.schema.yaml, access: reference_only}
-  - {purpose: runtime_result_contract, owner: 03_contracts/subagent_result.schema.yaml, access: reference_only}
+  - {purpose: lightweight_runtime_architecture, owner: 00_authoring/lightweight_runtime_v2_spec.md, access: authoring_reference}
   - {purpose: structure_preparation_workflow, owner: 01_workflows/structure_preparation_workflow/SKILL.md, access: reference_only}
   - {purpose: downstream_selection, owner: 02_operations/chain_and_component_selection/, access: reference_only}
   - {purpose: executable_tests_and_validation, owner: 04_evals/component_and_residue_classification_validator/, access: reference_only, status: revalidation_required}
+
+legacy_dependencies:
+  status: frozen_not_default_runtime
+  items:
+    - 03_contracts/subagent_task.schema.yaml
+    - 03_contracts/subagent_result.schema.yaml
+    - runtime_dependency_preflight task-identity closure path
+    - manager pre-agent dispatch gate
+    - workstream route event closure
+  rule: lightweight_1_2_must_not_construct_or_require_these_for_ordinary_execution
+
 removed_migration_sources:
   - {path: 02_validators/component_and_residue_classification_validator/references/standard_residue_alias_registry.yaml, status: removed}
   - {path: 02_validators/component_and_residue_classification_validator/references/coordination_detection_registry.yaml, status: removed}
   - {path: 02_validators/component_and_residue_classification_validator/schemas/classification_outputs.schema.yaml, status: removed}
+
 validation_evidence:
   authoritative_record:
     path: 04_evals/component_and_residue_classification_validator/VALIDATION.md
@@ -70,7 +92,7 @@ validation_evidence:
     commit_sha: b9faf855bbbd43fb9d5c215c0dbc52e5eee37da8
     status: superseded_by_current_contract_change
   current_local_checks:
-    status: passed
+    status: historical_pass_revalidation_required_after_lightweight_interface_change
     scope:
       - python_compile
       - schema_meta_validation
@@ -82,10 +104,12 @@ validation_evidence:
       - historical_1_2_to_1_3_opaque_id_regression
   overall:
     implementation: present
+    lightweight_interface: refactored
     repository_controlled_validation: pending
-    dependency_closure: pending_revalidation
+
 notes:
-  - Facade files preserve CLI/import compatibility; core files own deterministic implementations.
-  - SKILL.md owns only local execution and gates; scientific rules, schemas and CLI documentation are not duplicated there.
+  - Existing deterministic scripts and scientific schemas are retained; the refactor changes runtime ownership, directory isolation, reuse, and completion recording rather than the scientific classification engine.
+  - Stable base directory may be initialized globally, but actual mutable/output state is isolated under `02_component_and_residue_classification/<task_id>/`.
+  - Direct reuse references another task's official result files and does not create an empty current-task directory.
   - classification_result.yaml preserves the opaque 1.2 to 1.3 identity contract; downstream code must not reconstruct IDs.
-  - The 2026-07-31 PASS record is historical and cannot validate the current contract.
+  - reference_manifest.yaml and optional relation_decisions.yaml provide the provenance needed for cross-task reuse equivalence checks.
