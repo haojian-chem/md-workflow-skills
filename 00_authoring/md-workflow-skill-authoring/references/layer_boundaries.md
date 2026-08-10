@@ -1,245 +1,267 @@
-# MD Workflow 四层职责与执行后端边界
+# MD Workflow 四层职责与 Lightweight Runtime 边界
 
-本文件是 Manager、Workflow、Operation、Validator **逻辑职责边界**的权威定义。
+本文件定义 Manager、Workflow、Operation、Validator 的**逻辑职责边界**。
 
 核心原则：
 
 ```text
-职责边界 ≠ LLM 调用边界 ≠ 进程边界
+逻辑职责边界 ≠ LLM 对话边界 ≠ 进程边界
 ```
 
-运行时可以通过确定性 Tool 或受控 Agent context 执行某一职责，但不得改变该职责的语义所有权。
+Lightweight Runtime v2 默认只有两个长期用户对话角色：
+
+```text
+Manager 对话
+→ Task Sheet
+→ Task Execution Agent 对话
+```
+
+Task Execution Agent 在执行过程中按当前 Step 加载 Operation / Validator / Tool；这些逻辑层不要求分别创建新的 Agent。
 
 ## 1. Manager
 
-唯一主工作：管理项目级语义与提交边界。
+唯一主工作：任务级项目管理与初始规划。
 
 负责：
 
-- 两个 root 与项目入口状态；
-- Focus 和 Workstream；
-- route scope、跨 Workflow route 与 revision；
-- 用户决定；
-- 当前执行后端解析；
-- 外部 submission；
-- 恢复、暂停、重试、重规划；
-- `00_project_state/**` 与 `00_project_records/**` 的提交授权；
-- 用户可见状态与 closure。
+- 确认 Skill root 与 MD project root；
+- 定位已有 Task；
+- 创建新的独立 Task；
+- 使用轻量 planning index 生成初始子环节计划；
+- 维护 `task_index.md` 中的任务导航信息；
+- 用户明确要求时重新规划或整理任务；
+- 将 `Txxxx.md` 一次性交接给 Task Execution Agent。
 
 Manager 不负责：
 
-- 结构/拓扑/模拟/分析业务操作；
-- 科学质量判断；
-- 根据阶段名编造 Workflow 内部步骤；
-- 用 LLM 逐字段模拟 schema/引用/序列化；
-- 因记录所有权而手工构造全部机械 YAML。
+- 普通 Step 的科学执行；
+- 当前 Step 的 reuse 判定；
+- Operation / Validator 的逐步调度闭环；
+- route / Workstream / event / artifact state / runtime task-result；
+- 为每个子环节创建任务执行目录；
+- 预读全部 Step Skill；
+- 为“全面了解”扫描整个项目。
 
-Manager 的提交边界可以调用已批准 deterministic builder/recorder，但语义决定仍归 Manager。
+Manager 可以建立或确认稳定 Workflow / Step 基础目录，并在 Task Sheet 中记录：
+
+```text
+<base_work_directory>/<task_id>/
+```
+
+但具体 `<task_id>/` 由 Task Execution Agent 在确实需要本地执行时创建。
 
 ## 2. Workflow
 
-唯一主工作：拥有一个阶段的局部流程语义。
+唯一主工作：拥有一个科研阶段的**阶段级科学关系与 Step 映射**。
 
 负责：
 
-- 阶段内有序 node/substep；
-- REQUIRED / CONDITIONAL；
-- entry/exit artifact requirements；
-- planning fragment；
-- route-affecting 条件和 blocker；
-- 当需要语义重判时给出当前 execution decision；
-- 声明 node 的 Operation/Validator 责任与允许的 execution backend preference。
+- 阶段目标；
+- 有序 substep / Step registry；
+- Step 与 Operation / Validator Skill 的映射；
+- 哪些 Step 是初始规划中的 conditional step；
+- 阶段内上游结果对下游处理的科学关系；
+- 阶段完成条件；
+- 基础工作目录语义。
 
 Workflow 不负责：
 
-- 项目入口/初始化；
-- 跨 Workflow 起终点；
-- Focus/Workstream 创建；
-- 直接执行 Operation/Validator；
-- 修改业务或管理文件；
-- 直接向用户提问。
+- 创建/修改 Task Sheet；
+- 返回 route fragment；
+- 返回 workflow decision；
+- 维护 active route / Workstream / event；
+- 直接执行 Operation / Validator；
+- 定义具体 Step 的 reuse conditions；
+- 复制 Step 的科学算法；
+- 直接根据目录存在判断完成。
 
-compact Workflow runtime spec 是本 Workflow 权威定义的派生投影，不是第二套流程定义。
+当某个 Step 的结果影响后续条件 Step 时，Workflow 可以说明**关系**，但具体适用条件由对应 Step Skill 定义。
 
 ## 3. Operation
 
-唯一主工作：执行一个明确、可验证的业务操作。
+唯一主工作：执行一个明确、可核验的业务操作。
 
 负责：
 
-- task-local preflight；
-- 授权路径内的文件/命令操作；
-- 必要业务日志；
-- 操作是否实际完成的确定性/操作性核验；
-- Operation result 与 artifact candidates。
+- 当前 Step 的业务 Preflight；
+- 明确对象上的文件/命令/结构操作；
+- 必要的可复现脚本、配置和中间结果；
+- 操作是否实际完成的核验；
+- 业务结果文件；
+- 在其拥有相应内容时定义 Step 的 object requirements、reuse conditions、execution rules 和 official results。
 
 Operation 不负责：
 
-- 项目/Workflow 路线；
-- 用户确认；
-- 管理目录提交；
-- 独立科学质量判决；
-- 创建嵌套 Agent。
+- 项目级任务规划；
+- Workflow 阶段关系；
+- route / Workstream / event / runtime task-result；
+- 创建嵌套 Agent；
+- 无明确依据扩展用户研究目标；
+- 在有专属 Validator 时复制其独立 validation rules。
 
-Operation 可以由 `DETERMINISTIC` Tool 或 Agent context 执行，但结果仍必须表示为 Operation responsibility。
+Operation 可以直接由 Task Execution Agent 按 Skill 执行，也可以调用 ACTIVE 且接口合适的确定性 Tool。
 
 ## 4. Validator
 
-唯一主工作：读取并检查目标对象，输出结构化判定。
+唯一主工作：读取并检查目标对象，输出科学/技术判定。
 
 负责：
 
 - 目标和必要上下文读取；
-- 科学/技术检查、识别或分类；
-- 区分“Validator 是否成功执行”和“目标是否通过”；
-- outcome、findings、gate 建议与 decision request；
-- Validation result/report。
+- 科学/技术检查、识别、分类或质量判定；
+- 区分“Validator 是否成功执行”和“被检查对象是否满足要求”；
+- findings、outcome 和必要报告；
+- 在其拥有相应内容时定义 validation requirements；
+- Validator-only Step 时拥有完整 Step 接口。
 
 Validator 不负责：
 
-- 修改被验证对象；
-- 自动修复；
-- 用户确认；
-- 管理目录提交；
-- 项目/Workflow 路线；
-- 嵌套 Agent。
+- 自动修改被验证对象，除非该 Skill 本身被重新定义为 Operation；
+- 项目级任务规划；
+- route / Workstream / event / runtime task-result；
+- 创建嵌套 Agent；
+- 为确认事项绕回 Manager。
 
-完全确定性的 Validator 可以由 Tool 后端执行；需要科学判断的 Validator 通常使用 Agent 后端。
+需要用户科学判断时，应把触发条件写入 Skill，由当前 Task Execution Agent 在同一个执行对话中向用户确认。
 
-## 5. Tool
+## 5. Step-facing Skill 接口
 
-Tool 是确定性执行组件，不是第五个决策层。
+Workflow 中每个实际子环节都必须由一个 Skill 或一组配套 Skills 合计明确：
 
-Tool 可以承担：
+```text
+purpose
+object requirements
+reuse conditions
+execution rules
+validation requirements
+official results
+```
 
-- parsing / hashing / copy / deterministic transform；
-- schema/reference validation；
-- deterministic record building；
-- controlled state commit；
-- 已冻结规则的确定性检查。
+如果是：
+
+```text
+Operation-only Step
+```
+
+Operation 通常拥有全部接口。
+
+如果是：
+
+```text
+Validator-only Step
+```
+
+Validator 拥有全部接口。
+
+如果是：
+
+```text
+Operation + dedicated Validator
+```
+
+推荐：
+
+- Operation：purpose / object requirements / reuse conditions / execution rules / official results；
+- Validator：validation requirements / validation report；
+- content map 明确唯一 owner，禁止两份 Skill 复制同一规则。
+
+## 6. Task Execution Agent
+
+Task Execution Agent 是运行角色，不是新的 Skill 层级。
+
+负责在一个长期执行对话中：
+
+1. 读取当前 `Txxxx.md`；
+2. 确定当前 Step 和对象；
+3. 加载当前 Step 所需 Skill；
+4. 查询当前 Step 的历史正式结果；
+5. 按 Step reuse conditions 判断；
+6. 必要时向用户确认；
+7. 执行和验证；
+8. 更新 Task Sheet；
+9. 登记 official results；
+10. 根据结果调整后续 Step；
+11. 继续下一 Step，而不是返回 Manager。
+
+它不是独立 authoring layer，也不需要通用 `task_execution_agent/SKILL.md`。
+
+## 7. Tool
+
+Tool 是确定性执行组件，不是第五个科学决策层。
+
+适合：
+
+- parsing；
+- hashing；
+- deterministic transform；
+- 明确格式校验；
+- 原子文件写入；
+- 重复、稳定、可测试的计算；
+- 已冻结规则的机械检查。
 
 Tool 不得：
 
-- 选择 Focus、route scope、route revision；
+- 解释用户研究意图；
+- 选择任务范围；
 - 作开放式科学判断；
 - 向用户提问；
 - 创建 Agent；
-- 降低 gate；
-- 超出 registry 权限写入。
+- 为普通 Lightweight 执行强制构造 Legacy task/route/event/transaction 对象；
+- 超出注册权限写入。
 
-## 6. 执行后端模型
+历史 Tool 如果科学动作仍有价值，但接口依赖 Legacy Runtime，应先适配为显式业务输入接口后再作为 Lightweight 默认路径。
 
-运行时必须把逻辑 task/node 与执行后端分开表示。
+## 8. 目录与写入边界
 
-### DETERMINISTIC
-
-适用于同时满足：
-
-- 业务逻辑已冻结为确定性规则；
-- 不需要开放式科学判断或用户决定；
-- 所需 capability 有 `ACTIVE` Tool；
-- Tool 输出可以映射到对应 Operation/Validator result contract。
-
-不创建业务 Agent。
-
-### AGENT_TASK
-
-一个临时前台 Agent context 执行一个上下文有界 task unit：
+稳定 Step 基础目录：
 
 ```text
-OPERATION
-VALIDATOR
-OPERATION_WITH_VALIDATOR
+<base_work_directory>/
 ```
 
-这是当前兼容默认后端。
+可以由项目初始化建立。
 
-### AGENT_SEQUENCE
-
-一个临时 Agent context 连续执行多个上下文连续 node/task，但每个 Operation/Validator 责任和结果必须保持独立。
-
-只有同时满足以下条件才可启用：
-
-- 同一 Workstream；
-- 同一 Workflow；
-- sequence contract 明确列出节点；
-- 不跨用户 decision barrier；
-- 不跨 route-changing branch；
-- 不跨外部 submission；
-- 不跨高风险/不可逆恢复锚点；
-- 不改变目录所有权边界；
-- 上一个节点输出直接构成下一个节点输入；
-- 中间每个节点仍可单独记录结果和 gate。
-
-在 sequence contract、校验和 fixture 未实现前：
+任务专属执行目录：
 
 ```text
-AGENT_SEQUENCE = DISABLED_BY_DEFAULT
+<base_work_directory>/<task_id>/
 ```
 
-不得为了省时间临时把多个节点塞进一个 Agent。
+规则：
 
-## 7. 后端选择规则
+- Manager 只记录该路径；
+- 当前 Step 开始先做 reuse；
+- 只有需要实际执行时 Task Execution Agent 才创建该目录；
+- 直接复用时不创建空目录；
+- 不同 Task 固定文件名结果不得写入同一基础目录。
 
-Workflow/runtime spec 可以声明：
+`00_project_records/**` 的普通维护由 Manager 和当前 Task Execution Agent 按 Lightweight 规则完成；Operation / Validator / Tool 不应绕过执行角色自行建立第二套状态系统。
+
+## 9. 用户确认边界
+
+普通 Step 内的科学歧义由当前 Task Execution Agent 直接向用户确认。
+
+Manager 仅在项目级任务定位、创建、重新规划等管理问题上承担管理对话职责。
+
+Tool 不向用户提问。
+
+Operation / Validator Skill 应声明确认触发条件，但不要求返回 Legacy `confirmation_items` 或 decision record。
+
+## 10. Legacy 边界
+
+以下只属于冻结历史、旧项目迁移或明确 Legacy 维护：
 
 ```text
-preferred_backend
-fallback_backend
-required_capability
+Workstream
+Focus
+route / route revision
+workflow_route_fragment
+workflow_decision
+subagent_task / subagent_result
+project event
+artifact state machine
+transaction closure
+runtime projection orchestration
 ```
 
-Manager 只解析 capability 与已冻结 eligibility，不创造新的科学路由。
-
-典型顺序：
-
-```text
-preferred DETERMINISTIC
-  + ACTIVE capability
-  → DETERMINISTIC
-
-preferred DETERMINISTIC
-  + capability unavailable
-  + fallback AGENT_TASK allowed
-  → AGENT_TASK
-
-需要科学判断
-  → AGENT_TASK
-```
-
-后端变化不改变 Operation/Validator 的责任归属，也不改变 artifact/validation 语义。
-
-## 8. Runtime context 边界
-
-真实 MD runtime 优先读取 `runtime/**` 紧凑投影。
-
-完整 authoring references 只在：
-
-- runtime projection 缺失/失效；
-- 恢复；
-- contract/协议冲突；
-- 开发或审计
-
-时加载。
-
-任何层都不得把“为了遵守规则”解释成每次运行都全文读取全部权威设计文件。
-
-## 9. 管理与业务写权限
-
-Manager 控制：
-
-```text
-00_project_state/**
-00_project_records/**
-```
-
-Operation/Validator/业务 Agent 只写 task 授权业务路径。
-
-确定性 recorder/state Tool 可以在 Manager 明确授权且 registry 权限覆盖时写管理目录；这不改变 Manager 的所有权。
-
-## 10. 并发边界
-
-- 同时最多一个前台 MD Agent context；
-- `DETERMINISTIC` Tool 调用不占用业务 Agent 名额，但不得被用于绕过串行业务依赖；
-- 多个 tmux/调度系统外部任务可后台并存；
-- Operation/Validator/Tool 不创建嵌套 Agent。
+新 Skill 不得因为这些文件仍在仓库中而继续复制旧接口。
