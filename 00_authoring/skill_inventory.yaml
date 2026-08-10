@@ -1,21 +1,35 @@
-schema_version: 3
-status: classification_1_2_state_redesign_present_unvalidated
+schema_version: 4
+status: lightweight_runtime_v2_global_entry_aligned_step_migration_pending
+
 runtime_architecture:
-  project_model: workstream
-  workflow_interfaces:
-    planning: workflow_route_fragment
-    execution: workflow_decision
-  foreground_subagent_mode: serial
-  max_foreground_subagents: 1
-  external_submissions_may_coexist: true
-  deterministic_tools:
-    registry: 05_tools/tool_registry.yaml
-    decision_layer: false
-    default_runtime_validation:
-      ordinary_task: FAST
-      lifecycle_and_recovery: FULL
+  default_runtime: lightweight_runtime_v2
+  project_model: task_sheet
+  records:
+    task_index: 00_project_records/task_index.md
+    task_sheets: 00_project_records/tasks/Txxxx.md
+    project_result_index: 00_project_records/project_result_index.md
+  conversations:
+    manager:
+      role: task_location_creation_initial_planning_and_project_level_management
+      skill: 00_manager/md_workflow_manager/SKILL.md
+    task_execution_agent:
+      role: continuous_multi_step_task_execution
+      manager_roundtrip_between_steps: false
+      dedicated_runtime_interface_status: pending
+  scientific_layers:
+    workflow: 01_workflows
+    operation: 02_operations
+    validator: 02_validators
+    tool: 05_tools
+  legacy_runtime:
+    status: frozen_not_default_runtime
+    project_model: workstream_route_event_transaction
+    runtime_projection: runtime/
+    contracts: 03_contracts/
+    rule: retain_for_history_migration_and_explicit_legacy_maintenance_only
+
 shared_contracts:
-  status: aligned_draft_revalidation_required
+  status: legacy_frozen_not_default_lightweight_runtime
   index: 03_contracts/README.md
   files:
     - 03_contracts/common_types.schema.yaml
@@ -33,29 +47,135 @@ shared_contracts:
     - 03_contracts/submission_record.schema.yaml
     - 03_contracts/artifact_set.schema.yaml
     - 03_contracts/state_snapshot.schema.yaml
+
 skills:
-  - {name: md-workflow-skill-authoring, layer: authoring, path: 00_authoring/md-workflow-skill-authoring, status: active_aligned_tool_requests_supported, content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml}
-  - {name: md-workflow-tool-authoring, layer: authoring, path: 00_authoring/md-workflow-tool-authoring, status: draft_first_tool_lifecycle_validated, content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml}
-  - {name: md_workflow_manager, layer: manager, path: 00_manager/md_workflow_manager, status: draft_runtime_validator_active_v1_2_task_closure_validated, content_map: 00_authoring/content_maps/md_workflow_manager.yaml}
-  - {name: structure_preparation_workflow, layer: workflow, path: 01_workflows/structure_preparation_workflow, status: draft_dual_interface_integration_required, content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml}
-  - {name: source_recognition, layer: operation, path: 02_operations/source_recognition, status: draft_safe_copy_semantics_integration_required, content_map: 00_authoring/content_maps/source_recognition.yaml}
-  - {name: component_and_residue_classification_validator, layer: validator, path: 02_validators/component_and_residue_classification_validator, status: present_unvalidated_state_redesign_revalidation_required, content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml}
-  - {name: chain_and_component_selection, layer: operation, path: 02_operations/chain_and_component_selection, status: passed_2026_07_31_revalidate_after_1_2_change, content_map: 00_authoring/content_maps/chain_and_component_selection.yaml}
-  - {name: chain_and_component_selection_validator, layer: validator, path: 02_validators/chain_and_component_selection_validator, status: passed_2026_07_31_revalidate_after_1_2_change, content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml}
-  - {name: altloc_occupancy_resolution, layer: operation, path: 02_operations/altloc_occupancy_resolution, status: planned, content_map: 00_authoring/content_maps/altloc_occupancy_resolution.yaml}
-  - {name: altloc_occupancy_validator, layer: validator, path: 02_validators/altloc_occupancy_validator, status: planned, content_map: 00_authoring/content_maps/altloc_occupancy_validator.yaml}
-  - {name: structure_completeness_validator, layer: validator, path: 02_validators/structure_completeness_validator, status: planned, content_map: 00_authoring/content_maps/structure_completeness_validator.yaml}
-  - {name: missing_region_completion, layer: operation, path: 02_operations/missing_region_completion, status: planned, content_map: 00_authoring/content_maps/missing_region_completion.yaml}
-  - {name: missing_region_completion_validator, layer: validator, path: 02_validators/missing_region_completion_validator, status: planned, content_map: 00_authoring/content_maps/missing_region_completion_validator.yaml}
-  - {name: protein_protonation_assignment, layer: operation, path: 02_operations/protein_protonation_assignment, status: planned, content_map: 00_authoring/content_maps/protein_protonation_assignment.yaml}
-  - {name: protein_protonation_validator, layer: validator, path: 02_validators/protein_protonation_validator, status: planned, content_map: 00_authoring/content_maps/protein_protonation_validator.yaml}
-  - {name: structure_reorder_and_mapping, layer: operation, path: 02_operations/structure_reorder_and_mapping, status: planned, content_map: 00_authoring/content_maps/structure_reorder_and_mapping.yaml}
-  - {name: structure_mapping_validator, layer: validator, path: 02_validators/structure_mapping_validator, status: planned, content_map: 00_authoring/content_maps/structure_mapping_validator.yaml}
-  - {name: structure_preparation_validator, layer: validator, path: 02_validators/structure_preparation_validator, status: planned, content_map: 00_authoring/content_maps/structure_preparation_validator.yaml}
+  - name: md-workflow-skill-authoring
+    layer: authoring
+    path: 00_authoring/md-workflow-skill-authoring
+    status: lightweight_alignment_pending
+    content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
+
+  - name: md-workflow-tool-authoring
+    layer: authoring
+    path: 00_authoring/md-workflow-tool-authoring
+    status: active_tool_lifecycle_retained_lightweight_alignment_pending
+    content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml
+
+  - name: md_workflow_manager
+    layer: manager
+    path: 00_manager/md_workflow_manager
+    status: lightweight_manager_core_refactored
+    content_map: 00_authoring/content_maps/md_workflow_manager.yaml
+
+  - name: structure_preparation_workflow
+    layer: workflow
+    path: 01_workflows/structure_preparation_workflow
+    status: legacy_runtime_interface_present_lightweight_refactor_pending
+    content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
+
+  - name: source_recognition
+    layer: operation
+    path: 02_operations/source_recognition
+    status: scientific_logic_retained_lightweight_step_interface_pending
+    content_map: 00_authoring/content_maps/source_recognition.yaml
+
+  - name: component_and_residue_classification_validator
+    layer: validator
+    path: 02_validators/component_and_residue_classification_validator
+    status: present_unvalidated_state_redesign_lightweight_interface_pending
+    content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
+
+  - name: chain_and_component_selection
+    layer: operation
+    path: 02_operations/chain_and_component_selection
+    status: passed_2026_07_31_revalidate_after_1_2_change_lightweight_interface_pending
+    content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
+
+  - name: chain_and_component_selection_validator
+    layer: validator
+    path: 02_validators/chain_and_component_selection_validator
+    status: passed_2026_07_31_revalidate_after_1_2_change_lightweight_interface_pending
+    content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
+
+  - name: altloc_occupancy_resolution
+    layer: operation
+    path: 02_operations/altloc_occupancy_resolution
+    status: planned
+    content_map: 00_authoring/content_maps/altloc_occupancy_resolution.yaml
+
+  - name: altloc_occupancy_validator
+    layer: validator
+    path: 02_validators/altloc_occupancy_validator
+    status: planned
+    content_map: 00_authoring/content_maps/altloc_occupancy_validator.yaml
+
+  - name: structure_completeness_validator
+    layer: validator
+    path: 02_validators/structure_completeness_validator
+    status: planned
+    content_map: 00_authoring/content_maps/structure_completeness_validator.yaml
+
+  - name: missing_region_completion
+    layer: operation
+    path: 02_operations/missing_region_completion
+    status: planned
+    content_map: 00_authoring/content_maps/missing_region_completion.yaml
+
+  - name: missing_region_completion_validator
+    layer: validator
+    path: 02_validators/missing_region_completion_validator
+    status: planned
+    content_map: 00_authoring/content_maps/missing_region_completion_validator.yaml
+
+  - name: protein_protonation_assignment
+    layer: operation
+    path: 02_operations/protein_protonation_assignment
+    status: planned
+    content_map: 00_authoring/content_maps/protein_protonation_assignment.yaml
+
+  - name: protein_protonation_validator
+    layer: validator
+    path: 02_validators/protein_protonation_validator
+    status: planned
+    content_map: 00_authoring/content_maps/protein_protonation_validator.yaml
+
+  - name: structure_reorder_and_mapping
+    layer: operation
+    path: 02_operations/structure_reorder_and_mapping
+    status: planned
+    content_map: 00_authoring/content_maps/structure_reorder_and_mapping.yaml
+
+  - name: structure_mapping_validator
+    layer: validator
+    path: 02_validators/structure_mapping_validator
+    status: planned
+    content_map: 00_authoring/content_maps/structure_mapping_validator.yaml
+
+  - name: structure_preparation_validator
+    layer: validator
+    path: 02_validators/structure_preparation_validator
+    status: planned
+    content_map: 00_authoring/content_maps/structure_preparation_validator.yaml
+
 tools:
   registry: 05_tools/tool_registry.yaml
+  lightweight_policy:
+    retain_scientifically_useful_deterministic_tools: true
+    legacy_orchestration_tools_are_default_runtime: false
+    do_not_add_runtime_management_tools_without_new_evidence: true
   items:
-    - {name: runtime_schema_validator, status: ACTIVE, validation_evidence: 04_evals/runtime_schema_validator/VALIDATION.md}
-    - {name: state_transaction, status: DESIGNED}
-    - {name: incremental_reference_checker, status: DESIGNED}
-    - {name: task_closure_renderer, status: DESIGNED}
+    - name: runtime_schema_validator
+      status: ACTIVE_LEGACY
+      validation_evidence: 04_evals/runtime_schema_validator/VALIDATION.md
+    - name: state_transaction
+      status: LEGACY_DESIGNED_FROZEN
+    - name: incremental_reference_checker
+      status: LEGACY_DESIGNED_FROZEN
+    - name: task_closure_renderer
+      status: LEGACY_DESIGNED_FROZEN
+
+migration_next:
+  - define_task_execution_agent_runtime_interface
+  - refactor_structure_preparation_workflow_for_lightweight_execution
+  - migrate_1_1_1_2_1_3_to_step_reuse_official_result_interface
+  - validate_cross_dialog_task_recovery_and_result_reuse
