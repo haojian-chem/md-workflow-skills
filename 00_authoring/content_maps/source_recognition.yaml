@@ -16,6 +16,8 @@ owned_content:
     owner: 02_operations/source_recognition/SKILL.md
   destination_conflict_and_reuse_rules:
     owner: 02_operations/source_recognition/SKILL.md
+  task_scoped_work_directory_and_output_paths:
+    owner: 02_operations/source_recognition/SKILL.md
   lightweight_object_requirements:
     owner: 02_operations/source_recognition/SKILL.md
   lightweight_reuse_conditions:
@@ -59,6 +61,8 @@ legacy_dependencies:
 
 notes:
   - Default handling remains byte copy with SHA-256 verification; moving requires explicit user authorization for the concrete source file.
-  - 1.1 official results are the recognized/copied structure file and source_recognition_report.yaml.
+  - Stable 1.1 base directory may exist from project initialization; actual execution writes to `01_source_recognition/<task_id>/` created by the Task Execution Agent only when local execution is needed.
+  - Direct reuse references the source task's existing official results and does not create an empty current-task directory.
+  - 1.1 official results are the recognized/copied structure file and source_recognition_report.yaml inside the executing task directory.
   - 1.1 reuse is based on source content hash, verified destination hash, compatible request semantics, and absence of an explicit redo request.
   - Historical source_recognition_deterministic v0.1.0 remains scientifically useful but its task.yaml/subagent-result interface is not a Lightweight Runtime default path.
