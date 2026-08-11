@@ -1,4 +1,4 @@
-schema_version: 2
+schema_version: 3
 status: active_partial
 purpose: lightweight_manager_initial_planning
 
@@ -12,6 +12,7 @@ runtime_policy:
     - step_preflight
     - validator_logic
     - runtime_state_tracking
+    - scientific_step_applicability_decisions
 
 workflow_order:
   - structure_preparation
@@ -39,47 +40,38 @@ workflows:
       - id: "1.1"
         name: source_recognition
         base_work_directory: 01_structure_preparation/01_source_recognition
-        conditional: false
 
       - id: "1.2"
         name: component_and_residue_classification
         base_work_directory: 01_structure_preparation/02_component_and_residue_classification
-        conditional: false
 
       - id: "1.3"
         name: chain_and_component_selection
         base_work_directory: 01_structure_preparation/03_chain_and_component_selection
-        conditional: false
 
       - id: "1.4"
         name: altloc_occupancy_resolution
         base_work_directory: 01_structure_preparation/04_altloc_occupancy_resolution
-        conditional: true
 
       - id: "1.5"
         name: completeness_check
         base_work_directory: 01_structure_preparation/05_completeness_check
-        conditional: false
 
       - id: "1.6"
         name: missing_region_completion
         base_work_directory: 01_structure_preparation/06_missing_region_completion
-        conditional: true
 
       - id: "1.7"
         name: protein_protonation_assignment
         base_work_directory: 01_structure_preparation/07_protein_protonation_assignment
-        conditional: true
 
       - id: "1.8"
         name: reorder_and_mapping
         base_work_directory: 01_structure_preparation/08_reorder_and_mapping
-        conditional: false
 
       - id: "1.9"
         name: validation
         base_work_directory: 01_structure_preparation/09_validation
-        conditional: false
 
   topology_preparation:
     workflow_id: "2"
@@ -112,15 +104,17 @@ workflows:
 planning_rules:
   - preserve_defined_step_order
   - task_scope_is_the_set_of_steps_written_into_the_task_sheet
+  - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
+  - manager_does_not_evaluate_scientific_step_applicability
+  - task_execution_agent_may_remove_add_or_reorder_future_steps_based_on_execution_evidence_or_explicit_user_scope_change
   - do_not_create_start_end_or_route_objects
   - do_not_invent_steps_for_workflows_with_undefined_step_catalogs
-  - conditional_steps_may_be_listed_initially_when_no_evidence_resolves_them
   - task_sheet_work_directory_is_planned_as_base_work_directory_plus_task_id
   - manager_records_but_does_not_create_task_specific_execution_directories
-  - task_execution_agent_may_remove_or_add_steps_later_based_on_execution_evidence_or_explicit_user_scope_change
 
 forbidden_content:
   - scientific_decision_rules
+  - step_applicability_conditions
   - reuse_conditions
   - input_output_schemas
   - preflight_rules
