@@ -36,6 +36,8 @@ Task Execution Agent 按当前子环节加载对应 Skill，并只读取当前�
 
 Manager 创建初始计划；Task Execution Agent 根据科研结果或用户明确指令直接调整后续子环节。
 
+Manager 的初始计划不是科学适用性判决。Manager 不负责判断某个 Step 对当前体系是否实际需要，也不维护 `conditional` / applicability 标记。
+
 不再维护独立 route object、route revision 或 route transaction。
 
 ---
@@ -303,7 +305,10 @@ Manager 不需要：
 - 生成独立 route；
 - 预先查询全部复用结果；
 - 读取所有子环节 Skill；
-- 提前运行科学检查。
+- 提前运行科学检查；
+- 判断每个 Step 对当前体系是否实际适用。
+
+Manager 只根据用户明确的任务范围和 planning index 中已定义的 Step 顺序生成初始计划。科学适用性由 Task Execution Agent 在执行过程中根据正式结果和当前 Step Skill 处理。
 
 Manager 为每个子环节记录：
 
@@ -356,8 +361,9 @@ Task Execution Agent 也可以依据科研结果对后续计划做必要局部�
 - Step name；
 - `base_work_directory`；
 - Step order；
-- 是否 conditional；
 - 必要时的轻量 planning alias。
+
+不保存 `conditional`、applicability、trigger condition 或其他需要 Manager 科学判断的字段。
 
 统一目录规则：
 
@@ -373,6 +379,7 @@ planning index 可以声明目录创建责任，但不创建任务专属科研�
 不得写入：
 
 - 科学判断规则；
+- Step 适用性条件；
 - 输入要求；
 - 输出 schema；
 - reuse conditions；
@@ -662,6 +669,7 @@ Lightweight Runtime v2 的目标不是降低科研严谨性，而是减少 LLM �
 
 - 一个 Manager 对话完成任务定位 / 创建和初始规划；
 - 一个 Task Execution Agent 对话可以连续推进多个子环节；
+- Manager 不承担 Step 科学适用性判断；
 - 当前子环节只加载当前真正需要的 Skill 和文件；
 - 复用检查发生在子环节开始时；
 - 不为普通科研动作维护事务型 runtime closure；
