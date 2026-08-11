@@ -58,7 +58,7 @@ skills:
   - name: md-workflow-skill-authoring
     layer: authoring
     path: 00_authoring/md-workflow-skill-authoring
-    status: lightweight_authoring_guide_core_and_templates_aligned_revalidation_pending
+    status: lightweight_authoring_guide_aligned_revalidation_pending
     content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
 
   - name: md-workflow-tool-authoring
@@ -187,9 +187,10 @@ tools:
       status: LEGACY_DESIGNED_FROZEN
 
 migration_next:
-  - revalidate_lightweight_skill_authoring_guide_and_static_checks
-  - continue_1_3_design_from_authoring_draft_before_touching_current_implementation
-  - migrate_1_3_operation_and_validator_only_after_design_is_frozen
+  - revalidate_lightweight_skill_authoring_static_checks
+  - lightweight_align_md_workflow_tool_authoring
+  - continue_1_3_formal_design_and_draft_merge_in_its_own_authoring_window
+  - define_workflow_2_and_3_step_catalogs_after_1_3_sync
   - validate_1_1_and_1_2_task_scoped_directory_behavior
   - validate_cross_dialog_recovery_and_1_1_to_1_2_to_1_3_handoff
   - validate_result_reuse_without_empty_task_directories
