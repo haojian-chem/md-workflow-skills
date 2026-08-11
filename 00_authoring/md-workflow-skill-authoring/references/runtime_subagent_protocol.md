@@ -1,5 +1,15 @@
 # MD Workflow Runtime Execution Protocol
 
+> **LEGACY / FROZEN**
+>
+> 本文件只保留旧 Workstream / route / runtime task-result 架构的历史执行协议，用于旧项目迁移、历史审计或明确的 Legacy 维护。
+>
+> **Lightweight Runtime v2 的普通 Skill authoring 和真实任务执行不得读取本文件作为默认运行规则。** 当前默认运行关系以 `00_authoring/lightweight_runtime_v2_spec.md`、`md-workflow-skill-authoring/SKILL.md` 和 `references/layer_boundaries.md` 为准。
+
+以下内容保持为 Legacy 历史定义，不再向新 Skill 迁移。
+
+---
+
 本协议定义真实 MD runtime 中 Operation/Validator 的执行后端、Agent context 边界和最小任务信息。
 
 逻辑职责由 `layer_boundaries.md` 定义；本文件只定义**如何执行**。
