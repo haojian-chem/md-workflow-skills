@@ -35,7 +35,8 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 - 创建子 Agent；
 - 维护 Workstream、route、event、artifact state 或 transaction；
 - 返回 `workflow_route_fragment` 或 `workflow_decision`；
-- 根据目录存在与否推断子环节完成。
+- 根据目录存在与否推断子环节完成；
+- 为 Manager 判断某个子环节是否适用于当前体系。
 
 # 阶段目录与任务隔离
 
@@ -149,8 +150,6 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 逻辑职责：`OPERATION + VALIDATOR`
 
-该环节为条件环节。
-
 ---
 
 ## 1.5 Completeness check
@@ -188,8 +187,6 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 逻辑职责：`OPERATION + VALIDATOR`
 
-该环节为条件环节。
-
 ---
 
 ## 1.7 Protein protonation assignment
@@ -208,8 +205,6 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 - `02_validators/protein_protonation_validator/SKILL.md`
 
 逻辑职责：`OPERATION + VALIDATOR`
-
-该环节为条件环节。
 
 ---
 
@@ -268,13 +263,13 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 ## 1.4
 
-1.4 只在当前保留结构存在需要处理的 altloc / occupancy 问题时需要执行。
+1.4 只在当前保留结构存在需要处理的 altloc / occupancy 问题时有实际工作。
 
-如果进入该环节前已有充分证据确认不需要处理，Task Execution Agent 可从尚未执行的任务计划中删除 1.4；具体判断依据由 1.4 Skill 定义，而不是由本 Workflow 重复定义。
+如果执行推进到相关判断点时已有充分证据确认无需处理，Task Execution Agent 可删除尚未执行的 1.4；具体判断依据由 1.4 Skill 定义，而不是由 Manager 或本 Workflow 预先判断。
 
 ## 1.5 → 1.6
 
-1.5 检查结构完整性。1.6 是否需要保留在后续计划中，应依据 1.5 的正式结果决定。
+1.5 检查结构完整性。1.6 是否继续保留在后续计划中，应依据 1.5 的正式结果决定。
 
 如果 1.5 明确不需要 missing-region completion，则删除尚未执行的 1.6；如果结果要求补全或修复，则保留或加入 1.6。
 
@@ -284,7 +279,7 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 ## 1.7
 
-1.7 是否需要执行由当前体系和质子化处理需求决定。具体适用条件、方法和用户确认要求由 1.7 Skill 定义。
+1.7 是否需要实际执行由当前体系和质子化处理需求决定。具体适用条件、方法和用户确认要求由 1.7 Skill 定义。
 
 如果 1.7 改变结构或残基状态，后续环节使用其正式结果对象。
 
@@ -294,25 +289,19 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 1.9 对结构准备阶段的最终结果执行阶段级验证。只有 1.9 的实际验证要求满足，才能把结构准备视为完成；目录存在或上游步骤曾执行不能替代 1.9。
 
-# 条件环节与动态任务计划
+# 动态任务计划
 
-结构准备阶段当前条件环节为：
+本 Workflow 不把任何子环节标记为 Manager 层面的 `conditional step`。
 
-```text
-1.4 altloc_occupancy_resolution
-1.6 missing_region_completion
-1.7 protein_protonation_assignment
-```
-
-Manager 在初始规划时可以在未有充分证据时先列出这些环节。
+Manager 只根据用户任务范围与 planning index 写出初始计划，不负责根据体系科学特征提前判断 1.4、1.6、1.7 或其他 Step 是否实际需要。
 
 Task Execution Agent 在执行过程中根据：
 
-- 当前子环节的正式结果；
-- 当前 Skill 的科学规则；
+- 当前及前序子环节的正式结果；
+- 当前相关 Step Skill 的科学规则；
 - 用户在当前执行对话中的明确要求；
 
-直接增删或调整后续尚未执行子环节。
+直接增删、替换或调整尚未执行的后续子环节。
 
 确认不需要的未执行环节直接从 Task Sheet 删除，不写 `NOT_APPLICABLE` / `SKIP` 状态，也不生成 route revision。
 
@@ -368,7 +357,8 @@ Legacy 材料仍可保留用于历史、旧项目迁移或明确的 Legacy 维�
 - [ ] Manager 只记录任务专属目录路径，未创建 `Txxxx/` 执行目录；
 - [ ] 当前任务目录只在确实需要执行该子环节时由 Task Execution Agent 创建；
 - [ ] 未重新定义具体子环节的科学算法、reuse conditions 或 official results；
-- [ ] 条件环节根据实际证据动态增删，而不是生成 SKIP / route revision；
+- [ ] 未设置 Manager conditional/applicability metadata；
+- [ ] 后续计划根据实际执行证据动态调整，而不是生成 SKIP / route revision；
 - [ ] 未创建 Workflow decision、route fragment、event 或 runtime task；
 - [ ] 未要求普通子环节结束后返回 Manager；
 - [ ] 最终结构准备完成仍以 1.9 的实际验证结果为依据。
