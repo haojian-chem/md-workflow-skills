@@ -18,7 +18,8 @@ Workflow 是阶段级科研规则与 Step 映射，不是 Agent，也不是 rout
 - 维护 Workstream / active route / event；
 - 执行具体 Operation / Validator；
 - 定义具体 Step 的 reuse conditions；
-- 复制 Step 的算法与详细科学规则。
+- 复制 Step 的算法与详细科学规则；
+- 为 Manager 判断某个 Step 是否适用于当前体系。
 
 # 阶段目录
 
@@ -41,13 +42,12 @@ Workflow 是阶段级科研规则与 Step 映射，不是 Agent，也不是 rout
 step_id:
 name:
 base_work_directory:
-conditional: true | false
 skills:
   operation:
   validator:
 ```
 
-不在这里重复具体 Step 的输入、reuse、preflight、输出 schema 或执行命令。
+不在这里重复具体 Step 的输入、reuse、preflight、输出 schema、执行命令或科学适用性条件。
 
 # 阶段内科学关系
 
@@ -58,17 +58,19 @@ skills:
 → 下游 Step 如何消费
 ```
 
-如果某个 Step 的结果会影响后续 conditional Step，只说明关系；具体判断条件归对应 Step Skill。
+如果某个正式结果可能使后续尚未执行 Step 被增加、删除、替换或重排，只说明这种科学关系；具体判断由 Task Execution Agent 在执行时根据相关 Step Skill 和当前正式结果完成。
 
-# 条件 Step
+# 动态任务计划关系
 
-列出本阶段的 conditional Steps。
+Workflow 可以记录阶段内常见的计划调整关系，但不把它们编码成 Manager `conditional` 标记。
 
 规则：
 
-- 初始计划中无充分证据时可以保留；
-- Task Execution Agent 到达相关判断点后依据当前 Step Skill 和正式结果增删；
+- Manager 只按用户任务范围和 planning index 生成初始计划；
+- Manager 不根据体系科学特征判断 Step applicability；
+- Task Execution Agent 在执行过程中依据当前证据直接调整尚未执行的未来 Step；
 - 确认不需要且尚未执行的 Step 直接从 Task Sheet 删除；
+- 必要的新 Step 可以加入 Task Sheet；
 - 不生成 SKIP / route revision 对象。
 
 # 复用边界
@@ -107,5 +109,6 @@ runtime task unit
 - [ ] 只拥有阶段级科学边界与 Step 映射；
 - [ ] 未复制具体 Step 科学规则；
 - [ ] 未创建 route / decision / Workstream 接口；
-- [ ] conditional Step 关系明确；
+- [ ] 未把 Step applicability 写成 Manager conditional metadata；
+- [ ] 计划调整关系只由执行证据触发；
 - [ ] 最终完成条件来自真实验证结果。
