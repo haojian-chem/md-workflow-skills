@@ -36,6 +36,7 @@ Manager 不负责：
 
 - 普通 Step 的科学执行；
 - 当前 Step 的 reuse 判定；
+- 判断某个 Step 对当前体系是否科学适用；
 - Operation / Validator 的逐步调度闭环；
 - route / Workstream / event / artifact state / runtime task-result；
 - 为每个子环节创建任务执行目录；
@@ -59,8 +60,8 @@ Manager 可以建立或确认稳定 Workflow / Step 基础目录，并在 Task S
 - 阶段目标；
 - 有序 substep / Step registry；
 - Step 与 Operation / Validator Skill 的映射；
-- 哪些 Step 是初始规划中的 conditional step；
 - 阶段内上游结果对下游处理的科学关系；
+- 哪些科学结果可能导致后续尚未执行 Step 被增加、删除、替换或重排；
 - 阶段完成条件；
 - 基础工作目录语义。
 
@@ -72,10 +73,11 @@ Workflow 不负责：
 - 维护 active route / Workstream / event；
 - 直接执行 Operation / Validator；
 - 定义具体 Step 的 reuse conditions；
+- 为 Manager 提供 `conditional` / applicability 标记；
 - 复制 Step 的科学算法；
 - 直接根据目录存在判断完成。
 
-当某个 Step 的结果影响后续条件 Step 时，Workflow 可以说明**关系**，但具体适用条件由对应 Step Skill 定义。
+当某个 Step 的结果影响后续尚未执行 Step 时，Workflow 可以说明**关系**，但具体适用性判定由相关 Step Skill 和 Task Execution Agent 在执行时完成。
 
 ## 3. Operation
 
