@@ -1,5 +1,15 @@
 # Runtime Record Commit Protocol
 
+> **LEGACY / FROZEN**
+>
+> 本文件只保留旧 Workstream / route / runtime task-result 架构下的 R4 机械闭环设计，用于旧项目迁移、历史审计或明确的 Legacy 维护。
+>
+> **Lightweight Runtime v2 的普通 Skill authoring 和真实任务执行不得读取本文件作为默认记录规则。** 当前默认记录体系只使用 `task_index.md`、`Txxxx.md` 和 `project_result_index.md`，并由 Manager / Task Execution Agent 按 `00_authoring/lightweight_runtime_v2_spec.md` 维护。
+
+以下内容保持为 Legacy 历史定义，不再向新 Skill 迁移。
+
+---
+
 Status: DESIGN_FROZEN_IMPLEMENTATION_PENDING
 
 本协议定义 R4：把普通 task 闭环中的机械记录构造、schema 校验和受控提交从 Manager LLM 推理中移出。
