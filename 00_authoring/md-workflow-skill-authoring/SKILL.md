@@ -135,7 +135,9 @@ minimal_reads: []
 forbidden_default_reads: []
 ```
 
-Manager 不拥有具体 Step 的科学输入、reuse conditions、validation requirements 或 official results。
+Manager 不拥有具体 Step 的科学输入、reuse conditions、validation requirements、official results 或适用性判断。
+
+Manager planning index 只保存生成初始 Task Sheet 所需的 Workflow/Step 目录与顺序信息，不使用 `conditional` 或其他科学适用性标记。
 
 ## Workflow
 
@@ -146,14 +148,13 @@ purpose:
 stage_goal:
 ordered_substeps: []
 step_to_skill_mapping: []
-conditional_steps: []
 stage_scientific_relations: []
 stage_completion_condition:
 ```
 
-Workflow 可以描述阶段内科学依赖和“某结果可能导致后续条件 Step 删除/保留”，但具体判定条件归对应 Step Skill。
+Workflow 可以描述阶段内科学依赖，以及“某个正式结果可能使后续 Step 被增加、删除、替换或重排”的关系；具体适用性判定仍归当前 Step Skill 与 Task Execution Agent。
 
-Workflow 不建立 planning fragment、execution decision、route revision、Workstream state 或 runtime task unit。
+Workflow 不建立 planning fragment、execution decision、route revision、Workstream state、runtime task unit，也不为 Manager 维护 `conditional step` 元数据。
 
 ## Step-facing Operation / Validator
 
@@ -425,11 +426,11 @@ python 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py
 - 直接复用时不创建空任务目录；
 - official results 登记；
 - 跨对话恢复；
-- 当前结果导致后续条件 Step 增删；
+- 当前结果导致后续 Step 增删、替换或重排；
 - Tool 不可用时的合理回退；
 - 不写 Legacy runtime records。
 
-Workflow 评测应重点检查阶段映射和科学关系，不再要求 route fragment / workflow decision fixtures。
+Workflow 评测应重点检查阶段映射和科学关系，不再要求 route fragment / workflow decision fixtures，也不要求 conditional-step metadata。
 
 # 交付
 
