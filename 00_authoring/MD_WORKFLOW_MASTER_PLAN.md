@@ -1,8 +1,8 @@
 # MD Workflow Master Plan
 
-Status: DRAFT
+Status: ACTIVE PLANNING BASELINE
 
-This file records the current planning baseline for the MD Workflow. It is a planning artifact, not an implementation contract. Items marked as confirmed are fixed unless later design evidence requires revision; items marked as draft still require dedicated planning before implementation.
+This file records the current planning baseline for the MD Workflow. It is a planning artifact, not an implementation contract. Frozen stage architecture is authoritative for planning; detailed scientific execution remains owned by the corresponding Workflow / Operation / Validator Skills and references.
 
 ## 1. Top-level stage numbering
 
@@ -18,120 +18,217 @@ Numbering semantics:
 
 - `1.3` means the MD Workflow stage 1.3, i.e. the third sub-stage under `1 Structure preparation`.
 - The same rule applies to `2.x`, `3.x`, `4.x`, and `5.x`.
-- Do not reuse the old mapping in which system construction was called `Stage 2.x`, MD simulation was `Stage 3`, and analysis was `Stage 4`.
+
+---
 
 ## 2. Stage 1 — Structure preparation
 
-### 2.1 Confirmed stages
+Current defined sequence:
 
-#### 1.1 Structure source recognition
-
-Purpose:
-
-- identify the source and format of the input structure;
-- identify the effective structure file used by the workflow;
-- record source metadata needed by downstream processing.
-
-Status: implemented / existing.
-
-#### 1.2 Component and residue classification
-
-Purpose:
-
-- identify models and subunits;
-- classify standard residues, connected nonstandard residues, independent nonstandard components, solvent, ions, and unresolved objects;
-- record covalent and coordination relationships when supported by evidence;
-- provide structured classification input for stage 1.3.
-
-Important boundary:
-
-- stage 1.2 identifies what components are;
-- stage 1.2 does not decide which components are retained for MD;
-- stage 1.2 may record known missing or incomplete residues/atoms as baseline structural facts.
-
-Status: implemented / existing.
-
-#### 1.3 Chain and component selection
-
-Purpose:
-
-- select the final model, chains/subunits, ligands, cofactors, metals, structural waters, ions, and other components that will enter the MD system;
-- consume the structured classification produced by stage 1.2;
-- make explicit keep/remove decisions rather than inferring them from residue names alone.
-
-Status: scientific planning pending; implementation has not started.
-
-### 2.2 Completeness ordering rule
-
-Confirmed planning correction:
-
-- baseline structure completeness information must be available before stage 1.3 selection;
-- therefore, completeness checking must not be moved wholesale to after stage 1.3;
-- however, actual completion/repair should be performed only for the final selected system whenever possible.
-
-Planning model:
-
-1. Before or during the 1.2 -> 1.3 handoff:
-   - detect and record missing residues, missing atoms, unresolved regions, or other incompleteness relevant to selection;
-   - do not repair every component automatically.
-2. Stage 1.3:
-   - select the final MD components.
-3. After stage 1.3:
-   - perform completion/repair only for retained components that require it.
-
-Exact ownership and numbering of the post-selection completion step remain to be frozen in a later planning pass.
-
-### 2.3 Draft downstream structure-preparation stages
-
-The following sequence is currently a draft and must not yet be treated as a frozen implementation contract:
-
+- 1.1 Structure source recognition
+- 1.2 Component and residue classification
+- 1.3 Chain and component selection
 - 1.4 Alternate conformation / occupancy resolution
-- 1.5 Structure completion / repair for the selected system
-- 1.6 Protonation state assignment
-- 1.7 Structure normalization / reordering / mapping
-- 1.8 Structure preparation validation
+- 1.5 Completeness check
+- 1.6 Missing-region completion
+- 1.7 Protein protonation assignment
+- 1.8 Reorder and mapping
+- 1.9 Structure preparation validation
 
-These stage boundaries and names require dedicated planning before implementation.
+Stage 1 execution-time applicability is determined by the relevant Step Skills and actual evidence. Manager planning does not mark conditional steps.
+
+### Stage 1 → Stage 2 chain-assignment handoff
+
+Workflow 1 final structure organization must provide stable heavy-atom identity/order and the chain assignment consumed by Stage 2.
+
+For topology-linked nonstandard units:
+
+```text
+all standard-side linked residues belong to one standard chain
+→ linked nonstandard unit does not receive a separate chain; it is assigned to that chain
+
+standard-side linked residues span multiple standard chains
+→ linked nonstandard unit receives its own chain identity
+```
+
+This chain identity is distinct from later GROMACS `moleculetype` organization. Stage 2 may merge multiple chains into one covalently connected moleculetype while preserving chain identity.
+
+---
 
 ## 3. Stage 2 — Topology / parameterization
 
-### 3.1 Current draft decomposition
+### 3.1 Status
 
-- 2.1 Topology / force-field strategy
-- 2.2 Standard component topology
-- 2.3 Covalently linked nonstandard parameterization
-- 2.4 Independent nonstandard component parameterization
-- 2.5 Topology assembly
-- 2.6 Topology validation
+**Stage 2 architecture is frozen.**
+
+Frozen sequence:
+
+1. `2.1 Parameterization environment and assignment`
+2. `2.2 Standard residue topology generation`
+3. `2.3 Topology-linked nonstandard parameterization`
+4. `2.4 Independent nonstandard parameterization`
+5. `2.5 Topology integration and assembly`
+6. `2.6 Topology validation`
+
+The authoritative architecture record is:
+
+`00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
+
+Detailed 2.5 linked integration rules are owned by:
+
+- `02_operations/topology_integration_and_assembly/SKILL.md`
+- `02_operations/topology_integration_and_assembly/references/topology_integration_rules.md`
+- `02_operations/topology_integration_and_assembly/references/parameter_definition_deduplication.md`
 
 ### 3.2 Routing principle
 
-Parameterization should be routed primarily by component/topology ownership rather than by whether a parameter is ordinary or unusual.
+Stage 2 routes work by component/topology ownership, not by parameter complexity.
 
-Therefore:
+Do not create a generic `Special / custom parameter generation` stage.
 
-- standard-component issues belong to 2.2;
-- custom or missing parameters for covalently linked nonstandard residues belong to 2.3;
-- custom or missing parameters for independent nonstandard components belong to 2.4;
-- cross-component integration belongs to topology assembly in 2.5.
+Methods such as DFT, RESP/RESP2, Multiwfn, Sobtop, Seminario, GAFF, metal-specific handling, or future custom tools remain internal methods of the appropriate Step rather than separate workflow stages.
 
-### 3.3 Removed stage concept
+### 3.3 2.1 Parameterization environment and assignment
 
-Do not create a separate `Special / custom parameter generation` stage.
+Purpose:
 
-Reason:
+- establish the set of force-field / parameter-definition sources used by the system;
+- assign actual classified objects to the downstream topology acquisition / parameterization route;
+- do not reclassify 1.2 objects.
 
-- it overlaps with stages 2.2-2.4 when the issue is component-specific;
-- it overlaps with topology assembly when the issue is cross-component integration;
-- a separate catch-all stage would mix two incompatible routing dimensions: component class and parameter complexity.
+Assignment baseline:
 
-Special/custom parameter work must stay inside the appropriate 2.2-2.4 route, while final integration is handled by topology assembly.
+- all `STANDARD_RESIDUE` → 2.2;
+- each **topology-linked nonstandard unit** → 2.3;
+- each `INDEPENDENT_NONSTANDARD` residue name/type → 2.4;
+- FF-complete solvent/ion definitions → direct 2.5 integration;
+- solvent/ion without complete definition → 2.4 type handling.
 
-Status of Stage 2 decomposition: draft; not yet frozen stage-by-stage.
+A topology-linked nonstandard unit may contain one or multiple nonstandard residues when they must be jointly parameterized as one linked chemical unit.
+
+### 3.4 2.2 Standard residue topology generation
+
+Purpose:
+
+- generate actual all-atom molecule topology/structure for all standard residues from the selected parameterization environment;
+- perform standard-residue hydrogenation;
+- emit standard-only structure/topology plus mapping.
+
+Core result categories:
+
+```text
+standard-only .gro
+standard-only .top
+standard molecule .itp file(s)
+*.map
+```
+
+2.2 may internally split `pdb2gmx` processing groups; one-chain-one-run is not a default rule.
+
+### 3.5 2.3 Topology-linked nonstandard parameterization
+
+Processing unit:
+
+```text
+one topology-linked nonstandard unit
+→ one 2.3 processing unit
+```
+
+A unit may contain one or multiple nonstandard residues.
+
+Purpose:
+
+- build the linked parameterization model;
+- consume standard-side all-atom fragments from 2.2 while keeping their relative order;
+- hydrogenate only the nonstandard part;
+- identify standard-side atoms incompatible with the linked state;
+- add parameterization caps where required;
+- execute DFT / RESP(2) / topology generation;
+- emit linked-site modification information for 2.5.
+
+Protein-model boundary baseline: retain the directly attached standard residue, extend across peptide bonds toward neighboring residues, prefer final cuts on suitable C-C single bonds, and cap with H. Detailed nucleic-acid boundary rules remain a local scientific refinement rather than a Stage 2 architecture question.
+
+### 3.6 2.4 Independent nonstandard parameterization
+
+Purpose:
+
+- parameterize each independent nonstandard type once;
+- apply that type topology to all current-system instances.
+
+Output levels:
+
+```text
+type-level:
+  mol2 / chg / itp
+
+system-instance-level:
+  gro / map
+```
+
+### 3.7 2.5 Topology integration and assembly
+
+Purpose:
+
+- consume 2.2 standard, 2.3 linked units, 2.4 independent types/instances, and FF-direct solvent/ion definitions;
+- determine final GROMACS moleculetype organization while preserving upstream chain identity;
+- determine the final atom set and final all-atom order before topology migration;
+- freeze one canonical final atom index and final map;
+- generate each final molecule `.itp` by molecule-level topology integration;
+- collect/deduplicate/conflict-check global/type-level parameter definitions into one consolidated parameter-definition `.itp`;
+- assemble `final_system.top` and write `final_system.gro` using the already frozen canonical final atom order.
+
+Critical ordering rule:
+
+```text
+final topology organization
+→ final atom set
+→ final all-atom order
+→ canonical final atom index + final.map
+→ molecule-level topology integration / final molecule .itp
+→ global parameter-definition consolidation
+→ final_system.top
+→ final_system.gro using the same canonical order
+```
+
+For confirmed covalent connectivity, all covalently connected standard components and linked units belong to one final GROMACS moleculetype. This may merge multiple source chains but does not erase chain identity.
+
+### 3.8 2.6 Topology validation
+
+Purpose:
+
+- validate the complete 2.5 package without rebuilding it;
+- verify topology package completeness, internal topology consistency, linked modifications, map consistency, charge/connectivity sanity, topology-coordinate atom-by-atom consistency, and GROMACS preprocessing acceptance.
+
+`gmx grompp` success is necessary evidence but is not sufficient by itself for Stage 2 validation.
+
+2.6 does not silently repair topology; failures route back to the relevant upstream Step.
+
+### 3.9 Stage 2 shared mapping rule
+
+2.2–2.5 mapping follows:
+
+```text
+generated/output atom → source provenance
+```
+
+Core fields:
+
+```yaml
+output_atom_index:
+output_atom_name:
+output_residue_name:
+output_residue_number:
+origin: SOURCE | ADDED_H | CAP
+source_atom_serial:
+```
+
+`DELETED_BY_LINK` is not a map state. Connectivity is read from topology/mol2 rather than duplicated in the map.
+
+---
 
 ## 4. Stage 3 — System construction / solvation
 
-### 4.1 Current draft decomposition
+Current draft decomposition:
 
 - 3.1 System construction settings
 - 3.2 Periodic box construction
@@ -147,91 +244,64 @@ Purpose of Stage 3 as a whole:
 - add solvent and ions according to the selected model and concentration strategy;
 - produce a validated complete system ready to enter MD simulation.
 
-Status: draft; stage boundaries still require review, especially whether final assembly should remain separate from final validation.
+Status: draft; Stage 3 boundaries still require dedicated review.
+
+---
 
 ## 5. Stage 4 — MD simulation
 
 Top-level stage confirmed.
 
-Sub-stage decomposition: not planned in this file yet.
+Sub-stage decomposition: not yet frozen.
+
+---
 
 ## 6. Stage 5 — Analysis
 
 Top-level stage confirmed.
 
-Sub-stage decomposition: not planned in this file yet.
+Sub-stage decomposition: not yet frozen.
 
-## 7. Runtime infrastructure priority
+---
 
-Repeated test runs have shown that the current runtime architecture imposes excessive fixed orchestration cost. The main cost is repeated LLM-side reading and interpretation of static rules, contracts, records, and Workflow/Manager text rather than scientific computation, Linux I/O, PDB processing, or deterministic schema validation.
+## 7. Runtime architecture baseline
 
-This is treated as an architecture-wide runtime issue rather than an initialization-only issue.
+The default runtime architecture is Lightweight Runtime v2:
 
-The adopted redesign baseline is recorded in:
+- Manager creates/locates tasks and performs initial planning or explicit replanning;
+- Task Execution Agent owns long-lived execution, per-step reuse checks, execution, validation, recording, and dynamic future-step adjustment;
+- no default transaction/event/workstream runtime engine;
+- Operation preflight and dedicated scientific validation remain available where needed;
+- deterministic Tools are preferred for deterministic transformations but do not recreate a transaction engine.
 
-`00_authoring/RUNTIME_ORCHESTRATION_REDESIGN_PLAN.md`
+The planning index is only a lightweight initial-planning catalog and must not contain scientific applicability rules, reuse rules, schemas, commands, validator logic, or runtime state.
 
-Confirmed direction:
-
-- separate authoring-time rules from minimal runtime rules;
-- keep Manager / Workflow / Operation / Validator responsibility boundaries;
-- do not require every responsibility boundary to create a separate LLM invocation;
-- prefer deterministic Tools for deterministic work;
-- allow explicit execution backends such as deterministic execution, one-Agent tasks, and context-continuous Agent sequences;
-- use active-route fast-path progression when no route-affecting evidence appears;
-- move mechanical record/state/event construction to deterministic builders/recorders;
-- reserve LLM reasoning for semantic decisions, ambiguity, exceptions, scientific judgment, recovery, and user interaction.
-
-Stage 1.3 remains the next scientific workflow stage, but detailed implementation is temporarily behind the runtime infrastructure redesign because adding further stages to the current orchestration model would compound the measured fixed-cost problem.
+---
 
 ## 8. Current planning state
 
-Confirmed:
+Frozen:
 
-- top-level stages 1-5 and their numbering semantics;
-- 1.1 Structure source recognition;
-- 1.2 Component and residue classification;
-- 1.3 Chain and component selection as the next scientific stage;
-- baseline completeness information must precede selection;
-- completion/repair should target the selected system;
-- Stage 2 must not contain a separate generic special/custom-parameter stage;
-- runtime orchestration redesign is the current infrastructure priority before further Stage 1 implementation.
+- top-level Stage 1–5 numbering semantics;
+- Workflow 1 step catalog;
+- Workflow 2 / Stage 2 architecture and six-step catalog;
+- Stage 2 topology-linked nonstandard unit model;
+- Stage 1 → Stage 2 chain-assignment handoff principle;
+- Stage 2 map semantics;
+- Stage 2 final all-atom ordering/index timing;
+- 2.5 molecule-level integration ownership and global parameter-definition consolidation boundary;
+- 2.6 validation boundary.
 
-Still to freeze:
+Still to plan/freeze:
 
-- runtime/authoring separation model and generated runtime artifact ownership;
-- compact Manager and Workflow runtime specifications;
-- deterministic / Agent task / Agent sequence execution backend rules;
-- deterministic record/state commit model;
-- active-route fast-path rules;
-- initialization candidate-only validation mode;
-- 1.1/1.2 migration benchmark after runtime redesign;
-- exact 1.4+ structure-preparation stage boundaries;
-- detailed 1.3 contract, content map, write paths, dependencies, and work order;
-- exact Stage 2 sub-stage boundaries and naming;
-- exact Stage 3 sub-stage boundaries and naming;
-- all Stage 4 and Stage 5 sub-stage plans.
+- Stage 3 exact boundaries and names;
+- Stage 4 sub-stage plan;
+- Stage 5 sub-stage plan;
+- implementation details and Validators/Tools for Stage 2 steps not yet implemented;
+- nucleic-acid-specific 2.3 model-cut/capping rules where needed.
 
 ## 9. Immediate next planning task
 
-Current order:
+Stage 2 architecture is closed for ordinary redesign.
 
-```text
-Runtime orchestration redesign planning
-→ freeze the core runtime architecture
-→ implement the minimum runtime infrastructure
-→ migrate and benchmark initialization + 1.1 + 1.2
-→ confirm correctness and latency improvement
-→ resume detailed planning for stage 1.3 Chain and component selection
-```
-
-The runtime redesign plan should first freeze:
-
-- authoring vs runtime information boundaries;
-- runtime manifest/spec ownership;
-- execution backend selection rules;
-- deterministic record/state builder responsibilities;
-- conditions for route fast-path advancement vs Workflow re-entry;
-- performance measurement and acceptance criteria.
-
-After these are frozen and validated on initialization/1.1/1.2, stage 1.3 planning resumes with its own boundary, local contract, content map, upstream/downstream interfaces, write paths, work order, and validation criteria.
+Next architecture-level work should move to Stage 3 unless a concrete Stage 2 implementation/validation issue exposes new scientific evidence requiring a local correction.
