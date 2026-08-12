@@ -77,8 +77,31 @@ workflows:
     workflow_id: "2"
     name: topology_preparation
     project_directory: 02_topology_preparation
-    step_catalog_status: not_defined
-    steps: []
+    step_catalog_status: defined
+    steps:
+      - id: "2.1"
+        name: parameterization_environment_and_assignment
+        base_work_directory: 02_topology_preparation/01_parameterization_environment_and_assignment
+
+      - id: "2.2"
+        name: standard_residue_topology_generation
+        base_work_directory: 02_topology_preparation/02_standard_residue_topology_generation
+
+      - id: "2.3"
+        name: topology_linked_nonstandard_parameterization
+        base_work_directory: 02_topology_preparation/03_topology_linked_nonstandard_parameterization
+
+      - id: "2.4"
+        name: independent_nonstandard_parameterization
+        base_work_directory: 02_topology_preparation/04_independent_nonstandard_parameterization
+
+      - id: "2.5"
+        name: topology_integration_and_assembly
+        base_work_directory: 02_topology_preparation/05_topology_integration_and_assembly
+
+      - id: "2.6"
+        name: topology_validation
+        base_work_directory: 02_topology_preparation/06_topology_validation
 
   md_preparation:
     workflow_id: "3"
