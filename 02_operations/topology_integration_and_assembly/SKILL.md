@@ -1,6 +1,6 @@
 ---
 name: topology_integration_and_assembly
-description: Lightweight Runtime v2 的 2.5 Topology integration and assembly。将 2.2 standard topology、2.3 topo-linked nonstandard unit、2.4 independent nonstandard、以及 2.1 已确认可直接使用的 solvent/ion definitions 整合成 final all-atom topology package；负责 final moleculetype 组织、linked-site modification、charge replacement、bonded-term migration、parameter-definition 汇总和 final topology/coordinate/map assembly，但不替代 2.6 topology validation，也不重新执行 2.3 parameterization。
+description: Lightweight Runtime v2 的 2.5 Topology integration and assembly。将 2.2 standard topology、2.3 topo-linked nonstandard unit、2.4 independent nonstandard、以及 2.1 已确认可直接使用的 solvent/ion definitions 整合成 final all-atom topology package；负责 final atom ordering/index、final moleculetype 组织、linked-site modification、charge replacement、bonded-term migration、parameter-definition 汇总和 final topology/coordinate/map assembly，但不替代 2.6 topology validation，也不重新执行 2.3 parameterization。
 ---
 
 # 目标
@@ -38,11 +38,14 @@ final topology package
 - 2.1 parameterization environment / assignment；
 - 2.2 standard-only structure、topology、molecule `.itp`、map；
 - 每个 2.3 topo-linked nonstandard **unit** 的 parameterization result、map、linked-site modification information；
-- 2.4 independent nonstandard type-level topology 与当前体系实例结构/map；
+- 2.4 independent nonstandard type-level topology 与当前体系实例 structure/map；
 - 2.1 已确认可以直接引用的 solvent/ion topology definitions；
+- Workflow 1 最终结构整理/映射结果中已经确定的 chain identity / chain assignment；
 - 当前体系信息中已经确认的 expected charge / composition 等 2.5 所需体系事实。
 
 2.5 读取 2.3 输出时必须以 `nonstandard unit` 为处理对象。一个 unit 可以包含多个 nonstandard residues；不得假设一个 2.3 result 只对应一个 residue。
+
+2.5 不重新给 topo-linked unit 分 chain。若 unit 的 standard-side linked residues 全部属于同一条 standard chain，则其 chain assignment 应已由 Workflow 1 确定为该 chain；若跨多条 standard chains，则应由 Workflow 1 为该 unit 建立独立 chain identity。2.5 可因 covalent topology 把多个 chain 组织进同一 GROMACS `moleculetype`，但不得覆盖既有 chain identity。
 
 不要求读取 2.2/2.3/2.4 的全部执行历史，只消费其正式 handoff 结果。
 
@@ -54,7 +57,7 @@ final topology package
 2. 所有实际参与的 2.3 nonstandard unit 结果及 linked-site modification information 相同；
 3. 所有实际参与的 2.4 type/instance 结果相同；
 4. parameterization environment 与实际引用 force-field include tree 相同；
-5. final system composition 与 covalent connectivity 组织相同；
+5. final system composition、chain assignment 与 covalent connectivity 组织相同；
 6. expected charge 等影响 assembly 的体系信息相同；
 7. `nrexcl`、`[ exclusions ]`、attachment-site atom type、parameter conflict 等用户决定相同；
 8. 用户没有明确要求重新整合或做对照。
@@ -69,25 +72,23 @@ final topology package
 
 `references/topology_integration_rules.md`
 
-详细六类 parameter-definition 汇总、两轮 dedup 与 conflict 规则仅在处理 parameter level definitions 时读取：
+详细六类 parameter-definition 汇总、两轮 dedup 与 conflict 规则仅在处理 parameter-level definitions 时读取：
 
 `references/parameter_definition_deduplication.md`
 
 主执行顺序：
 
 1. 解析并固定本次 2.5 输入集合；
-2. 根据已确认 covalent connectivity 决定 final `moleculetype` 组织；
-3. 写入 standard molecule-level topology 基线并完成 final index remapping；
-4. 在 standard 部分写入后、topo-linked nonstandard 写入前执行 standard-side deleted-atom mechanical cleanup；
-5. 写入每个 topo-linked nonstandard unit 的 `[ atoms ]` 与其它 molecule-level content；
-6. 对 standard-side attachment-site atom type 做 applicability review；
-7. 对每个 unit 执行已冻结的 charge modification / replacement；
-8. 迁移 topo-linked bonded terms、`[ pairs ]`、`[ exclusions ]` 与其它 molecule-level directives；
-9. 纳入 independent nonstandard 与 FF-direct solvent/ion topology；
-10. 汇总 2.2–2.4 中六类 parameter-level definitions，内部 dedup 后再与实际 force-field include tree dedup；
-11. 组装 final coordinates、final map、final `.top`、local `.itp` 与 `[ molecules ]` composition；
-12. 执行 2.5 assembly completeness gate；
-13. 写 `topology_integration_report.yaml` 并交给 2.6。
+2. 根据已确认 covalent connectivity 与上游 chain assignment 决定 final `moleculetype` 组织，同时保留 chain identity；
+3. 按 coordinate ownership 确定 final atom set：标准部分来自 2.2 并应用全部 confirmed standard-side deletions；topo-linked 只纳入 unit 自身最终 SOURCE + ADDED_H atoms；independent 使用 2.4 all-instance structure；FF-direct 组件使用当前体系实际实例；
+4. 以 Workflow 1 heavy-atom identity/order 为结构骨架，结合 2.2/2.3/2.4 all-atom order，建立 final all-atom order；
+5. 在 topology integration 开始前同时冻结 canonical final atom index、`final_system.map` 与所有 source/local atom → final atom index mapping；
+6. 以第 5 步 final index 为唯一目标编号，对每个 final `moleculetype` 执行 molecule-level topology integration：建立 final `[ atoms ]`，执行 standard-side deletion cleanup、attachment-site atom-type review、charge modification/replacement，并迁移 bonded terms、`[ pairs ]`、`[ exclusions ]` 与其它 molecule-level directives；每个 final moleculetype 的 local `.itp` 在本步骤直接生成；
+7. 汇总 2.2–2.4 中六类 parameter-level definitions，内部 dedup 后再与实际 force-field include tree dedup/conflict processing，生成一个 consolidated parameter-definition `.itp`；
+8. 组装 `final_system.top`：按 include order 引用 base force-field definitions、consolidated parameter-definition `.itp`、第 6 步生成的 final molecule `.itp`、FF-direct solvent/ion topology，并写入 `[ system ]` / `[ molecules ]`；
+9. 严格按第 4–5 步已经冻结的 final all-atom order 写出 `final_system.gro`；不得重新生成另一套 atom order 或 map；
+10. 执行 2.5 assembly completeness gate，确认 final topology / coordinates / map 使用同一 canonical final index；
+11. 写 `topology_integration_report.yaml` 并交给 2.6。
 
 ### Final moleculetype 组织
 
@@ -107,6 +108,29 @@ chain identity / residue identity 继续保留；改变的是 GROMACS `moleculet
 
 若 topology-linked relation 不是已确认的 covalent connectivity，且其 final moleculetype 组织不能从上游正式信息确定，当前 Step 向用户确认，不自行扩展规则。
 
+### Final all-atom order 与 canonical final index
+
+final all-atom order **必须先于 molecule-level topology integration 冻结**。
+
+规则：
+
+- Workflow 1 只提供 heavy-atom identity/order 骨架；
+- standard residue 内部继承 2.2 all-atom order minus confirmed deletions；
+- topo-linked unit 只保留 unit 自身 final SOURCE + ADDED_H atoms，并保持 2.3 相对顺序；
+- independent instances 继承 2.4 all-instance order；
+- linked nonstandard block 不按 attachment site 紧邻插入 standard residue，而在所属 standard residue block 后按上游 object order 组织；
+- 只做 final moleculetype organization 所需的块级组合，不自由重排。
+
+final all-atom order 冻结时必须同步生成：
+
+```text
+canonical final atom index
+final_system.map
+source/local atom → final atom index mapping
+```
+
+后续 final molecule `.itp` 与 `final_system.gro` 都消费这同一套 index；不得在 topology integration 或 coordinate writing 时建立第二套编号。
+
 ### Multiple-unit overlap
 
 若 2.5 发现两个名义上不同的 nonstandard units 在 standard-side modification、attachment、deletion 或 charge modification 上出现实质重叠：
@@ -125,13 +149,15 @@ chain identity / residue identity 继续保留；改变的是 GROMACS `moleculet
 只有以下条件全部成立，2.5 才可标记为 `已完成`：
 
 - final `moleculetype` 组织已经确定；
-- 所有 standard / topo-linked / independent / FF-direct components 已归入 final topology package；
-- final atom numbering 与 residue numbering 已完成；
+- final all-atom order、canonical final atom index 与 final map 已在 topology integration 前冻结；
+- 所有 standard / topo-linked / independent / FF-direct components 已归入 final atom set / final topology package；
+- 每个 final moleculetype 的 local `.itp` 已按 canonical final index 完成；
 - standard-side deletion mechanical cleanup 已完成；
 - molecule-level directives 已按本 Skill 规则迁移；
-- 六类 parameter-definition `.itp` 已汇总并完成两轮 dedup/conflict processing；
+- 六类 parameter-definition 已汇总并完成两轮 dedup/conflict processing；
+- `final_system.top` 已完整引用所需 definitions / molecule topology，并写入 `[ system ]` / `[ molecules ]`；
+- `final_system.gro` 与 `final_system.map` 使用同一 canonical final atom order/index；
 - final topology 中不存在对 deleted atom、CAP 或其它 non-final atom 的引用；
-- final map 与 final topology atom numbering 可机械对齐；
 - 所有需要用户决定的项目已经解决；
 - `topology_integration_report.yaml` 中 unresolved decisions/conflicts 为空。
 
@@ -176,6 +202,8 @@ topology_integration_report.yaml
 
 负责：
 
+- 消费 Workflow 1 已确定 chain assignment，不重新分 chain；
+- final atom set / all-atom order / canonical final index；
 - final moleculetype assembly；
 - final `[ atoms ]` 与 numbering；
 - standard-side deletion application；
@@ -190,6 +218,7 @@ topology_integration_report.yaml
 
 - 重新做 2.3 parameterization；
 - 重新定义 nonstandard unit；
+- 重新决定 topo-linked unit 的 chain assignment；
 - 根据 atom/residue name 猜跨步骤 identity；
 - 自动发明 replacement atom type；
 - 处理 unresolved chemistry without user decision；
@@ -217,6 +246,7 @@ Task Execution Agent 必须先做 reuse；只有确实需要执行新的 2.5 时
 - 当前 Task Sheet Step 为 2.5；
 - 上游正式结果路径明确且可读；
 - 2.3 输入按 nonstandard unit 解释；
+- Workflow 1 chain assignment 已明确；
 - final system composition 与 expected charge 等体系信息已给定；
 - covalent attachment relationships 足以决定 automatic moleculetype merge；
 - 多 unit overlap 已排除或已由用户处理；
@@ -257,8 +287,10 @@ Preflight 不通过时不得留下可误认成 final topology package 的结果�
 # 自检
 
 - [ ] 以 nonstandard unit 而不是单个 nonstandard residue 解释 2.3 输出；
+- [ ] 已消费 Workflow 1 chain assignment，未在 2.5 重新分 chain；
 - [ ] covalently connected components 已归入同一 final moleculetype；
-- [ ] standard deletion cleanup 位于 standard 写入后、linked nonstandard 写入前；
+- [ ] final all-atom order / canonical final index / final map 在 topology integration 前已经冻结；
+- [ ] 每个 final moleculetype `.itp` 直接由 topology integration 生成并使用 canonical final index；
 - [ ] charge、bonded terms、pairs、exclusions 与 parameter definitions 均按 references 处理；
 - [ ] 所有 blocking user decisions 已解决；
 - [ ] final package 可确定性交给 2.6；
