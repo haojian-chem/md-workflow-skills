@@ -107,8 +107,19 @@ workflows:
     workflow_id: "3"
     name: md_preparation
     project_directory: 03_md_preparation
-    step_catalog_status: not_defined
-    steps: []
+    step_catalog_status: defined
+    steps:
+      - id: "3.1"
+        name: periodic_box_construction
+        base_work_directory: 03_md_preparation/01_periodic_box_construction
+
+      - id: "3.2"
+        name: solvent_addition
+        base_work_directory: 03_md_preparation/02_solvent_addition
+
+      - id: "3.3"
+        name: ion_addition
+        base_work_directory: 03_md_preparation/03_ion_addition
 
   md_simulation:
     workflow_id: "4"
@@ -126,6 +137,8 @@ workflows:
 
 planning_rules:
   - preserve_defined_step_order
+  - defined_step_order_is_the_default_planning_order_not_a_one-instance-only_constraint
+  - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
   - task_scope_is_the_set_of_steps_written_into_the_task_sheet
   - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
   - manager_does_not_evaluate_scientific_step_applicability
