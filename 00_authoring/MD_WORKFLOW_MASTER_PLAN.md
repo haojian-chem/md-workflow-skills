@@ -228,23 +228,111 @@ source_atom_serial:
 
 ## 4. Stage 3 — System construction / solvation
 
-Current draft decomposition:
+### 4.1 Status
 
-- 3.1 System construction settings
-- 3.2 Periodic box construction
-- 3.3 Solvation
-- 3.4 Ion addition
-- 3.5 Final system assembly
-- 3.6 System construction validation
+**Stage 3 architecture is frozen.**
 
-Purpose of Stage 3 as a whole:
+Frozen catalog:
 
-- start from a validated unsolvated structure/topology pair;
-- construct the periodic simulation system;
-- add solvent and ions according to the selected model and concentration strategy;
-- produce a validated complete system ready to enter MD simulation.
+1. `3.1 Periodic box construction`
+2. `3.2 Solvent addition`
+3. `3.3 Ion addition`
 
-Status: draft; Stage 3 boundaries still require dedicated review.
+Default scientific route:
+
+```text
+3.1 Periodic box construction
+→ 3.2 Solvent addition
+→ 3.3 Ion addition
+```
+
+The numbering records the default scientific order rather than a once-only execution constraint. Each Stage 3 step may appear zero, one, or multiple times as separate Task Sheet substep instances when required by the current system or explicit task scope.
+
+The authoritative Stage 3 architecture record is:
+
+`00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
+
+Stage 3 intentionally does not define separate system-construction-specification, final-assembly, or stage-level-validation steps. The Task Sheet records the actual operation sequence, and each operation performs its own required local validation.
+
+### 4.2 3.1 Periodic box construction
+
+Current-version execution tool:
+
+`gmx editconf`
+
+Processing object:
+
+- any validated `.gro` file;
+- record the `.top` / `.itp` files associated with that `.gro` for downstream handoff.
+
+Current arg tendency centers on:
+
+- `-c` as the normal centering tendency;
+- `-box` when explicit box dimensions are required;
+- `-d` when a solute/system-to-box-boundary distance is specified.
+
+Current version does not use Agent-written coordinate/box-vector modification as part of 3.1. More complex direct structure/box modification is reserved for a future update.
+
+### 4.3 3.2 Solvent addition
+
+Current-version execution tool:
+
+`gmx solvate`
+
+The current validated `.gro` and its associated topology package are consumed together with the requested solvent definition. Repeated 3.2 instances are allowed for workflows that add solvent in multiple passes.
+
+Arg tendency includes:
+
+- `-cp` current validated `.gro`;
+- `-cs` requested solvent coordinate/template;
+- `-p` current topology, with `sys.top` as the preferred Stage 3 basename when naming is under workflow control;
+- `-o` new solvated `.gro`.
+
+3.2 normally inherits the existing box rather than replacing the role of 3.1.
+
+### 4.4 3.3 Ion addition
+
+3.3 is one workflow step with a fixed two-command internal sequence:
+
+```text
+Skill-provided genion .mdp template
+→ gmx grompp
+→ genion.tpr
+→ gmx genion
+→ ionized .gro + updated topology
+```
+
+The Skill should provide a dedicated minimal `.mdp` template used only to generate the temporary `.tpr` required by `genion`; it does not carry Stage 4 EM/equilibration/production semantics.
+
+`gmx grompp` arg tendency:
+
+- `-f` Skill-provided genion `.mdp`;
+- `-c` current validated `.gro`;
+- `-p` current topology, commonly `sys.top`;
+- `-o` temporary `genion.tpr`.
+
+`gmx genion` arg tendency:
+
+- use `-neutral` when the task requires an electrically neutral system;
+- for biomolecular systems, if the user has not specified another salt concentration, tend toward `-conc 0.154`;
+- determine `-pname` / `-nname` from the current ion definitions and task requirements;
+- select the actual bulk-solvent replacement group from the current system rather than hard-coding `SOL`.
+
+Each repeated 3.3 instance regenerates its own `.tpr` from the current structure/topology state before running `genion`.
+
+### 4.5 Shared Stage 3 naming / command policy
+
+`sys.top` is the preferred Stage 3 topology basename when naming is under workflow control. An existing validated topology with another basename is not renamed merely to satisfy this preference.
+
+Stage 3 Step Skills should express **arg tendency** rather than rigid command templates. Priority is:
+
+```text
+explicit user requirement
+> current Task Sheet requirement
+> actual current object/state
+> Step Skill arg tendency
+> GROMACS default
+```
 
 ---
 
@@ -290,18 +378,21 @@ Frozen:
 - Stage 2 map semantics;
 - Stage 2 final all-atom ordering/index timing;
 - 2.5 molecule-level integration ownership and global parameter-definition consolidation boundary;
-- 2.6 validation boundary.
+- 2.6 validation boundary;
+- Workflow 3 / Stage 3 architecture and three-step catalog;
+- Stage 3 default route `3.1 → 3.2 → 3.3` with repeatable task-sheet instances;
+- Stage 3 current-version GROMACS execution boundary and arg-tendency policy.
 
 Still to plan/freeze:
 
-- Stage 3 exact boundaries and names;
 - Stage 4 sub-stage plan;
 - Stage 5 sub-stage plan;
 - implementation details and Validators/Tools for Stage 2 steps not yet implemented;
+- Stage 3 detailed Step Skill implementation/templates/validation refinements;
 - nucleic-acid-specific 2.3 model-cut/capping rules where needed.
 
 ## 9. Immediate next planning task
 
-Stage 2 architecture is closed for ordinary redesign.
+Stage 2 and Stage 3 architecture are closed for ordinary redesign.
 
-Next architecture-level work should move to Stage 3 unless a concrete Stage 2 implementation/validation issue exposes new scientific evidence requiring a local correction.
+Next architecture-level work should move to Stage 4 unless a concrete Stage 2/3 implementation or validation issue exposes new scientific evidence requiring a local correction.
