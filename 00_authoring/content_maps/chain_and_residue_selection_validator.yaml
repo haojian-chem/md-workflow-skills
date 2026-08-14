@@ -1,0 +1,27 @@
+schema_version: 4
+skill_name: chain_and_residue_selection_validator
+skill_type: validator
+skill_path: 02_validators/chain_and_residue_selection_validator
+architecture: lightweight_runtime_v2
+status: redesigned_guide_validation_rules_frozen_validation_pending
+
+owned_content:
+  validation_requirements:
+    owner: 02_validators/chain_and_residue_selection_validator/SKILL.md
+  validation_record_format:
+    owner: 02_validators/chain_and_residue_selection_validator/SKILL.md
+
+external_references:
+  - purpose: selection_operation
+    owner: 02_operations/chain_and_residue_selection/SKILL.md
+    access: reference_only
+  - purpose: pdb_materialization_rules
+    owner: 02_operations/chain_and_residue_selection/references/pdb_materialization_rules.md
+    access: reference_only
+  - purpose: upstream_classification_result
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result.schema.yaml
+    access: reference_only
+
+notes:
+  - Current Validator records a small PASS/FAIL checklist instead of a dedicated result schema or finding-code system.
+  - Historical chain_and_component_selection_validator remains reference-only and is not the default 1.3 Validator.
