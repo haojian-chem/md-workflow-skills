@@ -4,9 +4,35 @@
 
 - Lightweight Runtime v2 is the default runtime architecture.
 - Workflow 1 step catalog is defined.
+- **Workflow 1 / Step 1.3 Chain and Residue Selection scientific design is frozen; guide implementation is merged and validation is pending.**
 - **Workflow 2 / Stage 2 architecture is frozen.**
 - **Workflow 3 / Stage 3 architecture is frozen.**
 - Workflow 4–5 detailed step catalogs remain pending.
+
+## Workflow 1 / Step 1.3 freeze
+
+Current default Skill path:
+
+- `02_operations/chain_and_residue_selection/SKILL.md`
+- `02_operations/chain_and_residue_selection/references/pdb_materialization_rules.md`
+- `02_validators/chain_and_residue_selection_validator/SKILL.md`
+
+Key frozen design:
+
+- 1.3 selects research objects at chain / residue level; PDB generation is materialization of that selection.
+- User interaction uses source identity; internal selection records use 1.2 `component_id + residue_id`.
+- `selection_index.yaml` records targets; each `targets/target_xxx.yaml` records selection and, after PDB generation, chain/residue mapping.
+- Selected missing residues remain part of the research-object selection and reserve target-local resid positions without generating coordinates.
+- PDB chain labels derive deterministically from 1.2 `chain_index`; residue ordering follows 1.2 authoritative `residue_records[]` order.
+- PDB ATOM/HETATM and TER behavior follows 1.2 `polymer_class`; connectivity records are not regenerated.
+- Validator records PASS/FAIL for Selection, Structure content, PDB organization and Mapping.
+- Historical `chain_and_component_selection` Operation/Validator remain reference-only and are no longer the default 1.3 path.
+
+Pending:
+
+- validate the revised 1.2 residue-order contract;
+- validate 1.3 guidance on representative real structures and missing-residue cases;
+- decide from implementation evidence whether PDB materialization warrants a deterministic Tool.
 
 ## Workflow 2 / Stage 2 freeze
 
