@@ -27,7 +27,7 @@ Current defined sequence:
 
 - 1.1 Structure source recognition
 - 1.2 Component and residue classification
-- 1.3 Chain and component selection
+- 1.3 Chain and residue selection
 - 1.4 Alternate conformation / occupancy resolution
 - 1.5 Completeness check
 - 1.6 Missing-region completion
@@ -372,6 +372,7 @@ Frozen:
 
 - top-level Stage 1–5 numbering semantics;
 - Workflow 1 step catalog;
+- Workflow 1 / 1.3 Chain and Residue Selection scientific design;
 - Workflow 2 / Stage 2 architecture and six-step catalog;
 - Stage 2 topology-linked nonstandard unit model;
 - Stage 1 → Stage 2 chain-assignment handoff principle;
