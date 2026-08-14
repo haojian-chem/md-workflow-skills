@@ -257,37 +257,71 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 1.3 不重新定义 1.2 已建立的分类标识和关系语义。
 
-## 1.3 → 后续结构处理
+## 1.3 → 1.4
 
-1.3 确定后续实际保留和处理的结构内容。若 1.3 产生新的结构结果，后续结构相关环节以相应结果作为对象，而不是继续默认使用 1.3 之前的结构。
+1.3 确定后续实际保留和处理的 target，并生成对应 PDB。1.4 直接读取这些 target PDB，对当前保留结构中的多 conformer / altloc 部分选择一个构象、删除其余构象原子并更新 atom serial。
 
-## 1.4
+若当前 target 不存在需要处理的多 conformer，Task Execution Agent 可按 1.4 Skill 的规则删除尚未执行的 1.4。
 
-1.4 只在当前保留结构存在需要处理的 altloc / occupancy 问题时有实际工作。
+## 1.4 → 1.5
 
-如果执行推进到相关判断点时已有充分证据确认无需处理，Task Execution Agent 可删除尚未执行的 1.4；具体判断依据由 1.4 Skill 定义，而不是由 Manager 或本 Workflow 预先判断。
+1.5 使用 1.4 后的当前 PDB，并结合前序已经完成的 residue / atom 核对信息，生成当前保留结构的 repair report。
+
+报告范围包括：
+
+- missing residues；
+- missing heavy atoms；
+- confirmed extra atoms；
+- confirmed atom-name mismatches。
+
+1.5 不重新执行前序 force-field / residue-definition 核对，也不修改结构。已确认属于正常 Stage 2 / `pdb2gmx` termini processing 的表示差异不作为 1.6 repair item。
 
 ## 1.5 → 1.6
 
-1.5 检查结构完整性。1.6 是否继续保留在后续计划中，应依据 1.5 的正式结果决定。
+1.6 严格按 1.5 repair report 执行：补 missing residues、补 missing heavy atoms、删除 confirmed extra atoms、校正已确认 atom-name mismatch。
 
-如果 1.5 明确不需要 missing-region completion，则删除尚未执行的 1.6；如果结果要求补全或修复，则保留或加入 1.6。
+缺失重原子可使用 AF3 / CCD 完整残基模板对齐后补全；缺失残基使用 AF3 完整结构作为参考，通过缺失区两侧逐步扩展的局部双侧 anchor 进行叠合后补全。两侧无法得到合理一致叠合时不得强行插入。
 
-## 1.6 → 后续结构处理
+1.6 不重新判断 repair item，不执行 force-field-specific terminal conversion，也不生成最终 H。
 
-如果 1.6 改变了结构，后续结构相关环节必须使用补全后的结果对象。不得因为任务单最初填写了旧对象而继续处理旧结构。
+如果 1.5 没有需要 1.6 处理的 repair item，可删除尚未执行的 1.6。
 
-## 1.7
+## 1.6 → 1.7
 
-1.7 是否需要实际执行由当前体系和质子化处理需求决定。具体适用条件、方法和用户确认要求由 1.7 Skill 定义。
+若 1.6 实际修改结构，1.7 必须消费 1.6 的 completed structure，而不是继续处理旧对象。
 
-如果 1.7 改变结构或残基状态，后续环节使用其正式结果对象。
+1.7 对蛋白质执行 PROPKA，并结合 PROPKA 结果与当前局部化学环境判断需要区分的 protonation state；随后把对应 residue name 改为目标 force field 的状态名称。1.7 不添加最终 H。
+
+## 1.7 → 1.8
+
+1.8 消费质子化状态已落实的重原子结构，确定最终 Stage 1 chain assignment、整理 residue / atom order 并生成 heavy-atom mapping。
+
+对于 topology-linked nonstandard unit：
+
+```text
+all standard-side linked residues belong to one standard chain
+→ assign the nonstandard unit to that chain
+
+standard-side linked residues span multiple standard chains
+→ give the nonstandard unit an independent chain identity
+```
+
+同一 chain 内 standard polymer residue block 保持 polymer 顺序；归入该 chain 的 topology-linked nonstandard units 放在 standard residue block 之后，并保持上游稳定 object order。
+
+1.8 不再改变 heavy-atom set，也不生成 Stage 2 的 force-field-specific all-atom order。
 
 ## 1.8 → 1.9
 
-1.8 整理最终结构顺序、编号和映射，使结构及映射关系进入可验证状态。
+1.9 对 `stage1_final.pdb + stage1_final.map` 执行阶段级只读验证，并再做一次最终 force-field compatibility check。
 
-1.9 对结构准备阶段的最终结果执行阶段级验证。只有 1.9 的实际验证要求满足，才能把结构准备视为完成；目录存在或上游步骤曾执行不能替代 1.9。
+最终检查至少确认：
+
+- Stage 1 上游 blocking 问题均已闭合；
+- final PDB 与 map 一一对应；
+- standard residue / protonation-state residue naming 可被目标 force field 识别；
+- 1.6–1.8 修改后没有产生新的 blocking heavy-atom / atom-name incompatibility。
+
+已确认属于 `pdb2gmx` 正常 termini processing 的 terminal representation 差异只记录为 Stage 2 handoff item，不作为 Stage 1 FAIL。1.9 不自行 repair；失败时返回真正负责的上游步骤处理后重新验证。
 
 # 动态任务计划
 
