@@ -1,5 +1,5 @@
 schema_version: 4
-status: lightweight_runtime_v2_authoring_guide_aligned_structure_workflow_1_1_1_2_refactored_1_3_draft_pending
+status: lightweight_runtime_v2_authoring_guide_aligned_structure_workflow_1_1_1_2_refactored_1_3_guide_merged_validation_pending
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
@@ -76,7 +76,7 @@ skills:
   - name: structure_preparation_workflow
     layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: lightweight_workflow_refactored_task_directory_policy_aligned_1_3_pending
+    status: lightweight_workflow_refactored_1_3_mapping_aligned_revalidation_pending
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
 
   - name: source_recognition
@@ -91,16 +91,28 @@ skills:
     status: lightweight_step_interface_task_scoped_outputs_refactored_scientific_revalidation_pending
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
 
+  - name: chain_and_residue_selection
+    layer: operation
+    path: 02_operations/chain_and_residue_selection
+    status: lightweight_guide_scientific_rules_frozen_validation_pending
+    content_map: 00_authoring/content_maps/chain_and_residue_selection.yaml
+
+  - name: chain_and_residue_selection_validator
+    layer: validator
+    path: 02_validators/chain_and_residue_selection_validator
+    status: lightweight_guide_validation_rules_frozen_validation_pending
+    content_map: 00_authoring/content_maps/chain_and_residue_selection_validator.yaml
+
   - name: chain_and_component_selection
     layer: operation
     path: 02_operations/chain_and_component_selection
-    status: redesign_draft_recorded_current_implementation_incomplete_lightweight_migration_pending
+    status: legacy_reference_only_superseded_by_chain_and_residue_selection
     content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
 
   - name: chain_and_component_selection_validator
     layer: validator
     path: 02_validators/chain_and_component_selection_validator
-    status: historical_2026_07_31_pass_not_current_redesign_current_implementation_incomplete
+    status: legacy_reference_only_superseded_by_chain_and_residue_selection_validator
     content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
 
   - name: altloc_occupancy_resolution
@@ -189,8 +201,7 @@ tools:
 migration_next:
   - revalidate_lightweight_skill_authoring_static_checks
   - lightweight_align_md_workflow_tool_authoring
-  - continue_1_3_formal_design_and_draft_merge_in_its_own_authoring_window
-  - define_workflow_2_and_3_step_catalogs_after_1_3_sync
+  - validate_redesigned_1_3_selection_guides_and_real_pdb_materialization
   - validate_1_1_and_1_2_task_scoped_directory_behavior
   - validate_cross_dialog_recovery_and_1_1_to_1_2_to_1_3_handoff
   - validate_result_reuse_without_empty_task_directories
