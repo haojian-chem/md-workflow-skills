@@ -1,0 +1,29 @@
+schema_version: 4
+skill_name: chain_and_residue_selection
+skill_type: operation
+skill_path: 02_operations/chain_and_residue_selection
+architecture: lightweight_runtime_v2
+status: redesigned_guide_scientific_rules_frozen_validation_pending
+
+owned_content:
+  step_purpose_object_requirements_reuse_execution_and_official_results:
+    owner: 02_operations/chain_and_residue_selection/SKILL.md
+  selection_record_formats:
+    owner: 02_operations/chain_and_residue_selection/SKILL.md
+  pdb_materialization_rules:
+    owner: 02_operations/chain_and_residue_selection/references/pdb_materialization_rules.md
+
+external_references:
+  - purpose: upstream_classification_result
+    owner: 02_validators/component_and_residue_classification_validator/schemas/classification_result.schema.yaml
+    access: reference_only
+  - purpose: structure_preparation_workflow
+    owner: 01_workflows/structure_preparation_workflow/SKILL.md
+    access: reference_only
+  - purpose: dedicated_validator
+    owner: 02_validators/chain_and_residue_selection_validator/SKILL.md
+    access: reference_only
+
+notes:
+  - Current design is guide-first; no local schema or operation-result wrapper is required.
+  - Historical chain_and_component_selection implementation remains reference-only and is not the default 1.3 path.
