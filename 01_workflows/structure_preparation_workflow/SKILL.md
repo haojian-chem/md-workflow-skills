@@ -46,7 +46,7 @@ Task Execution Agent 从 `Txxxx.md` 确定当前要处理的子环节和对象�
 01_structure_preparation/
 ├── 01_source_recognition/
 ├── 02_component_and_residue_classification/
-├── 03_chain_and_component_selection/
+├── 03_chain_and_residue_selection/
 ├── 04_altloc_occupancy_resolution/
 ├── 05_completeness_check/
 ├── 06_missing_region_completion/
@@ -114,20 +114,20 @@ Manager 在 Task Sheet 中记录任务专属工作目录路径，但不创建 `T
 
 ---
 
-## 1.3 Chain and component selection
+## 1.3 Chain and residue selection
 
 基础工作目录：
 
-`01_structure_preparation/03_chain_and_component_selection`
+`01_structure_preparation/03_chain_and_residue_selection`
 
 任务执行目录：
 
-`01_structure_preparation/03_chain_and_component_selection/<task_id>`
+`01_structure_preparation/03_chain_and_residue_selection/<task_id>`
 
 当前执行 Skill：
 
-- `02_operations/chain_and_component_selection/SKILL.md`
-- `02_validators/chain_and_component_selection_validator/SKILL.md`
+- `02_operations/chain_and_residue_selection/SKILL.md`
+- `02_validators/chain_and_residue_selection_validator/SKILL.md`
 
 逻辑职责：`OPERATION + VALIDATOR`
 
