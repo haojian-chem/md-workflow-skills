@@ -3,7 +3,7 @@ skill_name: structure_preparation_workflow
 skill_type: workflow
 skill_path: 01_workflows/structure_preparation_workflow
 architecture: lightweight_runtime_v2
-status: lightweight_refactored_revalidation_pending
+status: lightweight_refactored_1_3_mapping_aligned_revalidation_pending
 
 owned_content:
   stage_goal_and_completion_criteria:
