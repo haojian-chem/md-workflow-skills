@@ -125,3 +125,5 @@ REJECTED_BY_USER
 `classification_observations.yaml` 保存当前状态，并记录五个检查阶段及实际独立 relation outputs。`completed_checks` 不暗示每个阶段都有单独结果文件。
 
 关系 result 保存完整检查证据；observations 只保留当前有效关系状态。最终构建器不得再次推断关系、改变 topology effect 或重新计算 relation ID，只负责物化下游选择 ID、聚合确认事项和生成最终契约。
+
+最终 `classification_result.yaml` 中 `residue_records[]` 的数组顺序是下游使用的正式 residue order，`OBSERVED` 与 `MISSING_EXPECTED` 都保留在其应有位置。下游需要 residue ordering 时按该数组过滤所需对象，不得按 opaque `residue_id`、`component_id` 或 source residue number 重新排序。`chain_groups[].residue_ids` 与 `missing_residue_ids` 只表示 membership，不承担排序语义。
