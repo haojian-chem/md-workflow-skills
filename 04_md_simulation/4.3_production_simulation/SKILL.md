@@ -44,7 +44,7 @@ formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式�
 - predecessor dynamical state / checkpoint inheritance 兼容；
 - candidate 已通过本 Skill 的 production validation。
 
-只因存在 `md.N` 目录或 trajectory 文件，不构成 reuse。
+只因存在 `md.N` 目录或同名 run files，不构成 reuse。
 
 ## Execution rules
 
@@ -71,8 +71,6 @@ md.N.mdp
 - NPT production 时 target pressure 与 barostat / pressure coupling 设置；
 - restraint / bias / special coupling 等当前 run 的明确要求；
 - output frequency / output settings 是否满足当前 simulation 与后续 intended use。
-
-不要为普通 production MD 额外建立 temperature-change / annealing 专项设计分支。若任务本身明确包含特殊 protocol，则按该 planned requirement 处理即可。
 
 ### 2. `gmx grompp`
 
@@ -150,8 +148,6 @@ Production run 完成前至少检查：
 6. temperature behavior 是否符合 intended condition；
 7. NPT production 时，pressure behavior 与 volume / density behavior 是否符合 intended condition。
 
-不额外要求把 trajectory / energy 等 production output 的“是否生成”作为独立 validation item；需要判断运行完整性时，以 `mdrun`、`.log`、final `.gro`、`.cpt` 及当前 scientific condition 为核心证据。
-
 不对所有 production run 硬编码统一 temperature deviation、instantaneous pressure 或 density fluctuation threshold。应结合实际 coupling method、体系规模、run length 和 planned scientific condition 判断。
 
 ## Official results
@@ -162,7 +158,7 @@ Production run 完成前至少检查：
 - 在当前 planned route entry 中保留 bound `md.N`；
 - 通过项目级 `04_md_simulation/run_unit.yaml` 供后续 Stage 4 continuation/reuse 与 Stage 5 定位实际 run files。
 
-本 Skill 不把 `md.N.mdp`、`md.N.tpr`、`md.N.gro`、`md.N.cpt`、trajectory、energy 等逐项登记到 `project_result_index.md`。
+本 Skill 不把 run-unit 内部各文件逐项登记到 `project_result_index.md`。
 
 ## User confirmation boundary
 
