@@ -200,10 +200,10 @@ gmx mdrun \
 
 规则：
 
-- 第一行是 `gmx mdrun \\`；
+- 第一行固定采用上方示例所示的 `gmx mdrun` shell continuation 形式；
 - 每个 option/value 单独一行；
 - 后续行缩进 4 spaces；
-- 除最后一行外，每行以 `\\` 结尾；
+- 除最后一行外，每个 command line 都使用 shell line continuation；
 - 使用 `bash gmx_mdrun.sh` 执行；
 - `grompp` 失败时不得生成该脚本。
 
