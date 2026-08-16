@@ -1,5 +1,5 @@
 schema_version: 4
-status: lightweight_runtime_v2_authoring_guide_aligned_structure_workflow_1_1_1_2_refactored_1_3_guide_merged_validation_pending
+status: lightweight_runtime_v2_stage4_first_pass_implemented_validation_pending
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
@@ -23,10 +23,18 @@ runtime_architecture:
       manager_roundtrip_between_steps: false
       dedicated_runtime_interface_status: not_required_root_agents_rules_apply
   scientific_layers:
-    workflow: 01_workflows
-    operation: 02_operations
-    validator: 02_validators
+    logical_roles:
+      - workflow
+      - operation
+      - validator
+    conventional_directories:
+      workflow: 01_workflows
+      operation: 02_operations
+      validator: 02_validators
+    integrated_stage_directories:
+      md_simulation: 04_md_simulation
     tool: 05_tools
+    note: logical scientific roles do not require separate physical layer directories when a stage-specific integrated layout is explicitly frozen
   legacy_runtime:
     status: frozen_not_default_runtime
     project_model: workstream_route_event_transaction
@@ -78,6 +86,30 @@ skills:
     path: 01_workflows/structure_preparation_workflow
     status: lightweight_workflow_refactored_1_3_mapping_aligned_revalidation_pending
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
+
+  - name: md_simulation
+    layer: workflow
+    path: 04_md_simulation
+    status: stage4_architecture_frozen_first_pass_implemented_validation_pending
+    content_map: 00_authoring/content_maps/md_simulation.yaml
+
+  - name: energy_minimization
+    layer: operation
+    path: 04_md_simulation/4.1_energy_minimization
+    status: first_pass_implemented_validation_pending
+    content_map: 00_authoring/content_maps/energy_minimization.yaml
+
+  - name: equilibration
+    layer: operation
+    path: 04_md_simulation/4.2_equilibration
+    status: first_pass_implemented_validation_pending
+    content_map: 00_authoring/content_maps/equilibration.yaml
+
+  - name: production_simulation
+    layer: operation
+    path: 04_md_simulation/4.3_production_simulation
+    status: first_pass_implemented_validation_pending
+    content_map: 00_authoring/content_maps/production_simulation.yaml
 
   - name: source_recognition
     layer: operation
@@ -205,3 +237,4 @@ migration_next:
   - validate_1_1_and_1_2_task_scoped_directory_behavior
   - validate_cross_dialog_recovery_and_1_1_to_1_2_to_1_3_handoff
   - validate_result_reuse_without_empty_task_directories
+  - validate_stage4_planned_run_binding_execution_and_run_specific_checks
