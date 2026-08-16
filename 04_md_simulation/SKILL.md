@@ -1,6 +1,6 @@
 ---
 name: md-simulation
-summary: Stage 4 分子动力学模拟总 Skill。管理 planned run route、formal run-unit 绑定与复用、project-level run_unit.yaml，以及 4.1/4.2/4.3 执行层之间的关系。
+description: Stage 4 分子动力学模拟总 Skill。管理 planned run route、formal run-unit 绑定与复用、project-level run_unit.yaml，以及 4.1/4.2/4.3 执行层之间的关系。
 ---
 
 # 4 MD simulation
