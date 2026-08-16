@@ -7,7 +7,8 @@
 - **Workflow 1 / Step 1.3 Chain and Residue Selection scientific design is frozen; guide implementation is merged and validation is pending.**
 - **Workflow 2 / Stage 2 architecture is frozen.**
 - **Workflow 3 / Stage 3 architecture is frozen.**
-- Workflow 4–5 detailed step catalogs remain pending.
+- **Workflow 4 / Stage 4 run-unit architecture is frozen; detailed validation design is deferred.**
+- Workflow 5 detailed step catalog remains pending.
 
 ## Workflow 1 / Step 1.3 freeze
 
@@ -102,9 +103,41 @@ Key frozen Stage 3 rules:
 
 Stage 3 is closed for ordinary architecture redesign. Remaining Stage 3 work is Step Skill implementation, template/validation refinement, or evidence-driven local correction.
 
+## Workflow 4 / Stage 4 freeze
+
+Frozen sub-stage catalog:
+
+1. `4.1 Energy minimization`
+2. `4.2 Equilibration`
+3. `4.3 Production simulation`
+
+Authoritative planning/design records:
+
+- `00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
+- `00_authoring/MD_WORKFLOW_MASTER_PLAN.md`
+- `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+
+Key frozen Stage 4 rules:
+
+- Stage 4 Task Sheet planning is based on a **planned run route**, not a serialized sub-stage list.
+- Stage 4 sub-stages are execution layers; run units are execution objects.
+- `4.1` executes `em.*`; `4.2` executes `nvt.* / npt.*`; `4.3` executes `md.*`.
+- Planned route entries do not receive formal `em.N / nvt.N / npt.N / md.N` identities until processing begins.
+- At run start, Stage 4 binds a reusable existing run unit, continues a matching unfinished run unit, or instantiates a new run unit.
+- One centralized project-level `run_unit.yaml` maintains instantiated run units across tasks/conversations.
+- `run_unit.yaml` root is directly a list; minimum fields are `run_unit_id`, `start_from_run_unit_id`, `status`, and `path`.
+- `run_unit_type` is not stored; first-level type comes from the run-unit name and detailed settings come from the real `.mdp`.
+- `path` is the complete storage directory used for locating/querying run files and does not prescribe the execution working directory.
+- Allowed run-unit maintenance statuses are `未完成 / 已完成 / 已终止`.
+- Technical continuation remains the same run unit; a new scientific segment becomes a new run unit.
+- `simulation_plan.yaml`, historical `expected_route.yaml`, per-run `run_unit.yaml`, and `simulation_output_index` are not part of the Stage 4 default architecture.
+
+Stage 4 run-unit architecture is closed for ordinary redesign. Detailed validation semantics and implementation details are intentionally left to separate conversations.
+
 ## Open planning work
 
-- Stage 4 step decomposition.
+- Stage 4 detailed validation design.
+- Stage 4 detailed `.mdp` generation/editing and execution implementation.
 - Stage 5 step decomposition.
 - Stage 2 Steps/Validators/Tools not yet implemented.
 - Stage 3 Step Skills/templates/validation details not yet implemented.
