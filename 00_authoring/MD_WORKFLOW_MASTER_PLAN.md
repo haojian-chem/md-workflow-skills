@@ -340,7 +340,7 @@ explicit user requirement
 
 ### 5.1 Status
 
-**Stage 4 run-unit architecture is frozen; detailed validation design is deferred.**
+**Stage 4 architecture, validation ownership, and first-pass execution guidance are frozen and implemented. Representative validation remains pending.**
 
 Frozen sub-stage catalog:
 
@@ -351,6 +351,17 @@ Frozen sub-stage catalog:
 Authoritative architecture record:
 
 `00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
+
+Implemented Skill hierarchy:
+
+```text
+04_md_simulation/SKILL.md
+04_md_simulation/4.1_energy_minimization/SKILL.md
+04_md_simulation/4.2_equilibration/SKILL.md
+04_md_simulation/4.3_production_simulation/SKILL.md
+```
+
+Workflow/operation responsibilities remain logical distinctions; Stage 4 does not physically split the parent and child Skills across `01_workflows/` and `02_operations/`.
 
 ### 5.2 Execution-layer / execution-object model
 
@@ -373,6 +384,8 @@ The Task Sheet does not represent Stage 4 as a serial `4.1 → 4.2 → 4.3` list
 
 A planned route entry does not receive a formal `em.N / nvt.N / npt.N / md.N` identity until that entry begins processing.
 
+One planned route entry normally binds one formal run unit. If a replacement run unit is required, the entry is rebound and the old run unit remains in the project-level list; no separate attempts layer is added.
+
 ### 5.3 Planned run route and formal identity
 
 When a planned route entry begins, Stage 4 first determines whether it can bind an existing reusable run unit, continue an existing unfinished run unit, or must instantiate a new run unit.
@@ -392,7 +405,13 @@ For a new run unit, the formal identity is locked and registered immediately bef
 
 ### 5.4 Project-level `run_unit.yaml`
 
-The project keeps one centralized `run_unit.yaml` containing only instantiated run units. It supports cross-task and cross-conversation discovery.
+The project keeps one centralized:
+
+```text
+04_md_simulation/run_unit.yaml
+```
+
+containing only instantiated run units. It supports cross-task and cross-conversation discovery.
 
 The YAML root is directly a list. Minimum fields are:
 
@@ -400,7 +419,7 @@ The YAML root is directly a list. Minimum fields are:
 - run_unit_id: em.1
   start_from_run_unit_id:
   status: 已完成
-  path: /absolute/storage/directory/
+  path: /project/04_md_simulation/em.1/
 ```
 
 No separate `run_unit_type` is stored. No detailed `.mdp` settings are copied into this file.
@@ -413,7 +432,7 @@ Allowed maintenance statuses are:
 已终止
 ```
 
-`path` is the complete storage directory used to locate/query the run-unit files. It does not prescribe the execution working directory. Multiple run units may share the same storage directory.
+`path` points to the complete directory of that specific run unit. Multiple run-unit directories may share the same Stage 4 parent directory, but each record points to its own run-unit directory.
 
 `start_from_run_unit_id` records inheritance from another Stage 4 run unit. It may be empty for a run that begins directly from a pre-Stage-4 object.
 
@@ -425,7 +444,28 @@ Technical continuation that completes the original run remains the same run unit
 
 The project-level `run_unit.yaml` is a discovery/maintenance list, not a simulation plan and not sufficient by itself to prove scientific reuse.
 
-### 5.6 Explicitly rejected Stage 4 planning/runtime structures
+### 5.6 Execution and validation ownership
+
+Each child Skill generates/adjusts its own final `.mdp`, runs `gmx grompp`, confirms the intended `.tpr`, generates `gmx_mdrun.sh`, executes `gmx mdrun`, and performs its own run-specific validation.
+
+There is no separate generic MDP-generation sub-stage and no separate Stage 4 Validator Skill.
+
+Common rules include:
+
+- the final actual `.mdp` is authoritative for detailed run settings;
+- `grompp` warnings must be inspected and blind `-maxwarn` use is prohibited;
+- `gmx_mdrun.sh` is generated only after successful preprocessing and contains the actual `gmx mdrun` command only;
+- final `.gro` bonded-geometry screening flags reference-length bond/constraint deviations above `0.08 nm` and reference-angle deviations above `30°`; fixed/special bonded functions follow their actual geometry definitions.
+
+Run-specific MDP checks, command tendencies and validation details are owned by the corresponding child Skills.
+
+### 5.7 Project result registration
+
+Stage 4 registers the project-level `04_md_simulation/run_unit.yaml` path and a description of that file in `project_result_index.md`.
+
+Individual run-unit directories and individual `.mdp/.tpr/.gro/.cpt/.xtc/.edr` files are not separately registered as Stage 4 project-level results.
+
+### 5.8 Explicitly rejected Stage 4 planning/runtime structures
 
 Do not use as the default Stage 4 model:
 
@@ -438,16 +478,13 @@ Do not use as the default Stage 4 model:
 - formal run-unit IDs allocated during initial planning;
 - `run_unit_type` duplicated in `run_unit.yaml`;
 - detailed `.mdp` settings duplicated in `run_unit.yaml`;
-- a no-information top-level `run_units:` wrapper.
+- a no-information top-level `run_units:` wrapper;
+- a separate attempts layer for replacement runs;
+- separate Stage 4 Validator Skills.
 
-### 5.7 Deferred Stage 4 work
+### 5.9 Remaining Stage 4 work
 
-The following are intentionally left for other discussions:
-
-- detailed validation rules for EM/NVT/NPT/MD run units;
-- Validator organization and validation evidence semantics;
-- detailed `.mdp` generation/editing architecture;
-- implementation-level commands/templates and execution refinements.
+Remaining work is representative execution validation and evidence-driven local correction of the implemented guidance, not ordinary architecture redesign.
 
 ---
 
@@ -495,19 +532,25 @@ Frozen:
 - Workflow 4 / Stage 4 three-sub-stage execution-layer catalog;
 - Stage 4 Task Sheet planned-run-route representation;
 - Stage 4 formal run-unit identity timing and centralized `run_unit.yaml` maintenance model;
-- Stage 4 continuation versus new-run-unit boundary.
+- Stage 4 complete run-unit directory path semantics;
+- Stage 4 continuation versus new-run-unit boundary;
+- Stage 4 MDP/grompp/mdrun ownership and common script boundary;
+- Stage 4 validation ownership within 4.1/4.2/4.3 and common bonded-geometry screening;
+- Stage 4 project-level result registration through `run_unit.yaml`.
 
 Still to plan/freeze:
 
-- Stage 4 detailed validation design;
-- Stage 4 detailed `.mdp` generation/editing and execution implementation;
 - Stage 5 sub-stage plan;
 - implementation details and Validators/Tools for Stage 2 steps not yet implemented;
 - Stage 3 detailed Step Skill implementation/templates/validation refinements;
 - nucleic-acid-specific 2.3 model-cut/capping rules where needed.
 
+Still to validate:
+
+- Stage 4 planned-run binding, reuse, continuation, run-unit maintenance and representative 4.1/4.2/4.3 execution/check behavior.
+
 ## 9. Immediate next planning task
 
-Stage 2 and Stage 3 architecture are closed for ordinary redesign. Stage 4 run-unit architecture is also closed for ordinary redesign; its deferred validation and implementation details should be handled separately.
+Stage 2, Stage 3 and Stage 4 architecture are closed for ordinary redesign. Stage 4 has entered implementation validation/refinement.
 
 Architecture-level planning can proceed to Stage 5 when requested.
