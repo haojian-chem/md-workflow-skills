@@ -125,8 +125,23 @@ workflows:
     workflow_id: "4"
     name: md_simulation
     project_directory: 04_md_simulation
-    step_catalog_status: not_defined
-    steps: []
+    step_catalog_status: defined
+    planning_mode: planned_run_route
+    manager_allocates_formal_run_unit_ids: false
+    steps:
+      - id: "4.1"
+        name: energy_minimization
+        execution_object_prefix: em
+
+      - id: "4.2"
+        name: equilibration
+        execution_object_prefixes:
+          - nvt
+          - npt
+
+      - id: "4.3"
+        name: production_simulation
+        execution_object_prefix: md
 
   analysis:
     workflow_id: "5"
@@ -137,15 +152,17 @@ workflows:
 
 planning_rules:
   - preserve_defined_step_order
-  - defined_step_order_is_the_default_planning_order_not_a_one-instance-only_constraint
+  - defined_step_order_is_the_default_planning_order_not_a_one-instance_only_constraint
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
-  - task_scope_is_the_set_of_steps_written_into_the_task_sheet
+  - md_simulation_task_sheet_uses_planned_run_route_instead_of_serialized_sub_stage_instances
+  - md_simulation_formal_run_unit_ids_are_not_allocated_during_initial_planning
+  - task_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_task_sheet
   - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
   - manager_does_not_evaluate_scientific_step_applicability
-  - task_execution_agent_may_remove_add_or_reorder_future_steps_based_on_execution_evidence_or_explicit_user_scope_change
-  - do_not_create_start_end_or_route_objects
+  - task_execution_agent_may_remove_add_or_reorder_future_steps_or_run_entries_based_on_execution_evidence_or_explicit_user_scope_change
+  - do_not_create_start_end_or_route_objects_outside_the_stage4_task_sheet_planned_run_route
   - do_not_invent_steps_for_workflows_with_undefined_step_catalogs
-  - task_sheet_work_directory_is_planned_as_base_work_directory_plus_task_id
+  - task_sheet_work_directory_is_planned_as_base_work_directory_plus_task_id_when_the_workflow_uses_step_directories
   - manager_records_but_does_not_create_task_specific_execution_directories
 
 forbidden_content:
