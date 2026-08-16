@@ -1,6 +1,6 @@
 ---
 name: energy-minimization
-summary: Stage 4.1 Energy minimization Skill。负责 em.* run unit 的 MDP 生成、grompp、gmx_mdrun.sh、mdrun 与 EM 结果检查。
+description: Stage 4.1 Energy minimization Skill。负责 em.* run unit 的 MDP 生成、grompp、gmx_mdrun.sh、mdrun 与 EM 结果检查。
 ---
 
 # 4.1 Energy minimization
