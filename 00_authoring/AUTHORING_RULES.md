@@ -54,12 +54,24 @@ Manager 任务管理与初始规划：
 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
 ```
 
-具体科研职责：
+具体科研职责的常规目录为：
 
 ```text
 01_workflows/
 02_operations/
 02_validators/
+```
+
+这些目录表达常规物理组织方式，不是强制的逻辑层绑定。若某个 Workflow/Stage 已通过 freeze 文件明确采用 stage-integrated layout，则可将父级 Workflow 职责和子级 Operation/validation 职责放在同一 Stage 目录树中；逻辑职责边界仍须由 Skill/content map 明确。
+
+当前已冻结的例外：
+
+```text
+04_md_simulation/
+├── SKILL.md
+├── 4.1_energy_minimization/
+├── 4.2_equilibration/
+└── 4.3_production_simulation/
 ```
 
 Tool 注册状态、版本和入口：
@@ -89,7 +101,9 @@ Validator
 
 Tool 是确定性程序，不是第五个科学决策层。
 
-但逻辑职责不再要求同等数量的 LLM 调度层。默认真实运行模式是：
+逻辑职责不要求一一对应为独立物理目录，也不要求同等数量的 LLM 调度层。物理目录组织应服从已冻结的 Workflow/Stage 架构与内容唯一归属；不得仅因为存在 Workflow/Operation/Validator 逻辑角色就机械拆目录。
+
+默认真实运行模式是：
 
 ```text
 Manager 对话
