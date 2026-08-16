@@ -1,0 +1,45 @@
+schema_version: 4
+skill_name: md_simulation
+skill_type: workflow
+skill_path: 04_md_simulation
+architecture: lightweight_runtime_v2
+status: first_pass_implemented_validation_pending
+
+owned_content:
+  stage4_planned_run_route_semantics:
+    owner: 04_md_simulation/SKILL.md
+  formal_run_unit_identity_and_binding:
+    owner: 04_md_simulation/SKILL.md
+  project_level_run_unit_yaml_rules:
+    owner: 04_md_simulation/SKILL.md
+  continuation_vs_new_segment_boundary:
+    owner: 04_md_simulation/SKILL.md
+  common_mdrun_script_format:
+    owner: 04_md_simulation/SKILL.md
+  common_bonded_geometry_screening:
+    owner: 04_md_simulation/SKILL.md
+  stage4_project_result_registration:
+    owner: 04_md_simulation/SKILL.md
+  child_skill_mapping:
+    owner: 04_md_simulation/SKILL.md
+
+external_references:
+  - purpose: stage4_architecture_freeze
+    owner: 00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+    access: reference_only
+  - purpose: manager_planning_catalog
+    owner: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
+    access: reference_only
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: reference_only
+
+child_skills:
+  - 04_md_simulation/4.1_energy_minimization/SKILL.md
+  - 04_md_simulation/4.2_equilibration/SKILL.md
+  - 04_md_simulation/4.3_production_simulation/SKILL.md
+
+notes:
+  - Stage 4 keeps workflow/operation responsibility distinctions logically but uses one physical Stage directory.
+  - Run-specific MDP generation, grompp, mdrun option tendencies, and validation belong to the corresponding child Skill.
+  - No separate Stage 4 Validator Skill is used.
