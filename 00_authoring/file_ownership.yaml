@@ -41,6 +41,14 @@ review_queue:
     required_action: validate_selection_guidance_record_formats_and_real_pdb_materialization
   - skill_name: chain_and_residue_selection_validator
     required_action: validate_selection_structure_organization_mapping_checks
+  - skill_name: md_simulation
+    required_action: validate_stage4_planned_run_binding_run_unit_maintenance_and_result_registration
+  - skill_name: energy_minimization
+    required_action: validate_em_mdp_grompp_mdrun_fmax_and_bonded_geometry_guidance
+  - skill_name: equilibration
+    required_action: validate_nvt_npt_mdp_coupling_checkpoint_execution_and_equilibration_checks
+  - skill_name: production_simulation
+    required_action: validate_production_mdp_tinit_checkpoint_execution_and_run_checks
 
 alignment_queue: []
 
