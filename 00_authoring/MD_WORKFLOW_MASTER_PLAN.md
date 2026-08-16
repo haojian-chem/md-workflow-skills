@@ -338,9 +338,116 @@ explicit user requirement
 
 ## 5. Stage 4 — MD simulation
 
-Top-level stage confirmed.
+### 5.1 Status
 
-Sub-stage decomposition: not yet frozen.
+**Stage 4 run-unit architecture is frozen; detailed validation design is deferred.**
+
+Frozen sub-stage catalog:
+
+1. `4.1 Energy minimization`
+2. `4.2 Equilibration`
+3. `4.3 Production simulation`
+
+Authoritative architecture record:
+
+`00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
+
+### 5.2 Execution-layer / execution-object model
+
+Stage 4 uses a different planning/execution representation from Stages 1–3.
+
+```text
+sub-stage = execution layer
+run unit = execution object
+```
+
+Mapping:
+
+```text
+4.1 → em.*
+4.2 → nvt.* / npt.*
+4.3 → md.*
+```
+
+The Task Sheet does not represent Stage 4 as a serial `4.1 → 4.2 → 4.3` list. It records a **planned run route** composed of the actual intended simulation segments.
+
+A planned route entry does not receive a formal `em.N / nvt.N / npt.N / md.N` identity until that entry begins processing.
+
+### 5.3 Planned run route and formal identity
+
+When a planned route entry begins, Stage 4 first determines whether it can bind an existing reusable run unit, continue an existing unfinished run unit, or must instantiate a new run unit.
+
+Formal run-unit identities are project-level:
+
+```text
+em.N
+nvt.N
+npt.N
+md.N
+```
+
+The prefix is sufficient for first-level classification. Detailed scientific settings are read from the actual `.mdp` rather than duplicated in the project-level run-unit list.
+
+For a new run unit, the formal identity is locked and registered immediately before execution. Gaps in historical numbering are not recycled.
+
+### 5.4 Project-level `run_unit.yaml`
+
+The project keeps one centralized `run_unit.yaml` containing only instantiated run units. It supports cross-task and cross-conversation discovery.
+
+The YAML root is directly a list. Minimum fields are:
+
+```yaml
+- run_unit_id: em.1
+  start_from_run_unit_id:
+  status: 已完成
+  path: /absolute/storage/directory/
+```
+
+No separate `run_unit_type` is stored. No detailed `.mdp` settings are copied into this file.
+
+Allowed maintenance statuses are:
+
+```text
+未完成
+已完成
+已终止
+```
+
+`path` is the complete storage directory used to locate/query the run-unit files. It does not prescribe the execution working directory. Multiple run units may share the same storage directory.
+
+`start_from_run_unit_id` records inheritance from another Stage 4 run unit. It may be empty for a run that begins directly from a pre-Stage-4 object.
+
+### 5.5 Reuse / continuation / new run boundary
+
+Before creating a new run unit, Stage 4 checks instantiated candidates. Candidate reuse considers predecessor-state compatibility, topology/parameter-package compatibility, intended requirement versus actual effective settings, and result validity. Detailed settings are determined from real run artifacts such as `.mdp`.
+
+Technical continuation that completes the original run remains the same run unit. A scientifically new simulation segment becomes a new run unit.
+
+The project-level `run_unit.yaml` is a discovery/maintenance list, not a simulation plan and not sufficient by itself to prove scientific reuse.
+
+### 5.6 Explicitly rejected Stage 4 planning/runtime structures
+
+Do not use as the default Stage 4 model:
+
+- a Task Sheet route expressed only as `4.1 → 4.2 → 4.3`;
+- one ordinary Task Sheet substep per run unit;
+- `simulation_plan.yaml`;
+- historical `expected_route.yaml`;
+- one `run_unit.yaml` per run-unit directory;
+- `simulation_output_index`;
+- formal run-unit IDs allocated during initial planning;
+- `run_unit_type` duplicated in `run_unit.yaml`;
+- detailed `.mdp` settings duplicated in `run_unit.yaml`;
+- a no-information top-level `run_units:` wrapper.
+
+### 5.7 Deferred Stage 4 work
+
+The following are intentionally left for other discussions:
+
+- detailed validation rules for EM/NVT/NPT/MD run units;
+- Validator organization and validation evidence semantics;
+- detailed `.mdp` generation/editing architecture;
+- implementation-level commands/templates and execution refinements.
 
 ---
 
@@ -364,6 +471,8 @@ The default runtime architecture is Lightweight Runtime v2:
 
 The planning index is only a lightweight initial-planning catalog and must not contain scientific applicability rules, reuse rules, schemas, commands, validator logic, or runtime state.
 
+Stage 4 is a stage-specific exception to the normal sub-stage-sequence Task Sheet representation: the Task Sheet stores a planned run route while Stage 4 sub-stages remain the execution layers selected for each run unit.
+
 ---
 
 ## 8. Current planning state
@@ -382,11 +491,16 @@ Frozen:
 - 2.6 validation boundary;
 - Workflow 3 / Stage 3 architecture and three-step catalog;
 - Stage 3 default route `3.1 → 3.2 → 3.3` with repeatable task-sheet instances;
-- Stage 3 current-version GROMACS execution boundary and arg-tendency policy.
+- Stage 3 current-version GROMACS execution boundary and arg-tendency policy;
+- Workflow 4 / Stage 4 three-sub-stage execution-layer catalog;
+- Stage 4 Task Sheet planned-run-route representation;
+- Stage 4 formal run-unit identity timing and centralized `run_unit.yaml` maintenance model;
+- Stage 4 continuation versus new-run-unit boundary.
 
 Still to plan/freeze:
 
-- Stage 4 sub-stage plan;
+- Stage 4 detailed validation design;
+- Stage 4 detailed `.mdp` generation/editing and execution implementation;
 - Stage 5 sub-stage plan;
 - implementation details and Validators/Tools for Stage 2 steps not yet implemented;
 - Stage 3 detailed Step Skill implementation/templates/validation refinements;
@@ -394,6 +508,6 @@ Still to plan/freeze:
 
 ## 9. Immediate next planning task
 
-Stage 2 and Stage 3 architecture are closed for ordinary redesign.
+Stage 2 and Stage 3 architecture are closed for ordinary redesign. Stage 4 run-unit architecture is also closed for ordinary redesign; its deferred validation and implementation details should be handled separately.
 
-Next architecture-level work should move to Stage 4 unless a concrete Stage 2/3 implementation or validation issue exposes new scientific evidence requiring a local correction.
+Architecture-level planning can proceed to Stage 5 when requested.
