@@ -4,7 +4,7 @@
 
 This file records the frozen architecture and current-version execution boundary for MD Workflow Stage 3 — System construction / solvation.
 
-It is a design/implementation handoff record. Detailed future Operation Skills may refine command construction, validation details, and templates without reopening the Stage 3 step architecture unless new scientific evidence requires an architecture change.
+It is a design/implementation handoff record. Current Step Skills may refine command construction, validation details, and templates without reopening the Stage 3 step architecture unless new scientific evidence requires an architecture change.
 
 Status: **FROZEN**
 
@@ -214,7 +214,7 @@ Each repeated 3.3 instance reruns `grompp` against its own current `.gro` and to
 
 ## 5.2 MDP template requirement
 
-The future/current 3.3 Skill implementation should carry a dedicated minimal MDP template, conceptually:
+The 3.3 implementation must carry a dedicated minimal MDP template, conceptually:
 
 ```text
 templates/genion.mdp
@@ -223,6 +223,8 @@ templates/genion.mdp
 Its sole purpose is to let `gmx grompp` generate the `.tpr` required by `gmx genion`.
 
 It is not an EM, equilibration, or production-MD parameter set and carries no Stage 4 simulation semantics.
+
+The exact template contents remain implementation work until separately added and validated.
 
 ## 5.3 `gmx grompp` arg tendency
 
@@ -279,9 +281,9 @@ User-specified concentration/composition overrides the biomolecular `0.154 M` te
 3.3 normally produces:
 
 - new ionized `.gro`;
-- updated current `.top` / `sys.top` molecule composition；
-- continued references to required `.itp` files；
-- intermediate `genion.tpr` retained as execution evidence when useful。
+- updated current `.top` / `sys.top` molecule composition;
+- continued references to required `.itp` files;
+- intermediate `genion.tpr` retained as execution evidence when useful.
 
 The Step performs lightweight consistency checks for successful ion replacement/addition and coordinate/topology composition alignment.
 
@@ -313,9 +315,17 @@ Frozen architecture:
 - `sys.top` naming tendency;
 - 3.1 input may be any validated `.gro` with associated topology-file records.
 
-Future implementation/refinement work:
+Current first-pass guides:
 
-- formal Operation Skill files for 3.1–3.3;
-- exact template contents and deterministic validation checks;
+```text
+03_md_preparation/SKILL.md
+03_md_preparation/3.1_periodic_box_construction/SKILL.md
+03_md_preparation/3.2_solvent_addition/SKILL.md
+03_md_preparation/3.3_ion_addition/SKILL.md
+```
+
+Remaining implementation/refinement work:
+
+- exact `genion.mdp` template contents and representative/deterministic execution validation;
 - more complex Agent/deterministic-tool box editing beyond `gmx editconf`;
-- implementation-level filenames/schemas where needed.
+- implementation-level filenames/schemas only where they become genuinely useful.
