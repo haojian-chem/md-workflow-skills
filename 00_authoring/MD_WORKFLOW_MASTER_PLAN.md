@@ -2,7 +2,7 @@
 
 Status: ACTIVE CURRENT BASELINE
 
-本文件只保存 MD Workflow 的**当前阶段目录、冻结状态和权威文件入口**。具体科学规则不在这里重复；发生冲突时，以对应 Workflow/Stage Skill 和明确的 architecture-freeze 文件为准。
+本文件只保存 MD Workflow 的**当前阶段目录、冻结状态和权威文件入口**。具体科学规则不在这里重复；发生冲突时，以对应当前 Stage/main Skill 和明确 architecture-freeze 文件为准。
 
 ## 1. Top-level numbering
 
@@ -16,7 +16,21 @@ Status: ACTIVE CURRENT BASELINE
 
 编号语义：`1.3` 表示整个 MD Workflow 的第 1.3 阶段；`2.4`、`3.2`、`4.1`、`5.1` 同理。
 
-## 2. Stage 1 — Structure preparation
+## 2. Current Skill organization rule
+
+新科研 Skill 默认采用：
+
+```text
+main Skill
++ references when detail is long
++ supporting Skill only when complexity and a clear boundary justify it
+```
+
+不再强制 Workflow / Operation / Validator 分类。
+
+仓库中现存 `01_workflows/`、`02_operations/`、`02_validators/` 是历史布局/迁移中的当前路径，不是新 Skill 的强制模板。后续迁移以实际职责边界为准，不为了目录统一一次性重构全部现有 Skill。
+
+## 3. Stage 1 — Structure preparation
 
 Status: DEFINED; guide implementation exists, representative validation/refinement continues.
 
@@ -34,7 +48,7 @@ Catalog:
 1.9 Structure preparation validation
 ```
 
-Current Workflow guide:
+Current Stage 1 guide entry remains at its historical path:
 
 `01_workflows/structure_preparation_workflow/SKILL.md`
 
@@ -42,9 +56,9 @@ Manager planning catalog:
 
 `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
 
-Stage 1 content and implementation details are owned by the current Workflow / Operation / Validator Skills and their content maps, not by historical 1.3 drafts.
+Stage 1 current scientific content is owned by the current guides at their existing paths. Do not infer authoring role or future physical layout from those historical directory names.
 
-## 3. Stage 2 — Topology / parameterization
+## 4. Stage 2 — Topology / parameterization
 
 Status: ARCHITECTURE FROZEN; implementation remains partial.
 
@@ -63,15 +77,15 @@ Architecture authority:
 
 `00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
-Implemented detailed work currently includes:
+Implemented detailed work currently includes the existing guide:
 
 `02_operations/topology_integration_and_assembly/SKILL.md`
 
-Do not infer missing Step implementations from old Runtime contracts or historical design records.
+This path is historical placement, not a requirement that future Stage 2 Skills use an Operation directory.
 
-## 4. Stage 3 — System construction / solvation
+## 5. Stage 3 — System construction / solvation
 
-Status: ARCHITECTURE FROZEN; detailed Step Skill implementation/templates remain pending/refining.
+Status: ARCHITECTURE FROZEN; detailed Skill implementation/templates remain pending/refining.
 
 Catalog:
 
@@ -93,7 +107,7 @@ Architecture authority:
 
 The IDs express default scientific order, not a once-only constraint; Task Sheet instances may repeat when required.
 
-## 5. Stage 4 — MD simulation
+## 6. Stage 4 — MD simulation
 
 Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; representative execution validation remains pending.
 
@@ -118,6 +132,8 @@ Architecture record:
 
 `00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
 
+Stage 4 uses one integrated main Skill plus supporting run-type Skills because those run types have clear, complex execution boundaries. This is a scientific/maintenance choice, not a Workflow/Operation classification requirement.
+
 Stage 4 is a stage-specific Task Sheet exception:
 
 ```text
@@ -141,15 +157,15 @@ Current minimum record:
   top: /full/path/to/main.top
 ```
 
-`path` is the full storage directory for that run unit and is used for lookup; it does not prescribe the execution working directory.
+`path` is the full storage directory for lookup; it does not prescribe execution working directory.
 
 `top` is the full path of the main `.top` actually used by that run unit's `grompp`. It supports downstream topology lineage checks, including Stage 5 `.ndx` reuse across different TPRs.
 
-Stage 4 validation belongs to the corresponding 4.1/4.2/4.3 Skill; there is no separate generic Stage 4 Validator layer.
+Validation is owned by the corresponding result-producing Skill; Stage 4 does not add a generic validation layer.
 
-## 6. Stage 5 — Analysis
+## 7. Stage 5 — Analysis
 
-Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; concrete analysis-tool population and representative validation remain pending.
+Status: ARCHITECTURE AND FIRST-PASS MAIN GUIDE FROZEN; concrete analysis-capability population and representative validation remain pending.
 
 Catalog:
 
@@ -160,15 +176,17 @@ Catalog:
 Current authority:
 
 ```text
-01_workflows/analysis_workflow/SKILL.md
-02_operations/analysis_planning_and_orchestration/SKILL.md
+05_analysis/SKILL.md
+05_analysis/references/analysis_tool_inventory.yaml
 ```
 
 Architecture record:
 
 `00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
 
-Manager creates the Task Sheet `5.1` entry and preserves the user's stated analysis goal/object/constraints. 5.1 expands that requirement into the concrete Stage 5 plan, performs the Stage 5 reuse query/check, discovers methods through its tool inventory, and orchestrates concrete analysis Skills / prepared-input producers.
+Stage 5 uses one integrated main Skill. It is not split into `01_workflows/analysis_workflow` and `02_operations/analysis_planning_and_orchestration`.
+
+Manager creates the Task Sheet `5.1` entry and preserves the user's stated analysis goal/object/constraints. Stage 5 main Skill expands that requirement into the concrete plan, performs the Stage 5 reuse query/check, discovers capabilities through its inventory, and orchestrates concrete analysis Skills / prepared-input producers.
 
 5.1 plan items use fixed local integer numbering and the minimum record:
 
@@ -193,15 +211,15 @@ Project-level prepared-input indexes:
 
 ```text
 <project_root>/05_analysis/indexes/
-├── trajectory_index.yaml  # maintained by trjconv
-└── ndx_index.yaml         # maintained by make_ndx
+├── trajectory_index.yaml  # maintained by trjconv capability owner
+└── ndx_index.yaml         # maintained by make_ndx capability owner
 ```
 
 5.1 queries and verifies these indexes but does not own the lifecycle of the files they index.
 
-Stage 5 does not add a generic Validator layer. Each concrete Tool/analysis Skill validates its own output data. Project-level result registration records which objects received which analyses and provides a pointer to the corresponding Task Sheet / 5.1 plan item for details.
+Each concrete analysis Skill/Tool validates its own output data. Project-level result registration records which objects received which analyses and provides a pointer to the corresponding Task Sheet / 5.1 plan item for details.
 
-## 7. Runtime architecture baseline
+## 8. Runtime architecture baseline
 
 Default runtime architecture:
 
@@ -214,16 +232,16 @@ Manager
 → task location / creation / initial planning
 → Task Sheet handoff
 → long-lived Task Execution Agent
-→ current Step Skill only
+→ current main Skill + only needed supporting material
 ```
 
-Do not restore the historical Workstream / route / event / runtime-task / transaction engine as the default runtime.
+Do not restore the historical Workstream / route / event / runtime-task / transaction engine as default runtime.
 
 Manager initial planning authority:
 
 `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
 
-## 8. Authority and stale-file rule
+## 9. Authority and stale-file rule
 
 For current work, use this precedence:
 
@@ -236,14 +254,14 @@ current Skill / Tool guide
 
 A historical file remaining in Git does not make it a current design source. Files explicitly marked `SUPERSEDED` or `LEGACY` are history-only and must not be used to reconstruct current interfaces.
 
-## 9. Current remaining work
+## 10. Current remaining work
 
 Architecture-level ordinary redesign is closed for Stages 2–5 unless new execution evidence requires local correction.
 
 Current work is mainly:
 
-- Stage 1 representative validation/refinement;
-- Stage 2 missing Step/Validator/Tool implementation and evidence-driven refinement;
-- Stage 3 Step Skill/template/validation implementation;
+- Stage 1 representative validation/refinement and gradual layout cleanup when useful;
+- Stage 2 missing Skill/Tool implementation under current main-Skill model;
+- Stage 3 Skill/template/validation implementation under current main-Skill model;
 - Stage 4 representative execution validation;
-- Stage 5 concrete analysis-tool inventory population, `trjconv` / `make_ndx` / analysis Skill design, and representative validation.
+- Stage 5 concrete analysis-capability inventory population, `trjconv` / `make_ndx` / analysis Skill design, and representative validation.
