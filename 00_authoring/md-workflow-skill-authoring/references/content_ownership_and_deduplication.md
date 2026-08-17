@@ -27,7 +27,67 @@ Status: CURRENT
 
 Legacy `03_contracts/**`、runtime projection、subagent protocol、route/event/transaction 文件只在明确 Legacy 维护时拥有其历史接口，不是新 Skill 的共享运行时 owner。
 
-## 2. Main `SKILL.md`
+## 2. Rule ownership gate
+
+**向当前 Skill 增加任何科学、执行、validation、结果或文件生命周期规则之前，都必须先做 ownership 判断。**
+
+```text
+准备加入一条规则
+↓
+这条规则是否描述“当前 Skill 自己必须如何处理/判断/产出”？
+├─ 是
+│  → 当前 Skill 可以定义
+│
+└─ 否
+   ↓
+   是否已有其他 Skill / Tool / shared reference 拥有这条规则？
+   ├─ 有
+   │  → 只引用 owner 的正式结果、能力或规则入口
+   │  → 不复制、不改写成第二份规范
+   │
+   └─ 没有或存在冲突
+      → 记录 cross-skill finding / handoff
+      → 交给对应 owner window / main window 裁决
+      → 不在当前 Skill 中临时创造一份“兼容规则”
+```
+
+最重要的边界是：
+
+```text
+当前 Skill 可以定义：
+“我需要外部 Skill 提供什么”
+
+当前 Skill 不可以定义：
+“外部 Skill 应该怎样把它做出来”
+```
+
+读取外部 Skill 的目的，是准确理解它已经提供什么、避免重复和保证 handoff；**读取权不是定义权。**
+
+## 3. 禁止 shadow specification
+
+不得为了让当前 Skill 看起来“自洽”而建立外部规则的第二份规范，即使只是改写措辞。
+
+以下都属于 shadow specification：
+
+- 完整复制另一个 Skill 的步骤；
+- 把另一个 Skill 的参数表重新写一遍；
+- 在当前 Skill 中总结并重新规定对方的 validation；
+- 复制对方的 official-result 结构或文件生命周期；
+- 把外部规则“简化重述”到足以独立指导执行，从而形成第二个 authority。
+
+允许的最小接口描述只有：
+
+```text
+consume: 使用哪个正式结果
+require: 需要哪项已冻结能力/判据
+handoff: 当前输出如何交给下游
+```
+
+必要时可以说明为什么需要该接口，但不要展开 owner Skill 的内部实现。
+
+如果一句接口说明已经开始出现“对方先做 A，再做 B，参数用 C，最后检查 D”，通常说明已经越界。
+
+## 4. Main `SKILL.md`
 
 主 Skill 保留：
 
@@ -49,7 +109,7 @@ Legacy `03_contracts/**`、runtime projection、subagent protocol、route/event/
 - Tool 已完整拥有的确定性接口实现；
 - Legacy route / Workstream / event / task-result contract。
 
-## 3. Supporting Skill
+## 5. Supporting Skill
 
 只有复杂且边界清晰时才拆 supporting Skill。
 
@@ -62,7 +122,7 @@ Supporting Skill 必须拥有一项可独立描述的完整职责，不能只是
 
 Main Skill 只引用 supporting Skill 的能力和 handoff，不复制其内部完整规则。
 
-## 4. 外部 Skill 的接口级描述
+## 6. 外部 Skill 的接口级描述
 
 当前 Skill 可以读取并理解其他 Skill，但只拥有与自身相关的**接口关系**。
 
@@ -88,7 +148,7 @@ official results
 
 发现外部 Skill 缺失/冲突时，写 cross-skill finding / handoff 给其 owner，不在当前文件中建立第二份规则。
 
-## 5. `references/`
+## 7. `references/`
 
 适合保存当前 Skill 独有且按需读取的：
 
@@ -101,7 +161,7 @@ official results
 
 Reference 不重新描述 `SKILL.md` 的完整主流程。
 
-## 6. `schemas/`
+## 8. `schemas/`
 
 只在确有稳定、可机器校验的结构化 handoff/文件约束时创建。
 
@@ -109,7 +169,7 @@ Reference 不重新描述 `SKILL.md` 的完整主流程。
 
 不要为 Task Sheet、route、subagent task/result 等重新建立 Legacy 式本地 schema 副本。
 
-## 7. `scripts/` 与 Tool
+## 9. `scripts/` 与 Tool
 
 Skill-local、不会跨 Skill 复用的小型确定性 helper 可以留在 `scripts/`。
 
@@ -117,7 +177,7 @@ Skill-local、不会跨 Skill 复用的小型确定性 helper 可以留在 `scri
 
 Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否强制调用由当前科学/技术要求决定。
 
-## 8. Validation ownership
+## 10. Validation ownership
 
 默认：
 
@@ -130,7 +190,7 @@ Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否�
 
 Tool 对自己生成的确定性输出负责机械/格式有效性；main Skill 对这些输出是否满足当前科研目标负责。
 
-## 9. Content map
+## 11. Content map
 
 Content map 只记录：
 
@@ -143,7 +203,20 @@ Content map 只记录：
 
 Content map 不是任务运行时 dispatcher，也不应把其他 Skill 的内部内容复制进来。
 
-## 10. 拆分/重复警告
+## 12. 完成前去重 / 越界自检
+
+每次 Skill 编写或修改完成前，至少检查：
+
+```text
+1. 我是否写了其他环节“应该怎么做”？
+2. 我是否复制或改写了另一个 owner 已经定义的规则？
+3. 是否存在一条规则以后修改时必须同步更新多个文件？
+4. 当前外部内容能否缩成 consume / require / handoff，而不是重新描述其内部实现？
+```
+
+任一答案为“是”时，先处理 ownership/去重问题，再认为当前 Skill 可以交付。
+
+## 13. 拆分/重复警告
 
 出现以下情况时必须检查并重构：
 
