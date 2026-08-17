@@ -19,7 +19,7 @@ Status: CURRENT
 
 只有 `SKILL.md` 是默认必需文件。其他目录只有在当前职责确实需要时才创建。
 
-不要先按 Workflow / Operation / Validator 分类再决定文件结构，也不要为了“完整”自动生成空目录、空 schema 或配套 Validator。
+不要先按 Workflow / Operation / Validator 分类再决定文件结构，也不要为了“完整”自动生成空目录、空 schema、content map 或配套 Validator。
 
 ## 2. Main Skill 与 references
 
@@ -86,10 +86,10 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 ↓
 处理被本次改动取代的旧文件
 ↓
-更新 current index/content map
+按需要更新 Stage freeze / Master Plan / Sync Status / Tool registry 等真正有独立职责的共享入口
 ```
 
-不得先批量生成一套目录/模板，再把实际职责硬塞进去。
+不得先批量生成一套目录、YAML metadata 或模板，再把实际职责硬塞进去。
 
 ## 5. Architecture-freeze 文件位置
 
@@ -105,7 +105,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 - freeze record 只保存阶段级已冻结架构、职责边界和明确拒绝项；
 - current Skill / reference 仍拥有具体执行规则，freeze record 不复制整套 Skill 内容；
 - 同一 Stage 有新的 freeze record 明确取代旧 freeze 时，先迁移 current 引用，再将被取代的旧 Markdown 移入 `00_authoring/archive/`；
-- Master Plan、Sync Status 和相关 content map 只指向 current freeze 路径。
+- Master Plan、Sync Status 只指向 current freeze 路径，不复制完整 freeze 内容。
 
 当前目录入口：
 
@@ -119,7 +119,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 1. 确认 current 文件已经完整接管其仍有效内容；
 2. 更新所有 current 引用，使普通 authoring/runtime 不再依赖旧路径；
-3. 需要保留以便历史查阅时移入：
+3. 需要保留以便历史查阅的 Markdown 移入：
 
 ```text
 00_authoring/archive/
@@ -127,7 +127,8 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 4. archive 按语义归类，例如 `root_history/`、`legacy_runtime/`、旧 authoring assets；
 5. 从原 active path 删除旧文件；不要同时在 active path 留 tombstone、archive 再留一份副本；
-6. Git history 继续保存完整历史版本。
+6. 对不再有 current 用途的旧 YAML/schema/index，通常直接从 active path 删除，由 Git history 保留历史；只有明确有审计价值时才归档；
+7. Git history 继续保存完整历史版本。
 
 Archive 文件不是 current authority，普通 Skill authoring、Task Execution Agent 和 Manager 均不得默认读取。
 
@@ -138,12 +139,35 @@ Archive 文件不是 current authority，普通 Skill authoring、Task Execution
 - current `SKILL.md`；
 - current references；
 - 仍然有效的 architecture-freeze record；
-- current template/index/status file；
+- 当前确有独立用途的 template / coordination record / status file；
 - 真实科研项目的结果或运行记录。
 
 归档依据是**authority 已被明确取代**，不是文件日期。
 
-## 8. 替换检查
+## 8. Metadata 最小化
+
+不要默认给每个 Skill 再创建一份平行 metadata 来描述它自己已经说明的内容。
+
+当前默认不建立：
+
+```text
+content map
+skill inventory entry
+额外 role taxonomy YAML
+```
+
+如果某个结构化文件没有独立机器用途，只是在重复：
+
+```text
+Skill 在哪里
+Skill 拥有什么
+Skill 引用了谁
+Skill 当前是什么状态
+```
+
+则优先删除这层 metadata，由实际 `SKILL.md`、目录结构以及真正独立的 Stage/Tool/coordination 记录承担各自职责。
+
+## 9. 替换检查
 
 当新文件替换旧文件时，交付前确认：
 
@@ -153,9 +177,9 @@ Archive 文件不是 current authority，普通 Skill authoring、Task Execution
 - [ ] 旧文件已归档或删除，而不是继续留在 active 搜索路径；
 - [ ] archive 没有被加入默认 startup/read list；
 - [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
-- [ ] content map / inventory 只指向 current authority。
+- [ ] 没有为了 discoverability 又建立一份重复 Skill 内容的 YAML metadata。
 
-## 9. 原则摘要
+## 10. 原则摘要
 
 ```text
 一个职责 → 一个 main Skill
@@ -163,6 +187,8 @@ Archive 文件不是 current authority，普通 Skill authoring、Task Execution
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
 Stage architecture freeze → 00_authoring/architecture_freezes/
-已被取代的文件 → archive，不留在 active path
+多窗口 writer assignment → 00_authoring/coordination/
+已被取代的 Markdown → archive
+无独立用途的旧 YAML/schema/index → 删除 active copy，Git history 保留
 已有 owner 的规则 → 引用，不复制
 ```
