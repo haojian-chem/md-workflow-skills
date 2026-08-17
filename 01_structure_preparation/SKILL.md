@@ -69,7 +69,7 @@ description: Stage 1 Structure preparation 的总 Skill。定义 1.1–1.9 的�
 
 Manager 初始规划使用：
 
-`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+`00_manager/references/workflow_plan_index.yaml`
 
 Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
