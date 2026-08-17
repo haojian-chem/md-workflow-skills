@@ -178,6 +178,14 @@ structures/target_xxx.pdb
 - `structures/target_*.pdb`；
 - `selection_validation.md`。
 
+项目级正式结果索引：
+
+```text
+<project_root>/00_project_records/project_result_index.md
+```
+
+只登记 `selection_index.yaml` 的完整绝对路径及简明说明。`targets/target_*.yaml`、`structures/target_*.pdb` 与 `selection_validation.md` 保持为当前 Step 的正式结果，但不分别登记为 project-level result entry；需要具体 target 时由 `selection_index.yaml` 继续定位。
+
 # 工作目录
 
 基础目录：
