@@ -7,57 +7,91 @@ status: BACKLOG
 
 # Goal
 
-# Context
+# Current responsibility
+
+说明当前窗口负责的 main Skill / supporting Skill 范围，不使用强制 Workflow / Operation / Validator 分类。
+
+# Context to read
 
 开始前必须读取：
 
 - `AGENTS.md`
+- `00_authoring/AUTHORING_RULES.md`
 - `00_authoring/SYNC_STATUS.md`
 - `00_authoring/skill_inventory.yaml`
 - `00_authoring/file_ownership.yaml`
 - 目标 Skill 的 content map
-- `03_contracts/README.md`
-- 本任务适用的共享 schemas
+- 当前目标 Skill
+- 与当前输入/输出/边界直接相关的上下游或相邻 Skill / Tool guide
+
+`read_context` 可以在执行中继续扩展；它不是硬白名单。
 
 # 已做过 / 已否定 / 仍未验证
 
-# Frozen local contract
+# Owned task boundary
 
 ```yaml
-skill_layer:
-job:
-required_inputs: []
-outputs: []
+primary_job:
+inputs_or_evidence: []
+results_or_handoff: []
 write_paths: []
-forbidden_paths: []
-shared_contracts: []
-workstream_effects: []
-record_effects: []
+shared_files_read_only: []
 ```
 
-# File ownership
+# Read / write policy
 
 ```yaml
+read_context: []
 write_paths: []
-read_paths: []
-forbidden_paths: []
-shared_files: []
 ```
 
-共享文件不得在业务窗口直接修改。需要变更时写入 `contract_change_requests`。
+规则：
 
-# Runtime constraints
+- 可以按需读取未归本窗口写入的相关 Skill；
+- 只有 `write_paths` 表示修改权；
+- 不修改共享 authoring/index/architecture 文件；
+- 不在当前 Skill 中替其他 Skill 定义内部逻辑。
 
-- Workflow 不作为 Agent；
-- 任意时刻最多一个前台临时子 Agent；
-- task unit 只允许 `OPERATION | VALIDATOR | OPERATION_WITH_VALIDATOR`；
-- 子 Agent 不修改项目状态和记录目录；
-- 多个外部任务并存不等于前台 Agent 并行。
+# Cross-Skill interface
+
+只记录接口级关系：
+
+```yaml
+consumes_from_other_skills: []
+provides_to_other_skills: []
+external_rules_referenced: []
+```
+
+如果发现外部 Skill 需要修改：
+
+```yaml
+cross_skill_findings: []
+```
+
+由 owner window / main window 处理。
+
+# Agent-guidance check
+
+- Skill 应指导 Agent 如何完成任务；
+- 不建立无必要 parser gate；
+- 不建立无必要 dispatcher/workflow hop；
+- Tool 仅在确定性能力有实际价值时使用；
+- 推荐工具与强制科学方法要求必须区分。
+
+# Supporting content
+
+需要拆 supporting Skill / reference 时说明原因：
+
+```yaml
+references_to_add: []
+supporting_skills_to_add: []
+why_split_is_justified: []
+```
 
 # Done when
 
 # Validation
 
-# Contract change requests
+# Cross-Skill findings
 
 # Handoff
