@@ -33,11 +33,11 @@ AGENTS.md
 
 然后根据当前任务按需读取：
 
-- 目标 Skill 的 content map；
 - 对应 Stage 的 `architecture_freezes/` 记录；
 - 与当前输入、输出或科学边界直接相关的上下游/相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
-- 只有涉及项目级状态、规划或多窗口协调时，才读取 `MD_WORKFLOW_MASTER_PLAN.md`、`SYNC_STATUS.md`、`skill_inventory.yaml`、`file_ownership.yaml` 等项目级 authoring metadata。
+- 只有涉及项目级阶段状态或 runtime architecture 时，才读取 `MD_WORKFLOW_MASTER_PLAN.md`、`SYNC_STATUS.md`、`lightweight_runtime_v2_spec.md`；
+- 只有涉及多窗口写入协调时，才读取 `coordination/file_ownership.yaml` 或对应 window work order。
 
 **不要在新窗口启动时预加载整个 `00_authoring/`。** 主 Skill 负责告诉 Agent 什么时候需要进一步读取什么。
 
@@ -144,15 +144,18 @@ write ownership 必须窄
 - 对外部 Skill 只记录必要的 `consume / require / handoff`；
 - 发现外部问题时提交 finding，不在当前 Skill 偷偷补一份外部规则。
 
-启动/交付检查：
+需要显式多窗口 assignment 时使用：
 
-`assets/multi_window_startup_checklist.md`
+```text
+coordination/file_ownership.yaml
+coordination/window_work_orders/
+```
 
 # References and supporting Skills
 
 属于当前 Skill、但过长或只在特定条件下需要的内容优先放 `references/`。
 
-主 Skill只保留：
+主 Skill 只保留：
 
 ```text
 何时读取
@@ -219,21 +222,19 @@ Stage / Workflow 架构 freeze 统一放在：
 
 不得同时在 active path 留 `SUPERSEDED / LEGACY` tombstone、又在 archive 留副本。
 
-# Project-level authoring metadata
+# Project-level authoring support
 
-以下文件/目录是项目级 authoring 状态、索引或协调信息，**不是比本 `SKILL.md` 更高一级的 Skill authority**：
+以下内容是按需辅助材料，**不是比本 `SKILL.md` 更高一级的 Skill authority**：
 
 ```text
 MD_WORKFLOW_MASTER_PLAN.md
 SYNC_STATUS.md
 lightweight_runtime_v2_spec.md
-skill_inventory.yaml
-file_ownership.yaml
-content_maps/
 architecture_freezes/
+coordination/
 ```
 
-只有当前任务需要相应信息时才读取。
+不再为每个 Skill 维护一套平行的 content-map / skill-inventory 元数据。Skill 自身及其必要 references 就是职责定义来源。
 
 # Safety
 
