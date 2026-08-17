@@ -1,12 +1,12 @@
 # MD Workflow Master Plan
 
-Status: ACTIVE PLANNING BASELINE
+Status: ACTIVE CURRENT BASELINE
 
-This file records the current planning baseline for the MD Workflow. It is a planning artifact, not an implementation contract. Frozen stage architecture is authoritative for planning; detailed scientific execution remains owned by the corresponding Workflow / Operation / Validator Skills and references.
+本文件只保存 MD Workflow 的**当前阶段目录、冻结状态和权威文件入口**。具体科学规则不在这里重复；发生冲突时，以对应 Workflow/Stage Skill 和明确的 architecture-freeze 文件为准。
 
-## 1. Top-level stage numbering
+## 1. Top-level numbering
 
-Confirmed top-level stages:
+固定顶层阶段：
 
 1. Structure preparation
 2. Topology / parameterization
@@ -14,345 +14,98 @@ Confirmed top-level stages:
 4. MD simulation
 5. Analysis
 
-Numbering semantics:
-
-- `1.3` means the MD Workflow stage 1.3, i.e. the third sub-stage under `1 Structure preparation`.
-- The same rule applies to `2.x`, `3.x`, `4.x`, and `5.x`.
-
----
+编号语义：`1.3` 表示整个 MD Workflow 的第 1.3 阶段；`2.4`、`3.2`、`4.1`、`5.1` 同理。
 
 ## 2. Stage 1 — Structure preparation
 
-Current defined sequence:
+Status: DEFINED; guide implementation exists, representative validation/refinement continues.
 
-- 1.1 Structure source recognition
-- 1.2 Component and residue classification
-- 1.3 Chain and residue selection
-- 1.4 Alternate conformation / occupancy resolution
-- 1.5 Completeness check
-- 1.6 Missing-region completion
-- 1.7 Protein protonation assignment
-- 1.8 Reorder and mapping
-- 1.9 Structure preparation validation
-
-Stage 1 execution-time applicability is determined by the relevant Step Skills and actual evidence. Manager planning does not mark conditional steps.
-
-### Stage 1 → Stage 2 chain-assignment handoff
-
-Workflow 1 final structure organization must provide stable heavy-atom identity/order and the chain assignment consumed by Stage 2.
-
-For topology-linked nonstandard units:
+Catalog:
 
 ```text
-all standard-side linked residues belong to one standard chain
-→ linked nonstandard unit does not receive a separate chain; it is assigned to that chain
-
-standard-side linked residues span multiple standard chains
-→ linked nonstandard unit receives its own chain identity
+1.1 Structure source recognition
+1.2 Component and residue classification
+1.3 Chain and residue selection
+1.4 Alternate conformation / occupancy resolution
+1.5 Completeness check
+1.6 Missing-region completion
+1.7 Protein protonation assignment
+1.8 Reorder and mapping
+1.9 Structure preparation validation
 ```
 
-This chain identity is distinct from later GROMACS `moleculetype` organization. Stage 2 may merge multiple chains into one covalently connected moleculetype while preserving chain identity.
+Current Workflow guide:
 
----
+`01_workflows/structure_preparation_workflow/SKILL.md`
+
+Manager planning catalog:
+
+`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+
+Stage 1 content and implementation details are owned by the current Workflow / Operation / Validator Skills and their content maps, not by historical 1.3 drafts.
 
 ## 3. Stage 2 — Topology / parameterization
 
-### 3.1 Status
+Status: ARCHITECTURE FROZEN; implementation remains partial.
 
-**Stage 2 architecture is frozen.**
+Catalog:
 
-Frozen sequence:
+```text
+2.1 Parameterization environment and assignment
+2.2 Standard residue topology generation
+2.3 Topology-linked nonstandard parameterization
+2.4 Independent nonstandard parameterization
+2.5 Topology integration and assembly
+2.6 Topology validation
+```
 
-1. `2.1 Parameterization environment and assignment`
-2. `2.2 Standard residue topology generation`
-3. `2.3 Topology-linked nonstandard parameterization`
-4. `2.4 Independent nonstandard parameterization`
-5. `2.5 Topology integration and assembly`
-6. `2.6 Topology validation`
-
-The authoritative architecture record is:
+Architecture authority:
 
 `00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
-Detailed 2.5 linked integration rules are owned by:
+Implemented detailed work currently includes:
 
-- `02_operations/topology_integration_and_assembly/SKILL.md`
-- `02_operations/topology_integration_and_assembly/references/topology_integration_rules.md`
-- `02_operations/topology_integration_and_assembly/references/parameter_definition_deduplication.md`
+`02_operations/topology_integration_and_assembly/SKILL.md`
 
-### 3.2 Routing principle
-
-Stage 2 routes work by component/topology ownership, not by parameter complexity.
-
-Do not create a generic `Special / custom parameter generation` stage.
-
-Methods such as DFT, RESP/RESP2, Multiwfn, Sobtop, Seminario, GAFF, metal-specific handling, or future custom tools remain internal methods of the appropriate Step rather than separate workflow stages.
-
-### 3.3 2.1 Parameterization environment and assignment
-
-Purpose:
-
-- establish the set of force-field / parameter-definition sources used by the system;
-- assign actual classified objects to the downstream topology acquisition / parameterization route;
-- do not reclassify 1.2 objects.
-
-Assignment baseline:
-
-- all `STANDARD_RESIDUE` → 2.2;
-- each **topology-linked nonstandard unit** → 2.3;
-- each `INDEPENDENT_NONSTANDARD` residue name/type → 2.4;
-- FF-complete solvent/ion definitions → direct 2.5 integration;
-- solvent/ion without complete definition → 2.4 type handling.
-
-A topology-linked nonstandard unit may contain one or multiple nonstandard residues when they must be jointly parameterized as one linked chemical unit.
-
-### 3.4 2.2 Standard residue topology generation
-
-Purpose:
-
-- generate actual all-atom molecule topology/structure for all standard residues from the selected parameterization environment;
-- perform standard-residue hydrogenation;
-- emit standard-only structure/topology plus mapping.
-
-Core result categories:
-
-```text
-standard-only .gro
-standard-only .top
-standard molecule .itp file(s)
-*.map
-```
-
-2.2 may internally split `pdb2gmx` processing groups; one-chain-one-run is not a default rule.
-
-### 3.5 2.3 Topology-linked nonstandard parameterization
-
-Processing unit:
-
-```text
-one topology-linked nonstandard unit
-→ one 2.3 processing unit
-```
-
-A unit may contain one or multiple nonstandard residues.
-
-Purpose:
-
-- build the linked parameterization model;
-- consume standard-side all-atom fragments from 2.2 while keeping their relative order;
-- hydrogenate only the nonstandard part;
-- identify standard-side atoms incompatible with the linked state;
-- add parameterization caps where required;
-- execute DFT / RESP(2) / topology generation;
-- emit linked-site modification information for 2.5.
-
-Protein-model boundary baseline: retain the directly attached standard residue, extend across peptide bonds toward neighboring residues, prefer final cuts on suitable C-C single bonds, and cap with H. Detailed nucleic-acid boundary rules remain a local scientific refinement rather than a Stage 2 architecture question.
-
-### 3.6 2.4 Independent nonstandard parameterization
-
-Purpose:
-
-- parameterize each independent nonstandard type once;
-- apply that type topology to all current-system instances.
-
-Output levels:
-
-```text
-type-level:
-  mol2 / chg / itp
-
-system-instance-level:
-  gro / map
-```
-
-### 3.7 2.5 Topology integration and assembly
-
-Purpose:
-
-- consume 2.2 standard, 2.3 linked units, 2.4 independent types/instances, and FF-direct solvent/ion definitions;
-- determine final GROMACS moleculetype organization while preserving upstream chain identity;
-- determine the final atom set and final all-atom order before topology migration;
-- freeze one canonical final atom index and final map;
-- generate each final molecule `.itp` by molecule-level topology integration;
-- collect/deduplicate/conflict-check global/type-level parameter definitions into one consolidated parameter-definition `.itp`;
-- assemble `final_system.top` and write `final_system.gro` using the already frozen canonical final atom order.
-
-Critical ordering rule:
-
-```text
-final topology organization
-→ final atom set
-→ final all-atom order
-→ canonical final atom index + final.map
-→ molecule-level topology integration / final molecule .itp
-→ global parameter-definition consolidation
-→ final_system.top
-→ final_system.gro using the same canonical order
-```
-
-For confirmed covalent connectivity, all covalently connected standard components and linked units belong to one final GROMACS moleculetype. This may merge multiple source chains but does not erase chain identity.
-
-### 3.8 2.6 Topology validation
-
-Purpose:
-
-- validate the complete 2.5 package without rebuilding it;
-- verify topology package completeness, internal topology consistency, linked modifications, map consistency, charge/connectivity sanity, topology-coordinate atom-by-atom consistency, and GROMACS preprocessing acceptance.
-
-`gmx grompp` success is necessary evidence but is not sufficient by itself for Stage 2 validation.
-
-2.6 does not silently repair topology; failures route back to the relevant upstream Step.
-
-### 3.9 Stage 2 shared mapping rule
-
-2.2–2.5 mapping follows:
-
-```text
-generated/output atom → source provenance
-```
-
-Core fields:
-
-```yaml
-output_atom_index:
-output_atom_name:
-output_residue_name:
-output_residue_number:
-origin: SOURCE | ADDED_H | CAP
-source_atom_serial:
-```
-
-`DELETED_BY_LINK` is not a map state. Connectivity is read from topology/mol2 rather than duplicated in the map.
-
----
+Do not infer missing Step implementations from old Runtime contracts or historical design records.
 
 ## 4. Stage 3 — System construction / solvation
 
-### 4.1 Status
+Status: ARCHITECTURE FROZEN; detailed Step Skill implementation/templates remain pending/refining.
 
-**Stage 3 architecture is frozen.**
-
-Frozen catalog:
-
-1. `3.1 Periodic box construction`
-2. `3.2 Solvent addition`
-3. `3.3 Ion addition`
-
-Default scientific route:
+Catalog:
 
 ```text
 3.1 Periodic box construction
-→ 3.2 Solvent addition
-→ 3.3 Ion addition
+3.2 Solvent addition
+3.3 Ion addition
 ```
 
-The numbering records the default scientific order rather than a once-only execution constraint. Each Stage 3 step may appear zero, one, or multiple times as separate Task Sheet substep instances when required by the current system or explicit task scope.
+Default scientific order:
 
-The authoritative Stage 3 architecture record is:
+```text
+3.1 → 3.2 → 3.3
+```
+
+Architecture authority:
 
 `00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
 
-Stage 3 intentionally does not define separate system-construction-specification, final-assembly, or stage-level-validation steps. The Task Sheet records the actual operation sequence, and each operation performs its own required local validation.
-
-### 4.2 3.1 Periodic box construction
-
-Current-version execution tool:
-
-`gmx editconf`
-
-Processing object:
-
-- any validated `.gro` file;
-- record the `.top` / `.itp` files associated with that `.gro` for downstream handoff.
-
-Current arg tendency centers on:
-
-- `-c` as the normal centering tendency;
-- `-box` when explicit box dimensions are required;
-- `-d` when a solute/system-to-box-boundary distance is specified.
-
-Current version does not use Agent-written coordinate/box-vector modification as part of 3.1. More complex direct structure/box modification is reserved for a future update.
-
-### 4.3 3.2 Solvent addition
-
-Current-version execution tool:
-
-`gmx solvate`
-
-The current validated `.gro` and its associated topology package are consumed together with the requested solvent definition. Repeated 3.2 instances are allowed for workflows that add solvent in multiple passes.
-
-Arg tendency includes:
-
-- `-cp` current validated `.gro`;
-- `-cs` requested solvent coordinate/template;
-- `-p` current topology, with `sys.top` as the preferred Stage 3 basename when naming is under workflow control;
-- `-o` new solvated `.gro`.
-
-3.2 normally inherits the existing box rather than replacing the role of 3.1.
-
-### 4.4 3.3 Ion addition
-
-3.3 is one workflow step with a fixed two-command internal sequence:
-
-```text
-Skill-provided genion .mdp template
-→ gmx grompp
-→ genion.tpr
-→ gmx genion
-→ ionized .gro + updated topology
-```
-
-The Skill should provide a dedicated minimal `.mdp` template used only to generate the temporary `.tpr` required by `genion`; it does not carry Stage 4 EM/equilibration/production semantics.
-
-`gmx grompp` arg tendency:
-
-- `-f` Skill-provided genion `.mdp`;
-- `-c` current validated `.gro`;
-- `-p` current topology, commonly `sys.top`;
-- `-o` temporary `genion.tpr`.
-
-`gmx genion` arg tendency:
-
-- use `-neutral` when the task requires an electrically neutral system;
-- for biomolecular systems, if the user has not specified another salt concentration, tend toward `-conc 0.154`;
-- determine `-pname` / `-nname` from the current ion definitions and task requirements;
-- select the actual bulk-solvent replacement group from the current system rather than hard-coding `SOL`.
-
-Each repeated 3.3 instance regenerates its own `.tpr` from the current structure/topology state before running `genion`.
-
-### 4.5 Shared Stage 3 naming / command policy
-
-`sys.top` is the preferred Stage 3 topology basename when naming is under workflow control. An existing validated topology with another basename is not renamed merely to satisfy this preference.
-
-Stage 3 Step Skills should express **arg tendency** rather than rigid command templates. Priority is:
-
-```text
-explicit user requirement
-> current Task Sheet requirement
-> actual current object/state
-> Step Skill arg tendency
-> GROMACS default
-```
-
----
+The IDs express default scientific order, not a once-only constraint; Task Sheet instances may repeat when required.
 
 ## 5. Stage 4 — MD simulation
 
-### 5.1 Status
+Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; representative execution validation remains pending.
 
-**Stage 4 architecture, validation ownership, and first-pass execution guidance are frozen and implemented. Representative validation remains pending.**
+Execution-layer catalog:
 
-Frozen sub-stage catalog:
+```text
+4.1 Energy minimization   → em.*
+4.2 Equilibration         → nvt.* / npt.*
+4.3 Production simulation → md.*
+```
 
-1. `4.1 Energy minimization`
-2. `4.2 Equilibration`
-3. `4.3 Production simulation`
-
-Authoritative architecture record:
-
-`00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
-
-Implemented Skill hierarchy:
+Current authority:
 
 ```text
 04_md_simulation/SKILL.md
@@ -361,70 +114,74 @@ Implemented Skill hierarchy:
 04_md_simulation/4.3_production_simulation/SKILL.md
 ```
 
-Workflow/operation responsibilities remain logical distinctions; Stage 4 does not physically split the parent and child Skills across `01_workflows/` and `02_operations/`.
+Architecture record:
 
-### 5.2 Execution-layer / execution-object model
+`00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
 
-Stage 4 uses a different planning/execution representation from Stages 1–3.
+Stage 4 is a stage-specific Task Sheet exception:
 
 ```text
 sub-stage = execution layer
 run unit = execution object
 ```
 
-Mapping:
+Task Sheet records a planned run route. Formal `em.N / nvt.N / npt.N / md.N` identity is assigned only when a planned entry starts processing.
 
-```text
-4.1 → em.*
-4.2 → nvt.* / npt.*
-4.3 → md.*
-```
+Project-level run-unit discovery/maintenance file:
 
-The Task Sheet does not represent Stage 4 as a serial `4.1 → 4.2 → 4.3` list. It records a **planned run route** composed of the actual intended simulation segments.
+`<project_root>/04_md_simulation/run_unit.yaml`
 
-A planned route entry does not receive a formal `em.N / nvt.N / npt.N / md.N` identity until that entry begins processing.
-
-One planned route entry normally binds one formal run unit. If a replacement run unit is required, the entry is rebound and the old run unit remains in the project-level list; no separate attempts layer is added.
-
-### 5.3 Planned run route and formal identity
-
-When a planned route entry begins, Stage 4 first determines whether it can bind an existing reusable run unit, continue an existing unfinished run unit, or must instantiate a new run unit.
-
-Formal run-unit identities are project-level:
-
-```text
-em.N
-nvt.N
-npt.N
-md.N
-```
-
-The prefix is sufficient for first-level classification. Detailed scientific settings are read from the actual `.mdp` rather than duplicated in the project-level run-unit list.
-
-For a new run unit, the formal identity is locked and registered immediately before execution. Gaps in historical numbering are not recycled.
-
-### 5.4 Project-level `run_unit.yaml`
-
-The project keeps one centralized:
-
-```text
-04_md_simulation/run_unit.yaml
-```
-
-containing only instantiated run units. It supports cross-task and cross-conversation discovery.
-
-The YAML root is directly a list. Minimum fields are:
+Current minimum record:
 
 ```yaml
-- run_unit_id: em.1
-  start_from_run_unit_id:
+- run_unit_id: md.1
+  start_from_run_unit_id: npt.1
   status: 已完成
-  path: /project/04_md_simulation/em.1/
+  path: /full/path/to/run-unit-directory/
+  top: /full/path/to/main.top
 ```
 
-No separate `run_unit_type` is stored. No detailed `.mdp` settings are copied into this file.
+`path` is the full storage directory for that run unit and is used for lookup; it does not prescribe the execution working directory.
 
-Allowed maintenance statuses are:
+`top` is the full path of the main `.top` actually used by that run unit's `grompp`. It supports downstream topology lineage checks, including Stage 5 `.ndx` reuse across different TPRs.
+
+Stage 4 validation belongs to the corresponding 4.1/4.2/4.3 Skill; there is no separate generic Stage 4 Validator layer.
+
+## 6. Stage 5 — Analysis
+
+Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; concrete analysis-tool population and representative validation remain pending.
+
+Catalog:
+
+```text
+5.1 Analysis planning and orchestration
+```
+
+Current authority:
+
+```text
+01_workflows/analysis_workflow/SKILL.md
+02_operations/analysis_planning_and_orchestration/SKILL.md
+```
+
+Architecture record:
+
+`00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
+
+Manager creates the Task Sheet `5.1` entry and preserves the user's stated analysis goal/object/constraints. 5.1 expands that requirement into the concrete Stage 5 plan, performs the Stage 5 reuse query/check, discovers methods through its tool inventory, and orchestrates concrete analysis Skills / prepared-input producers.
+
+5.1 plan items use fixed local integer numbering and the minimum record:
+
+```text
+编号
+tool
+inputs
+settings
+status
+path
+```
+
+Plan-item statuses:
 
 ```text
 未完成
@@ -432,125 +189,61 @@ Allowed maintenance statuses are:
 已终止
 ```
 
-`path` points to the complete directory of that specific run unit. Multiple run-unit directories may share the same Stage 4 parent directory, but each record points to its own run-unit directory.
+Project-level prepared-input indexes:
 
-`start_from_run_unit_id` records inheritance from another Stage 4 run unit. It may be empty for a run that begins directly from a pre-Stage-4 object.
+```text
+<project_root>/05_analysis/indexes/
+├── trajectory_index.yaml  # maintained by trjconv
+└── ndx_index.yaml         # maintained by make_ndx
+```
 
-### 5.5 Reuse / continuation / new run boundary
+5.1 queries and verifies these indexes but does not own the lifecycle of the files they index.
 
-Before creating a new run unit, Stage 4 checks instantiated candidates. Candidate reuse considers predecessor-state compatibility, topology/parameter-package compatibility, intended requirement versus actual effective settings, and result validity. Detailed settings are determined from real run artifacts such as `.mdp`.
-
-Technical continuation that completes the original run remains the same run unit. A scientifically new simulation segment becomes a new run unit.
-
-The project-level `run_unit.yaml` is a discovery/maintenance list, not a simulation plan and not sufficient by itself to prove scientific reuse.
-
-### 5.6 Execution and validation ownership
-
-Each child Skill generates/adjusts its own final `.mdp`, runs `gmx grompp`, confirms the intended `.tpr`, generates `gmx_mdrun.sh`, executes `gmx mdrun`, and performs its own run-specific validation.
-
-There is no separate generic MDP-generation sub-stage and no separate Stage 4 Validator Skill.
-
-Common rules include:
-
-- the final actual `.mdp` is authoritative for detailed run settings;
-- `grompp` warnings must be inspected and blind `-maxwarn` use is prohibited;
-- `gmx_mdrun.sh` is generated only after successful preprocessing and contains the actual `gmx mdrun` command only;
-- final `.gro` bonded-geometry screening flags reference-length bond/constraint deviations above `0.08 nm` and reference-angle deviations above `30°`; fixed/special bonded functions follow their actual geometry definitions.
-
-Run-specific MDP checks, command tendencies and validation details are owned by the corresponding child Skills.
-
-### 5.7 Project result registration
-
-Stage 4 registers the project-level `04_md_simulation/run_unit.yaml` path and a description of that file in `project_result_index.md`.
-
-Individual run-unit directories and individual `.mdp/.tpr/.gro/.cpt/.xtc/.edr` files are not separately registered as Stage 4 project-level results.
-
-### 5.8 Explicitly rejected Stage 4 planning/runtime structures
-
-Do not use as the default Stage 4 model:
-
-- a Task Sheet route expressed only as `4.1 → 4.2 → 4.3`;
-- one ordinary Task Sheet substep per run unit;
-- `simulation_plan.yaml`;
-- historical `expected_route.yaml`;
-- one `run_unit.yaml` per run-unit directory;
-- `simulation_output_index`;
-- formal run-unit IDs allocated during initial planning;
-- `run_unit_type` duplicated in `run_unit.yaml`;
-- detailed `.mdp` settings duplicated in `run_unit.yaml`;
-- a no-information top-level `run_units:` wrapper;
-- a separate attempts layer for replacement runs;
-- separate Stage 4 Validator Skills.
-
-### 5.9 Remaining Stage 4 work
-
-Remaining work is representative execution validation and evidence-driven local correction of the implemented guidance, not ordinary architecture redesign.
-
----
-
-## 6. Stage 5 — Analysis
-
-Top-level stage confirmed.
-
-Sub-stage decomposition: not yet frozen.
-
----
+Stage 5 does not add a generic Validator layer. Each concrete Tool/analysis Skill validates its own output data. Project-level result registration records which objects received which analyses and provides a pointer to the corresponding Task Sheet / 5.1 plan item for details.
 
 ## 7. Runtime architecture baseline
 
-The default runtime architecture is Lightweight Runtime v2:
+Default runtime architecture:
 
-- Manager creates/locates tasks and performs initial planning or explicit replanning;
-- Task Execution Agent owns long-lived execution, per-step reuse checks, execution, validation, recording, and dynamic future-step adjustment;
-- no default transaction/event/workstream runtime engine;
-- Operation preflight and dedicated scientific validation remain available where needed;
-- deterministic Tools are preferred for deterministic transformations but do not recreate a transaction engine.
+`00_authoring/lightweight_runtime_v2_spec.md`
 
-The planning index is only a lightweight initial-planning catalog and must not contain scientific applicability rules, reuse rules, schemas, commands, validator logic, or runtime state.
+Core rule:
 
-Stage 4 is a stage-specific exception to the normal sub-stage-sequence Task Sheet representation: the Task Sheet stores a planned run route while Stage 4 sub-stages remain the execution layers selected for each run unit.
+```text
+Manager
+→ task location / creation / initial planning
+→ Task Sheet handoff
+→ long-lived Task Execution Agent
+→ current Step Skill only
+```
 
----
+Do not restore the historical Workstream / route / event / runtime-task / transaction engine as the default runtime.
 
-## 8. Current planning state
+Manager initial planning authority:
 
-Frozen:
+`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
 
-- top-level Stage 1–5 numbering semantics;
-- Workflow 1 step catalog;
-- Workflow 1 / 1.3 Chain and Residue Selection scientific design;
-- Workflow 2 / Stage 2 architecture and six-step catalog;
-- Stage 2 topology-linked nonstandard unit model;
-- Stage 1 → Stage 2 chain-assignment handoff principle;
-- Stage 2 map semantics;
-- Stage 2 final all-atom ordering/index timing;
-- 2.5 molecule-level integration ownership and global parameter-definition consolidation boundary;
-- 2.6 validation boundary;
-- Workflow 3 / Stage 3 architecture and three-step catalog;
-- Stage 3 default route `3.1 → 3.2 → 3.3` with repeatable task-sheet instances;
-- Stage 3 current-version GROMACS execution boundary and arg-tendency policy;
-- Workflow 4 / Stage 4 three-sub-stage execution-layer catalog;
-- Stage 4 Task Sheet planned-run-route representation;
-- Stage 4 formal run-unit identity timing and centralized `run_unit.yaml` maintenance model;
-- Stage 4 complete run-unit directory path semantics;
-- Stage 4 continuation versus new-run-unit boundary;
-- Stage 4 MDP/grompp/mdrun ownership and common script boundary;
-- Stage 4 validation ownership within 4.1/4.2/4.3 and common bonded-geometry screening;
-- Stage 4 project-level result registration through `run_unit.yaml`.
+## 8. Authority and stale-file rule
 
-Still to plan/freeze:
+For current work, use this precedence:
 
-- Stage 5 sub-stage plan;
-- implementation details and Validators/Tools for Stage 2 steps not yet implemented;
-- Stage 3 detailed Step Skill implementation/templates/validation refinements;
-- nucleic-acid-specific 2.3 model-cut/capping rules where needed.
+```text
+current Skill / Tool guide
+> matching architecture-freeze record
+> this Master Plan / SYNC_STATUS
+> historical validation, redesign, benchmark, Legacy Runtime files
+```
 
-Still to validate:
+A historical file remaining in Git does not make it a current design source. Files explicitly marked `SUPERSEDED` or `LEGACY` are history-only and must not be used to reconstruct current interfaces.
 
-- Stage 4 planned-run binding, reuse, continuation, run-unit maintenance and representative 4.1/4.2/4.3 execution/check behavior.
+## 9. Current remaining work
 
-## 9. Immediate next planning task
+Architecture-level ordinary redesign is closed for Stages 2–5 unless new execution evidence requires local correction.
 
-Stage 2, Stage 3 and Stage 4 architecture are closed for ordinary redesign. Stage 4 has entered implementation validation/refinement.
+Current work is mainly:
 
-Architecture-level planning can proceed to Stage 5 when requested.
+- Stage 1 representative validation/refinement;
+- Stage 2 missing Step/Validator/Tool implementation and evidence-driven refinement;
+- Stage 3 Step Skill/template/validation implementation;
+- Stage 4 representative execution validation;
+- Stage 5 concrete analysis-tool inventory population, `trjconv` / `make_ndx` / analysis Skill design, and representative validation.
