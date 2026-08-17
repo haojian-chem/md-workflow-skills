@@ -1,34 +1,80 @@
 # 渐进披露
 
-Codex 初始依赖 Skill 的 `name`、`description` 和路径判断是否加载完整 Skill，因此 description 必须前置用途、触发词和排除边界。
+Status: CURRENT
 
-## 主文件
+主 `SKILL.md` 的目标是让 Agent 快速理解并推进当前职责，而不是在启动时加载全部细节。
+
+## 1. 主文件应回答什么
 
 主 `SKILL.md` 应能快速回答：
 
 - 何时使用；
-- 当前 Skill 只做什么；
-- 需要哪些输入；
-- 何时阻塞或暂停；
-- 产生什么输出；
-- 读取哪个共享 contract。
+- 当前目标是什么；
+- 当前 Skill 拥有什么、不拥有什么；
+- 需要哪些输入/证据；
+- reuse 怎么判断；
+- 执行时有哪些必须遵守的规则；
+- 怎样 validation；
+- 结果和 handoff 是什么；
+- 什么情况下需要进一步读取 reference / supporting Skill / Tool guide。
 
-## 按需读取 reference
+## 2. Reference 按需读取
 
-`SKILL.md` 必须说明加载条件，例如：
+长规则、registry、数据表和条件性细节放 `references/`。
+
+主 Skill 应说明加载条件，例如：
 
 ```text
-仅检测到金属离子时读取 references/coordination_detection_registry.yaml。
+检测到金属配位问题时，再读取 references/coordination_rules.md
 ```
 
-不得要求启动时读取整个 `references/`。
+不得要求启动时默认扫描整个 `references/`。
 
-## 规模建议
+## 3. Supporting Skill 的拆分条件
 
-- Manager：150–300 行；
-- Workflow：80–180 行；
-- Operation：80–200 行；
-- Validator：100–250 行；
-- 编写指导 Skill：150–300 行。
+不要按 Workflow / Operation / Validator 类型拆文件。
 
-超过范围不是自动错误，但必须检查重复、字段表、长示例和职责混入。
+只有一块内容：
+
+- 足够复杂；
+- 边界清晰；
+- 可以独立加载；
+- 有独立复用或测试价值；
+
+才拆成 supporting Skill。
+
+如果只是主 Skill 中的一段较长说明，优先 reference，而不是新 Skill。
+
+## 4. 避免假性渐进披露
+
+以下不算有效渐进披露：
+
+```text
+main Skill
+→ 强制 dispatcher Skill
+→ 强制 parser Skill
+→ 才能读取实际文件
+```
+
+这只是增加 hop。
+
+有效方式是：
+
+```text
+Agent 先读 main Skill
+→ 只有当前任务真的需要时再读对应 detail/reference/supporting Skill
+```
+
+## 5. 规模判断
+
+不再按 Workflow / Operation / Validator 给固定行数配额。
+
+当主 Skill 明显过长时，优先检查：
+
+1. 是否复制了其他 Skill 的内容；
+2. 是否把长数据/registry 放错位置；
+3. 是否包含大量示例；
+4. 是否把 Tool 接口实现细节写进主 Skill；
+5. 是否存在真正复杂且可独立加载的 supporting responsibility。
+
+长度本身不是拆 Skill 的充分理由；职责边界和按需加载收益才是。
