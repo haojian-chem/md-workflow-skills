@@ -26,7 +26,7 @@ Status: ACTIVE CURRENT BASELINE
 05_analysis/
 ```
 
-只有这些 `01`–`05` 目录表示 MD Workflow Stage。目录可以在对应 Skill 正式生成前预留；**目录存在不等于 Skill 已生成或已激活**。
+只有这些 `01`–`05` 目录表示 MD Workflow Stage。Stage / Step 目录可以在对应 Skill 正式生成前预留；**目录存在不等于 Skill 已生成或已激活**。
 
 `evals/`、`tools/`、`legacy/` 等基础设施目录不占用 Stage 编号。
 
@@ -78,11 +78,32 @@ Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 2.6 Topology validation
 ```
 
-Architecture authority:
+Reserved Step directories:
+
+```text
+02_topology_preparation/2.1_parameterization_environment_and_assignment/
+02_topology_preparation/2.2_standard_residue_topology_generation/
+02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/
+02_topology_preparation/2.4_independent_nonstandard_parameterization/
+02_topology_preparation/2.5_topology_integration_and_assembly/
+02_topology_preparation/2.6_topology_validation/
+```
+
+There is currently **no active Stage 2 `SKILL.md`**. The directories are reserved package locations only.
+
+Stage-level architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
-Any Stage 2 `SKILL.md` materialized before explicit approval is authoring reference only, not runtime authority, and must be consolidated into the freeze before pseudo-Skill removal.
+2.5 has detailed frozen generation material, but is still freeze-only:
+
+```text
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
+```
+
+These files preserve the detailed pre-authorization 2.5 material for later formal Skill generation; they are not runtime Skills.
 
 ## 5. Stage 3 — System construction / solvation
 
@@ -94,11 +115,29 @@ Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 3.3 Ion addition
 ```
 
-Architecture authority:
+Reserved Step directories:
+
+```text
+03_md_preparation/3.1_periodic_box_construction/
+03_md_preparation/3.2_solvent_addition/
+03_md_preparation/3.3_ion_addition/
+```
+
+There is currently **no active Stage 3 `SKILL.md`**.
+
+Stage-level architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
 
-The exact dedicated minimal `genion.mdp` template and representative execution validation remain implementation-time work. Any currently materialized Stage 3 `SKILL.md` files are not approved runtime Skills and must first be reconciled with the freeze so no agreed detail is lost.
+Detailed frozen Step material:
+
+```text
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.1_PERIODIC_BOX_CONSTRUCTION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.2_SOLVENT_ADDITION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.3_ION_ADDITION_FREEZE.md
+```
+
+The exact dedicated minimal `genion.mdp` template and representative execution validation remain implementation-time work after formal Skill generation is approved.
 
 ## 6. Stage 4 — MD simulation
 
@@ -124,11 +163,24 @@ Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 5.1 Analysis planning and orchestration
 ```
 
-Architecture authority:
+Reserved Step directory:
+
+`05_analysis/5.1_analysis_planning_and_orchestration/`
+
+There is currently **no active Stage 5 `SKILL.md`** and no active analysis capability inventory.
+
+Stage-level architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
 
-Any currently materialized Stage 5 main-guide/inventory files are authoring reference only until explicitly approved Skill generation. Agreed details must be preserved in the freeze before those pseudo-current files are removed or repurposed.
+Detailed frozen 5.1 / inventory material:
+
+```text
+00_authoring/architecture_freezes/WORKFLOW5_STAGE5_5.1_ANALYSIS_PLANNING_ORCHESTRATION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md
+```
+
+Concrete analysis-capability Skills/Tools remain future implementation work after explicit approval.
 
 ## 8. Runtime and infrastructure
 
@@ -147,10 +199,10 @@ Historical design Markdown: `00_authoring/archive/`.
 ## 9. Current work status
 
 - Stage 1：1.1–1.4 已完成；1.5 正在独立窗口 authoring；1.6–1.9 已冻结、目录保留，但尚未获批生成 active Skills；
-- Stage 2：architecture freeze 已完成；正式 2.x Skill generation 尚未获批；
-- Stage 3：architecture freeze 已完成；正式 3.1–3.3 Skill generation 尚未获批；
+- Stage 2：2.1–2.6 环节与目录已确定；architecture freeze 已完成；2.5 详细方案也只属于 freeze；正式 Stage 2 Skill generation 尚未获批；
+- Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
-- Stage 5：architecture freeze 已完成；正式 5.1 / analysis capability Skill generation 尚未获批；
+- Stage 5：5.1 环节与目录已确定；architecture freeze 已完成；正式 5.1 / analysis capability Skill generation 尚未获批；
 - Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule

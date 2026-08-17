@@ -1,18 +1,22 @@
 # Stage 5 — Analysis architecture freeze
 
-Status: FROZEN — MAIN GUIDE IMPLEMENTED, TOOL-SPECIFIC DETAILS PENDING
+Status: **FROZEN — NO ACTIVE SKILL GENERATION APPROVED YET**
 
-本文件记录 Stage 5 — Analysis 的冻结架构。Stage 5 的具体分析方法、`trjconv` / `make_ndx` 等工具内部规则与各工具 validation 由相应 Skill/Tool 后续独立维护；本文件不提前固定这些方法细节。
+本文件记录 Stage 5 — Analysis 的冻结架构。Stage 5 的具体分析方法、`trjconv` / `make_ndx` 等工具内部规则与各工具 validation 由未来相应 Skill/Tool 独立维护；本文件不提前固定这些方法细节。
 
-当前 Stage 5 main Skill：
+当前没有 active Stage 5 `SKILL.md`。已确定的未来 Step package 路径为：
 
-`05_analysis/SKILL.md`
+`05_analysis/5.1_analysis_planning_and_orchestration/`
 
-当前能力清单：
+5.1 的 generation-ready 详细冻结材料：
 
-`05_analysis/references/analysis_tool_inventory.yaml`
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_5.1_ANALYSIS_PLANNING_ORCHESTRATION_FREEZE.md`
 
-Stage 5 不使用 `01_workflows/` / `02_operations/` / `02_validators/` 强制分类。这里采用一个 main Skill 覆盖 Stage 5/5.1 主线；只有未来出现复杂且边界清晰的分析能力时，再增加 supporting Skill。
+analysis capability inventory 的冻结设计：
+
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md`
+
+Stage 5 不使用 `01_workflows/` / `02_operations/` / `02_validators/` 强制分类。未来正式生成时，一个 main Skill 覆盖 Stage 5/5.1 主线；只有出现复杂且边界清晰的分析能力时，再增加 supporting Skill。
 
 ## 1. Stage 5 catalog
 
@@ -74,7 +78,7 @@ analysis Skill / Tool
 
 ## 3. Main-Skill guidance principle
 
-Stage 5 main Skill 是 Agent guide，不是 parser / dispatcher engine。
+未来 Stage 5 main Skill 是 Agent guide，不是 parser / dispatcher engine。
 
 规则：
 
@@ -170,9 +174,11 @@ index: 使用第 2 项生成的 ndx 文件
 
 ## 7. Analysis capability inventory
 
-5.1 使用：
+5.1 使用一个 Stage 5 analysis capability inventory 作为能力发现入口；正式文件仅在 Skill generation 获批后建立/启用。
 
-`05_analysis/references/analysis_tool_inventory.yaml`
+冻结设计见：
+
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md`
 
 Inventory 是能力发现入口，不是新的调度层。
 
@@ -249,7 +255,7 @@ different top
 
 默认不追加 atom count / atom ordering 的第二层核验。
 
-Stage 4 `run_unit.yaml` 因此记录每个 run unit 实际用于 `grompp` 的主 `.top` 完整路径。
+Stage 5 只消费 Stage 4 current run-unit topology lineage；Stage 4 如何维护该字段由 Stage 4 自己的 current Skill/freeze 拥有。
 
 ## 9. Validation ownership
 
@@ -316,3 +322,5 @@ path
 - 建立统一 Stage 5 Validator layer；
 - 为了旧目录分类把 Stage 5 拆到 `01_workflows/` 和 `02_operations/`；
 - 把 Agent 锁进无必要 parser / wrapper / dispatcher 链。
+
+Pre-authorization 5.1 main-guide material is preserved verbatim in `WORKFLOW5_STAGE5_5.1_ANALYSIS_PLANNING_ORCHESTRATION_FREEZE.md` (source blob `372699ea526813d97bda07e3826e5c7670dae4bc`).

@@ -4,9 +4,19 @@
 
 This file records the frozen architecture and current-version execution boundary for MD Workflow Stage 3 — System construction / solvation.
 
-It is a design/implementation handoff record. Current Step Skills may refine command construction, validation details, and templates without reopening the Stage 3 step architecture unless new scientific evidence requires an architecture change.
+It is a design/implementation handoff record. Future Step Skills may refine command construction, validation details, and templates without reopening the Stage 3 step architecture unless new scientific evidence requires an architecture change.
 
-Status: **FROZEN**
+Status: **FROZEN — NO ACTIVE SKILL GENERATION APPROVED YET**
+
+The reserved scientific package paths are:
+
+```text
+03_md_preparation/3.1_periodic_box_construction/
+03_md_preparation/3.2_solvent_addition/
+03_md_preparation/3.3_ion_addition/
+```
+
+Directory existence does not mean an active `SKILL.md` exists.
 
 ---
 
@@ -59,7 +69,7 @@ Topology-associated records should identify the actual `.top` and required `.itp
 
 `sys.top` is the preferred Stage 3 topology basename when naming is under workflow control. An existing validated topology with another basename is not renamed merely to satisfy this tendency.
 
-For GROMACS commands, each Step Skill should expose an **arg tendency** rather than a rigid command template. Priority is:
+For GROMACS commands, each future Step Skill should expose an **arg tendency** rather than a rigid command template. Priority is:
 
 ```text
 explicit user requirement
@@ -81,7 +91,7 @@ The 3.1 handoff also records the `.top` / `.itp` files associated with that `.gr
 
 ## 3.1.2 Current-version tool boundary
 
-Current implementation uses only:
+Current implementation design uses only:
 
 ```text
 gmx editconf
@@ -140,7 +150,7 @@ The topology files are referenced, not recopied merely for directory symmetry.
 
 ## 4.1 Current-version tool
 
-Current implementation uses:
+Current implementation design uses:
 
 ```text
 gmx solvate
@@ -214,7 +224,7 @@ Each repeated 3.3 instance reruns `grompp` against its own current `.gro` and to
 
 ## 5.2 MDP template requirement
 
-The 3.3 implementation must carry a dedicated minimal MDP template, conceptually:
+The future 3.3 implementation must carry a dedicated minimal MDP template, conceptually:
 
 ```text
 templates/genion.mdp
@@ -224,7 +234,7 @@ Its sole purpose is to let `gmx grompp` generate the `.tpr` required by `gmx gen
 
 It is not an EM, equilibration, or production-MD parameter set and carries no Stage 4 simulation semantics.
 
-The exact template contents remain implementation work until separately added and validated.
+The exact template contents remain implementation work until separately added and validated after Skill generation is approved.
 
 ## 5.3 `gmx grompp` arg tendency
 
@@ -315,17 +325,20 @@ Frozen architecture:
 - `sys.top` naming tendency;
 - 3.1 input may be any validated `.gro` with associated topology-file records.
 
-Current first-pass guides:
+Detailed generation-ready Step freezes preserved from pre-authorization material:
 
 ```text
-03_md_preparation/SKILL.md
-03_md_preparation/3.1_periodic_box_construction/SKILL.md
-03_md_preparation/3.2_solvent_addition/SKILL.md
-03_md_preparation/3.3_ion_addition/SKILL.md
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.1_PERIODIC_BOX_CONSTRUCTION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.2_SOLVENT_ADDITION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.3_ION_ADDITION_FREEZE.md
 ```
+
+These are authoring references only. There is no active Stage 3 `SKILL.md` until explicit generation approval.
 
 Remaining implementation/refinement work:
 
 - exact `genion.mdp` template contents and representative/deterministic execution validation;
 - more complex Agent/deterministic-tool box editing beyond `gmx editconf`;
 - implementation-level filenames/schemas only where they become genuinely useful.
+
+Pre-authorization Stage-main material was previously stored in blob `9e6a8fd5c566dfdcf70f7ffef6c44a85a55c93f6`; its substantive catalog/handoff content is represented by this Stage freeze and the three Step freezes above.

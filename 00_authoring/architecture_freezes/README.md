@@ -15,6 +15,8 @@ Status: CURRENT AUTHORING REFERENCE DIRECTORY
 - freeze 不是 archive；它属于 current authoring authority，用于架构追溯、边界确认和后续 Skill generation；
 - 被新的 freeze record 明确取代的旧 Markdown 移入 `00_authoring/archive/`，不继续留在 active path。
 
+部分 step-level freeze 文件是从此前未经授权物化的 guide 文本**原样迁入**。其中可能保留 YAML frontmatter、`Skill` 等历史措辞；这些内容因位于 `architecture_freezes/` 且不命名为 `SKILL.md`，只具有 authoring-reference 身份，不是 runtime Skill。
+
 当前冻结记录：
 
 ```text
@@ -22,10 +24,24 @@ WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
 WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
 WORKFLOW1_STAGE1_1.8_REORDER_MAPPING_FREEZE.md
 WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
+
 WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
+WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_FREEZE.md
+WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md
+WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
+
 WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
+WORKFLOW3_STAGE3_3.1_PERIODIC_BOX_CONSTRUCTION_FREEZE.md
+WORKFLOW3_STAGE3_3.2_SOLVENT_ADDITION_FREEZE.md
+WORKFLOW3_STAGE3_3.3_ION_ADDITION_FREEZE.md
+
 WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+
 WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+WORKFLOW5_STAGE5_5.1_ANALYSIS_PLANNING_ORCHESTRATION_FREEZE.md
+WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md
 ```
 
-Stage 1.6–1.9 当前仅以 freeze record 存在；这些文件是后续正式生成对应 Skill 的 authoring input，不是 runtime Skill entry。
+当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
+
+Stage 2 的 stage-level freeze 中仍可能保留早期 `02_operations/...` 路径文字；2.5 后续正式生成时，应以本目录中三个 `WORKFLOW2_STAGE2_2.5_*_FREEZE.md` 文件作为详细 2.5 generation input，不再追随旧 role-based 路径。
