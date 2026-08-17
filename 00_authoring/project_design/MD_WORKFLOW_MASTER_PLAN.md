@@ -61,7 +61,7 @@ Current substep Skills are colocated under `01_structure_preparation/1.x_*`.
 
 Manager planning catalog:
 
-`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+`00_manager/references/workflow_plan_index.yaml`
 
 ## 4. Stage 2 — Topology / parameterization
 
