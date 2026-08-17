@@ -1,5 +1,5 @@
-schema_version: 5
-status: current_stage5_frozen
+schema_version: 6
+status: current_stage5_integrated
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
@@ -9,178 +9,149 @@ runtime_architecture:
   planning_index: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
   legacy_runtime_status: frozen_not_default
 
-scientific_layout:
-  conventional:
-    workflow: 01_workflows
-    operation: 02_operations
-    validator: 02_validators
-  integrated_stage_directories:
-    md_simulation: 04_md_simulation
-  tools: 05_tools
-  rule: physical layout may differ when a stage-specific architecture freeze explicitly defines an integrated layout
+skill_layout_policy:
+  current_model: main_skill_plus_on_demand_support
+  forced_scientific_role_taxonomy: false
+  forced_directories: false
+  historical_existing_directories:
+    - 01_workflows
+    - 02_operations
+    - 02_validators
+  rule: existing historical paths remain discoverable during migration but are not templates for new Skill placement or splitting
+  current_integrated_stage_directories:
+    - 04_md_simulation
+    - 05_analysis
 
 skills:
   - name: md-workflow-skill-authoring
-    layer: authoring
     path: 00_authoring/md-workflow-skill-authoring
-    status: active_lightweight_authoring_guide
+    status: active_current_authoring_guide
     content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
 
   - name: md-workflow-tool-authoring
-    layer: authoring
     path: 00_authoring/md-workflow-tool-authoring
     status: active_tool_authoring_guide_alignment_review_pending
     content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml
 
   - name: md_workflow_manager
-    layer: manager
     path: 00_manager/md_workflow_manager
     status: active_lightweight_manager
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
 
   - name: structure_preparation_workflow
-    layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: guide_implemented_revalidation_pending
+    status: existing_historical_layout_guide_implemented_revalidation_pending
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
 
   - name: source_recognition
-    layer: operation
     path: 02_operations/source_recognition
-    status: guide_implemented_revalidation_pending
+    status: existing_historical_layout_guide_implemented_revalidation_pending
     content_map: 00_authoring/content_maps/source_recognition.yaml
 
   - name: component_and_residue_classification_validator
-    layer: validator
     path: 02_validators/component_and_residue_classification_validator
-    status: guide_implemented_revalidation_pending
+    status: existing_historical_layout_guide_implemented_revalidation_pending
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
 
   - name: chain_and_residue_selection
-    layer: operation
     path: 02_operations/chain_and_residue_selection
-    status: scientific_design_frozen_guide_implemented_validation_pending
+    status: existing_historical_layout_scientific_design_frozen_validation_pending
     content_map: 00_authoring/content_maps/chain_and_residue_selection.yaml
 
   - name: chain_and_residue_selection_validator
-    layer: validator
     path: 02_validators/chain_and_residue_selection_validator
-    status: validation_design_frozen_guide_implemented_validation_pending
+    status: existing_historical_layout_validation_design_frozen_validation_pending
     content_map: 00_authoring/content_maps/chain_and_residue_selection_validator.yaml
 
   - name: chain_and_component_selection
-    layer: operation
     path: 02_operations/chain_and_component_selection
     status: legacy_reference_only_superseded
     content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
 
   - name: chain_and_component_selection_validator
-    layer: validator
     path: 02_validators/chain_and_component_selection_validator
     status: legacy_reference_only_superseded
     content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
 
   - name: altloc_occupancy_resolution
-    layer: operation
     path: 02_operations/altloc_occupancy_resolution
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/altloc_occupancy_resolution.yaml
 
   - name: altloc_occupancy_validator
-    layer: validator
     path: 02_validators/altloc_occupancy_validator
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/altloc_occupancy_validator.yaml
 
   - name: structure_completeness_validator
-    layer: validator
     path: 02_validators/structure_completeness_validator
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_completeness_validator.yaml
 
   - name: missing_region_completion
-    layer: operation
     path: 02_operations/missing_region_completion
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/missing_region_completion.yaml
 
   - name: missing_region_completion_validator
-    layer: validator
     path: 02_validators/missing_region_completion_validator
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/missing_region_completion_validator.yaml
 
   - name: protein_protonation_assignment
-    layer: operation
     path: 02_operations/protein_protonation_assignment
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/protein_protonation_assignment.yaml
 
   - name: protein_protonation_validator
-    layer: validator
     path: 02_validators/protein_protonation_validator
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/protein_protonation_validator.yaml
 
   - name: structure_reorder_and_mapping
-    layer: operation
     path: 02_operations/structure_reorder_and_mapping
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_reorder_and_mapping.yaml
 
   - name: structure_mapping_validator
-    layer: validator
     path: 02_validators/structure_mapping_validator
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_mapping_validator.yaml
 
   - name: structure_preparation_validator
-    layer: validator
     path: 02_validators/structure_preparation_validator
-    status: guide_implemented_validation_pending
+    status: existing_historical_layout_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_preparation_validator.yaml
 
   - name: topology_integration_and_assembly
-    layer: operation
     path: 02_operations/topology_integration_and_assembly
-    status: stage2_step_2_5_guide_implemented_refinement_pending
+    status: existing_historical_layout_stage2_step_2_5_guide_implemented_refinement_pending
     content_map: null
 
   - name: md_simulation
-    layer: workflow
     path: 04_md_simulation
-    status: stage4_frozen_guide_implemented_validation_pending
+    status: stage4_integrated_frozen_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/md_simulation.yaml
 
   - name: energy_minimization
-    layer: operation
     path: 04_md_simulation/4.1_energy_minimization
-    status: guide_implemented_validation_pending
+    status: stage4_supporting_skill_validation_pending
     content_map: 00_authoring/content_maps/energy_minimization.yaml
 
   - name: equilibration
-    layer: operation
     path: 04_md_simulation/4.2_equilibration
-    status: guide_implemented_validation_pending
+    status: stage4_supporting_skill_validation_pending
     content_map: 00_authoring/content_maps/equilibration.yaml
 
   - name: production_simulation
-    layer: operation
     path: 04_md_simulation/4.3_production_simulation
-    status: guide_implemented_validation_pending
+    status: stage4_supporting_skill_validation_pending
     content_map: 00_authoring/content_maps/production_simulation.yaml
 
-  - name: analysis_workflow
-    layer: workflow
-    path: 01_workflows/analysis_workflow
-    status: stage5_frozen_guide_implemented_validation_pending
-    content_map: 00_authoring/content_maps/analysis_workflow.yaml
-
-  - name: analysis_planning_and_orchestration
-    layer: operation
-    path: 02_operations/analysis_planning_and_orchestration
-    status: stage5_frozen_guide_implemented_tool_inventory_population_pending
-    content_map: 00_authoring/content_maps/analysis_planning_and_orchestration.yaml
+  - name: analysis
+    path: 05_analysis
+    status: stage5_integrated_frozen_main_guide_implemented_tool_population_pending
+    content_map: 00_authoring/content_maps/analysis.yaml
 
 tools:
   registry: 05_tools/tool_registry.yaml
@@ -194,5 +165,6 @@ current_architecture_records:
 
 notes:
   - This inventory is discovery metadata, not an architecture authority.
-  - Historical or Legacy files do not become current merely because they remain in Git.
-  - Concrete Stage 5 analysis tools are added to analysis_tool_inventory.yaml only when their referenced guide exists.
+  - Do not infer scientific role from historical path names.
+  - New Skills use the main-Skill + on-demand supporting/reference model.
+  - Concrete Stage 5 analysis capabilities are added to 05_analysis/references/analysis_tool_inventory.yaml only when their referenced guide exists.
