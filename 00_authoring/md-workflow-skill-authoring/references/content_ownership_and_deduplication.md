@@ -1,146 +1,158 @@
 # 内容唯一归属与去重
 
-## 单一真值
+Status: CURRENT
 
-每个概念必须有一个且只有一个 owner。
+## 1. 单一真值
+
+每个当前规则必须有一个且只有一个 owner。
+
+当前 owner 类型按**具体内容职责**确定，不按 Workflow / Operation / Validator 分类确定。
+
+常见 authority：
 
 | 内容 | 权威位置 |
 |---|---|
 | Lightweight Runtime 总体架构 | `00_authoring/lightweight_runtime_v2_spec.md` |
-| 四层逻辑职责 | `references/layer_boundaries.md` |
+| Skill 组织与职责边界 | `references/skill_boundaries.md` |
 | Manager 任务管理与初始规划 | `00_manager/md_workflow_manager/SKILL.md` |
 | Manager 轻量 planning catalog | `00_manager/md_workflow_manager/references/workflow_plan_index.yaml` |
-| Workflow 阶段科学关系与 Step 映射 | 当前 Workflow `SKILL.md` |
-| 当前 Step 的执行规则 | 当前 Operation / Validator `SKILL.md` |
-| 当前 Step 的 reuse conditions | content map 指定的当前 Step owner |
-| 当前 Step 的 validation requirements | 当前 Validator 或明确 owner |
-| 当前 Step 的 official results | content map 指定的当前 Step owner |
+| 当前科研职责主线 | 当前 main `SKILL.md` |
+| 当前职责的长科学规则/registry | 当前 `references/` |
+| 当前职责独有且稳定的结构化约束 | 当前 `schemas/` |
+| Skill-local deterministic helper | 当前 `scripts/` |
+| 跨 Skill deterministic capability | `05_tools/` 对应 Tool |
 | 跨任务正式结果检索 | 项目 `project_result_index.md` |
 | 当前任务计划与恢复上下文 | 项目 `tasks/Txxxx.md` |
 | 网页端多窗口规则 | `references/multi_window_authoring_protocol.md` |
-| 确定性 Tool 通用边界 | `references/deterministic_tool_protocol.md` |
-| 当前 Tool 接口 | 当前 Tool `tool.yaml` |
-| 当前 Skill 独有领域数据 | 当前 `references/` |
-| 当前 Skill 独有输出结构 | 当前 `schemas/` |
-| 示例和测试数据 | `04_evals/<skill-name>/fixtures/` |
 
-Legacy `03_contracts/**`、runtime projection、subagent protocol、record commit protocol 只在 Legacy 维护时拥有其历史接口，不是 Lightweight 新 Skill 的共享运行时 owner。
+Legacy `03_contracts/**`、runtime projection、subagent protocol、route/event/transaction 文件只在明确 Legacy 维护时拥有其历史接口，不是新 Skill 的共享运行时 owner。
 
-## `SKILL.md`
+## 2. Main `SKILL.md`
 
-保留：
+主 Skill 保留：
 
-- 唯一工作；
-- 职责边界；
-- 当前 Skill 独有输入/对象要求；
-- 核心执行或判定步骤；
-- reuse conditions（如果本 Skill 是 owner）；
-- validation requirements（如果本 Skill 是 owner）；
-- official results（如果本 Skill 是 owner）；
+- 当前任务目标；
+- scope / responsibility boundary；
+- 当前输入/对象/证据要求；
+- reuse 判据；
+- 核心执行/判断主线；
+- validation；
+- 结果与 handoff；
 - 特有用户确认条件；
-- 特有 Preflight；
-- 对 reference/schema/Tool 的按需引用。
+- 对 reference / supporting Skill / Tool 的按需引用。
 
-不得重复：
+主 Skill 不应重复：
 
-- 整套 Lightweight Runtime 规则；
-- 其他 Step 的详细算法；
-- Task Sheet 通用字段定义；
-- project_result_index 通用格式；
-- 另一个 Skill 已拥有的 reuse / validation / official result 规则；
+- 整套 Runtime 架构；
+- 其他 Skill 的内部算法；
+- 其他 Skill 的默认参数、validation、official results；
+- Tool 已完整拥有的确定性接口实现；
 - Legacy route / Workstream / event / task-result contract。
 
-## Workflow `SKILL.md`
+## 3. Supporting Skill
 
-只保存阶段级内容：
+只有复杂且边界清晰时才拆 supporting Skill。
 
-- 阶段目标；
-- Step 顺序与映射；
-- conditional Step 列表；
-- 阶段内科学关系；
-- 阶段完成条件。
+Supporting Skill 必须拥有一项可独立描述的完整职责，不能只是：
 
-不得复制每个 Step 的：
+- 为了形成“Operation + Validator”配对；
+- 为了把主 Skill 的几条规则搬出去；
+- 为了匹配 `01_workflows/02_operations/02_validators` 目录；
+- 为了增加一个 dispatcher hop。
 
-- object requirements；
-- reuse conditions；
-- Preflight；
-- 命令；
-- schema 字段；
-- official result 细节。
+Main Skill 只引用 supporting Skill 的能力和 handoff，不复制其内部完整规则。
 
-## Operation + Validator 配套
+## 4. 外部 Skill 的接口级描述
 
-同一 Step 有 Operation 和专属 Validator 时，推荐唯一归属：
+当前 Skill 可以读取并理解其他 Skill，但只拥有与自身相关的**接口关系**。
+
+允许记录：
 
 ```text
-Operation
-→ purpose
-→ object requirements
-→ reuse conditions
-→ execution rules
-→ official results
-
-Validator
-→ validation requirements
-→ validation report / findings
+consume: 上游哪个正式结果
+require: 外部 Skill 的哪项已冻结能力
+handoff: 当前输出如何供下游使用
 ```
 
-如果实际职责不同，可以调整，但必须在 content map 明确唯一 owner。
+禁止在当前 Skill 中重新定义外部 Skill 的：
 
-不要在 Operation 和 Validator 两边分别完整写同一套 Step contract。
+```text
+内部步骤
+默认参数
+方法选择
+validation
+结果文件生命周期
+official results
+任务计划规则
+```
 
-## `references/`
+发现外部 Skill 缺失/冲突时，写 cross-skill finding / handoff 给其 owner，不在当前文件中建立第二份规则。
 
-只保存当前 Skill 独有且按需读取的：
+## 5. `references/`
 
-- 科学规则；
+适合保存当前 Skill 独有且按需读取的：
+
+- 长科学规则；
 - registry；
-- 长说明；
-- 专用数据表；
-- 方法细节。
+- 数据表；
+- 长方法说明；
+- 大枚举；
+- 只有特定条件才需要的细节。
 
-Reference 不重新描述 `SKILL.md` 的完整执行流程。
+Reference 不重新描述 `SKILL.md` 的完整主流程。
 
-## `schemas/`
+## 6. `schemas/`
 
-只在当前 Skill 产生独有结构化文件且字段约束确有价值时创建。
+只在确有稳定、可机器校验的结构化 handoff/文件约束时创建。
 
-Lightweight Runtime 不需要给 Task Sheet、route、subagent task/result 建立新的本地 schema 副本。
+不要把本可以由 Agent 直接理解的普通文本描述强制转换成 schema，只为了让流程看起来形式化。
 
-跨 Step 的 handoff 优先通过上游已经定义的 official result 文件完成。
+不要为 Task Sheet、route、subagent task/result 等重新建立 Legacy 式本地 schema 副本。
 
-## `scripts/`
+## 7. `scripts/` 与 Tool
 
-只保存当前 Skill 独有且不值得共享的确定性实现。
+Skill-local、不会跨 Skill 复用的小型确定性 helper 可以留在 `scripts/`。
 
-跨 Skill 可复用的稳定程序进入 `05_tools/`。
+跨 Skill 复用、需要独立测试与生命周期的确定性程序进入 `05_tools/`。
 
-不要为了旧 Runtime wrapper 保留新的多层 adapter；新 Lightweight Tool 应优先接受明确业务输入和输出路径。
+Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否强制调用由当前科学/技术要求决定。
 
-## 示例与评测
+## 8. Validation ownership
 
-示例统一进入 fixture / eval，不与 schema 并行维护第二套约束。
+默认：
 
-Lightweight Step 评测优先覆盖：
+```text
+结果 owner
+→ 同时拥有该结果的 validation requirement
+```
 
-- reuse；
-- task-scoped 目录；
-- official results；
-- 用户确认；
-- 跨对话恢复；
-- 不写 Legacy runtime records。
+只有 validation 本身复杂、可复用、边界清晰时才拆 supporting validation Skill。
 
-## 拆分警告
+Tool 对自己生成的确定性输出负责机械/格式有效性；main Skill 对这些输出是否满足当前科研目标负责。
 
-出现以下情况时必须重构：
+## 9. Content map
+
+Content map 只记录：
+
+- 当前 Skill 路径；
+- 当前 owned content；
+- supporting/reference ownership；
+- 外部只读 authority。
+
+新 content map 不要求 `skill_type: workflow|operation|validator`。
+
+Content map 不是任务运行时 dispatcher，也不应把其他 Skill 的内部内容复制进来。
+
+## 10. 拆分/重复警告
+
+出现以下情况时必须检查并重构：
 
 - 同一规则在两个文件完整出现；
-- Workflow 开始复制 Step 详细科学逻辑；
-- Operation 与 Validator 重复定义同一 validation/reuse 规则；
-- 主流程被字段表或大枚举淹没；
-- 修改一个定义需要同步多个位置；
-- reference 重新描述 `SKILL.md` 的完整流程；
-- schema 与示例各自定义不同约束；
+- 当前 Skill 开始替另一个 Skill 定义内部行为；
+- main Skill 与 supporting Skill 重复同一流程；
+- validation 为了分类被无必要单独拆出；
+- 主流程被 schema、字段表或 parser 中间层淹没；
+- reference 重新描述 `SKILL.md` 完整流程；
+- 修改一个定义必须同步多个 owner；
 - 新 Skill 为兼容 Legacy Runtime 又复制 route/task/result/event 接口；
-- 每个 Task 的固定输出仍写入共同 Step 基础目录而不是 `<task_id>/`。
+- 新 Skill 仅因为旧目录结构而被强行分类。
