@@ -11,6 +11,8 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 
 本步骤不负责缺失残基/缺失重原子补全、atom/residue naming 修正、质子化处理或几何优化。
 
+1.4 不设置内部 reuse 环节；进入本步骤后只处理当前 Task Sheet 指向的当前结构对象。
+
 # Object requirements
 
 当前对象是前序流程交给 1.4 的待处理结构。正常预期为 PDB，并以 PDB `altLoc` 作为主要 alternate-conformation 表示。
@@ -105,7 +107,7 @@ occupancy 是重要证据，但不是唯一自动判据。不得仅按“字母 
 5. 保留 surviving atoms 的原坐标；
 6. 保留 surviving atoms 的原相对顺序；
 7. 保留 retained atoms 原有 occupancy，不统一改写为 `1.00`；
-8. 按最终写入顺序重新连续编号 PDB atom serial。
+8. 按最终写入顺序重新连续编号 PDB `ATOM` / `HETATM` / `TER` serial。
 
 除上述构象处理所必需的修改外，不改变：
 
@@ -138,7 +140,7 @@ Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独
 
 - 删除未选构象 atoms；
 - 清除已解析的 altLoc；
-- atom serial 重编号。
+- `ATOM` / `HETATM` / `TER` serial 重编号。
 
 除这些允许变化外，检查 surviving structure 未发生非预期的 identity、coordinate 或 relative-order 变化，也没有误删 shared / unrelated atoms。
 
@@ -146,7 +148,7 @@ Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独
 
 确认：
 
-- atom serial 唯一且连续；
+- `ATOM` / `HETATM` / `TER` serial 唯一且连续；
 - 输出结构能够被可靠读取并继续作为结构对象使用；
 - 本次 altLoc 处理没有造成明显的重复 atom identity 或结构记录异常。
 
