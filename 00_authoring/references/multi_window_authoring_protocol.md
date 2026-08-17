@@ -35,18 +35,17 @@ AGENTS.md
 
 随后只按当前任务需要继续读取：
 
-- 目标 content map；
 - 对应 architecture freeze；
 - 直接相关的上下游/相邻 Skill；
 - 当前需要的 Tool guide / reference；
-- 涉及多窗口写入协调时再读取 `file_ownership.yaml`；
-- 涉及当前 inventory/status 时再读取 `skill_inventory.yaml` / `SYNC_STATUS.md`。
+- 涉及多窗口 writer 协调时再读取 `00_authoring/coordination/file_ownership.yaml` 或对应 window work order；
+- 涉及项目级阶段状态时再读取 `SYNC_STATUS.md` / `MD_WORKFLOW_MASTER_PLAN.md`。
 
 不要把整个 `00_authoring/` 作为每个新窗口的固定 preload。
 
 ## 3. Main authoring window
 
-主窗口负责共享 authoring / architecture / index 文件，包括：
+主窗口负责共享 authoring / architecture / coordination 文件，包括：
 
 - `AGENTS.md`；
 - `00_authoring/SKILL.md`；
@@ -55,10 +54,12 @@ AGENTS.md
 - `00_authoring/assets/`；
 - `00_authoring/scripts/`；
 - `00_authoring/architecture_freezes/`；
-- authoring inventory / content maps / file ownership；
+- `00_authoring/coordination/`；
 - Manager shared references；
 - Tool registry；
 - 跨 Skill 接口裁决与最终集成。
+
+不再通过每个 Skill 一份 content map 或一个全局 skill inventory 来授予/判断写入权。
 
 ## 4. Business Skill window
 
@@ -70,7 +71,7 @@ AGENTS.md
 
 一个文件同一时间只有一个 writer；一个 Skill 目录默认只有一个 writer window。
 
-如果用户明确要求当前窗口同时修改另一个 Skill，必须先把对应路径加入当前 write ownership，再实施修改。
+如果用户明确要求当前窗口同时修改另一个 Skill，必须先明确扩展当前 write ownership，再实施修改。
 
 ## 5. Read scope
 
@@ -116,17 +117,16 @@ AGENTS.md
 
 原则是：**当前 Skill 只定义自己如何做；对其他 Skill 只定义自己需要什么。** 已有 owner 的外部规则只引用，不复制、改写或总结成可独立执行的第二份规范。
 
-如果外部内容不完整或有冲突，窗口应返回：
+如果外部内容不完整或有冲突，窗口返回简短 finding 即可：
 
-```yaml
-cross_skill_finding:
-  owner_skill:
-  issue:
-  why_it_matters:
-  suggested_change:
+```text
+owner_skill:
+issue:
+why_it_matters:
+suggested_change:
 ```
 
-由 owner window / main window 决定是否修改。
+不要求先转换成固定 schema。由 owner window / main window 决定是否修改。
 
 ## 7. 不强制 Skill 分类
 
@@ -168,6 +168,12 @@ main Skill
 - 不通过“在自己 Skill 里复制一份外部规则”规避 ownership 冲突；
 - 不使用开发子 Agent 解决窗口冲突。
 
+需要显式登记 writer 时，才在：
+
+`00_authoring/coordination/file_ownership.yaml`
+
+增加 assignment。
+
 ## 10. 交付前去重检查
 
 交付前至少确认：
@@ -179,22 +185,16 @@ main Skill
 
 任一项不满足时，先处理 ownership / deduplication，再交付。
 
-## 11. 交付格式
+## 11. 交付
 
-```yaml
-window_id:
-task_id:
-skill_name:
-status: DRAFTED | BLOCKED | REVIEW_REQUIRED
-read_context: []
-owned_write_paths: []
-created_files: []
-modified_files: []
-validation_run: []
-cross_skill_findings: []
-tool_requests: []
-open_questions: []
-summary:
+交付只需要说明：
+
+```text
+当前窗口负责什么
+修改了哪些 owned paths
+做了什么 validation
+有哪些 cross-skill findings
+还有哪些未决问题
 ```
 
-交付摘要只说明当前窗口完成的职责和跨 Skill findings，不把其他 Skill 的内部设计重新复制一遍。
+不要求统一交付 YAML，也不要把其他 Skill 的内部设计重新复制一遍。
