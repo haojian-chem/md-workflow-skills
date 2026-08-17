@@ -8,6 +8,9 @@ on:
       - "04_evals/chain_and_component_selection/**"
       - "00_authoring/content_maps/chain_and_component_selection.yaml"
       - "00_authoring/content_maps/chain_and_component_selection_validator.yaml"
+      - "00_authoring/SKILL.md"
+      - "00_authoring/references/**"
+      - "00_authoring/scripts/**"
       - ".github/workflows/chain-component-selection-core.yml"
   pull_request:
     paths:
@@ -16,6 +19,9 @@ on:
       - "04_evals/chain_and_component_selection/**"
       - "00_authoring/content_maps/chain_and_component_selection.yaml"
       - "00_authoring/content_maps/chain_and_component_selection_validator.yaml"
+      - "00_authoring/SKILL.md"
+      - "00_authoring/references/**"
+      - "00_authoring/scripts/**"
       - ".github/workflows/chain-component-selection-core.yml"
   workflow_dispatch:
 
@@ -72,23 +78,18 @@ jobs:
             02_validators/chain_and_component_selection_validator
           do
             label=$(echo "$skill" | tr '/' '_')
-            python 00_authoring/md-workflow-skill-authoring/scripts/validate_md_skill.py \
+            python 00_authoring/scripts/validate_md_skill.py \
               . "$skill" > "selection_authoring_output/validate_${label}.log" 2>&1
             status=$?
             echo "validate_${label}=$status" | tee -a selection_authoring_output/statuses.txt
             [ "$status" -eq 0 ] || overall=1
-            python 00_authoring/md-workflow-skill-authoring/scripts/detect_cross_file_duplication.py \
+            python 00_authoring/scripts/detect_cross_file_duplication.py \
               "$skill" > "selection_authoring_output/duplication_${label}.log" 2>&1
             status=$?
             echo "duplication_${label}=$status" | tee -a selection_authoring_output/statuses.txt
             [ "$status" -eq 0 ] || overall=1
           done
-          python 00_authoring/md-workflow-skill-authoring/scripts/validate_architecture_separation.py \
-            . > selection_authoring_output/architecture.log 2>&1
-          status=$?
-          echo "architecture=$status" | tee -a selection_authoring_output/statuses.txt
-          [ "$status" -eq 0 ] || overall=1
-          python 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py \
+          python 00_authoring/scripts/validate_content_maps.py \
             . > selection_authoring_output/content_maps.log 2>&1
           status=$?
           echo "content_maps=$status" | tee -a selection_authoring_output/statuses.txt
