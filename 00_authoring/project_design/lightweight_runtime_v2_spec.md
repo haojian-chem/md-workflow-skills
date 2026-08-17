@@ -89,7 +89,7 @@ Manager 默认不：
 
 Manager 初始规划规则由：
 
-`00_manager/md_workflow_manager/SKILL.md`
+`00_manager/SKILL.md`
 
 及其 planning reference 拥有。
 
