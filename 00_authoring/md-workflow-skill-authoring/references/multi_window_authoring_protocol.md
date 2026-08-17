@@ -11,7 +11,7 @@ Status: CURRENT
 ```text
 读取范围可以宽
 写入所有权必须窄
-理解其他 Skill ≠ 获得修改权
+理解其他 Skill ≠ 获得修改权或定义权
 ```
 
 每个业务窗口应主动读取与当前职责直接相关的其他 Skill，尤其是上下游、相邻边界、输入来源和输出消费者。
@@ -108,6 +108,12 @@ Status: CURRENT
 - 文件保存/索引生命周期；
 - 任务计划维护规则。
 
+对任何准备加入当前 Skill 的规则，都必须应用 canonical ownership / deduplication gate：
+
+`content_ownership_and_deduplication.md`
+
+原则是：**当前 Skill 只定义自己如何做；对其他 Skill 只定义自己需要什么。** 已有 owner 的外部规则只引用，不复制、改写或总结成可独立执行的第二份规范。
+
 如果这些外部内容不完整或有冲突，窗口应返回：
 
 ```yaml
@@ -160,7 +166,18 @@ main Skill
 - 不通过“在自己 Skill 里复制一份外部规则”规避 ownership 冲突；
 - 不使用开发子 Agent 解决窗口冲突。
 
-## 10. 交付格式
+## 10. 交付前去重检查
+
+交付前至少确认：
+
+- 当前 Skill 没有写其他环节“应该怎么做”；
+- 没有复制或改写另一个 owner 的规则；
+- 没有形成以后需要多处同步修改的 shadow specification；
+- 外部内容已经尽量缩成 `consume / require / handoff`。
+
+任一项不满足时，先处理 ownership / deduplication，再交付。
+
+## 11. 交付格式
 
 ```yaml
 window_id:
