@@ -86,7 +86,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 ↓
 处理被本次改动取代的旧文件
 ↓
-按需要更新 Stage freeze / Master Plan / Sync Status / Tool registry 等真正有独立职责的共享入口
+按需要更新 Stage freeze / Master Plan / Tool registry / coordination record 等真正有独立职责的共享入口
 ```
 
 不得先批量生成一套目录、YAML metadata 或模板，再把实际职责硬塞进去。
@@ -105,13 +105,35 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 - freeze record 只保存阶段级已冻结架构、职责边界和明确拒绝项；
 - current Skill / reference 仍拥有具体执行规则，freeze record 不复制整套 Skill 内容；
 - 同一 Stage 有新的 freeze record 明确取代旧 freeze 时，先迁移 current 引用，再将被取代的旧 Markdown 移入 `00_authoring/archive/`；
-- Master Plan、Sync Status 只指向 current freeze 路径，不复制完整 freeze 内容。
+- `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 只记录 current freeze 入口和建设状态，不复制完整 freeze 内容。
 
 当前目录入口：
 
 `00_authoring/architecture_freezes/README.md`
 
-## 6. 过期文件归档
+## 6. Project-design 文档
+
+项目级设计资料统一位于：
+
+```text
+00_authoring/project_design/
+```
+
+当前职责分工：
+
+```text
+MD_WORKFLOW_MASTER_PLAN.md
+→ Stage numbering / catalog / 建设状态 / current entry
+
+lightweight_runtime_v2_spec.md
+→ 跨 Stage Lightweight Runtime 通用架构
+```
+
+不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design 文档；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
+
+不再单独维护 current `SYNC_STATUS.md`。如果某项内容只是“当前 Stage 建设到哪里”，归入 Master Plan；如果是具体规则，则归入真正的规则 owner。
+
+## 7. 过期文件归档
 
 当前 authoring/Skill 活跃路径中不应长期保留 `SUPERSEDED` / `LEGACY` / `HISTORY ONLY` 文件作为伪 current entry。
 
@@ -132,19 +154,19 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 Archive 文件不是 current authority，普通 Skill authoring、Task Execution Agent 和 Manager 均不得默认读取。
 
-## 7. 什么不应归档
+## 8. 什么不应归档
 
 不要因为“文件较旧”就归档仍然有效的：
 
 - current `SKILL.md`；
 - current references；
 - 仍然有效的 architecture-freeze record；
-- 当前确有独立用途的 template / coordination record / status file；
+- 当前确有独立用途的 template / coordination record / project-design document；
 - 真实科研项目的结果或运行记录。
 
 归档依据是**authority 已被明确取代**，不是文件日期。
 
-## 8. Metadata 最小化
+## 9. Metadata 最小化
 
 不要默认给每个 Skill 再创建一份平行 metadata 来描述它自己已经说明的内容。
 
@@ -167,7 +189,7 @@ Skill 当前是什么状态
 
 则优先删除这层 metadata，由实际 `SKILL.md`、目录结构以及真正独立的 Stage/Tool/coordination 记录承担各自职责。
 
-## 9. 替换检查
+## 10. 替换检查
 
 当新文件替换旧文件时，交付前确认：
 
@@ -177,9 +199,10 @@ Skill 当前是什么状态
 - [ ] 旧文件已归档或删除，而不是继续留在 active 搜索路径；
 - [ ] archive 没有被加入默认 startup/read list；
 - [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
+- [ ] project-level 状态只在 Master Plan 维护，不再另建 parallel sync/status 文件；
 - [ ] 没有为了 discoverability 又建立一份重复 Skill 内容的 YAML metadata。
 
-## 10. 原则摘要
+## 11. 原则摘要
 
 ```text
 一个职责 → 一个 main Skill
@@ -187,6 +210,7 @@ Skill 当前是什么状态
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
 Stage architecture freeze → 00_authoring/architecture_freezes/
+跨 Stage project design → 00_authoring/project_design/
 多窗口 writer assignment → 00_authoring/coordination/
 已被取代的 Markdown → archive
 无独立用途的旧 YAML/schema/index → 删除 active copy，Git history 保留
