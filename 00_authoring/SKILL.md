@@ -36,7 +36,8 @@ AGENTS.md
 - 对应 Stage 的 `architecture_freezes/` 记录；
 - 与当前输入、输出或科学边界直接相关的上下游/相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
-- 只有涉及项目级阶段状态或 runtime architecture 时，才读取 `MD_WORKFLOW_MASTER_PLAN.md`、`SYNC_STATUS.md`、`lightweight_runtime_v2_spec.md`；
+- 只有涉及项目级阶段目录/建设状态时，才读取 `project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 只有涉及跨 Stage runtime architecture 时，才读取 `project_design/lightweight_runtime_v2_spec.md`；
 - 只有涉及多窗口写入协调时，才读取 `coordination/file_ownership.yaml` 或对应 window work order。
 
 **不要在新窗口启动时预加载整个 `00_authoring/`。** 主 Skill 负责告诉 Agent 什么时候需要进一步读取什么。
@@ -227,12 +228,13 @@ Stage / Workflow 架构 freeze 统一放在：
 以下内容是按需辅助材料，**不是比本 `SKILL.md` 更高一级的 Skill authority**：
 
 ```text
-MD_WORKFLOW_MASTER_PLAN.md
-SYNC_STATUS.md
-lightweight_runtime_v2_spec.md
+project_design/MD_WORKFLOW_MASTER_PLAN.md
+project_design/lightweight_runtime_v2_spec.md
 architecture_freezes/
 coordination/
 ```
+
+不再维护独立 current `SYNC_STATUS.md`；阶段建设状态统一进入 Master Plan。
 
 不再为每个 Skill 维护一套平行的 content-map / skill-inventory 元数据。Skill 自身及其必要 references 就是职责定义来源。
 
