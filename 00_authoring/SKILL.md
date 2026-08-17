@@ -31,7 +31,7 @@ AGENTS.md
 
 之后只按任务需要读取：
 
-- 对应 Stage 的 `architecture_freezes/`；
+- 对应 Stage / Step 的 `architecture_freezes/`；
 - 与当前输入/输出/边界直接相关的相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
 - 项目级 Stage catalog/status 需要时读 `project_design/MD_WORKFLOW_MASTER_PLAN.md`；
@@ -50,7 +50,7 @@ AGENTS.md
 
 # Scientific Skill layout
 
-Current active scientific roots：
+Scientific roots 按 MD Workflow Stage 固定为：
 
 ```text
 01_structure_preparation/
@@ -60,7 +60,7 @@ Current active scientific roots：
 05_analysis/
 ```
 
-这些编号只对应 MD Workflow Stage 1–5。
+这些 Stage / Step 目录可以在正式 `SKILL.md` 生成前预先保留，用于稳定规划路径和后续 Skill package 落位；**目录存在不等于 Skill 已生成或已激活**。
 
 以下为 unnumbered repository infrastructure，不是 Scientific Skill root：
 
@@ -87,6 +87,58 @@ legacy/
 ```
 
 普通模板：`assets/skill.template.md`。
+
+**Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
+
+# Authoring status maintenance
+
+`project_design/MD_WORKFLOW_MASTER_PLAN.md` 是项目级 **Stage / Step 建设状态与 current entry 的唯一状态 owner**。既然维护这个状态文件，任何真正改变实现状态的 authoring 工作都必须同步它；不能把状态维护留给“以后某个窗口顺手更新”。
+
+以下变化都属于必须同步的状态变化：
+
+```text
+讨论/设计中
+→ architecture frozen
+
+architecture frozen
+→ Skill generation approved / in progress
+
+freeze-only
+→ active SKILL.md generated
+
+active Skill
+→ representative validation completed / implementation milestone changed
+
+current Skill / freeze
+→ superseded / retired / replaced
+```
+
+对于正式 Skill generation，交付顺序固定为：
+
+```text
+读取 current main + 对应 freeze + authoring rules
+↓
+生成 / 修改目标 Skill package
+↓
+完成本次要求的 validation / self-check
+↓
+更新直接拥有该入口的 Stage main Skill（如果它维护 current/freeze-only entry）
+↓
+同步 MD_WORKFLOW_MASTER_PLAN.md 中对应 Stage / Step 的状态与 current entry
+↓
+如新增/替换 freeze，再同步 architecture_freezes/README.md
+↓
+交付
+```
+
+因此：**目标 `SKILL.md` 写完但状态 owner 尚未同步，不算完整交付。**
+
+多窗口时采用窄范围状态同步：
+
+- authoring 窗口在写状态前必须重新读取 current `main` 和 `coordination/file_ownership.yaml`；
+- 若 `MD_WORKFLOW_MASTER_PLAN.md` 没有被其他窗口显式占用，完成 Skill 的窗口可以只修改与自己 Stage / Step 对应的状态/current-entry 行，不获得修改其他 Stage catalog/architecture 的权限；
+- 若该共享文件已有显式 writer，占用窗口不得并发写；必须把精确的状态变更交给当前 writer，并在交付中明确“状态同步待 owner 落地”，不能静默跳过；
+- 不为解决状态同步再建立 parallel `status.yaml`、skill inventory 或第二份 sync 文档。
 
 # Main Skill boundary
 
@@ -134,6 +186,8 @@ write ownership 必须窄
 
 可以并且应该读取直接相关的上下游/相邻 Skill 来理解接口，但未经重新分配不得修改它们，也不得在当前 Skill 中创建 shadow specification。
 
+状态同步是唯一的窄共享写例外，只允许修改当前 authoring 工作直接造成的对应状态/current-entry，不扩展科学内容 ownership。
+
 详细协议：`references/multi_window_authoring_protocol.md`。
 
 # References / supporting Skills
@@ -171,7 +225,7 @@ Validation 默认跟随结果 owner；只有复杂且边界清晰时才拆 suppo
 
 # Architecture freezes and archive
 
-Stage / Workflow architecture freeze：`architecture_freezes/`。
+Stage / Workflow / pre-Skill Step architecture freeze：`architecture_freezes/`。
 
 历史 authoring/design Markdown：`archive/`。
 
@@ -187,6 +241,9 @@ Legacy executable/runtime material：`../legacy/`。
 - [ ] 未建立不必要 parser/wrapper/dispatcher；
 - [ ] 未重新定义其他 owner 的内部规则；
 - [ ] current scientific root 与 Stage 编号一致；
+- [ ] 预留 Step 目录没有被误写成“Skill 已生成”；
 - [ ] evals/tools/legacy 未被误当成 Stage Skill；
 - [ ] reuse、validation、results/handoff 足以支持跨对话继续；
+- [ ] 若本次改变了 freeze / Skill / validation 建设状态，`MD_WORKFLOW_MASTER_PLAN.md` 已同步，或存在明确且未完成的 writer handoff；
+- [ ] 若 Stage main Skill 维护 current/freeze-only entry，其入口状态已同步；
 - [ ] 未重新引入 Legacy Workstream/route/event/transaction runtime。
