@@ -28,6 +28,29 @@ current Skill / Tool guide
 
 **文件存在不等于当前有效。** archive、Legacy 和 Git history 只用于历史追溯，不得用于重建当前接口。
 
+## Root layout
+
+`00_authoring/` 根目录只保留少量 current authoring 入口文件；阶段冻结记录和过期历史材料分别集中到专用目录：
+
+```text
+00_authoring/
+├── README.md
+├── AUTHORING_RULES.md
+├── MD_WORKFLOW_MASTER_PLAN.md
+├── SYNC_STATUS.md
+├── lightweight_runtime_v2_spec.md
+├── skill_inventory.yaml
+├── file_ownership.yaml
+├── architecture_freezes/
+├── archive/
+├── content_maps/
+├── md-workflow-skill-authoring/
+├── md-workflow-tool-authoring/
+└── window_work_orders/
+```
+
+不要把新的 Stage freeze、临时 redesign、validation report 或 superseded Markdown 再散放回 `00_authoring/` 根目录。
+
 ## Current Skill model
 
 新科研 Skill 默认采用：
@@ -97,6 +120,23 @@ write ownership must be narrow
 
 发现跨 Skill 问题时提交 finding / handoff 给对应 owner 或 main window。
 
+## Architecture freeze records
+
+当前 Stage architecture-freeze 统一放在：
+
+`00_authoring/architecture_freezes/`
+
+当前记录：
+
+```text
+architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
+architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
+architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+```
+
+以后新增 Stage freeze 也进入该目录，不再直接放到 `00_authoring/` 根目录。
+
 ## Markdown archive
 
 过期 Markdown 的 current 归档目录：
@@ -116,25 +156,17 @@ Archive 边界见：
 
 `00_authoring/archive/README.md`
 
-## Current stage freeze records
-
-```text
-WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
-WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
-WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
-WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
-```
-
 ## Authoring support
 
+- `architecture_freezes/`：各 Stage 当前 architecture-freeze 集中目录；
+- `archive/`：非 current 的历史 authoring Markdown；
 - `md-workflow-skill-authoring/`：Skill 编写指导；
 - `md-workflow-tool-authoring/`：Tool 生命周期指导；
 - `content_maps/`：内容唯一归属；
 - `content_map.schema.yaml`：content map 结构；
 - `skill_inventory.yaml`：Skill discovery/status metadata；
 - `file_ownership.yaml`：多窗口写入所有权；
-- `SYNC_STATUS.md`：当前同步状态；
-- `archive/`：非 current 的历史 authoring Markdown。
+- `SYNC_STATUS.md`：当前同步状态。
 
 当前普通科研 Skill 模板：
 
