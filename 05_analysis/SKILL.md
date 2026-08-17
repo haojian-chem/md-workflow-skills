@@ -19,7 +19,7 @@ Stage 5 只包含一个 Task Sheet sub-stage：
 
 详细冻结架构：
 
-`00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
 
 ## Responsibility boundary
 
