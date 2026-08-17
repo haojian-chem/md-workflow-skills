@@ -1,26 +1,22 @@
 ---
 name: md_workflow_manager
-description: 轻量管理真实 MD 项目的任务定位、任务创建、初始规划和项目级任务整理；通过 task index 与 task sheet 向独立的 Task Execution Agent 对话交接，不执行具体科研子环节。
+description: Lightweight Runtime v2 的项目管理入口。负责任务定位、任务创建、初始规划、显式重新规划和项目级任务整理；通过 Task Sheet 向独立的 Task Execution Agent 对话交接，不执行具体科研子环节。
 ---
 
-# 目标
+# Purpose
 
-Manager 是 Lightweight Runtime v2 的项目管理入口。
-
-它只负责：
+Manager 只负责：
 
 - 定位已有任务；
 - 创建新任务；
-- 为新任务生成初始子环节计划；
-- 用户明确要求时重新规划或整理任务；
-- 维护任务索引中的项目级任务信息；
-- 将任务通过任务单交接给独立的 Task Execution Agent 对话。
+- 生成初始 Task Sheet 计划；
+- 用户明确要求时重新规划；
+- 项目级任务导航/整理；
+- 维护 `task_index.md` 中的任务级信息。
 
-Manager 不负责普通子环节执行、复用判定、Operation/Validator 调度闭环或逐步运行时状态维护。
+Manager 不负责普通科研 Step 的执行、reuse、validation、Operation/Validator 调度闭环或逐步 runtime state。
 
-# 默认记录体系
-
-真实项目默认只使用：
+## Current runtime records
 
 ```text
 <project_root>/00_project_records/
@@ -28,46 +24,38 @@ Manager 不负责普通子环节执行、复用判定、Operation/Validator 调�
 ├── project_result_index.md
 └── tasks/
     ├── T001.md
-    ├── T002.md
     └── ...
 ```
 
-其中：
+- `task_index.md`：任务导航；
+- `tasks/Txxxx.md`：计划、进度和最小恢复上下文；
+- `project_result_index.md`：正式结果检索入口，不保存当前任务状态。
 
-- `task_index.md`：只用于任务导航；
-- `tasks/Txxxx.md`：任务计划、进度和最小恢复上下文；
-- `project_result_index.md`：按子环节登记正式结果的位置，不保存当前任务或当前环节状态。
+Workstream、route、event、runtime task/result、transaction 等 Legacy records 不是默认依赖。
 
-Legacy Runtime 的 project state、Workstream、route、event、runtime task/result 等记录不是默认依赖。
+## Minimal reads
 
-# 最小启动
+正常 Manager 启动：
 
-进入真实 MD 项目时，先确认 Skill root 与 MD project root 不混淆。
-
-正常 Manager 启动只读取：
-
-1. `<project_root>/00_project_records/task_index.md`；
-2. 确定目标任务后，对应的 `<project_root>/00_project_records/tasks/Txxxx.md`。
+1. 读取 `<project_root>/00_project_records/task_index.md`；
+2. 确定目标任务后读取对应 `tasks/Txxxx.md`。
 
 只有创建新任务或用户明确要求重新规划时，才读取：
 
 `references/workflow_plan_index.yaml`
 
-默认不得为了“了解项目状态”而读取：
+默认不读取：
 
 - `project_result_index.md`；
-- 其他无关任务单；
-- 具体 Step / Operation / Validator Skill；
+- 其他无关 Task Sheets；
+- 具体 Workflow/Operation/Validator Skills；
 - 整个项目目录；
-- `runtime/**`；
-- Legacy project state / route / event / Workstream records；
-- 完整历史日志。
+- Legacy runtime/state/route/event records；
+- `references/stage_registry.yaml`、`route_planning_protocol.md`、`manager_runtime_source.yaml` 等已标记 Legacy 的历史文件。
 
-额外读取必须由当前管理动作的明确需求触发。
+## Project initialization
 
-# Lightweight 项目初始化
-
-新的 Lightweight Runtime 项目初始化时，Manager 只建立稳定的项目骨架，不建立任何任务专属执行目录。
+新 Lightweight 项目只建立稳定项目骨架和已定义的 Stage/Step base directories，不建立 task-specific 科研目录。
 
 记录目录：
 
@@ -78,13 +66,13 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 └── tasks/
 ```
 
-对于 planning index 已定义的 Workflow / Step，可以同时建立稳定的阶段目录和子环节基础目录，例如：
+例如 Stage 1 已定义基础目录：
 
 ```text
 01_structure_preparation/
 ├── 01_source_recognition/
 ├── 02_component_and_residue_classification/
-├── 03_chain_and_component_selection/
+├── 03_chain_and_residue_selection/
 ├── 04_altloc_occupancy_resolution/
 ├── 05_completeness_check/
 ├── 06_missing_region_completion/
@@ -93,9 +81,9 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 └── 09_validation/
 ```
 
-初始化到这一层即停止。
+初始化到 base-directory 层即停止。
 
-不得在初始化或新建任务时创建：
+不得提前创建：
 
 ```text
 <base_work_directory>/T001/
@@ -103,26 +91,22 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 ...
 ```
 
-`Txxxx/` 任务专属执行目录由 Task Execution Agent 在真正需要执行该子环节时创建。
+Task Execution Agent 真正进入某 Step 后先按当前 Skill 做 reuse 检查；只有需要本地执行时才创建当前 task-specific directory。
 
-如果该子环节通过已有结果复用直接闭合，则无需为了目录整齐而创建空的本任务 `Txxxx/` 目录。
+Stage 4 / Stage 5 的 project-level directories/indexes 按对应 Stage Skill/freeze 文件建立和维护，不由 Manager 发明额外 runtime state。
 
-不得同时初始化 Legacy Runtime 的 `00_project_state/`、Workstream、route、event、runtime task/result 等对象。
-
-如果已有项目只有 Legacy Runtime 记录，不要默认全量扫描或一比一转换；仅在需要继续旧项目时按当前目标恢复必要信息。
-
-# 任务定位
+## Task location
 
 优先级：
 
-1. 用户明确指定任务 ID；
-2. 用户明确指定可唯一匹配的任务名称；
-3. 当前对话已经明确绑定的任务；
-4. 仍无法唯一确定时，向用户确认。
+1. 用户明确指定 Task ID；
+2. 用户给出可唯一匹配的任务名称；
+3. 当前 Manager 对话已经明确绑定任务；
+4. 仍无法唯一确定时向用户确认。
 
-不得为了猜测“继续哪个任务”而遍历所有任务单。
+不得为了猜测任务而遍历所有 Task Sheets。
 
-任务级状态只有：
+任务级状态：
 
 ```text
 未完成
@@ -130,61 +114,105 @@ Legacy Runtime 的 project state、Workstream、route、event、runtime task/res
 已终止
 ```
 
-`task_index.md` 不记录当前子环节、当前对象、阻塞原因或运行日志。
+## New-task boundary
 
-# 新建任务规则
+检查、解释、排错、重新查看已有结果、继续已有 Step、在已有任务内重做某个 Step 默认不创建新任务。
 
-默认优先把用户的操作放回已有任务。
-
-以下行为本身不创建新任务：
-
-- 检查；
-- 解释；
-- 排错；
-- 重新查看已有结果；
-- 继续已有子环节；
-- 在已有任务内重做某个子环节。
-
-只有以下情况创建新任务：
+只有：
 
 - 用户提出新的独立工作目标；
-- 用户显式要求另建任务。
+- 用户明确要求另建任务；
 
-新任务 ID 使用当前项目中下一个可用的 `TNNN`。
+才创建新 Task Sheet。
 
-创建任务时：
+新 Task ID 使用当前项目下一个可用 `TNNN`。
 
-1. 在 `task_index.md` 登记任务；
+创建时：
+
+1. 在 `task_index.md` 登记；
 2. 创建 `tasks/Txxxx.md`；
-3. 根据用户目标与 `workflow_plan_index.yaml` 写入初始子环节计划；
-4. 只在任务单中记录每个子环节未来使用的任务专属工作目录路径，不创建这些 `Txxxx/` 目录。
+3. 根据用户范围和 `workflow_plan_index.yaml` 写入初始计划；
+4. 普通 Step 只记录未来 task-specific 工作目录路径，不创建目录。
 
-# 初始规划
+## Initial planning
 
-Manager 的规划结果直接写入任务单的 `计划与进度`，不创建独立 route object。
+Manager 规划只回答：
 
-规划只回答：
+> 为覆盖用户当前提出的工作范围，初始 Task Sheet 需要列出哪些已定义 Step 或已冻结的 stage-specific plan structure？
 
-> 为覆盖用户当前提出的工作范围，初始任务单应列出哪些已定义子环节？
+Manager：
 
-规划时：
+- 使用 planning index 的顺序、名称、基础目录和明确的 planning mode；
+- 不读取全部 Skills；
+- 不提前查 `project_result_index.md`；
+- 不做科学 applicability/reuse 判断；
+- 不根据体系特征提前删减普通 Step；
+- 对未定义 catalog 的 Workflow 不编造内部步骤。
 
-- 使用 `workflow_plan_index.yaml` 中已经定义的子环节顺序、名称和基础工作目录；
-- 根据用户明确提出的任务范围选择需要覆盖的 Workflow / Step 区间；
-- 每个子环节的任务专属工作目录按 `<base_work_directory>/<task_id>/` 记录；
-- Manager 只记录该路径，不创建该目录；
-- 不读取全部 Workflow / Step Skill；
-- 不提前查询 `project_result_index.md`；
-- 不提前执行科学检查；
-- 不判断某个已列出的 Step 对当前体系是否实际适用；
-- 不根据体系特征提前删减可能不需要的 Step；
-- 对规划索引尚未定义内部步骤的 Workflow，不得编造步骤。
+Task Sheet 是可动态维护的计划，不是科学适用性判决。
 
-初始 Task Sheet 是一个计划草案，不是科学适用性判决。进入执行后，Task Execution Agent 根据前序正式结果、当前 Step Skill 和用户明确要求直接增删、重排或替换尚未执行的后续 Step。
+### Ordinary Stage planning
 
-任务单不单独维护 `起点`、`终点`、`输入` 或 `route`。当前任务计划范围完全由 `计划与进度` 中实际列出的子环节定义。
+Stages 1–3 和 Stage 5 使用普通 sub-stage Task Sheet planning。
 
-# Task Sheet 格式
+普通 Step 示例：
+
+```markdown
+### 1.3 Chain and residue selection
+
+状态：待执行
+
+对象：
+待前序环节确定
+
+工作目录：
+`<project_root>/01_structure_preparation/03_chain_and_residue_selection/T001/`
+```
+
+普通 sub-stage 状态：
+
+```text
+待执行
+未完成
+已完成
+```
+
+### Stage 4 planning exception
+
+Stage 4 不把任务单写成固定 `4.1 → 4.2 → 4.3`。
+
+Manager 根据用户明确模拟需求在 Task Sheet 中建立 Stage 4 **planned run route**，记录计划中的 EM/NVT/NPT/MD segments 和关键要求，但不提前分配 formal `em.N / nvt.N / npt.N / md.N` IDs。
+
+Formal run-unit identity、reuse/continuation/new-unit 判断由 Stage 4 Execution Agent 按：
+
+`04_md_simulation/SKILL.md`
+
+在每个 planned entry 真正开始时处理。
+
+### Stage 5 planning
+
+如果用户任务范围包含 Analysis，Manager 只建立：
+
+```text
+5.1 Analysis planning and orchestration
+```
+
+并记录用户明确提出的：
+
+- 分析目标；
+- 分析对象；
+- 约束；
+- 用户明确指定的 RMSD/RDF 等方法（如有）。
+
+Manager 不自行把“稳定性分析”等目标展开成 RMSD/RMSF/PCA 组合，不查询 Stage 5 reuse，也不规划 `trjconv` / `make_ndx` 细节。
+
+具体 Stage 5 plan 由：
+
+`02_operations/analysis_planning_and_orchestration/SKILL.md`
+
+在执行期展开。
+
+## Task Sheet minimum format
 
 新任务单至少包含：
 
@@ -195,104 +223,75 @@ Manager 的规划结果直接写入任务单的 `计划与进度`，不创建独
 
 ## 任务目标
 
-<用户希望完成的工作>
+<用户工作目标>
 
 ## 计划与进度
 
-### 1.x <子环节名称>
-
-状态：待执行
-
-对象：
-<当前已知对象；若需由前序结果确定，则写“待前序环节确定”>
-
-工作目录：
-`<project_root>/<base_work_directory>/T001/`
+### <Step or stage-specific plan section>
+...
 ```
 
-这里的工作目录是当前任务为该子环节预留的执行位置。Manager 写入路径，但不负责创建目录。
+普通未来 Step 对象尚未形成时，不猜测具体文件路径。
 
-子环节状态只有：
+Manager 不单独维护：
 
 ```text
-待执行
-未完成
-已完成
+start step
+end step
+route object
+current node
+current stage field
 ```
 
-未来子环节的对象尚未形成时，不得猜测具体文件路径。
+任务范围由 Task Sheet 实际计划内容定义。
 
-# 与 Task Execution Agent 的交接
+## Handoff to Task Execution Agent
 
-Manager 与 Task Execution Agent 视为不同对话。
-
-默认交互模型是一次性交接：
+默认一次性交接：
 
 ```text
 Manager
-→ 定位 / 创建任务
-→ 初始规划
-→ 写入 Txxxx.md
-→ Task Execution Agent 连续推进任务
+→ locate/create task
+→ initial planning
+→ write Txxxx.md
+→ Task Execution Agent continuously executes and maintains the task
 ```
 
-Manager 不在每个子环节完成后重新接管，不作为普通运行时调度器。
+Task Execution Agent 可以：
 
-Task Execution Agent 可以在任务内部：
+- 连续执行多个 Step；
+- 更新 Task Sheet；
+- 根据科学结果调整尚未完成的未来计划；
+- 用户明确改变范围时直接修改计划；
+- 执行需要时创建当前 task-specific directory；
+- 复用时不创建无用空目录；
+- 任务完成或用户明确终止时同步更新 `task_index.md`。
 
-- 连续执行多个子环节；
-- 更新任务单；
-- 根据已有科学结果增删或调整后续子环节；
-- 用户在执行对话中明确改变任务范围时，直接修改任务计划；
-- 真正需要执行某子环节时创建该环节的 `<base_work_directory>/<task_id>/`；
-- 如果复用已有正式结果则不创建无用的本任务子目录；
-- 任务完成或用户明确终止时，同步更新 `task_index.md`。
+普通 Step 之间不回 Manager 调度。
 
-因此，Manager 不垄断任务单后续修改权，也不承担任务专属科研目录的创建职责。
+## Explicit replanning
 
-# 重新规划与项目级管理
+用户明确要求重新规划时，Manager 可以读取 current Task Sheet + `workflow_plan_index.yaml`，整理尚未完成的计划。
 
-以下场景可重新使用 Manager：
+已经实际执行并形成有意义历史的内容不得为了整洁而静默删除。
 
-- 用户明确要求重新规划已有任务；
-- 用户希望创建另一项任务；
-- 用户需要在多个任务之间进行项目级整理、定位或选择；
-- 用户主动回到 Manager 对话处理项目管理问题。
+Stage-specific plan structures遵守对应 Stage freeze：例如 Stage 5 已编号 plan items 原则上通过 `已终止` 保留，不重编号。
 
-重新规划时直接修改任务单中尚未完成的计划，不建立 route revision 对象。
+## Safety
 
-已经实际执行并形成有意义历史的子环节，不应仅为了整理计划而删除。
-
-# Legacy Runtime
-
-以下机制在 Lightweight Runtime v2 中视为 Legacy / frozen，不作为普通 Manager 依赖：
-
-- `project_state`；
-- `workstream_state`；
-- route / route revision；
-- runtime task/result；
-- project event；
-- artifact state machine；
-- runtime projection orchestration；
-- task closure transaction。
-
-旧文件和工具可以暂时保留，但 Manager 不为兼容它们创建新的双写层。
-
-# 安全边界
-
-- 不修改 `01_sources/` 中的来源文件；
-- 未经用户授权，不删除、覆盖或批量移动已有科研文件；
-- 破坏性或不可逆的项目级操作必须向用户确认；
+- 不修改 `01_sources/` 原始来源文件；
+- 未经用户授权，不删除、覆盖或批量移动科研文件；
+- 不以“全面了解”为理由扫描无关文件；
 - 不自动通过单位计费的期刊数据库下载文献；
-- Manager 不以“全面了解”为理由扫描无关文件。
+- 破坏性/不可逆项目级操作必须取得用户确认。
 
-# Manager 输出
+## Manager output
 
-创建或重新规划任务后，向用户简要展示：
+创建或重新规划后，向用户简要说明：
 
-- 任务 ID 与名称；
-- 当前任务状态；
-- 已写入任务单的预计子环节序列；
-- 任务单路径。
+- Task ID / name；
+- task status；
+- 已写入的初始/修订计划；
+- Task Sheet path。
 
-不展示 Legacy route、transaction、event 或内部 orchestration 信息。
+不展示 Legacy route、Workstream、transaction、event 或内部 orchestration state。
