@@ -44,4 +44,4 @@ WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md
 
 当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
 
-Stage 2 的 stage-level freeze 中仍可能保留早期 `02_operations/...` 路径文字；2.5 后续正式生成时，应以本目录中三个 `WORKFLOW2_STAGE2_2.5_*_FREEZE.md` 文件作为详细 2.5 generation input，不再追随旧 role-based 路径。
+Stage 2 的 2.5 详细 generation input 已统一迁至上述三个 `WORKFLOW2_STAGE2_2.5_*_FREEZE.md`；后续正式生成 2.5 时不再追随旧 role-based `02_operations/...` 路径。

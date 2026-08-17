@@ -9,7 +9,18 @@
 - `2.1–2.6` 的步骤结构、主要职责、核心输入输出关系和关键边界：**冻结**；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
 - 核酸/DNA/RNA 的 2.3 截断细节：**尚未专项冻结**；
-- 最终文件 basename / schema / 目录名：**仍可在实现层细化**。
+- 最终文件 basename / schema / 目录名：**仍可在实现层细化**；
+- **Stage 2 尚未获批生成 active Skill；当前 2.1–2.6 scientific directories 只是 reserved package paths。**
+
+2.5 更详细、可直接用于后续 Skill generation 的冻结材料位于：
+
+```text
+WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_FREEZE.md
+WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md
+WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
+```
+
+这些文件保存此前未经授权物化的 2.5 guide/reference 细节，但它们仍是 architecture-freeze authoring input，不是 runtime Skill。
 
 ---
 
@@ -367,10 +378,10 @@ Workflow 1 只提供 heavy-atom identity/order 骨架。
 
 每个 final moleculetype 的 final `.itp` 是第 6 步 topology integration 的直接输出。
 
-当前冻结规则详见：
+详细冻结规则见：
 
 ```text
-02_operations/topology_integration_and_assembly/references/topology_integration_rules.md
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md
 ```
 
 包括：
@@ -403,10 +414,10 @@ Workflow 1 只提供 heavy-atom identity/order 骨架。
 
 `same identity + same definition` 去重；`same identity + different definition` 为 blocking conflict，不静默覆盖。
 
-详细规则见：
+详细冻结规则见：
 
 ```text
-02_operations/topology_integration_and_assembly/references/parameter_definition_deduplication.md
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
 ```
 
 ## 8.8 2.5 official results
@@ -468,7 +479,7 @@ topology_integration_report.yaml
 
 - 核酸/DNA/RNA 的 2.3 截断/capping 规则；
 - 文件 basename、schema、deterministic tool implementation；
-- validator 的具体测试 fixture 与实现细节；
+- validator/testing fixture 与实现细节；
 - 新科学证据明确要求的局部规则修订。
 
-Stage 2 从此视为 **architecture frozen**。后续工作进入正式 Workflow/Operation/Validator/Tool 落地与验证，不再默认重新讨论 2.1–2.6 架构。
+Stage 2 从此视为 **architecture frozen**。后续只有在用户明确批准对应 Skill/Tool generation 后，才把这些 freeze 转写为 active implementation；不因 freeze 足够详细而自动生成 runtime Skill。
