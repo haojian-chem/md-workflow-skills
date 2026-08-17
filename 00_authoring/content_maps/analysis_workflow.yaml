@@ -1,0 +1,39 @@
+schema_version: 4
+skill_name: analysis_workflow
+skill_type: workflow
+skill_path: 01_workflows/analysis_workflow
+architecture: lightweight_runtime_v2
+status: stage5_architecture_frozen_guide_implemented_validation_pending
+
+owned_content:
+  stage5_goal_and_single_substage_catalog:
+    owner: 01_workflows/analysis_workflow/SKILL.md
+  manager_to_5_1_handoff_boundary:
+    owner: 01_workflows/analysis_workflow/SKILL.md
+  stage5_plan_item_model:
+    owner: 01_workflows/analysis_workflow/SKILL.md
+  prepared_input_index_locations_and_ownership:
+    owner: 01_workflows/analysis_workflow/SKILL.md
+  stage5_project_result_registration_boundary:
+    owner: 01_workflows/analysis_workflow/SKILL.md
+  stage5_completion_condition:
+    owner: 01_workflows/analysis_workflow/SKILL.md
+
+external_references:
+  - purpose: stage5_architecture_freeze
+    owner: 00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+    access: reference_only
+  - purpose: manager_planning_catalog
+    owner: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
+    access: reference_only
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: reference_only
+
+child_skills:
+  - 02_operations/analysis_planning_and_orchestration/SKILL.md
+
+notes:
+  - Stage 5 uses one ordinary Task Sheet sub-stage, 5.1 Analysis planning and orchestration.
+  - Concrete analysis methods and prepared-input producers are plan items selected by 5.1, not additional 5.x sub-stages.
+  - Tool/analysis-specific validation belongs to the corresponding Tool/Skill, not to a Stage 5 Validator layer.
