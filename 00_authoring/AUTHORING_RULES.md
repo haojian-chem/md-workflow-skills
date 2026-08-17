@@ -8,7 +8,7 @@ Status: CURRENT
 
 `00_authoring/lightweight_runtime_v2_spec.md`
 
-## 1. Authority and version resolution
+## 1. Current authority
 
 Authoring 开始时按需读取：
 
@@ -29,7 +29,7 @@ AGENTS.md
 
 ```text
 current Skill / Tool guide
-> matching WORKFLOW*_ARCHITECTURE_FREEZE*.md
+> matching architecture-freeze record
 > MD_WORKFLOW_MASTER_PLAN.md / SYNC_STATUS.md
 > explicitly SUPERSEDED / LEGACY / historical files
 ```
@@ -46,7 +46,137 @@ current Skill / Tool guide
 
 没有新证据改变前提时，不重复已经失败或明确否定的方案。
 
-## 2. Default runtime model
+## 2. Core design principle: Skill guides the Agent
+
+新的科研 Skill 首先是**指导 Agent 如何处理任务的科研/执行指南**，不是把 Agent 锁进一个固定 parser、固定程序链或人为工作流引擎。
+
+Skill 应明确：
+
+- 当前任务要达到什么科学/技术目标；
+- 需要理解哪些输入和证据；
+- 哪些判断必须做、哪些边界不能越过；
+- 哪些步骤存在真正的科学先后关系；
+- 可使用哪些 Tool / software / supporting Skill；
+- 如何判断结果有效；
+- 哪些信息需要记录和交接。
+
+Skill **不应仅为了形式化**而要求：
+
+- 先经过某个 parser 才允许理解一个 Agent 本来可以直接读取的文件；
+- 把所有任务转成固定 schema 后才能继续；
+- 通过额外 Workflow/dispatcher 层才能调用实际能力；
+- 把一种推荐工具写成唯一允许实现，除非该实现本身是已经冻结的科学/技术要求；
+- 为简单判断建立不必要的中间状态机。
+
+Parser / deterministic Tool 的定位是：在 parsing、批量处理、精确变换、稳定写入、可重复计算或机械校验上提供可靠能力。它们是**能力组件**，不是 Agent 理解任务的前置许可层。
+
+如果某一步确实必须使用特定软件/算法/文件格式，Skill 可以明确要求；但必须来自科学方法、可重复性或实际接口需求，而不是因为 authoring 模板习惯如此。
+
+## 3. Skill organization: main Skill first
+
+当前设计**不再强制把科研 Skill 分类成 Workflow / Operation / Validator，也不要求分别放入 `01_workflows/`、`02_operations/`、`02_validators/`。**
+
+默认组织方式是：
+
+```text
+main Skill
+├── references/        # 长规则、表、registry、按需说明
+├── schemas/           # 只有确有稳定结构化约束时才建立
+├── scripts/           # Skill-local deterministic helpers
+└── supporting Skill   # 仅在复杂且边界清晰时拆出
+```
+
+主 Skill 应足够让 Agent 完成当前职责。只有满足以下条件之一时才考虑拆 supporting Skill：
+
+- 内容复杂，放在主 Skill 会明显淹没主线；
+- 边界稳定且可独立加载；
+- 多处复用同一套完整判断/执行逻辑；
+- 需要独立 validation / testing 生命周期；
+- 独立维护能明显减少上下文而不制造额外编排层。
+
+Validation 默认跟随拥有该动作/结果的 Skill 或 Tool；只有 validation 本身复杂、可复用、边界清晰时才拆成独立 supporting Skill。
+
+Manager 是项目级管理 Skill，保留自己的特殊职责。Tool 是确定性能力组件，不属于科研 Skill 分类层。
+
+仓库中现存的 `01_workflows/`、`02_operations/`、`02_validators/` 是历史布局和逐步迁移中的现有路径，**不得被新窗口当成新 Skill 必须遵循的目录模板**。不要仅为了匹配旧目录分类而新建或拆分 Skill。
+
+详细边界：
+
+`00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md`
+
+## 4. Read broadly, write narrowly
+
+多窗口 authoring 中必须区分：
+
+```text
+read scope  ≠  write ownership
+```
+
+每个窗口**可以并且应该**按当前任务需要读取其不负责写入的 Skill，尤其是：
+
+- 直接上游 Skill；
+- 直接下游 Skill；
+- 当前输入/输出所依赖的 supporting Skill / Tool guide；
+- 具有相邻科学边界的 Skill；
+- 当前 Skill 明确引用的外部规则。
+
+读取这些内容的目的，是理解接口、避免重复定义、确认边界和保证 handoff 正确。
+
+但除非用户或 main authoring window 明确重新分配职责，业务窗口只允许修改自己的 `write_paths`。
+
+在自己负责的 Skill 内，对其他 Skill 只允许记录**接口级关系**，例如：
+
+```text
+消费上游哪个正式结果
+需要下游提供哪类能力
+调用哪个 supporting Skill / Tool
+依赖哪个已经冻结的外部判据
+```
+
+不得在自己的 Skill 中重新定义其他 Skill 的：
+
+- 内部执行流程；
+- 默认参数；
+- 科学判断逻辑；
+- validation 细节；
+- official results；
+- 文件生命周期；
+- 任务计划规则。
+
+如果发现其他 Skill 缺失规则、存在冲突或需要修改：
+
+```text
+发现问题
+→ 在当前窗口记录 cross-skill finding / handoff
+→ 交给拥有该 Skill 的窗口或 main window
+→ 不把临时修正规则塞进自己负责的 Skill
+```
+
+## 5. Multi-window ownership
+
+共享文件由 main authoring window 修改：
+
+```text
+AGENTS.md
+00_authoring/README.md
+00_authoring/AUTHORING_RULES.md
+00_authoring/MD_WORKFLOW_MASTER_PLAN.md
+00_authoring/SYNC_STATUS.md
+architecture-freeze records
+skill_inventory.yaml
+file_ownership.yaml
+content_maps/
+Manager shared references
+05_tools/tool_registry.yaml
+```
+
+同一 Skill/Tool 目录同一时间只分配给一个编写窗口；写路径重叠时不得并行。
+
+每个窗口开始前必须重新读取 current `SYNC_STATUS.md`、`skill_inventory.yaml`、`file_ownership.yaml`、目标 content map 和当前目标 Skill。与当前接口有关的其他 Skill 可以按需读取，不受 write ownership 限制。
+
+业务窗口不得因为读取了外部 Skill，就擅自修改该 Skill 或在自己的文件中替它定义规则。
+
+## 6. Lightweight runtime boundary
 
 Lightweight Runtime v2 默认记录层：
 
@@ -71,162 +201,52 @@ runtime projection state
 
 这些属于 Legacy history，不是新 Skill 的兼容目标。
 
-## 3. Scientific responsibility layers
+Manager 只负责：任务定位、创建、初始规划、用户明确要求时的重新规划，以及项目级导航/整理。普通科研执行由长期持有 Task Sheet 的 Task Execution Agent 完成。
 
-逻辑职责：
+## 7. Task-facing Skill interface
 
-```text
-Manager
-Workflow
-Operation
-Validator
-```
-
-Tool 是确定性程序，不是第五个科学判断层。
-
-物理目录通常为：
+一个主 Skill 不需要为了匹配模板而固定使用某组 section 名，但必须让 Agent 能回答：
 
 ```text
-01_workflows/
-02_operations/
-02_validators/
-05_tools/
+当前目的是什么？
+实际处理对象/输入是什么？
+什么情况下已有结果可以复用？
+执行时有哪些必须遵守的科学/技术规则？
+如何验证当前结果？
+哪些结果/记录需要保留并供后续使用？
 ```
 
-但已冻结 Stage 可以使用明确的 integrated layout，例如：
-
-```text
-04_md_simulation/
-```
-
-物理布局可以特殊，逻辑职责边界仍必须清楚。
-
-## 4. Manager boundary
-
-Manager 只负责：
-
-- 定位已有任务；
-- 创建新任务；
-- 初始规划；
-- 用户明确要求时重新规划；
-- 项目级任务导航/整理。
-
-Manager 普通初始规划只读：
-
-`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
-
-planning index 只保存规划需要的轻量信息，例如 Workflow/Step ID、名称、顺序、基础工作目录和已冻结的 stage-specific planning mode。
-
-planning index **不保存**：
-
-- `conditional` / applicability；
-- 科学判断规则；
-- reuse conditions；
-- input/output schema；
-- validation；
-- commands/software dependencies；
-- failure recovery；
-- artifact lineage；
-- subagent prompts。
-
-Manager 不预读具体 Step Skills，也不提前做科学 applicability/reuse 判断。
-
-## 5. Task Sheet and execution ownership
-
-Task Sheet 是默认运行时计划和最小恢复上下文。
-
-普通 sub-stage 至少记录：
-
-```text
-状态
-对象
-工作目录
-主要结果（完成后）
-执行记录（仅必要时）
-```
-
-任务级状态：
-
-```text
-未完成 | 已完成 | 已终止
-```
-
-普通子环节状态：
-
-```text
-待执行 | 未完成 | 已完成
-```
-
-Stage-specific 内部对象可以有自己已经冻结的局部状态规则；例如 Stage 4 run units 和 Stage 5 5.1 plan items 使用 `未完成 / 已完成 / 已终止`，但这不改变普通 Task Sheet sub-stage 状态体系。
-
-Task Execution Agent 长期持有一个 Task Sheet，可以依据执行证据：
-
-- 连续推进多个子环节；
-- 更新当前状态和结果；
-- 增加、删除或重排尚未执行的未来普通 sub-stage；
-- 维护已冻结 stage-specific plan structures；
-- 用户明确改变任务范围时直接修改 Task Sheet。
-
-已经执行并形成有意义历史的内容不得为了“整理”而静默删除。Stage 5 的 numbered plan items 一旦加入原则上不删除、不重编号，而使用 `已终止` 保留稳定历史。
-
-## 6. Step-facing Skill interface
-
-普通 Step-facing Skill 或一组配套 Operation + Validator 合计应明确：
+常用表达仍可采用：
 
 ```text
 purpose
-object requirements
+object/input requirements
 reuse conditions
-execution rules
+execution guidance
 validation requirements
-official results
+official results / handoff
 ```
 
-Stage-specific architecture 可以在 freeze 文件中明确不同的内部组织方式，但同样必须让 Task Execution Agent 知道：
+但这些是**信息要求**，不是固定 parser schema，也不要求拆成多个 Skill。
 
-- 当前处理什么；
-- 如何判断能否复用；
-- 如何执行；
-- 谁负责 validation；
-- 哪些结果需要正式登记。
+Stage-specific architecture 可以定义自己的计划对象，例如 Stage 4 run unit、Stage 5 plan item；不得为了统一模板强行改写这些已经冻结的局部模型。
 
-Workflow 只保存阶段边界、sub-stage/child Skill 映射和真正必要的阶段级科学关系，不复制具体 Step 的算法和详细参数。
+## 8. Reuse and results
 
-## 7. Reuse
+普通任务的 reuse 通常在实际开始该项工作时检查；如果某 Stage 已冻结其他组织方式，以对应 Stage guide 为准。
 
-普通 Step 的 reuse 在该 Step 真正开始时检查，而不是 Manager 创建任务时检查。
-
-统一逻辑：
+统一判断原则：
 
 ```text
 明确等价 → 自动复用
 明确不等价 → 正常执行
-信息不足 → 当前 Task Execution Agent 询问用户
+信息不足 → 当前 Task Execution Agent 向用户确认
 用户明确要求重做/对照 → 跳过自动复用
 ```
 
-Stage-specific freeze 可以改变 reuse 查询的组织时机。例如 Stage 5 已冻结为：5.1 在整体 plan 生成时集中完成 Stage 5 的 reuse 查询/核验，并同时考虑当前计划内后续将生成的 prepared inputs。
-
 复用另一任务的正式结果时直接引用，不为了“本任务完整”复制副本。
 
-## 8. Directories and result indexes
-
-普通 Step 工作目录采用：
-
-```text
-<base_work_directory>/<task_id>/
-```
-
-项目初始化可以建立稳定 Step 基础目录，但 Manager 不提前创建 task-specific 执行目录。Task Execution Agent 先检查 reuse，只有需要本地执行时才创建目录。
-
-`project_result_index.md` 是跨任务/跨对话正式结果检索入口，不是 summary、artifact registry 或运行状态文件。
-
-只登记当前 Skill 明确定义的正式结果/结果事项；不登记 debug、scratch、cache、普通中间文件。
-
-Stage-specific result registration 以对应 freeze/Skill 为准。例如：
-
-- Stage 4 登记 project-level `run_unit.yaml`；
-- Stage 5 登记“对哪些对象做了哪些分析 + 详细 Task Sheet/plan-item 入口”，而不是逐个工具输出文件。
+`project_result_index.md` 是跨任务/跨对话正式结果检索入口，不是 summary、artifact registry 或运行状态文件。登记粒度由当前 Skill/Stage 决定。
 
 ## 9. Tool boundary
 
@@ -241,71 +261,47 @@ Tool 生命周期 authority：
 05_tools/tool_registry.yaml
 ```
 
-Tool 适合承担确定性 parsing / hashing / transformation / file generation / deterministic validation，不承担：
+Tool 适合承担确定性 parsing / hashing / transformation / file generation / deterministic validation。
 
-- 用户意图解释；
-- 开放式科学方法选择；
-- 任务范围；
-- runtime orchestration state machine。
+引入 Tool 时必须问：
 
-未完成可执行 tests/benchmark 的 Tool 不得作为 ACTIVE 默认生产路径。
+> 这个 Tool 是为了可靠完成一个确定性动作，还是仅仅为了让 Agent 必须经过一个额外接口？
+
+如果属于后者，不应引入。
+
+Tool 不承担：用户意图解释、开放式科学方法选择、任务范围、通用 runtime orchestration state machine。
 
 ## 10. Content ownership
 
 一条当前规则只保留一个权威 owner。
 
-- current Skill 主线 → 当前 `SKILL.md`；
+- 当前 main Skill 主线 → 当前 `SKILL.md`；
 - 长 scientific/registry material → 当前 `references/`；
-- 当前 Skill 独有结构化约束 → `schemas/`；
-- Skill-local deterministic program → `scripts/`；
+- 当前 Skill 独有且确有价值的结构化约束 → `schemas/`；
+- Skill-local deterministic helper → `scripts/`；
 - 跨 Skill 共享确定性程序 → `05_tools/`；
-- stage architecture freeze → matching `WORKFLOW*_ARCHITECTURE_FREEZE*.md`；
+- stage architecture freeze → matching architecture-freeze record；
 - Manager initial planning catalog → `workflow_plan_index.yaml`；
 - Legacy contracts/runtime → 只作为历史/迁移材料。
 
-Content map 只记录当前内容唯一归属和必要外部只读引用；不得继续把 Legacy subagent/route contracts 作为 Lightweight Skill 的当前 dependency。
+Content map 记录当前内容归属和外部只读引用，不再要求 `workflow / operation / validator` 类型字段。
 
-## 11. Multi-window authoring
+## 11. Validation / review
 
-共享文件由 main authoring window 修改：
+Representative review 除科学正确性外，必须检查以下 authoring 失败模式：
 
-```text
-AGENTS.md
-00_authoring/README.md
-00_authoring/AUTHORING_RULES.md
-00_authoring/MD_WORKFLOW_MASTER_PLAN.md
-00_authoring/SYNC_STATUS.md
-architecture-freeze records
-skill_inventory.yaml
-file_ownership.yaml
-content_maps/
-Manager shared references
-05_tools/tool_registry.yaml
-```
+- Skill 是否把 Agent 锁死到不必要的 parser / wrapper / dispatcher；
+- 是否把推荐工具误写成唯一允许实现；
+- 是否为了形式化复制大量 schema/状态；
+- 是否在当前 Skill 中重新定义其他 Skill 的内容；
+- 是否把外部 Skill 的接口描述扩展成其内部算法；
+- 是否因为旧 `01_workflows/02_operations/02_validators` 路径而强行分类新 Skill；
+- 是否拆出没有独立复杂度或边界价值的 supporting Skill；
+- 多窗口是否越过 `write_paths`。
 
-同一 Skill/Tool 目录同一时间只分配给一个编写窗口。写路径重叠时不得并行。
+静态检查只能检查结构问题，不能反过来强迫当前 Skill 采用已经废弃的分类或 Legacy Runtime 接口。
 
-每个窗口开始前必须重新读取 current `SYNC_STATUS.md`、`skill_inventory.yaml`、`file_ownership.yaml` 和目标 content map；不得依赖旧窗口记忆来判断当前版本。
-
-## 12. Validation / review
-
-可继续使用不依赖 Legacy Runtime 的静态检查，例如 Markdown、content-map 和重复内容检查。
-
-任何仍以 Workstream/route/subagent contract 为成功条件的旧检查，只能标记为 Legacy validation，不能反过来否定当前 Lightweight guides。
-
-Representative validation 应覆盖当前 Skill 实际需要的：
-
-- 正向执行；
-- 输入缺失；
-- reuse 成功/失败/无法判断；
-- 用户明确重做；
-- 跨对话恢复；
-- dynamic plan update；
-- official result registration；
-- Tool 不可用或输出 invalid 时的合理处理；
-- 不写 Legacy runtime records。
-
-## 13. Safety
+## 12. Safety
 
 - 不修改 `01_sources/` 原始来源文件，除非有明确授权；
 - 未经授权不删除/覆盖/batch move 科研结果；
