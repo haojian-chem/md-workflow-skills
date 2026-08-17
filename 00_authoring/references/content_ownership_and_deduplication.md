@@ -12,7 +12,8 @@ Status: CURRENT
 
 | 内容 | 权威位置 |
 |---|---|
-| Lightweight Runtime 总体架构 | `00_authoring/lightweight_runtime_v2_spec.md` |
+| Lightweight Runtime 总体架构 | `00_authoring/project_design/lightweight_runtime_v2_spec.md` |
+| Stage catalog / 建设状态 / current entry | `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` |
 | Skill 组织与职责边界 | `references/skill_boundaries.md` |
 | Manager 任务管理与初始规划 | `00_manager/md_workflow_manager/SKILL.md` |
 | Manager 轻量 planning catalog | `00_manager/md_workflow_manager/references/workflow_plan_index.yaml` |
