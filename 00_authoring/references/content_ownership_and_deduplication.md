@@ -6,7 +6,7 @@ Status: CURRENT
 
 每个当前规则必须有一个且只有一个 owner。
 
-当前 owner 类型按**具体内容职责**确定，不按 Workflow / Operation / Validator 分类确定。
+当前 owner 类型按**具体内容职责**确定，不按 Workflow / Operation / Validator 分类确定，也不依赖额外 content-map metadata 才成立。
 
 常见 authority：
 
@@ -24,6 +24,7 @@ Status: CURRENT
 | 跨任务正式结果检索 | 项目 `project_result_index.md` |
 | 当前任务计划与恢复上下文 | 项目 `tasks/Txxxx.md` |
 | 网页端多窗口规则 | `references/multi_window_authoring_protocol.md` |
+| 多窗口 writer assignment | `00_authoring/coordination/file_ownership.yaml` |
 
 Legacy `03_contracts/**`、runtime projection、subagent protocol、route/event/transaction 文件只在明确 Legacy 维护时拥有其历史接口，不是新 Skill 的共享运行时 owner。
 
@@ -73,7 +74,8 @@ Legacy `03_contracts/**`、runtime projection、subagent protocol、route/event/
 - 把另一个 Skill 的参数表重新写一遍；
 - 在当前 Skill 中总结并重新规定对方的 validation；
 - 复制对方的 official-result 结构或文件生命周期；
-- 把外部规则“简化重述”到足以独立指导执行，从而形成第二个 authority。
+- 把外部规则“简化重述”到足以独立指导执行，从而形成第二个 authority；
+- 用 YAML metadata 再描述一遍 Skill 已经拥有的职责、引用和状态。
 
 允许的最小接口描述只有：
 
@@ -190,20 +192,7 @@ Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否�
 
 Tool 对自己生成的确定性输出负责机械/格式有效性；main Skill 对这些输出是否满足当前科研目标负责。
 
-## 11. Content map
-
-Content map 只记录：
-
-- 当前 Skill 路径；
-- 当前 owned content；
-- supporting/reference ownership；
-- 外部只读 authority。
-
-新 content map 不要求 `skill_type: workflow|operation|validator`。
-
-Content map 不是任务运行时 dispatcher，也不应把其他 Skill 的内部内容复制进来。
-
-## 12. 完成前去重 / 越界自检
+## 11. 完成前去重 / 越界自检
 
 每次 Skill 编写或修改完成前，至少检查：
 
@@ -212,11 +201,12 @@ Content map 不是任务运行时 dispatcher，也不应把其他 Skill 的内�
 2. 我是否复制或改写了另一个 owner 已经定义的规则？
 3. 是否存在一条规则以后修改时必须同步更新多个文件？
 4. 当前外部内容能否缩成 consume / require / handoff，而不是重新描述其内部实现？
+5. 是否又建立了一个 YAML/index 来重复 Skill 本身已经说明的职责或状态？
 ```
 
 任一答案为“是”时，先处理 ownership/去重问题，再认为当前 Skill 可以交付。
 
-## 13. 拆分/重复警告
+## 12. 拆分/重复警告
 
 出现以下情况时必须检查并重构：
 
@@ -228,4 +218,5 @@ Content map 不是任务运行时 dispatcher，也不应把其他 Skill 的内�
 - reference 重新描述 `SKILL.md` 完整流程；
 - 修改一个定义必须同步多个 owner；
 - 新 Skill 为兼容 Legacy Runtime 又复制 route/task/result/event 接口；
-- 新 Skill 仅因为旧目录结构而被强行分类。
+- 新 Skill 仅因为旧目录结构而被强行分类；
+- content map / inventory / role YAML 只是另一份 Skill 说明书。
