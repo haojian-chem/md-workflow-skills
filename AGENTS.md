@@ -26,7 +26,7 @@ AGENTS.md
 
 之后只按当前任务需要读取 architecture freeze、相邻 Skill、project design、Tool guide 或 coordination records。
 
-## 2. Current scientific Skill roots
+## 2. Scientific Stage roots
 
 ```text
 01_structure_preparation/
@@ -37,6 +37,16 @@ AGENTS.md
 ```
 
 这些编号对应 MD Workflow Stage 1–5。
+
+Stage / Step 目录可以在正式 Skill generation 前预留，因此：
+
+```text
+目录存在 ≠ Skill 已生成 ≠ runtime authority 已激活
+```
+
+当前建设状态和 current entry 必须读取：
+
+`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
 
 Manager 是独立 package：`00_manager/`。
 
@@ -56,21 +66,32 @@ legacy/     # old contracts / runtime / runtime-dependent tools
 
 `legacy/` 与 `00_authoring/archive/` 不是 current authority，普通 runtime / authoring 不默认读取。
 
-## 4. Stage 3
+## 4. Skill / freeze / status boundary
 
-Stage 3 — System construction / solvation 已冻结为：
+Architecture freeze 位于：
+
+`00_authoring/architecture_freezes/`
+
+freeze 可以详细到足以直接支持后续 Skill generation，但：
 
 ```text
-3.1 Periodic box construction
-3.2 Solvent addition
-3.3 Ion addition
+architecture frozen
+≠ Skill generation 已获许可
+≠ active SKILL.md
 ```
 
-Current source entry：`03_md_preparation/SKILL.md`。
+任何 authoring 窗口如果改变了 Stage / Step 的真实建设状态，例如：
 
-Architecture authority：`00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`。
+```text
+design → frozen
+freeze-only → active Skill generated
+active Skill → validation milestone changed
+current → superseded / retired
+```
 
-3.3 专用 minimal `genion.mdp` 的精确模板内容和 representative execution validation 尚未完成；不得用 Stage 4 MDP 伪代替。
+都必须同步 `MD_WORKFLOW_MASTER_PLAN.md`；具体规则见 `00_authoring/SKILL.md` 和 `00_authoring/references/multi_window_authoring_protocol.md`。
+
+不得仅凭目录或历史 `SKILL.md` 文件存在推断 runtime authority。
 
 ## 5. Tool boundary
 
@@ -92,6 +113,8 @@ write ownership 必须窄
 ```
 
 当前 Skill 可以消费其他 owner 的正式结果/接口，不能替其定义内部步骤、默认参数、validation、official results 或文件生命周期。
+
+状态同步只有一个窄例外：当前 Skill/freeze authoring 直接造成的 Master Plan 状态/current-entry 变化，按多窗口协议在无显式 writer 冲突时可以由当前窗口同步；这不扩展科学内容 ownership。
 
 提出或实施迭代修改前恢复：
 
@@ -132,9 +155,9 @@ Authoring                  → 00_authoring/SKILL.md
 Skill boundaries           → 00_authoring/references/skill_boundaries.md
 Cross-Stage runtime        → 00_authoring/project_design/lightweight_runtime_v2_spec.md
 Stage catalog/status       → 00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md
-Stage architecture freeze  → 00_authoring/architecture_freezes/
+Stage/Step architecture freeze → 00_authoring/architecture_freezes/
 Manager                    → 00_manager/SKILL.md
-Scientific Skills          → current Stage root / Step SKILL.md
+Scientific Skills          → entries explicitly marked current in Master Plan
 Current shared Tools       → tools/
 Evaluation infrastructure  → evals/
 Legacy executable material → legacy/
