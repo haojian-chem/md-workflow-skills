@@ -1,70 +1,39 @@
 # Workflow 4 / Stage 4 architecture freeze
 
-Status: FROZEN
+Status: FROZEN — FIRST-PASS GUIDES IMPLEMENTED, REPRESENTATIVE VALIDATION PENDING
 
-This file records the agreed Stage 4 architecture for MD simulation. It freezes the planning/execution object model, run-unit maintenance model, validation ownership, and the common implementation boundaries agreed before the first Stage 4 Skill implementation.
+本文件只保存 Stage 4 的冻结架构。具体 `.mdp`、`grompp`、`mdrun` 与 run-specific validation 以当前 `04_md_simulation/**/SKILL.md` 为准。
 
-Detailed execution guidance is owned by:
-
-```text
-04_md_simulation/SKILL.md
-04_md_simulation/4.1_energy_minimization/SKILL.md
-04_md_simulation/4.2_equilibration/SKILL.md
-04_md_simulation/4.3_production_simulation/SKILL.md
-```
-
-## 1. Stage 4 catalog
-
-Stage 4 keeps three sub-stages:
-
-1. `4.1 Energy minimization`
-2. `4.2 Equilibration`
-3. `4.3 Production simulation`
-
-Sub-stage semantics:
-
-- `4.1` is the execution layer for `em.*` run units.
-- `4.2` is the execution layer for `nvt.*` and `npt.*` run units.
-- `4.3` is the execution layer for `md.*` run units.
-
-A sub-stage is an **execution layer**. A run unit is the **execution object**. These are not the same level.
-
-Stage 4 is physically organized as one parent Skill with three child Skills under `04_md_simulation/`; it is not physically split into separate `01_workflows/` and `02_operations/` directories.
-
-## 2. Stage 4 Task Sheet planning model
-
-Stage 4 differs from Stages 1–3.
-
-For Stages 1–3, the Task Sheet normally represents execution as a sequence of workflow sub-stages. For Stage 4, the Task Sheet records a **planned run route composed of run-plan entries**, not a serialized `4.1 → 4.2 → 4.3` sub-stage list.
-
-Conceptually, a task may plan:
+## 1. Catalog and execution model
 
 ```text
-EM
-→ NVT 300 K
-→ NPT 300 K / 1 bar
-→ NPT restraint release
-→ MD 100 ns
+4.1 Energy minimization   → em.*
+4.2 Equilibration         → nvt.* / npt.*
+4.3 Production simulation → md.*
 ```
 
-The planned route may contain any number of EM/NVT/NPT/MD entries required by the simulation protocol.
+Stage 4 的关键语义：
 
-The Task Sheet is the plan source. Do not create a separate `simulation_plan.yaml` or restore the historical `expected_route.yaml`.
+```text
+sub-stage = execution layer
+run unit = execution object
+```
 
-A lightweight planned-route representation may record, for each planned entry:
+Task Sheet 不把 Stage 4 写成固定 `4.1 → 4.2 → 4.3`，而是记录实际 planned run route。
 
-- order;
-- run class (`EM`, `NVT`, `NPT`, `MD`);
-- key requirement sufficient to identify the intended segment without duplicating the complete `.mdp`;
-- bound run unit, initially empty and filled only after a formal run unit is bound or created.
+## 2. Planned route / formal run unit
 
-The exact Task Sheet formatting is implementation detail; the architectural requirement is that the route is run-unit-oriented rather than sub-stage-oriented.
+planned entry 在 planning 阶段不提前分配正式 ID。
 
-One planned route entry normally binds one formal run unit. If the originally bound unit later cannot be used and a new unit is required, the entry is rebound to the new unit. The old unit remains in `run_unit.yaml`; no separate `attempts` list is introduced.
+当该 entry 开始处理时：
 
-## 3. Formal run-unit identity
+```text
+bind reusable existing run unit
+/ continue matching unfinished run unit
+/ instantiate new run unit
+```
 
-Formal run units use project-level identities:
+正式 ID 只允许：
 
 ```text
 em.N
@@ -73,253 +42,114 @@ npt.N
 md.N
 ```
 
-The prefix provides the first-level run classification. Do not duplicate this as a separate `run_unit_type` field. More detailed simulation semantics are read from the actual `.mdp` when needed.
+prefix 已提供一级 run class，不再记录 `run_unit_type`。新 ID 使用同 prefix 的下一个历史编号，不回收空缺；身份锁定后、实际执行前立即登记。
 
-A planned route entry does **not** receive a formal `em.N / nvt.N / npt.N / md.N` identity during planning.
+## 3. Project-level `run_unit.yaml`
 
-Formal identity is locked only when that planned entry begins processing and the system has determined whether to:
-
-1. bind an existing reusable run unit;
-2. continue an existing unfinished run unit;
-3. instantiate a new run unit.
-
-For a new run unit, allocate the next number for the relevant prefix after inspecting the project-level run-unit list. Do not recycle gaps in old numbering.
-
-Identity must be registered immediately after locking and before execution begins so that concurrent or later conversations do not allocate the same identity.
-
-## 4. Project-level `run_unit.yaml`
-
-The project maintains one project-level:
+项目只维护一个：
 
 ```text
-04_md_simulation/run_unit.yaml
+<project_root>/04_md_simulation/run_unit.yaml
 ```
 
-for instantiated Stage 4 run units. It supports cross-task and cross-conversation discovery and maintenance.
+YAML root 直接是 list，不增加 `run_units:` wrapper。
 
-`run_unit.yaml` is not a simulation plan and does not list future, uninstantiated planned-route entries.
-
-The YAML root is directly a list. Do not add a no-information `run_units:` wrapper.
-
-Minimum record:
+每个 instantiated run unit 的最小字段：
 
 ```yaml
-- run_unit_id: em.1
-  start_from_run_unit_id:
-  status: 已完成
-  path: /project/04_md_simulation/em.1/
-
-- run_unit_id: nvt.1
-  start_from_run_unit_id: em.1
-  status: 已完成
-  path: /project/04_md_simulation/nvt.1/
+- run_unit_id: md.1
+  start_from_run_unit_id: npt.1
+  status: 未完成
+  path: /full/path/to/run-unit-storage-directory/
+  top: /full/path/to/main.top
 ```
 
-Required fields:
+字段语义：
 
-- `run_unit_id`
-- `start_from_run_unit_id`
-- `status`
-- `path`
+- `run_unit_id`：项目级正式 identity；
+- `start_from_run_unit_id`：从哪个 Stage 4 run unit 的状态开始；直接从 Stage 4 之前对象开始时可为空；
+- `status`：`未完成 / 已完成 / 已终止`；
+- `path`：该 run unit 实际文件的**完整存放目录**，用于跨任务/跨对话查询定位，不规定 execution working directory；
+- `top`：该 run unit 实际用于 `grompp` 的主 `.top` 文件完整路径。
 
-Do not add `run_unit_type`; the run-unit prefix already supplies the first-level type.
+多个 run unit 使用同一 main topology 时记录同一个 `top` 路径，不复制 `.top/.itp` 内容。
 
-Do not copy detailed `.mdp` parameters into `run_unit.yaml`.
+`top` 用于轻量 topology lineage，并支持 Stage 5 等下游判断不同 TPR 是否来自同一套 topology/system。Stage 5 当前 `.ndx` reuse 规则可据此将 different TPR + same `top` 视为可复用条件。
 
-### 4.1 `start_from_run_unit_id`
+`run_unit.yaml` 不记录未来 planned entries、不复制 `.mdp` 设置，也不记录 transient `running / failed / continuing` 状态。
 
-This records Stage 4 run-unit state inheritance.
+## 4. Binding / reuse
 
-For a run that starts directly from an object outside Stage 4, such as the Stage 3 final system, the field may be empty/null. The external starting object remains recoverable from the task context and actual inputs; the run-unit list does not expand into a generic lineage registry.
+在创建新 unit 前先查 `run_unit.yaml` 候选。
 
-### 4.2 `status`
+候选判断至少考虑：
 
-Allowed project-level maintenance states:
+- predecessor state；
+- topology / parameter package；
+- planned scientific requirement 与实际有效设置；
+- candidate result validity。
+
+真实详细设置以 `.mdp` 和必要 run artifacts 为准。
 
 ```text
-未完成
-已完成
-已终止
+明确等价 → 复用
+明确不等价 → 新建/执行
+信息不足 → 用户确认
+用户明确重做/对照 → 跳过自动复用
 ```
 
-Planned but not yet instantiated runs are not run units and therefore do not use `待执行` in `run_unit.yaml`.
+一个 run unit 可以被多个 Task Sheet 合法复用。
 
-Detailed transient conditions such as running, interrupted, failed, or continuing are not duplicated as additional index states; when needed they are determined from the run files and task execution record.
+## 5. Continuation / new segment
 
-### 4.3 `path`
+技术性 continuation 如果仍然是在完成原 scientific run，则保持同一个 run unit。
 
-`path` is the **complete directory path of that specific run unit**.
+原 planned segment 已完成后新增新的科学模拟 segment，则建立新的 planned entry，并在该 entry 开始时绑定新的 formal run unit。
 
-For example:
+失败本身不产生 `*.failed` identity。
+
+## 6. Execution ownership
+
+当前权威 Skill hierarchy：
 
 ```text
-/project/04_md_simulation/md.2/
+04_md_simulation/SKILL.md
+04_md_simulation/4.1_energy_minimization/SKILL.md
+04_md_simulation/4.2_equilibration/SKILL.md
+04_md_simulation/4.3_production_simulation/SKILL.md
 ```
 
-Multiple run-unit directories may share the same Stage 4 parent directory. Each `path` still points to the corresponding run unit's own complete directory.
-
-## 5. Binding a planned route entry to a run unit
-
-When a planned route entry begins processing:
+各 child Skill 自己负责：
 
 ```text
-read current planned run entry
-↓
-determine current intended run class and requirement
-↓
-determine the actual predecessor state
-↓
-read project run_unit.yaml
-↓
-locate candidate instantiated run units
-↓
-inspect candidate files as needed
-├─ reusable completed run exists
-│  → bind existing run unit
-├─ matching unfinished run exists and should be continued
-│  → bind/continue existing run unit
-└─ no usable run exists
-   → allocate new formal run-unit identity
-   → register it immediately as 未完成
-   → execute it
-↓
-record the bound run-unit identity in the Task Sheet planned route
+final .mdp
+→ gmx grompp
+→ confirm target .tpr
+→ generate gmx_mdrun.sh
+→ gmx mdrun
+→ run-specific validation
 ```
 
-The project-level list is a candidate-discovery/maintenance layer. Its contents alone are not sufficient to prove scientific reuse; deeper comparison reads the actual run files, especially `.mdp`, and other required evidence.
+Stage 4 不设置独立 Validator Skill。
 
-A run unit may be bound by more than one Task Sheet when reuse is valid. Reuse does not create a duplicate run-unit identity merely to make the current task own a copy.
+## 7. Result registration
 
-## 6. Shared reuse boundary
+Stage 4 在 `project_result_index.md` 中登记项目级 `04_md_simulation/run_unit.yaml` 的完整路径和说明。
 
-Before instantiating a new run unit, candidate reuse should consider at least:
+不把每个 run-unit directory 或 `.mdp/.tpr/.gro/.cpt/.xtc/.edr` 单独登记为 Stage 4 project-level result。
 
-- predecessor state compatibility;
-- topology/parameter package compatibility;
-- intended simulation requirement versus the candidate's actual effective settings;
-- whether the existing run-unit result has passed the corresponding child Skill checks.
+## 8. Explicitly rejected structures
 
-The actual effective settings are determined from run artifacts such as the real `.mdp`; they are not duplicated into `run_unit.yaml`.
+默认不得：
 
-## 7. Continuation versus a new run unit
-
-Technical continuation that is still completing the original scientific run remains the **same run unit**.
-
-Example:
-
-```text
-md.4 target = 100 ns
-run interrupted at 63 ns
-checkpoint continuation to 100 ns
-→ still md.4
-```
-
-A new scientific simulation segment is a **new run unit**.
-
-Example:
-
-```text
-md.4 completed its planned 100 ns
-later decision: add another 100 ns segment
-→ new planned MD entry
-→ when started, instantiate/bind a new md.N
-```
-
-The same principle applies to EM/NVT/NPT segments.
-
-Historical semantics retained where applicable:
-
-- append/technical continuation → same run unit;
-- a scientifically new segment or a no-append new run → new run unit;
-- failure by itself does not create a separate `*.failed` run unit.
-
-## 8. Sub-stage execution boundary
-
-Each Stage 4 child Skill owns execution of its corresponding run-unit class:
-
-```text
-4.1 → em.*
-4.2 → nvt.* / npt.*
-4.3 → md.*
-```
-
-The common execution shape is:
-
-```text
-current state + topology package + run requirement
-↓
-generate / adjust the final run .mdp
-↓
-gmx grompp
-↓
-confirm the expected .tpr
-↓
-generate gmx_mdrun.sh
-↓
-gmx mdrun
-↓
-run-specific validation
-```
-
-`.mdp` generation is part of the corresponding 4.1/4.2/4.3 Skill; Stage 4 does not create a separate generic MDP-generation sub-stage.
-
-The final actual `.mdp` is the authoritative detailed simulation setting record.
-
-`grompp` warnings must be inspected and judged. Blind use of `-maxwarn` merely to force preprocessing through is prohibited.
-
-`gmx_mdrun.sh` is generated only after successful `grompp` and confirmation of the intended `.tpr`. It contains the actual `gmx mdrun` command only; no metadata/status prose and no shebang are added. It is executed with `bash gmx_mdrun.sh`.
-
-Run-specific option tendencies and validation details are owned by the child Skills.
-
-## 9. Validation organization
-
-Stage 4 does **not** create separate Validator Skills for 4.1/4.2/4.3.
-
-Run validation is directly owned by the corresponding child Skill:
-
-```text
-4.1 Energy minimization   → EM checks
-4.2 Equilibration         → NVT/NPT checks
-4.3 Production simulation → production checks
-```
-
-A common bonded-geometry screening rule applies to the final `.gro`:
-
-- bond / constraint terms with a clear reference distance: `|r - r0| > 0.08 nm` is flagged as significant;
-- angle terms with a clear reference angle: `|θ - θ0| > 30°` is flagged as significant;
-- SETTLE and other fixed-geometry definitions are checked against their own reference geometry;
-- other bonded functions are interpreted according to their actual function definition rather than mechanically applying the ordinary bond/angle thresholds.
-
-These are screening thresholds for obvious structural abnormalities, not universal force-field quality criteria.
-
-## 10. Project result registration
-
-Stage 4 registers the project-level `run_unit.yaml` in `project_result_index.md`:
-
-```text
-path: complete path to 04_md_simulation/run_unit.yaml
-description: Stage 4 project-level index of instantiated run units
-```
-
-Individual `.mdp/.tpr/.gro/.cpt/.xtc/.edr` files and individual run-unit directories are not separately registered as project-level results.
-
-## 11. Explicitly rejected architecture
-
-Do not use the following as the Stage 4 default model:
-
-- serial Task Sheet route represented only as `4.1 → 4.2 → 4.3`;
-- one full ordinary Task Sheet substep per run unit;
-- separate `simulation_plan.yaml`;
-- historical `expected_route.yaml`;
-- one `run_unit.yaml` per run-unit directory;
-- `simulation_output_index`;
-- formal run-unit IDs allocated during initial planning;
-- `run_unit_type` duplicated in `run_unit.yaml`;
-- detailed `.mdp` settings copied into `run_unit.yaml`;
-- a top-level `run_units:` wrapper when `run_unit.yaml` contains only the run-unit list;
-- an `attempts` layer for replacement/retry run units;
-- separate Stage 4 Validator Skills.
-
-## 12. Remaining work
-
-Stage 4 architecture and first-pass Skill guidance are frozen. Remaining work is implementation validation, representative execution testing, and evidence-driven local correction. Stage 5 analysis architecture remains separate.
+- 用固定 `4.1 → 4.2 → 4.3` 代替真实 planned run route；
+- 每个 run unit 建普通 Task Sheet substep；
+- planning 时提前分配 formal run-unit ID；
+- 建 `simulation_plan.yaml` 或恢复历史 `expected_route.yaml`；
+- 每个 run unit 一个 `run_unit.yaml`；
+- 建 `simulation_output_index`；
+- 在 `run_unit.yaml` 记录 `run_unit_type`；
+- 复制完整 `.mdp` 设置；
+- 增加无信息量 `run_units:` wrapper；
+- 为 replacement run 建 attempts 层；
+- 为 Stage 4 建独立 Validator layer。
