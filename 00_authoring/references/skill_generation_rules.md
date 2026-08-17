@@ -68,7 +68,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 新建或重构 Skill 时按以下顺序：
 
 ```text
-读取 00_authoring/SKILL.md + 当前目标 Skill + 直接相关上下游/相邻 Skill
+读取 00_authoring/SKILL.md + 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
 ↓
 确认当前 Skill 的唯一职责与 write ownership
 ↓
@@ -86,14 +86,16 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 ↓
 处理被本次改动取代的旧文件
 ↓
-按需要更新 Stage freeze / Master Plan / Tool registry / coordination record 等真正有独立职责的共享入口
+按需要更新 Stage/Step freeze / Master Plan / Tool registry / coordination record 等真正有独立职责的共享入口
 ```
 
 不得先批量生成一套目录、YAML metadata 或模板，再把实际职责硬塞进去。
 
-## 5. Architecture-freeze 文件位置
+**Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把 freeze 转写为 active `SKILL.md`。
 
-当某个 Stage / Workflow 的架构已经明确敲定，需要保存正式 freeze record 时，统一写入：
+## 5. Architecture-freeze 文件位置与粒度
+
+当某个 Stage / Workflow / Step 的设计已经明确敲定，需要保存正式 freeze record 时，统一写入：
 
 ```text
 00_authoring/architecture_freezes/
@@ -102,9 +104,13 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 规则：
 
 - 不在 `00_authoring/` 根目录散放新的 `WORKFLOW*_ARCHITECTURE_FREEZE*.md`；
-- freeze record 只保存阶段级已冻结架构、职责边界和明确拒绝项；
-- current Skill / reference 仍拥有具体执行规则，freeze record 不复制整套 Skill 内容；
-- 同一 Stage 有新的 freeze record 明确取代旧 freeze 时，先迁移 current 引用，再将被取代的旧 Markdown 移入 `00_authoring/archive/`；
+- freeze 可以是 Stage-level，也可以是尚未正式生成 Skill 的 Step-level；
+- freeze 保存已经冻结的架构、职责边界、关键科学/技术规则和明确拒绝项；
+- 当目标 Step **尚无 current Skill** 时，freeze 可以保留已经讨论到 implementation-ready 的细节，作为后续 Skill generation 的直接输入，避免重复讨论或信息丢失；
+- freeze 文件不是 runtime Skill，不能因为内容足够详细就作为 `SKILL.md` 直接执行；
+- 当正式 current Skill 已经生成后，具体可变执行细节由对应 current `SKILL.md` / references 拥有；freeze 不维护第二套平行的 mutable specification；
+- 如果 Skill generation 发现此前讨论已经明确但 freeze 漏记的事实，应先补回对应 freeze 或在同次 authoring 中明确归属，不从历史伪 Skill 中静默丢失；
+- 同一 Stage / Step 有新的 freeze record 明确取代旧 freeze 时，先迁移 current 引用，再将被取代的旧 Markdown 移入 `00_authoring/archive/`；
 - `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 只记录 current freeze 入口和建设状态，不复制完整 freeze 内容。
 
 当前目录入口：
@@ -193,12 +199,13 @@ Skill 当前是什么状态
 
 当新文件替换旧文件时，交付前确认：
 
-- [ ] 新 main Skill / reference 已接管所有仍有效规则；
+- [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] current 文件不再引用旧路径；
-- [ ] 同一规则没有在新旧文件各保留一份；
+- [ ] 同一规则没有在新旧 active 文件各保留一份；
 - [ ] 旧文件已归档或删除，而不是继续留在 active 搜索路径；
 - [ ] archive 没有被加入默认 startup/read list；
 - [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
+- [ ] freeze 与 Skill 的授权状态没有混淆：freeze-only 不能被当作 active runtime Skill；
 - [ ] project-level 状态只在 Master Plan 维护，不再另建 parallel sync/status 文件；
 - [ ] 没有为了 discoverability 又建立一份重复 Skill 内容的 YAML metadata。
 
@@ -209,7 +216,8 @@ Skill 当前是什么状态
 长而同属当前职责 → reference
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
-Stage architecture freeze → 00_authoring/architecture_freezes/
+Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architecture_freezes/
+freeze 完成 ≠ Skill generation 获批
 跨 Stage project design → 00_authoring/project_design/
 多窗口 writer assignment → 00_authoring/coordination/
 已被取代的 Markdown → archive
