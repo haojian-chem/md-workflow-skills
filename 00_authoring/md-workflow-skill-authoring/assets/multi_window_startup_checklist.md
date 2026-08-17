@@ -27,7 +27,7 @@ Status: CURRENT
 - [ ] 已读取直接下游 Skill；
 - [ ] 已读取当前输入/输出依赖的 supporting Skill / Tool guide；
 - [ ] 已检查相邻职责是否存在重复或冲突；
-- [ ] 已理解：读取外部 Skill 不等于拥有修改权。
+- [ ] 已理解：读取外部 Skill 不等于拥有修改权或定义权。
 
 ## 写入所有权
 
@@ -35,6 +35,19 @@ Status: CURRENT
 - [ ] 共享 authoring/index/architecture 文件仍由 main window 修改；
 - [ ] 未通过“在自己 Skill 中复制外部规则”规避 ownership；
 - [ ] 如果发现外部 Skill 需要修改，准备提交 cross-skill finding / handoff。
+
+## Rule ownership / 去重
+
+新增或修改规则前使用：
+
+`references/content_ownership_and_deduplication.md`
+
+- [ ] 每条新增规则都确认属于当前 Skill 自己的职责；
+- [ ] 外部已有 owner 的规则只引用，没有复制或改写成第二份规范；
+- [ ] 外部规则缺失/冲突时记录 finding，没有在当前 Skill 临时补一份；
+- [ ] 当前 Skill 对外部 Skill 只保留必要的 `consume / require / handoff`；
+- [ ] 不存在以后修改一条规则必须同步更新多个 owner 文件的情况；
+- [ ] 没有形成 shadow specification。
 
 ## Parser / Tool 检查
 
@@ -50,6 +63,15 @@ Status: CURRENT
 - [ ] 当前 Skill 没有定义其他 Skill 的 validation / official results；
 - [ ] 外部 Skill 只以接口/正式结果/能力形式被引用；
 - [ ] 长但仍属于当前 Skill 的内容优先放 reference，而不是无必要拆 Skill。
+
+## 交付前四问
+
+- [ ] 我是否写了其他环节“应该怎么做”？
+- [ ] 我是否复制或改写了另一个 owner 已经定义的规则？
+- [ ] 是否存在同一规则需要多个文件同步维护？
+- [ ] 外部内容是否可以进一步缩成接口引用而不重复其内部实现？
+
+任一答案为“是”时，先解决越界/重复，再交付当前 Skill。
 
 ## 启动前回顾
 
