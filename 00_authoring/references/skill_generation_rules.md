@@ -45,7 +45,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 - reuse；
 - 核心执行/判断边界；
 - validation；
-- results / handoff；
+- results；
 - 何时按需读取 reference、调用 supporting Skill 或 Tool。
 
 属于当前 Skill、但过长或只在特定条件下需要的内容优先放 `references/`，例如：
