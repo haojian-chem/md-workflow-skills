@@ -7,9 +7,9 @@ description: 设计、编写、冻结、审查或重构本项目科研 Skill 时
 
 本文件是 `00_authoring/` 的**唯一 Skill authoring 主入口**。
 
-它指导 Agent 把科研工作要求转化为边界清楚、可维护、可直接执行的 Skill guide。Skill 的目标是指导 Agent 处理任务，不是把 Agent 锁进固定 parser、schema、wrapper、dispatcher 或人为工作流引擎。
+Skill 的目标是指导 Agent 如何处理科研任务，不是把 Agent 锁进固定 parser、schema、wrapper、dispatcher 或人为 workflow engine。
 
-当前默认关系：
+默认关系：
 
 ```text
 Manager
@@ -23,7 +23,7 @@ Manager
 
 # New-window startup
 
-新开的 **Skill authoring / maintenance 窗口**默认只需要先读取：
+新开的 Skill authoring / maintenance 窗口默认先读取：
 
 ```text
 AGENTS.md
@@ -31,20 +31,18 @@ AGENTS.md
 → 当前负责的目标 Skill / 文件
 ```
 
-然后根据当前任务按需读取：
+然后按当前任务需要读取：
 
-- 对应 Stage 的 `architecture_freezes/` 记录；
-- 与当前输入、输出或科学边界直接相关的上下游/相邻 Skill；
+- 对应 Stage 的 `architecture_freezes/`；
+- 与当前输入、输出或科学边界直接相关的上下游 / 相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
-- 只有涉及项目级阶段目录/建设状态时，才读取 `project_design/MD_WORKFLOW_MASTER_PLAN.md`；
-- 只有涉及跨 Stage runtime architecture 时，才读取 `project_design/lightweight_runtime_v2_spec.md`；
-- 只有涉及多窗口写入协调时，才读取 `coordination/file_ownership.yaml` 或对应 window work order。
+- 项目级阶段目录 / 建设状态需要时读 `project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 跨 Stage runtime architecture 需要时读 `project_design/lightweight_runtime_v2_spec.md`；
+- 多窗口写入协调需要时读 `coordination/file_ownership.yaml` 或 work order。
 
-**不要在新窗口启动时预加载整个 `00_authoring/`。** 主 Skill 负责告诉 Agent 什么时候需要进一步读取什么。
+不要启动时预加载整个 `00_authoring/`。
 
-业务窗口可以并且应该读取不属于自己写入范围的相关 Skill；读取用于理解接口、避免重复和确认 handoff，不代表获得修改权或定义权。
-
-提出或实施修改前，先恢复当前讨论状态：
+提出或实施修改前恢复当前讨论状态：
 
 ```text
 已做过
@@ -56,7 +54,7 @@ AGENTS.md
 
 # Skill generation
 
-新建、重构或冻结 Skill 时，按需读取：
+详细生成规则按需读取：
 
 `references/skill_generation_rules.md`
 
@@ -67,18 +65,22 @@ AGENTS.md
 → 一个 main SKILL.md
 → 长且仍属于当前职责的内容放 references/
 → 只有复杂且独立时拆 supporting Skill
-→ 只有确有稳定机器约束/确定性能力时增加 schemas/scripts/Tool
+→ 只有确有稳定机器约束 / 确定性能力时增加 schemas / scripts / Tool
 ```
 
-不要先按 Workflow / Operation / Validator 分类，也不要先生成一套空目录再填内容。
+当前 active scientific Skill 按 Stage / 科学职责组织，例如：
 
-普通科研 Skill 模板：
+```text
+01_structure_preparation/
+02_topology_preparation/
+04_md_simulation/
+05_analysis/
+```
 
-`assets/skill.template.md`
+历史 Workflow / Operation / Validator role-based roots 已退出 active scientific Skill layout；不得为新 Skill 恢复这套分类，也不保留 compatibility copy。
 
-Manager 模板：
-
-`assets/manager_skill.template.md`
+普通科研 Skill 模板：`assets/skill.template.md`。
+Manager 模板：`assets/manager_skill.template.md`。
 
 # Main Skill boundary
 
@@ -97,15 +99,11 @@ main Skill 应足够让 Agent 回答：
 
 这些是信息要求，不是固定 section schema。
 
-当前设计不强制 Workflow / Operation / Validator 分类。仓库中现有 `01_workflows/`、`02_operations/`、`02_validators/` 是历史布局/迁移中的现存路径，不是新 Skill 的目录模板。
-
-详细边界：
-
-`references/skill_boundaries.md`
+详细边界：`references/skill_boundaries.md`。
 
 # Rule ownership and deduplication
 
-向当前 Skill 加任何科学、执行、validation、结果或文件生命周期规则之前，按需读取：
+向当前 Skill 加科学、执行、validation、结果或文件生命周期规则前，按需读取：
 
 `references/content_ownership_and_deduplication.md`
 
@@ -117,35 +115,28 @@ main Skill 应足够让 Agent 回答：
 └─ 否
    ↓
    外部已有 owner？
-   ├─ 有 → 只引用，不复制/改写成第二份规范
+   ├─ 有 → 只引用，不复制 / 改写成第二份规范
    └─ 没有或有冲突 → 提 cross-skill finding
 ```
 
 当前 Skill 可以定义“我需要外部 Skill 提供什么”，不能定义“外部 Skill 应该怎样把它做出来”。
 
-禁止 shadow specification：即使不是逐字复制，只要当前文件已经足以独立指导另一个 Skill 的内部执行，也属于越界重复。
+禁止 shadow specification。
 
 # Read broadly, write narrowly
-
-多窗口规则：
 
 ```text
 read scope 可以宽
 write ownership 必须窄
 ```
 
-详细协议：
+业务窗口可以并且应该读取直接相关的上下游 / 相邻 Skill，以理解接口、避免重复和确认 handoff；读取不代表获得修改权或定义权。
 
-`references/multi_window_authoring_protocol.md`
+对外部 Skill 只记录必要的 `consume / require / handoff`。发现外部问题时提交 finding，不在当前 Skill 偷偷补一份外部规则。
 
-业务窗口：
+详细协议：`references/multi_window_authoring_protocol.md`。
 
-- 按需读取直接相关的上下游、相邻 Skill；
-- 只修改被明确分配的 `write_paths`；
-- 对外部 Skill 只记录必要的 `consume / require / handoff`；
-- 发现外部问题时提交 finding，不在当前 Skill 偷偷补一份外部规则。
-
-需要显式多窗口 assignment 时使用：
+显式多窗口 assignment 使用：
 
 ```text
 coordination/file_ownership.yaml
@@ -156,43 +147,27 @@ coordination/window_work_orders/
 
 属于当前 Skill、但过长或只在特定条件下需要的内容优先放 `references/`。
 
-主 Skill 只保留：
+main Skill 只保留“何时读取 → 哪个 reference → 解决什么局部问题”，不要和 reference 各维护一份完整规则。
 
-```text
-何时读取
-→ 读取哪个 reference
-→ 它解决什么局部问题
-```
+Supporting Skill 只有内容复杂、可独立加载、边界稳定且独立维护确有价值时才拆分；不要为了 validation 配对、目录对称或减少几段文字增加 Skill hop。
 
-不要在 main Skill 和 reference 中各维护一份完整规则。
-
-Supporting Skill 只有在内容复杂、可独立加载、边界稳定且独立维护确有价值时才拆分。不要为了分类、几条 validation 规则或减少几段文字而增加新的 Skill hop。
-
-渐进披露：
-
-`references/progressive_disclosure.md`
+渐进披露：`references/progressive_disclosure.md`。
 
 # Tool boundary
 
 Tool 是确定性能力组件，不是 Agent 理解任务的许可层。
 
-适合 Tool 的内容包括精确 parsing、hash/mapping、批量结构化提取、稳定文件变换、格式校验和高重复度确定性计算。
+适合 Tool 的内容包括精确 parsing、hash / mapping、批量结构化提取、稳定文件变换、格式校验和高重复度确定性计算。
 
-如果 Agent 可以可靠直接读取输入并完成开放式科学判断，不要仅因为已有 parser/Tool 就规定必须先经过它。
+如果 Agent 可以可靠直接读取输入并完成开放式科学判断，不要仅因为已有 parser / Tool 就规定必须先经过它。
 
-详细规则：
+详细规则：`references/deterministic_tool_protocol.md`。
 
-`references/deterministic_tool_protocol.md`
-
-共享 Tool 的开发与生命周期由：
-
-`00_authoring/md-workflow-tool-authoring/SKILL.md`
-
-负责。
+共享 Tool 的开发与生命周期由 `md-workflow-tool-authoring/SKILL.md` 负责。
 
 # Reuse, validation and results
 
-当前 Skill 应定义真正影响本职责结果是否有效/可复用的条件，不根据文件名或目录存在猜测。
+当前 Skill 应定义真正影响本职责结果是否有效 / 可复用的条件，不根据文件名或目录存在猜测。
 
 通常：
 
@@ -200,7 +175,7 @@ Tool 是确定性能力组件，不是 Agent 理解任务的许可层。
 明确等价 → 自动复用
 明确不等价 → 重新执行
 信息不足 → 当前 Task Execution Agent 向用户确认
-用户明确要求重做/对照 → 不自动复用
+用户明确要求重做 / 对照 → 不自动复用
 ```
 
 Validation 默认跟随当前结果 owner；只有复杂且边界清晰时才拆 supporting validation Skill。
@@ -209,23 +184,15 @@ Validation 默认跟随当前结果 owner；只有复杂且边界清晰时才拆
 
 # Architecture freezes and archive
 
-Stage / Workflow 架构 freeze 统一放在：
+Stage / Workflow architecture freeze 统一放在 `architecture_freezes/`。
 
-`architecture_freezes/`
+被 current authority 明确取代的历史 Markdown 移入 `archive/`；active path 不留同名 / 同义 tombstone。
 
-被 current authority 明确取代的历史 authoring Markdown 统一移出 active path，进入：
+详细规则：`references/skill_generation_rules.md`。
 
-`archive/`
+# Project-level support
 
-详细生成与归档规则：
-
-`references/skill_generation_rules.md`
-
-不得同时在 active path 留 `SUPERSEDED / LEGACY` tombstone、又在 archive 留副本。
-
-# Project-level authoring support
-
-以下内容是按需辅助材料，**不是比本 `SKILL.md` 更高一级的 Skill authority**：
+以下是按需辅助材料，不高于本 `SKILL.md`：
 
 ```text
 project_design/MD_WORKFLOW_MASTER_PLAN.md
@@ -234,33 +201,21 @@ architecture_freezes/
 coordination/
 ```
 
-不再维护独立 current `SYNC_STATUS.md`；阶段建设状态统一进入 Master Plan。
-
-不再为每个 Skill 维护一套平行的 content-map / skill-inventory 元数据。Skill 自身及其必要 references 就是职责定义来源。
-
-# Safety
-
-- 不修改 `01_sources/` 原始来源文件，除非有明确授权；
-- 未经授权不删除、覆盖或批量移动科研结果；
-- 不自动通过单位计费的期刊数据库下载文献；
-- Tool 写路径必须受明确授权边界限制；
-- 破坏性或不可逆动作必须取得用户确认；
-- Tool 不直接向用户提问，必要确认由当前用户可见对话处理。
+不再为每个 Skill 维护平行的 content-map / skill-inventory 元数据。
 
 # Delivery check
 
 提交前至少确认：
 
 - [ ] main Skill 能直接指导 Agent 完成当前职责；
-- [ ] 长/条件性细节使用 reference，而不是重复写两份；
+- [ ] 长 / 条件性细节使用 reference，而不是重复写两份；
 - [ ] supporting Skill 只在复杂且边界清晰时存在；
-- [ ] 未把 Agent 锁死到不必要 parser/wrapper/dispatcher；
+- [ ] 未把 Agent 锁死到不必要 parser / wrapper / dispatcher；
 - [ ] 未重新定义其他 Skill 的内部规则；
 - [ ] 已有 owner 的规则只引用，没有 shadow specification；
 - [ ] 已按需读取相关上下游 Skill，但没有越过 write ownership；
-- [ ] 推荐路径和强制科学/技术要求已区分；
-- [ ] reuse、validation、results/handoff 足以支持跨对话继续；
+- [ ] reuse、validation、results / handoff 足以支持跨对话继续；
 - [ ] 本次产生的过期 Markdown 已归档，不再留在 active path；
-- [ ] 没有重新引入 Legacy Workstream/route/event/transaction runtime。
+- [ ] 没有重新引入 Legacy Workstream / route / event / transaction runtime。
 
-Authoring 对话交付时只报告本窗口修改、validation、cross-skill findings 和未决问题；不要复制其他 Skill 的内部设计。
+Authoring 对话交付只报告本窗口修改、validation、cross-skill findings 和未决问题，不复制其他 Skill 的内部设计。
