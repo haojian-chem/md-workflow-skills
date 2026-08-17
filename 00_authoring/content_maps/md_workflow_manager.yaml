@@ -34,8 +34,8 @@ external_references:
   - purpose: repository_runtime_entry
     owner: AGENTS.md
     access: reference_only
-  - purpose: repository_authoring_rules
-    owner: 00_authoring/AUTHORING_RULES.md
+  - purpose: authoring_main_skill
+    owner: 00_authoring/SKILL.md
     access: authoring_reference
 
 legacy_manager_material:
