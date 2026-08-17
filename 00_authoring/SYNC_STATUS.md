@@ -1,158 +1,139 @@
 # Authoring sync status
 
+Status: CURRENT
+
+本文件只记录当前同步状态和权威入口，不复制各 Stage 的完整科学规则。
+
 ## Current architecture baseline
 
-- Lightweight Runtime v2 is the default runtime architecture.
-- Workflow 1 step catalog is defined.
-- **Workflow 1 / Step 1.3 Chain and Residue Selection scientific design is frozen; guide implementation is merged and validation is pending.**
-- **Workflow 2 / Stage 2 architecture is frozen.**
-- **Workflow 3 / Stage 3 architecture is frozen.**
-- **Workflow 4 / Stage 4 architecture, validation ownership and first-pass execution guidance are frozen and implemented; representative validation is pending.**
-- Workflow 5 detailed step catalog remains pending.
+- Lightweight Runtime v2：当前默认 runtime architecture。
+- Stage 1 — Structure preparation：catalog defined；1.3–1.9 current guides 已同步，代表性 validation/refinement 仍在进行。
+- Stage 2 — Topology / parameterization：architecture frozen；implementation partial。
+- Stage 3 — System construction / solvation：architecture frozen；Step Skill/template implementation pending/refining。
+- Stage 4 — MD simulation：architecture + first-pass guides frozen/implemented；representative execution validation pending。
+- Stage 5 — Analysis：architecture + first-pass Workflow/5.1 guides frozen/implemented；analysis tool inventory population and concrete Tool/analysis Skill design pending。
 
-## Workflow 1 / Step 1.3 freeze
+## Current authority entry points
 
-Current default Skill path:
+Runtime architecture:
 
-- `02_operations/chain_and_residue_selection/SKILL.md`
-- `02_operations/chain_and_residue_selection/references/pdb_materialization_rules.md`
-- `02_validators/chain_and_residue_selection_validator/SKILL.md`
+`00_authoring/lightweight_runtime_v2_spec.md`
 
-Key frozen design:
+Master stage status/index:
 
-- 1.3 selects research objects at chain / residue level; PDB generation is materialization of that selection.
-- User interaction uses source identity; internal selection records use 1.2 `component_id + residue_id`.
-- `selection_index.yaml` records targets; each `targets/target_xxx.yaml` records selection and, after PDB generation, chain/residue mapping.
-- Selected missing residues remain part of the research-object selection and reserve target-local resid positions without generating coordinates.
-- PDB chain labels derive deterministically from 1.2 `chain_index`; residue ordering follows 1.2 authoritative `residue_records[]` order.
-- PDB ATOM/HETATM and TER behavior follows 1.2 `polymer_class`; connectivity records are not regenerated.
-- Validator records PASS/FAIL for Selection, Structure content, PDB organization and Mapping.
-- Historical `chain_and_component_selection` Operation/Validator remain reference-only and are no longer the default 1.3 path.
+`00_authoring/MD_WORKFLOW_MASTER_PLAN.md`
 
-Pending:
-
-- validate the revised 1.2 residue-order contract;
-- validate 1.3 guidance on representative real structures and missing-residue cases;
-- decide from implementation evidence whether PDB materialization warrants a deterministic Tool.
-
-## Workflow 2 / Stage 2 freeze
-
-Frozen six-step catalog:
-
-1. `2.1 Parameterization environment and assignment`
-2. `2.2 Standard residue topology generation`
-3. `2.3 Topology-linked nonstandard parameterization`
-4. `2.4 Independent nonstandard parameterization`
-5. `2.5 Topology integration and assembly`
-6. `2.6 Topology validation`
-
-Authoritative planning/design records:
-
-- `00_authoring/MD_WORKFLOW_MASTER_PLAN.md`
-- `00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
-- `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
-
-Current implemented Stage 2 Operation work includes:
-
-- `02_operations/topology_integration_and_assembly/SKILL.md`
-- `02_operations/topology_integration_and_assembly/references/topology_integration_rules.md`
-- `02_operations/topology_integration_and_assembly/references/parameter_definition_deduplication.md`
-
-Key frozen corrections:
-
-- 2.3 processing unit is a **topology-linked nonstandard unit**, which may contain one or multiple nonstandard residues.
-- Workflow 1 owns topo-linked unit chain assignment; 2.5 consumes it and may independently merge covalently connected chains/units into a GROMACS final `moleculetype` without erasing chain identity.
-- 2.5 freezes final atom set, final all-atom order, canonical final atom index and `final_system.map` **before** molecule-level topology integration.
-- Each final moleculetype `.itp` is a direct output of that topology integration using the canonical final index.
-- Consolidated global/type-level parameter definitions are generated after molecule-level integration and before `final_system.top` assembly.
-
-Stage 2 is closed for ordinary architecture redesign. Remaining Stage 2 work is implementation/validation refinement or evidence-driven local correction.
-
-## Workflow 3 / Stage 3 freeze
-
-Frozen three-step catalog:
-
-1. `3.1 Periodic box construction`
-2. `3.2 Solvent addition`
-3. `3.3 Ion addition`
-
-Default scientific route:
+Manager:
 
 ```text
-3.1 → 3.2 → 3.3
+00_manager/md_workflow_manager/SKILL.md
+00_manager/md_workflow_manager/references/workflow_plan_index.yaml
 ```
 
-The step IDs express the default scientific order and may appear multiple times as Task Sheet instances when required.
+Stage architecture records:
 
-Authoritative planning/design records:
+```text
+00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
+00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
+00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+```
 
-- `00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
-- `00_authoring/MD_WORKFLOW_MASTER_PLAN.md`
-- `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+Stage 4 current guides:
 
-Key frozen Stage 3 rules:
+```text
+04_md_simulation/SKILL.md
+04_md_simulation/4.1_energy_minimization/SKILL.md
+04_md_simulation/4.2_equilibration/SKILL.md
+04_md_simulation/4.3_production_simulation/SKILL.md
+```
 
-- no separate system-construction-specification, final-assembly, or stage-level-validation step;
-- 3.1 current version uses `gmx editconf`; direct Agent modification of coordinates/box vectors is reserved for future enhancement;
-- 3.1 arg tendency centers on `-c` and `-box` / `-d`;
-- 3.2 uses `gmx solvate`, may appear multiple times, and normally inherits the existing box;
-- `sys.top` is the preferred Stage 3 topology basename when naming is under workflow control, but existing validated topology names are preserved;
-- 3.3 internally executes `gmx grompp` then `gmx genion` and should ship a dedicated minimal genion `.mdp` template;
-- `gmx genion` tends toward `-neutral`; for biomolecular systems with no user-specified salt concentration, it tends toward `-conc 0.154`;
-- Stage 3 Skills expose arg tendencies rather than rigid command templates.
+Stage 5 current guides:
 
-Stage 3 is closed for ordinary architecture redesign. Remaining Stage 3 work is Step Skill implementation, template/validation refinement, or evidence-driven local correction.
+```text
+01_workflows/analysis_workflow/SKILL.md
+02_operations/analysis_planning_and_orchestration/SKILL.md
+02_operations/analysis_planning_and_orchestration/references/analysis_tool_inventory.yaml
+```
 
-## Workflow 4 / Stage 4 freeze
+## Stage 4 current run-unit record
 
-Frozen sub-stage catalog:
+Project-level runtime file:
 
-1. `4.1 Energy minimization`
-2. `4.2 Equilibration`
-3. `4.3 Production simulation`
+`<project_root>/04_md_simulation/run_unit.yaml`
 
-Authoritative planning/design records:
+Minimum fields:
 
-- `00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
-- `00_authoring/MD_WORKFLOW_MASTER_PLAN.md`
-- `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+```yaml
+- run_unit_id:
+  start_from_run_unit_id:
+  status:
+  path:
+  top:
+```
 
-Current implemented Skill paths:
+`path` = full run-unit storage directory for lookup; not an execution working-directory prescription.
 
-- `04_md_simulation/SKILL.md`
-- `04_md_simulation/4.1_energy_minimization/SKILL.md`
-- `04_md_simulation/4.2_equilibration/SKILL.md`
-- `04_md_simulation/4.3_production_simulation/SKILL.md`
+`top` = full path of the main `.top` actually used by the run unit's `grompp`; this supports downstream topology lineage, including Stage 5 `.ndx` reuse across different TPRs.
 
-Key frozen Stage 4 rules:
+## Stage 5 current freeze
 
-- Stage 4 uses one physical `04_md_simulation/` hierarchy: parent Stage Skill plus 4.1/4.2/4.3 child Skills; logical workflow/operation responsibilities do not require separate `01_workflows/` and `02_operations/` directories here.
-- Stage 4 Task Sheet planning is based on a **planned run route**, not a serialized sub-stage list.
-- Stage 4 sub-stages are execution layers; run units are execution objects.
-- `4.1` executes `em.*`; `4.2` executes `nvt.* / npt.*`; `4.3` executes `md.*`.
-- Planned route entries do not receive formal `em.N / nvt.N / npt.N / md.N` identities until processing begins.
-- One planned route entry normally binds one formal run unit; replacement rebinding does not introduce an `attempts` layer.
-- At run start, Stage 4 binds a reusable existing run unit, continues a matching unfinished run unit, or instantiates a new run unit.
-- One centralized project-level `04_md_simulation/run_unit.yaml` maintains instantiated run units across tasks/conversations.
-- `run_unit.yaml` root is directly a list; minimum fields are `run_unit_id`, `start_from_run_unit_id`, `status`, and `path`.
-- `path` points to that specific run unit's complete directory, e.g. `/project/04_md_simulation/md.2/`; multiple run-unit directories may share the same Stage 4 parent directory.
-- `run_unit_type` is not stored; first-level type comes from the run-unit name and detailed settings come from the real `.mdp`.
-- Allowed run-unit maintenance statuses are `未完成 / 已完成 / 已终止`.
-- Technical continuation remains the same run unit; a new scientific segment becomes a new run unit.
-- `.mdp` generation belongs to 4.1/4.2/4.3 themselves; there is no separate generic MDP-generation sub-stage.
-- `grompp` warnings must be inspected; blind `-maxwarn` use is prohibited.
-- `gmx_mdrun.sh` is generated only after successful `grompp` and TPR confirmation and contains only the actual mdrun command.
-- Run-specific validation is owned directly by 4.1/4.2/4.3; Stage 4 has no separate Validator Skill.
-- Common bonded-geometry screening uses `|r-r0| > 0.08 nm` for reference-length bond/constraint terms and `|θ-θ0| > 30°` for reference-angle terms; other fixed/special bonded functions follow their actual geometry definitions.
-- Stage 4 registers the path and description of project-level `run_unit.yaml` in `project_result_index.md`, not each run artifact or run directory.
-- `simulation_plan.yaml`, historical `expected_route.yaml`, per-run `run_unit.yaml`, `simulation_output_index`, and separate Stage 4 Validators are not part of the default architecture.
+Catalog:
 
-Stage 4 is closed for ordinary architecture redesign. Remaining work is representative execution validation and evidence-driven local correction of the implemented guidance.
+```text
+5.1 Analysis planning and orchestration
+```
 
-## Open planning work
+Manager creates the 5.1 Task Sheet entry and records the user's explicit analysis goal/object/constraints. 5.1 owns concrete analysis-plan expansion, Stage 5 reuse query/check, tool discovery and orchestration.
 
-- Validate Stage 4 planned-run binding, run-unit maintenance, MDP/grompp/mdrun guidance and run-specific checks on representative cases.
-- Stage 5 step decomposition.
-- Stage 2 Steps/Validators/Tools not yet implemented.
-- Stage 3 Step Skills/templates/validation details not yet implemented.
-- Nucleic-acid-specific 2.3 cut/capping rules when required by implementation.
+5.1 plan items use fixed local integer numbering and minimum fields:
+
+```text
+编号
+tool
+inputs
+settings
+status
+path
+```
+
+Statuses:
+
+```text
+未完成
+已完成
+已终止
+```
+
+Prepared-input indexes:
+
+```text
+<project_root>/05_analysis/indexes/
+├── trajectory_index.yaml  # maintained by trjconv
+└── ndx_index.yaml         # maintained by make_ndx
+```
+
+5.1 only queries/verifies/uses these indexes. Each concrete Tool/analysis Skill validates its own output data; Stage 5 has no generic Validator layer.
+
+## Historical / superseded material rule
+
+Historical redesign, Workstream/route/runtime-projection validation, old benchmark protocols and superseded 1.3 drafts are not current architecture sources.
+
+Current authoring should resolve conflicts in this order:
+
+```text
+current Skill / Tool guide
+> matching architecture-freeze record
+> MD_WORKFLOW_MASTER_PLAN.md / this SYNC_STATUS.md
+> explicitly historical or Legacy files
+```
+
+Files marked `SUPERSEDED` or `LEGACY` must not be used to reconstruct current interfaces.
+
+## Current pending work
+
+- Stage 1 representative guide validation/refinement.
+- Stage 2 missing Step/Validator/Tool implementation.
+- Stage 3 Step Skill/template/validation implementation.
+- Stage 4 representative planned-run/run-unit execution validation.
+- Stage 5 analysis tool inventory population and concrete `trjconv` / `make_ndx` / analysis Skill design and validation.
