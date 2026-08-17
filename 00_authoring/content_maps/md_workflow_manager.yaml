@@ -3,7 +3,7 @@ skill_name: md_workflow_manager
 skill_type: manager
 skill_path: 00_manager/md_workflow_manager
 architecture: lightweight_runtime_v2
-status: manager_core_and_global_entry_aligned_task_execution_interface_pending
+status: active_current_manager
 
 owned_content:
   task_location_and_identification:
@@ -13,6 +13,10 @@ owned_content:
   task_creation_rules:
     owner: 00_manager/md_workflow_manager/SKILL.md
   initial_task_planning:
+    owner: 00_manager/md_workflow_manager/SKILL.md
+  stage4_initial_planned_run_route_boundary:
+    owner: 00_manager/md_workflow_manager/SKILL.md
+  stage5_initial_5_1_handoff_boundary:
     owner: 00_manager/md_workflow_manager/SKILL.md
   task_sheet_creation_and_manager_handoff:
     owner: 00_manager/md_workflow_manager/SKILL.md
@@ -35,7 +39,7 @@ external_references:
     access: authoring_reference
 
 legacy_manager_material:
-  status: frozen_not_default_runtime
+  status: frozen_history_only
   files:
     - 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
     - 00_manager/md_workflow_manager/references/project_initialization_protocol.md
@@ -44,7 +48,7 @@ legacy_manager_material:
     - 00_manager/md_workflow_manager/references/stage_registry.yaml
     - 00_manager/md_workflow_manager/references/manager_runtime_checklist.md
     - 00_manager/md_workflow_manager/references/manager_display_rules.md
-  rule: retained_for_legacy_history_only_and_not_loaded_by_normal_lightweight_manager
+  rule: tombstoned_or_legacy_history_only_not_loaded_by_current_manager
 
 not_owned_by_manager:
   - step_scientific_execution
@@ -53,12 +57,12 @@ not_owned_by_manager:
   - validator_logic
   - project_result_index_step_registration
   - ordinary_task_execution_agent_progression
+  - stage5_concrete_analysis_plan_design
+  - stage4_formal_run_unit_binding
   - legacy_route_transaction_event_or_workstream_orchestration
 
 notes:
-  - Manager and Task Execution Agent are expected to run in different conversations; ordinary execution does not bounce back through Manager between steps.
-  - `task_index.md` is task navigation only; `Txxxx.md` is the current task plan and recovery context.
-  - `project_result_index.md` is organized by step and contains result locations, not current-step state.
-  - The planning index contains only step order, names, work directories, and conditional markers; it must not grow into a compact scientific Workflow Skill.
-  - Root `AGENTS.md` and authoring rules now select Lightweight Runtime v2 as the default architecture.
-  - A dedicated Task Execution Agent runtime interface and lightweight scientific Step migrations are still pending; Manager refactor alone does not make 1.1-1.3 fully migrated.
+  - Manager and Task Execution Agent run in different conversations; ordinary execution does not bounce back through Manager between steps.
+  - Planning index contains only lightweight initial-planning data and explicit stage-specific planning modes; it contains no conditional/applicability science.
+  - Stage 4 initial planning records a planned run route but does not allocate formal run-unit IDs.
+  - Stage 5 initial planning creates 5.1 and preserves the user's explicit analysis requirement; 5.1 designs the concrete analysis plan.
