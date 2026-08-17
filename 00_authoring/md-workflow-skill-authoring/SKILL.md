@@ -165,7 +165,21 @@ Authoring 窗口应按需了解上下游和相邻 Skill。
 
 不要把修正偷偷写进当前 Skill 作为“兼容规则”。
 
-详细协议：
+**每次准备加入一条规则，都必须先执行 canonical rule-ownership gate：**
+
+`references/content_ownership_and_deduplication.md`
+
+核心判断只有两步：
+
+```text
+这是当前 Skill 自己的规则？
+→ 是：当前 Skill 定义
+→ 否：引用已有 owner；若 owner 缺失/冲突则提交 finding
+```
+
+不得为了“当前 Skill 自洽”复制、改写或总结出一份可独立执行的外部规则；这会形成 shadow specification。
+
+详细多窗口协议：
 
 `references/multi_window_authoring_protocol.md`
 
@@ -295,7 +309,7 @@ Skill 必须让后续 Agent 能定位并理解真正需要的结果。
 
 新 content map 不再使用 `workflow / operation / validator` 强制类型字段。
 
-详细规则：
+详细规则及 rule-ownership gate：
 
 `references/content_ownership_and_deduplication.md`
 
@@ -335,6 +349,10 @@ Tool authoring：
 - [ ] 已按需读取直接相关的上下游/相邻 Skill；
 - [ ] 未修改未分配的 write path；
 - [ ] 当前 Skill 未重新定义外部 Skill 内部规则；
+- [ ] 对每条新增规则都通过了 rule-ownership gate；
+- [ ] 没有复制或改写已有 owner 的规则形成 shadow specification；
+- [ ] 没有一条规则需要未来在多个 owner 文件中同步修改；
+- [ ] 外部内容已尽量缩成 `consume / require / handoff`；
 - [ ] 没有因为旧目录而强制 Workflow/Operation/Validator 分类；
 - [ ] 没有为了形式化新增无价值 supporting Skill；
 - [ ] 没有把 Agent 锁死到不必要 parser/wrapper/dispatcher；
