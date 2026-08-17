@@ -19,17 +19,19 @@ Tool 不是新的科学决策层，也不是新的 runtime orchestration 层。
 
 # 启动前读取
 
-1. `AGENTS.md`；
-2. `00_authoring/AUTHORING_RULES.md`；
-3. `00_authoring/SYNC_STATUS.md`；
-4. `00_authoring/skill_inventory.yaml`；
-5. `00_authoring/file_ownership.yaml`；
-6. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
-7. `05_tools/tool_registry.yaml`；
-8. 目标 Tool 的当前 `tool.yaml`、实现、tests；
-9. 实际调用它的 main/supporting Skills。
+默认先读取：
 
-涉及 Legacy tool/runtime 迁移时才读取 `03_contracts/**` 或 `runtime/**`。
+```text
+AGENTS.md
+→ 00_authoring/SKILL.md
+→ 00_authoring/references/deterministic_tool_protocol.md
+→ 目标 Tool 的当前 tool.yaml / 实现 / tests
+→ 实际调用它的 main/supporting Skills
+```
+
+需要注册或发布 Tool 时再读取 `05_tools/tool_registry.yaml`；涉及多窗口写入协调、inventory/status 或 Legacy 迁移时，再按需读取对应 authoring metadata / Legacy 材料。
+
+不要为了 Tool authoring 预加载整个 `00_authoring/`。
 
 先列出：
 
