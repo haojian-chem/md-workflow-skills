@@ -66,7 +66,7 @@ owned_content:
 external_references:
   - {purpose: lightweight_runtime_architecture, owner: 00_authoring/lightweight_runtime_v2_spec.md, access: authoring_reference}
   - {purpose: structure_preparation_workflow, owner: 01_workflows/structure_preparation_workflow/SKILL.md, access: reference_only}
-  - {purpose: downstream_selection, owner: 02_operations/chain_and_component_selection/, access: reference_only}
+  - {purpose: downstream_selection, owner: 02_operations/chain_and_residue_selection/, access: reference_only}
   - {purpose: executable_tests_and_validation, owner: 04_evals/component_and_residue_classification_validator/, access: reference_only, status: revalidation_required}
 
 legacy_dependencies:
