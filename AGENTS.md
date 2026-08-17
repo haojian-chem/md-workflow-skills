@@ -5,13 +5,9 @@
 本仓库同时用于：
 
 1. 真实 MD 项目的运行与任务管理；
-2. MD Workflow Skill / Tool / contract / runtime 架构的设计与维护。
+2. MD Workflow Skill / Tool / runtime 架构的设计与维护。
 
-Skill 架构根目录：
-
-`/root/data/5_codex/3_md_workflow`
-
-真实 MD 项目根目录不固定。任何真实项目操作都必须区分 Skill root 与 MD project root。
+Skill architecture root 与真实 MD project root 必须区分。真实项目根目录不固定。
 
 ## 2. 先判断当前模式
 
@@ -19,7 +15,7 @@ Skill 架构根目录：
 
 真实 MD 项目默认使用 **Lightweight Runtime v2**。
 
-默认项目记录只有：
+默认项目记录：
 
 ```text
 <project_root>/00_project_records/
@@ -48,24 +44,135 @@ Manager 与 Task Execution Agent 默认不在每个子环节之间往返。
 当用户要求创建、定位、整理或重新规划任务时：
 
 1. 读取 `00_manager/md_workflow_manager/SKILL.md`；
-2. 按该 Skill 的最小读取规则使用 `task_index.md` 和目标任务单；
+2. 按其最小读取规则使用 `task_index.md` 和目标 Task Sheet；
 3. 只有创建或明确重新规划任务时才读取 Manager planning index；
-4. 不默认读取具体科研 Step Skill、项目结果索引或 Legacy Runtime records。
+4. 不默认读取具体科研 Skill、项目结果索引或 Legacy Runtime records。
 
 #### Task execution 请求
 
-当用户要求继续、执行、检查、解释或排错一个已有任务时：
+当用户要求继续、执行、检查、解释或排错已有任务时：
 
 1. 读取目标 `Txxxx.md`；
-2. 由任务单确定当前要处理的子环节和对象；
-3. 只加载当前子环节需要的 Skill；
-4. 在真正开始该子环节时，按环节在 `project_result_index.md` 中检索已有正式结果，并按当前 Skill 的 reuse conditions 判断是否复用；
-5. 只读取当前对象、候选复用结果及当前 Skill 明确要求的其他输入；
-6. 执行后直接维护任务单、登记正式结果，并根据结果或用户明确要求调整后续子环节。
+2. 由任务单确定当前要处理的子环节/对象；
+3. 加载当前任务所需的 main Skill；
+4. 按当前 Skill / Stage 已冻结规则检查 reuse；
+5. 只读取当前对象、候选结果和当前工作明确需要的其他资料；
+6. 必要时按需读取 supporting Skill / reference / Tool guide；
+7. 执行后维护 Task Sheet、登记正式结果，并根据结果或用户明确要求调整后续计划。
 
 普通 task execution 不需要为了推进下一子环节返回 Manager。
 
-#### Legacy Runtime
+### AUTHORING_OR_MAINTENANCE
+
+当用户要求编写、修改、审查或规划 Skill / Tool / Manager / Stage architecture 时：
+
+1. 读取 `00_authoring/AUTHORING_RULES.md`；
+2. 读取 current `SYNC_STATUS.md`、`skill_inventory.yaml`、`file_ownership.yaml`；
+3. 读取目标 content map 和目标当前 Skill；
+4. 按需读取与当前输入、输出和边界直接相关的其他 Skill / Tool guide；
+5. Lightweight Runtime v2 规格位于 `00_authoring/lightweight_runtime_v2_spec.md`；
+6. Legacy Runtime 文件默认只作为冻结历史材料。
+
+Authoring 中必须区分：
+
+```text
+read scope  ≠  write ownership
+```
+
+可以并且应该读取不属于当前写入范围的相关 Skill 来理解接口；未经明确分配，不得修改它们，也不得在当前 Skill 中替它们定义内部规则。
+
+## 3. Current Skill model
+
+当前科研 Skill 设计原则：
+
+```text
+main Skill
+├── references/        # 长规则/registry/按需细节
+├── schemas/           # 只有确有稳定结构化约束时使用
+├── scripts/           # Skill-local deterministic helper
+└── supporting Skill   # 仅复杂且边界清晰时拆出
+```
+
+**不再强制把科研 Skill 分类为 Workflow / Operation / Validator。**
+
+仓库中现存：
+
+```text
+01_workflows/
+02_operations/
+02_validators/
+```
+
+是历史布局和迁移中的现有路径，不是新 Skill 的强制目录模板。
+
+Manager 是项目级管理 Skill；Tool 是确定性能力组件。
+
+## 4. Skill 是 Agent guide
+
+Skill 的首要作用是指导 Agent 如何处理科研任务，而不是把 Agent 锁进固定 parser、wrapper 或 dispatcher。
+
+默认原则：
+
+- Agent 可以直接读取并理解实际科研文件；
+- parser / Tool 用于需要精确、稳定、批量、可测试的确定性动作；
+- 推荐 Tool 不自动等于唯一允许实现；
+- 只有科学方法或明确技术接口真正要求时，才规定不可替代的软件/算法/格式路径；
+- 不为简单判断增加无必要 schema、状态机或中间 workflow hop。
+
+## 5. 跨 Skill 边界
+
+当前 Skill 可以引用其他 Skill 的：
+
+```text
+正式结果
+对外能力
+已经冻结的判据
+handoff interface
+```
+
+不得在当前 Skill 中重新定义其他 Skill 的：
+
+```text
+内部步骤
+默认参数
+科学判断逻辑
+validation
+official results
+文件生命周期
+计划维护规则
+```
+
+发现外部 Skill 缺失/冲突时，交给 owner window / main authoring window 处理。
+
+## 6. Runtime 最小读取原则
+
+- Manager 只读取任务管理与规划真正需要的信息；
+- Task Execution Agent 只加载当前动作需要的信息；
+- 不为了“全面了解”扫描整个项目；
+- 跨环节优先消费上游正式结果，而不是重读上游全过程；
+- 但当当前科学判断确实需要理解相邻 Skill 的接口时，可以按需读取；
+- `project_result_index.md` 只用于结果检索，不保存当前任务状态。
+
+## 7. 任务与结果记录
+
+`task_index.md`：
+
+- 只记录任务导航；
+- 任务级状态：`未完成 | 已完成 | 已终止`。
+
+`tasks/Txxxx.md`：
+
+- 记录任务目标、计划、状态和最小恢复信息；
+- 普通子环节状态：`待执行 | 未完成 | 已完成`；
+- Stage-specific 内部对象可以使用其已冻结的局部状态规则。
+
+`project_result_index.md`：
+
+- 用于跨任务/跨对话正式结果检索；
+- 登记粒度由当前 Stage / Skill 定义；
+- 不建立通用 version registry。
+
+## 8. Legacy Runtime
 
 以下体系已冻结，不再是默认真实运行入口：
 
@@ -80,93 +187,25 @@ artifact state machine
 transaction closure
 ```
 
-只有旧项目首次接管、明确历史恢复、Legacy 调试或用户明确要求时才按需读取相关旧记录；不得默认扫描整套 Legacy Runtime。
+只有旧项目恢复、Legacy 调试、历史审计或用户明确要求时才按需读取。
 
-### AUTHORING_OR_MAINTENANCE
+## 9. 通用权限与安全
 
-当用户要求编写、修改、审查或规划 Skill、Tool、Manager、Workflow、contract 或 runtime 架构时：
-
-1. 读取 `00_authoring/AUTHORING_RULES.md`；
-2. 再读取目标文件对应的 content map、同步状态和适用权威 references；
-3. Lightweight Runtime v2 的架构规格位于 `00_authoring/lightweight_runtime_v2_spec.md`；
-4. Legacy Runtime 相关文件默认只作为冻结历史材料，不应为了新设计继续扩展。
-
-不要把 authoring 材料自动带入真实 MD runtime。
-
-## 3. Runtime 职责边界
-
-默认运行关系是：
-
-```text
-Manager
-  ↓ 一次性交接
-Task Sheet
-  ↓
-Task Execution Agent
-  ↓ 按当前子环节加载
-Step / Operation / Validator Skill
-  ↓ 必要时
-Deterministic Tool
-```
-
-逻辑上的 Workflow、Operation、Validator 科研职责继续保留，但不要求每个子环节通过一套 Manager → Workflow → Operation → Validator → closure 的 LLM 调度链。
-
-Tool 是确定性执行组件，不是科学决策层。
-
-Task Execution Agent 可以在当前用户对话中处理需要的科学判断、确认、复用判定和局部计划调整；Tool 不直接向用户提问。
-
-## 4. Runtime 最小读取原则
-
-- Manager 只读取任务管理与规划真正需要的信息；
-- Task Execution Agent 一次只加载当前子环节需要的信息；
-- 不预读未来子环节 Skill；
-- 不为了“全面了解”默认扫描项目目录、其他任务单或完整历史；
-- 跨环节优先消费上游正式结果文件，而不是重新读取上游 Skill 和全过程；
-- 每一次额外文件、Skill 或目录读取都必须由当前动作的明确需求触发；
-- `project_result_index.md` 只用于结果检索，不保存当前任务或当前环节状态。
-
-## 5. 任务与结果记录原则
-
-`task_index.md`：
-
-- 只记录任务导航；
-- 任务级状态仅使用 `未完成 | 已完成 | 已终止`。
-
-`tasks/Txxxx.md`：
-
-- 记录任务目标；
-- 记录每个子环节的 `状态 / 对象 / 工作目录 / 主要结果 / 必要执行记录`；
-- 子环节状态仅使用 `待执行 | 未完成 | 已完成`；
-- 确认不需要的未执行子环节直接从计划删除；
-- 任务范围由当前列出的子环节定义，不维护独立 start/end/route。
-
-`project_result_index.md`：
-
-- 一级按子环节组织；
-- 登记该环节定义的正式结果文件完整路径与来源任务；
-- 不建立稳定对象 registry 或 version registry。
-
-## 6. 通用权限与安全
-
-- 不修改 `01_sources/` 中的来源文件；
-- source recognition 默认复制源结构；只有用户明确授权且具备 source write permission 时才允许移动；
+- 不修改 `01_sources/` 中的来源文件，除非有明确授权；
 - 不自动通过单位计费的期刊数据库下载文献；
-- 未经授权，不删除、覆盖或批量移动项目文件；
+- 未经授权，不删除、覆盖或批量移动科研文件；
 - 破坏性或不可逆操作必须在执行前取得用户确认；
 - 默认 Tool 不访问网络，也不得嵌入 LLM 调用；
-- Tool 只能在明确授权的路径与权限边界内写入；
-- 需要复现的复杂科研操作优先保存实际脚本、配置或软件输入文件，不维护全局 shell 流水账。
+- Tool 只能在明确授权路径内写入；
+- 需要复现的复杂科研操作优先保存实际脚本、配置或软件输入文件。
 
-## 7. 架构来源
+## 10. 当前 authority
 
-- Lightweight Runtime v2 规格：`00_authoring/lightweight_runtime_v2_spec.md`
-- authoring/maintenance：`00_authoring/AUTHORING_RULES.md`
+- Runtime：`00_authoring/lightweight_runtime_v2_spec.md`
+- Authoring：`00_authoring/AUTHORING_RULES.md`
+- Skill boundary：`00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md`
 - Manager：`00_manager/md_workflow_manager/`
-- Workflow：`01_workflows/`
-- Operation：`02_operations/`
-- Validator：`02_validators/`
+- Current Stage guides：以 `SYNC_STATUS.md` 和对应 architecture-freeze record 为准
 - Tool：`05_tools/`
 - Legacy contracts：`03_contracts/`
 - Legacy runtime projection：`runtime/`
-
-`03_contracts/**` 与 `runtime/**` 当前保留用于 Legacy 历史和迁移，不是 Lightweight Runtime v2 普通任务的默认依赖。
