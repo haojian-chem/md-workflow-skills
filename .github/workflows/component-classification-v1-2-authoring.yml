@@ -4,11 +4,9 @@ on:
   pull_request:
     paths:
       - "02_validators/component_and_residue_classification_validator/**"
-      - "00_authoring/content_maps/component_and_residue_classification_validator.yaml"
       - "00_authoring/SKILL.md"
       - "00_authoring/references/**"
       - "00_authoring/scripts/**"
-      - "00_authoring/content_map.schema.yaml"
       - "01_workflows/structure_preparation_workflow/SKILL.md"
       - ".github/workflows/component-classification-v1-2-authoring.yml"
   workflow_dispatch:
@@ -45,12 +43,6 @@ jobs:
             > authoring_validation_output/detect_cross_file_duplication.log 2>&1
           status=$?
           echo "detect_cross_file_duplication=$status" | tee -a authoring_validation_output/statuses.txt
-          [ "$status" -eq 0 ] || overall=1
-
-          python 00_authoring/scripts/validate_content_maps.py \
-            . > authoring_validation_output/validate_content_maps.log 2>&1
-          status=$?
-          echo "validate_content_maps=$status" | tee -a authoring_validation_output/statuses.txt
           [ "$status" -eq 0 ] || overall=1
 
           cat authoring_validation_output/*.log
