@@ -1,50 +1,33 @@
 # Lightweight Runtime v2 Specification
 
-## 1. 目标与设计原则
+Status: CURRENT DEFAULT RUNTIME ARCHITECTURE
 
-Lightweight Runtime v2 的目标，是让 MD Workflow Skills 的默认运行方式接近“具备可靠科研 SOP 的直接 Agent 工作模式”，而不是让 LLM 维护一套事务型工作流引擎。
+## 1. Goal
 
-### 1.1 科研 Skill 与运行时管理分离
+Lightweight Runtime v2 让 MD Workflow 的默认运行方式接近“长期持有 Task Sheet 的科研执行 Agent + 按需加载当前 Skill”，而不是事务型 Workflow engine。
 
-保留 Workflow、Step/Operation、Validator、reference/SOP、实际执行脚本和确定性工具中真正用于科研判断、执行和验证的内容。
+保留：
 
-默认运行时不再依赖 route、transaction、event、artifact state machine、workstream state machine 等管理对象。
+- Workflow / Operation / Validator 的科研职责；
+- Step-specific scientific SOP；
+- reuse、validation、provenance、用户确认和 recovery 中真正必要的信息；
+- 确定性 Tools。
 
-### 1.2 Task Sheet 是默认运行时核心状态载体
+默认不再依赖：
 
-默认运行时只通过：
+```text
+Workstream
+route / route revision
+runtime task/result
+project event
+artifact state machine
+transaction closure
+runtime projection state
+```
 
-- `00_project_records/task_index.md`
-- `00_project_records/project_result_index.md`
-- `00_project_records/tasks/Txxxx.md`
+## 2. Project records
 
-维持跨对话任务状态、计划和结果定位。
-
-不再为普通任务同步维护另一套等价 runtime state。
-
-### 1.3 只读取当前动作真正需要的信息
-
-Manager 只负责任务管理和初始规划。
-
-Task Execution Agent 按当前子环节加载对应 Skill，并只读取当前动作明确需要的输入、结果和辅助资料。
-
-不得为了“全面了解项目”默认扫描整个项目、全部历史记录、其他任务单或无关 Skill。
-
-### 1.4 计划是动态工作计划，不是固定 route
-
-任务计划直接保存在 Task Sheet 中。
-
-Manager 创建初始计划；Task Execution Agent 根据科研结果或用户明确指令直接调整后续子环节。
-
-Manager 的初始计划不是科学适用性判决。Manager 不负责判断某个 Step 对当前体系是否实际需要，也不维护 `conditional` / applicability 标记。
-
-不再维护独立 route object、route revision 或 route transaction。
-
----
-
-## 2. 项目记录与目录体系
-
-### 2.1 项目记录目录
+默认项目记录：
 
 ```text
 <project_root>/00_project_records/
@@ -52,22 +35,21 @@ Manager 的初始计划不是科学适用性判决。Manager 不负责判断某�
 ├── project_result_index.md
 └── tasks/
     ├── T001.md
-    ├── T002.md
     └── ...
 ```
 
-### 2.2 `task_index.md`
+### `task_index.md`
 
-只承担任务导航。
+只用于任务导航：
 
-每个任务只记录：
+```text
+Task ID
+Task name
+Task status
+Task Sheet full path
+```
 
-- Task ID；
-- Task name；
-- Task status；
-- Task Sheet 完整路径。
-
-任务级状态只允许：
+任务状态：
 
 ```text
 未完成
@@ -75,49 +57,21 @@ Manager 的初始计划不是科学适用性判决。Manager 不负责判断某�
 已终止
 ```
 
-规则：
+### Task Sheet
 
-- 新任务创建时为 `未完成`；
-- 当前计划全部完成后为 `已完成`；
-- 仅当用户明确放弃任务时为 `已终止`；
-- 排错、失败、等待、阻塞不增加新的任务级状态。
+Task Sheet 是任务计划、进度和最小恢复上下文。
 
-Manager 负责创建和定位任务；Task Execution Agent 在任务完成或用户明确终止时可以同步更新该索引。
+普通 sub-stage 至少记录：
 
-### 2.3 Task Sheet：`tasks/Txxxx.md`
+```text
+状态
+对象
+工作目录
+主要结果（完成后）
+执行记录（仅必要时）
+```
 
-Task Sheet 是可动态维护的多环节工作计划与最小恢复上下文。
-
-任务级固定内容：
-
-- Task ID / title；
-- Task status；
-- Task goal；
-- Plan and progress。
-
-不单独维护：
-
-- task-level input；
-- start step；
-- end step；
-- task scope field；
-- route；
-- current node；
-- current stage。
-
-任务当前范围完全由 `计划与进度` 中实际列出的子环节定义。
-
-每个子环节记录：
-
-- `状态`；
-- `对象`；
-- `工作目录`；
-- `主要结果`（完成后）；
-- `执行记录`（仅必要时）。
-
-`对象` 表示该子环节实际处理的具体对象，可以是一个结构文件、一个上游正式结果文件、一组明确文件或必要时一个目录；不要求项目级稳定 object ID。
-
-子环节状态只允许：
+普通 sub-stage 状态：
 
 ```text
 待执行
@@ -125,556 +79,287 @@ Task Sheet 是可动态维护的多环节工作计划与最小恢复上下文。
 已完成
 ```
 
-确认不需要执行且尚未实际执行的子环节，直接从任务单删除，不保留 `不适用` 状态。
+Stage-specific 内部对象可以使用其 freeze 文件明确的局部状态模型，例如：
 
-已经实际执行过的子环节不得为了整理计划而静默删除；如结果被替换，保留必要执行记录。
+- Stage 4 run units：`未完成 / 已完成 / 已终止`；
+- Stage 5 5.1 plan items：`未完成 / 已完成 / 已终止`。
 
-### 2.4 工作目录两级模型
+### `project_result_index.md`
 
-科研工作目录分为：
+用于跨任务/跨对话检索正式结果，不保存当前任务状态，也不是 artifact registry 或 summary。
+
+登记粒度由当前 Skill/Stage 明确的 official-result boundary 决定。
+
+## 3. Manager
+
+Manager 与 Task Execution Agent 默认是不同对话。
+
+Manager 只负责：
+
+1. 任务定位；
+2. 新任务创建；
+3. 初始规划；
+4. 用户明确要求时重新规划；
+5. 项目级任务导航/整理。
+
+Manager 正常只读：
 
 ```text
-Step 基础目录
-→ 当前任务执行目录
+00_project_records/task_index.md
+目标 tasks/Txxxx.md
 ```
 
-例如 1.2：
+创建新任务或显式重新规划时再读：
+
+`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
+
+Manager 不：
+
+- 预读所有 Step Skills；
+- 扫描 project_result_index 做每一步 reuse；
+- 判断具体 Step 科学 applicability；
+- 建 route / Workstream / event；
+- 创建 task-specific 科研执行目录。
+
+## 4. Initial planning
+
+Manager planning index 只提供：
+
+- Workflow/Step ID；
+- name；
+- order；
+- project/base work directory；
+- 明确冻结的 stage-specific planning mode。
+
+不含：
 
 ```text
-01_structure_preparation/02_component_and_residue_classification/
-└── T001/
+conditional / applicability
+scientific decision rules
+reuse conditions
+input/output schemas
+validation
+commands
+dependencies
+failure recovery
+artifact lineage
 ```
 
-#### Step 基础目录
+普通 Workflow 使用 sub-stage Task Sheet 计划。
 
-稳定基础目录可以在项目初始化时创建到这一层，例如：
+### Stage 4 exception
+
+Stage 4 不把 Task Sheet 表示成固定 `4.1 → 4.2 → 4.3`，而是 planned run route。4.1/4.2/4.3 是 execution layers，formal run units 是 `em.N / nvt.N / npt.N / md.N` execution objects。
+
+Manager 不在 planning 时分配 formal run-unit IDs。
+
+### Stage 5
+
+Stage 5 仍是普通 sub-stage planning：Manager 只创建 `5.1 Analysis planning and orchestration` 并记录用户明确的分析目标/对象/约束。具体 analysis plan 由 5.1 执行期展开。
+
+## 5. Directory model
+
+普通 Step：
+
+```text
+<base_work_directory>/
+└── <task_id>/
+```
+
+项目初始化可以创建稳定 Step base directories，例如：
 
 ```text
 01_structure_preparation/
 ├── 01_source_recognition/
 ├── 02_component_and_residue_classification/
-├── 03_chain_and_component_selection/
-└── ...
+├── 03_chain_and_residue_selection/
+├── 04_altloc_occupancy_resolution/
+├── 05_completeness_check/
+├── 06_missing_region_completion/
+├── 07_protein_protonation_assignment/
+├── 08_reorder_and_mapping/
+└── 09_validation/
 ```
 
-项目初始化到 Step 基础目录即停止。
+Manager 只把未来 `<base>/<task_id>/` 路径写入 Task Sheet，不创建该目录。
 
-#### Task 执行目录
-
-不同任务的实际执行目录固定为：
+Task Execution Agent：
 
 ```text
-<base_work_directory>/<task_id>/
+进入当前 Step
+→ 先做该 Step 要求的 reuse 检查
+→ 可直接复用：不创建空 task directory
+→ 需要本地执行：创建当前 task directory
 ```
 
-例如：
+Stage-specific directory/index rules以相应 freeze/Skill 为准。
+
+## 6. Task Execution Agent
+
+Task Execution Agent 长期持有一个 Task Sheet，并连续推进多个 Step。
+
+普通执行顺序：
 
 ```text
-01_structure_preparation/02_component_and_residue_classification/T001/
-01_structure_preparation/02_component_and_residue_classification/T005/
-```
-
-Manager 在 Task Sheet 中记录该预留路径，但**不创建 `Txxxx/` 任务执行目录**。
-
-Task Execution Agent 在真正进入该子环节时：
-
-1. 先做 reuse 检查；
-2. 若可以直接复用已有正式结果，不创建当前任务空目录；
-3. 若确实需要本地执行，才创建当前 `<base_work_directory>/<task_id>/`；
-4. 当前执行不得顺带创建其他任务或未来子环节的 task 目录。
-
-该规则用于：
-
-- 隔离不同任务的固定文件名输出；
-- 防止 T005 覆盖 T001 的正式结果；
-- 避免 Manager 为尚未执行或最终被复用的步骤提前创建大量空目录。
-
-### 2.5 Task Sheet 的动态维护
-
-Manager 创建初始子环节计划。
-
-Task Execution Agent 可以根据当前结果：
-
-- 更新当前子环节状态；
-- 更新对象、工作目录和主要结果；
-- 增加完成当前任务所必需的后续子环节；
-- 删除确认不需要的尚未执行后续子环节；
-- 调整后续子环节顺序；
-- 写入必要执行记录。
-
-用户在 Task Execution Agent 对话中明确改变任务计划时，可以直接修改 Task Sheet，不需要返回 Manager。
-
-### 2.6 `project_result_index.md`
-
-`project_result_index.md` 是跨任务、跨对话的正式结果检索索引。
-
-它不是项目 summary、artifact registry、运行日志，也不保存当前任务或当前环节状态。
-
-一级按 Workflow 子环节组织：
-
-```text
-环节
-  → 具体结果描述
-      → 完整结果文件路径
-      → 来源任务
-```
-
-结果描述用于区分不同输入、选择或处理条件，不要求稳定对象层或 version registry。
-
-如果两个结果在影响该环节输出的条件上完全等价，正常情况下应在执行前触发复用；真正产生多个结果时，通过实际差异描述区分，而不是人为增加版本号。
-
-### 2.7 什么进入结果索引
-
-一个子环节完成后，只登记当前 Step Skill 明确定义的 `official results`。
-
-不登记：
-
-- 临时文件；
-- debug 输出；
-- scratch；
-- cache；
-- 普通中间文件；
-- 与正式交付无关的过程文件。
-
-### 2.8 执行记录不是流水日志
-
-Task Sheet 的 `执行记录` 只保存对恢复、判断和继续执行有意义的关键事件，例如：
-
-- 用户关键决定；
-- 关键科学或技术判断；
-- 异常及处理结果；
-- 当前未完成原因；
-- 复用来源；
-- 为什么增加、删除或调整后续子环节；
-- 为什么结果被重新生成或替换。
-
-不记录普通文件读取、Skill 加载、`ls/cat/grep`、临时文件操作等流水信息。
-
-默认不建立独立 `workflow_log.md` 或 `commands.log`。
-
-需要复现的复杂命令优先保存为实际脚本、配置或软件输入文件。
-
----
-
-## 3. Manager 职责
-
-Manager 与 Task Execution Agent 默认处于不同对话，应尽量减少二者往返。
-
-Manager 的核心职责只保留：
-
-1. 任务定位；
-2. 新任务创建；
-3. 初始规划；
-4. 项目级任务管理；
-5. 必要时显式重新规划。
-
-### 3.1 任务定位
-
-Manager 默认先读：
-
-`00_project_records/task_index.md`
-
-定位规则：
-
-- 用户指定 Task ID：直接定位；
-- 用户指定可唯一匹配的任务名称：从索引定位；
-- 当前 Manager 对话已明确任务：继续该任务；
-- 无法唯一确定：询问用户；
-- 不为了猜测当前任务遍历所有 Task Sheet。
-
-确定任务后才读取对应 `Txxxx.md`。
-
-### 3.2 新任务创建边界
-
-检查、解释、排错、重新查看结果、继续已有环节等默认属于已有任务，不创建新任务。
-
-只有：
-
-- 用户提出新的独立工作目标；
-- 用户显式要求另建任务；
-
-才创建新 Task Sheet。
-
-### 3.3 初始规划
-
-Manager 根据用户目标和 `workflow_plan_index.yaml` 直接生成 Task Sheet 中需要列出的子环节。
-
-Manager 不需要：
-
-- 建立 start/end runtime object；
-- 生成独立 route；
-- 预先查询全部复用结果；
-- 读取所有子环节 Skill；
-- 提前运行科学检查；
-- 判断每个 Step 对当前体系是否实际适用。
-
-Manager 只根据用户明确的任务范围和 planning index 中已定义的 Step 顺序生成初始计划。科学适用性由 Task Execution Agent 在执行过程中根据正式结果和当前 Step Skill 处理。
-
-Manager 为每个子环节记录：
-
-```text
-<project_root>/<base_work_directory>/<task_id>/
-```
-
-作为未来执行目录，但不创建该目录。
-
-### 3.4 Manager 与 Task Execution Agent 的交接
-
-```text
-Manager 对话
-→ 创建 / 定位任务
-→ 初始规划
-→ 写好 Txxxx.md
-→ 一次性交接
-
-Task Execution Agent 对话
-→ 连续执行多个子环节
-→ 持续维护 Txxxx.md
-→ 持续维护 project_result_index.md
+read target Task Sheet
+→ determine current Step/object
+→ read current Step Skill
+→ query project_result_index for current-Step candidates
+→ apply current Skill reuse rules
+→ execute if required
+→ validate according to current Skill
+→ update Task Sheet
+→ register official results
+→ adjust future plan if current evidence requires
+→ continue
 ```
 
 普通子环节之间不回 Manager 调度。
 
-### 3.5 后续计划变化
+用户在执行对话中明确改变任务范围时，可以直接修改 Task Sheet。
 
-用户在 Task Execution Agent 对话中明确改变任务计划时，Task Execution Agent 可以直接修改 Task Sheet，并在需要时读取 planning index 补充对应子环节。
+## 7. Step-facing Skill contract
 
-Task Execution Agent 也可以依据科研结果对后续计划做必要局部增删和排序调整。
-
----
-
-## 4. Manager Planning Index
-
-规划索引位于：
-
-`00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
-
-它只用于轻量初始规划，不是 Workflow Skill 摘要，也不是 route 配置。
-
-### 4.1 允许保存的信息
-
-每个 Workflow / Step 只保存规划需要的信息：
-
-- Workflow ID / name；
-- Workflow directory；
-- Step ID；
-- Step name；
-- `base_work_directory`；
-- Step order；
-- 必要时的轻量 planning alias。
-
-不保存 `conditional`、applicability、trigger condition 或其他需要 Manager 科学判断的字段。
-
-统一目录规则：
+普通 Step-facing Skill 或 Operation + Validator 组合应明确：
 
 ```text
-base_work_directory + task_id
-→ Task Sheet 预留工作目录
+purpose
+object requirements
+reuse conditions
+execution rules
+validation requirements
+official results
 ```
 
-planning index 可以声明目录创建责任，但不创建任务专属科研目录。
+Workflow 只保存阶段边界、Step mapping 和真正必要的阶段级科学关系，不复制具体 Step 算法。
 
-### 4.2 禁止进入 planning index 的内容
+Stage-specific architecture 可以定义不同内部对象/计划结构，但必须明确其 execution ownership、reuse、validation 和 result registration。
 
-不得写入：
+## 8. Reuse
 
-- 科学判断规则；
-- Step 适用性条件；
-- 输入要求；
-- 输出 schema；
-- reuse conditions；
-- preflight；
-- validator 规则；
-- 软件依赖；
-- 执行命令；
-- 错误恢复；
-- 用户确认条件；
-- artifact lineage；
-- subagent prompt；
-- 完整 Workflow / Operation 内容。
-
----
-
-## 5. Task Execution Agent 与 Step Skill 统一接口
-
-Task Execution Agent 是长期持有并推进一个 Task Sheet 的执行对话，不要求每个 1.x/2.x 子环节启动新的独立 Agent。
-
-### 5.1 每个 Step Skill 必须明确
-
-1. `purpose`
-2. `object requirements`
-3. `reuse conditions`
-4. `execution rules`
-5. `validation requirements`
-6. `official results`
-
-这些内容只描述当前科研子环节，不包含 transaction、route、event、artifact state 等管理逻辑。
-
-### 5.2 子环节统一执行顺序
+普通 Step 在真正开始时检查 reuse：
 
 ```text
-读取当前 Txxxx.md
-  ↓
-确定当前子环节及对象
-  ↓
-读取当前 Step Skill
-  ↓
-在 project_result_index.md 中检索该 Step 历史正式结果
-  ↓
-按 reuse conditions 判断
-  ├─ 明确等价：自动复用
-  ├─ 明确不等价：正常执行
-  └─ 无法判断：询问用户
-  ↓
-若需要本地执行：创建当前任务专属工作目录
-  ↓
-执行当前子环节
-  ↓
-按当前 Skill 要求验证
-  ↓
-更新 Txxxx.md
-  ↓
-登记 official results
-  ↓
-根据结果调整后续子环节
+明确等价 → 自动复用
+明确不等价 → 正常执行
+信息不足 → 当前用户可见 Task Execution Agent 询问用户
+用户明确要求重做/对照 → 跳过自动复用
 ```
 
-`project_result_index.md` 本身没有“当前环节”字段；当前执行到哪里只由 Task Sheet 决定。
+不要仅因为目录/文件存在、文件名相同或任务名称相似就复用。
 
-### 5.3 用户显式要求重做
+复用其他任务正式结果时直接引用，不复制一份“本任务副本”。
 
-如果用户明确要求重新分析、重新检查、重跑或生成新的对照结果，则跳过自动复用。
+Stage 5 是已冻结的组织例外：5.1 在整体 analysis plan 生成时集中查询和核验 Stage 5 reuse，并同时考虑当前 plan 中前置 producer 将生成、供后续 item 使用的文件；正常后续执行不逐项重做全局查询。
 
-### 5.4 Operation / Validator
+## 9. Validation ownership
 
-Operation 和 Validator 继续作为科研能力模块保留，但不再是 Runtime 强制穿过的固定层级。
+Validation ownership 由当前 Stage/Skill 明确：
 
-Step Skill 可以直接指导执行，或按需要调用 Operation / Validator。
+- 普通 Operation 可以调用专属 Validator；
+- Validator-only Step 可以自己拥有完整 Step validation；
+- Stage 4 run-specific validation 直接属于 4.1/4.2/4.3 Skills；
+- Stage 5 不设统一 Validator layer，各 Tool/analysis Skill 对自己产生的数据负责 validation，5.1 只负责 plan/orchestration consistency。
 
-### 5.5 最低回写要求
+## 10. Result registration
 
-Task Execution Agent 只需要：
+只登记当前 Skill/Stage 定义的 official results。
 
-1. 更新当前 Task Sheet；
-2. 如产生正式结果，更新 `project_result_index.md`；
-3. 如当前结果影响计划，直接修改后续子环节。
+不登记：
 
-不再生成普通 runtime task/result/event/artifact/route closure 对象。
+- debug/scratch/cache；
+- 普通过程文件；
+- 为了“完整”而复制的重复文件索引。
 
----
+Stage-specific examples：
 
-## 6. 结果登记与复用
+- Stage 4：登记 project-level `04_md_simulation/run_unit.yaml`；
+- Stage 5：登记“对哪些对象做了哪些分析 + 详细 Task Sheet/5.1 plan-item 入口”，不逐个登记所有分析输出文件。
 
-### 6.1 复用发生在子环节开始时
+## 11. Stage 4 project-level run units
 
-不在 Task Sheet 创建时冻结复用判断。
+Stage 4 项目级文件：
 
-因为创建任务时不存在的结果，推进到该环节时可能已经由其他任务完成；上游结果也可能改变后续步骤的必要性。
+`<project_root>/04_md_simulation/run_unit.yaml`
 
-### 6.2 Reuse conditions 由当前 Step Skill 定义
+当前最小 record：
 
-每个 Step Skill 只声明真正决定其输出是否仍有效的条件，例如：
+```yaml
+- run_unit_id:
+  start_from_run_unit_id:
+  status:
+  path:
+  top:
+```
 
-- 相同输入结构；
-- 相同 retain selection；
-- 相同 pH；
-- 相同 protonation method；
-- 相同 force field；
-- 相同 residue definition / parameter source。
+`path` 是完整存放目录，用于查询，不规定 working directory。
 
-不同 Step 的 reuse conditions 不由 Manager 统一推断。
+`top` 是该 run unit 实际用于 `grompp` 的主 `.top` 完整路径。
 
-### 6.3 复用判定
+详细规则以：
 
-- 明确等价：自动复用；
-- 明确不等价：正常执行；
-- 信息不足：询问用户；
-- 用户明确要求重做：不复用。
+`04_md_simulation/SKILL.md`
 
-复用后在当前 Task Sheet 中记录来源结果路径和必要 provenance。
+为准。
 
-直接复用时，不复制结果到当前任务目录，也不创建无意义空目录。
+## 12. Stage 5 planning/index model
 
----
-
-## 7. 最小读取与运行规则
-
-### 7.1 Manager
-
-Manager 默认只读：
+Stage 5 catalog：
 
 ```text
-task_index.md
-目标 Txxxx.md
+5.1 Analysis planning and orchestration
 ```
 
-只有创建或显式重新规划时再读 planning index。
-
-默认不得为了解项目情况读取：
-
-- `project_result_index.md`；
-- 其他 Task Sheet；
-- 具体 Step Skill；
-- Operation / Validator；
-- Legacy runtime records；
-- 整个项目目录。
-
-### 7.2 Task Execution Agent
-
-正常读取路径：
+5.1 plan items 使用局部固定整数编号，最小字段：
 
 ```text
-Txxxx.md
-→ current Step Skill
-→ project_result_index.md 中该 Step 的历史结果条目
-→ 必要的候选正式结果
-→ 当前对象
-→ 当前 Step 明确需要的其他输入
+编号
+tool
+inputs
+settings
+status
+path
 ```
 
-### 7.3 禁止预读未来 Step
-
-真正准备进入某个子环节时才读取其 Skill。
-
-### 7.4 禁止默认扫描整个项目
-
-对象优先来自 Task Sheet；进一步输入来自当前 Step Skill 和正式结果索引。
-
-只有信息确实不足时，才进行有明确目标的局部查找。
-
-### 7.5 Operation / Validator / Reference 按需加载
+Project-level prepared-input indexes：
 
 ```text
-Task Sheet
-→ Step Skill
-    → 真正需要时再读 Operation
-    → 真正需要时再读 Validator
-    → 真正需要时再读 Reference
+<project_root>/05_analysis/indexes/
+├── trajectory_index.yaml
+└── ndx_index.yaml
 ```
 
-### 7.6 跨环节通过正式结果传递
+维护责任和 reuse 规则以：
 
-当前 Step 需要上游内容时，优先读取上游正式结果文件，而不是重新加载上游 Skill 或扫描上游全过程。
+```text
+01_workflows/analysis_workflow/SKILL.md
+02_operations/analysis_planning_and_orchestration/SKILL.md
+```
 
-### 7.7 额外读取必须有明确原因
+为准。
 
-允许原因包括：
+## 13. Minimal reads
 
-- 当前 Step Skill 明确要求；
-- reuse conditions 需要核验；
-- 当前对象引用；
-- Validator 需要；
-- 用户明确要求；
-- 当前错误排查需要。
+按需读取，不以“全面了解”为理由扩大上下文。
 
-不得仅以“可能有用”“为了保险”“先全面了解”为理由扩大读取。
+Manager 不默认读 project result、其他 Task Sheets、全部 Skills、Legacy runtime records。
 
----
+Task Execution Agent 不默认：
 
-## 8. Legacy Runtime
+- 预读未来 Steps；
+- 扫描所有任务；
+- 重读上游全过程；
+- 加载 Legacy route/state/event/runtime records。
 
-### 8.1 冻结范围
+## 14. Legacy rule
 
-以下机制不再作为默认运行时继续扩展：
+Legacy Runtime 可以保留用于 Git history、旧项目迁移或明确调试，但：
 
-- `project_state`；
-- `workstream_state`；
-- route / route revision；
-- runtime task / result；
-- project events；
-- artifact state；
-- runtime projection；
-- runtime task builder；
-- runtime record committer；
-- route fast-path evaluator；
-- runtime project initializer；
-- 围绕上述对象建立的 transaction closure、schema 和 runtime eval。
+- 新项目不默认生成 Legacy records；
+- Lightweight Runtime 不双写旧 records；
+- 新 Skills 不增加 Legacy compatibility layer；
+- historical files 标为 `LEGACY` / `SUPERSEDED` 时不得用来推翻 current Skills/freeze records。
 
-### 8.2 Lightweight Runtime 禁止依赖 Legacy Runtime
+当前 authoring/version authority 规则见：
 
-新的 Manager、Task Execution Agent 和 Step Skill 不得要求普通任务先构造或维护 Legacy runtime objects。
-
-默认执行链只依赖：
-
-- `task_index.md`；
-- 当前 `Txxxx.md`；
-- `project_result_index.md`；
-- 当前 Step Skill；
-- 实际科研输入/输出；
-- 当前 Step 真正需要的 Operation / Validator / Tool。
-
-不得建立 Lightweight records 到 Legacy runtime 的兼容包装层。
-
-### 8.3 新项目
-
-新项目建立 Lightweight records，并可创建已定义的稳定 Workflow / Step 基础目录。
-
-不生成 Legacy project state、Workstream、route、event、runtime task/result，也不预创建任何 `<base_work_directory>/<task_id>/` 科研目录。
-
-### 8.4 旧项目接管
-
-已有旧项目不做一比一自动迁移。
-
-只恢复当前继续工作真正需要的信息，例如：
-
-- 已有任务目标；
-- 已完成主要子环节；
-- 当前仍需处理的子环节；
-- 已有正式结果路径；
-- 必要关键用户决定。
-
-随后建立 Lightweight records 并继续维护。
-
-### 8.5 Legacy records 读取边界
-
-仅在旧项目首次接管、当前记录缺失关键历史、用户明确要求、恢复或排错确有需要时按需读取。
-
-即使如此，也不扫描整套 Legacy records。
-
-### 8.6 第一阶段不删除 Legacy 工具
-
-至少验证以下场景后再决定删除还是归档：
-
-- 新项目初始化；
-- 新任务创建；
-- 多子环节连续执行；
-- 结果复用；
-- 中途增删计划；
-- 跨对话恢复；
-- 跨 Workflow 任务；
-- 旧项目接管。
-
-### 8.7 Scientific Skills 不属于 Legacy
-
-继续保留并重构：
-
-- Workflow scientific rules；
-- Step / Operation Skill；
-- Validator；
-- reference / SOP；
-- 实际有用的 deterministic tools；
-- 软件调用脚本；
-- 输入输出规范；
-- reuse conditions。
-
-工具应回归“完成科学动作并返回结果”的角色，而不是为 runtime receipt、event commit、route evaluation 等管理闭环服务。
-
----
-
-## 9. 重构验收原则
-
-Lightweight Runtime v2 的目标不是降低科研严谨性，而是减少 LLM 在管理层的重复读取、状态维护和多轮调度。
-
-默认普通任务应满足：
-
-- 一个 Manager 对话完成任务定位 / 创建和初始规划；
-- 一个 Task Execution Agent 对话可以连续推进多个子环节；
-- Manager 不承担 Step 科学适用性判断；
-- 当前子环节只加载当前真正需要的 Skill 和文件；
-- 复用检查发生在子环节开始时；
-- 不为普通科研动作维护事务型 runtime closure；
-- 简单判断和简单工具调用不产生分钟级管理开销；
-- 不同任务的固定文件名结果通过 `<base_work_directory>/<task_id>/` 隔离；
-- 可复用结果直接引用来源任务，不生成副本或空目录。
-
-后续 Manager、Workflow、Step/Operation、Validator 和 1.1/1.2/1.3 的重构均以本文件为运行时架构依据。
+`00_authoring/README.md`
