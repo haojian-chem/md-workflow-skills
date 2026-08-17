@@ -1,13 +1,10 @@
-schema_version: 3
+schema_version: 5
 skill_name: <skill-name>
-skill_type: <authoring_guide|manager|workflow|operation|validator>
 skill_path: <project-relative-skill-directory>
-contract_status: pending
-content_ownership_status: pending
+status: draft
 owned_content: {}
-external_references:
-- purpose: layer_boundary
-  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-  access: reference_only
+external_references: []
 notes:
-- Define the Skill contract before assigning local references, schemas, or detailed content ownership.
+  - Record content ownership and read-only external authorities only.
+  - Do not classify the Skill as workflow / operation / validator.
+  - Read scope is not encoded here; multi-window write ownership belongs to file_ownership.yaml / work order.
