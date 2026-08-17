@@ -1,240 +1,198 @@
-schema_version: 4
-status: lightweight_runtime_v2_stage4_first_pass_implemented_validation_pending
+schema_version: 5
+status: current_stage5_frozen
 
 runtime_architecture:
   default_runtime: lightweight_runtime_v2
+  authority: 00_authoring/lightweight_runtime_v2_spec.md
   project_model: task_sheet
-  records:
-    task_index: 00_project_records/task_index.md
-    task_sheets: 00_project_records/tasks/Txxxx.md
-    project_result_index: 00_project_records/project_result_index.md
-  directory_policy:
-    stable_step_base_directories_initialized_without_task_subdirectories: true
-    task_execution_directory_pattern: "<base_work_directory>/<task_id>/"
-    manager_records_but_does_not_create_task_execution_directories: true
-    task_execution_agent_creates_directory_only_when_local_execution_is_required: true
-    direct_reuse_does_not_require_empty_task_directory: true
-  conversations:
-    manager:
-      role: task_location_creation_initial_planning_and_project_level_management
-      skill: 00_manager/md_workflow_manager/SKILL.md
-    task_execution_agent:
-      role: continuous_multi_step_task_execution
-      manager_roundtrip_between_steps: false
-      dedicated_runtime_interface_status: not_required_root_agents_rules_apply
-  scientific_layers:
-    logical_roles:
-      - workflow
-      - operation
-      - validator
-    conventional_directories:
-      workflow: 01_workflows
-      operation: 02_operations
-      validator: 02_validators
-    integrated_stage_directories:
-      md_simulation: 04_md_simulation
-    tool: 05_tools
-    note: logical scientific roles do not require separate physical layer directories when a stage-specific integrated layout is explicitly frozen
-  legacy_runtime:
-    status: frozen_not_default_runtime
-    project_model: workstream_route_event_transaction
-    runtime_projection: runtime/
-    contracts: 03_contracts/
-    rule: retain_for_history_migration_and_explicit_legacy_maintenance_only
+  manager: 00_manager/md_workflow_manager/SKILL.md
+  planning_index: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
+  legacy_runtime_status: frozen_not_default
 
-shared_contracts:
-  status: legacy_frozen_not_default_lightweight_runtime
-  index: 03_contracts/README.md
-  files:
-    - 03_contracts/common_types.schema.yaml
-    - 03_contracts/confirmation_item.schema.yaml
-    - 03_contracts/workflow_route_fragment.schema.yaml
-    - 03_contracts/workflow_decision.schema.yaml
-    - 03_contracts/subagent_task.schema.yaml
-    - 03_contracts/subagent_result.schema.yaml
-    - 03_contracts/project_state.schema.yaml
-    - 03_contracts/workstream_state.schema.yaml
-    - 03_contracts/project_event.schema.yaml
-    - 03_contracts/manager_session.schema.yaml
-    - 03_contracts/route_record.schema.yaml
-    - 03_contracts/decision_record.schema.yaml
-    - 03_contracts/submission_record.schema.yaml
-    - 03_contracts/artifact_set.schema.yaml
-    - 03_contracts/state_snapshot.schema.yaml
+scientific_layout:
+  conventional:
+    workflow: 01_workflows
+    operation: 02_operations
+    validator: 02_validators
+  integrated_stage_directories:
+    md_simulation: 04_md_simulation
+  tools: 05_tools
+  rule: physical layout may differ when a stage-specific architecture freeze explicitly defines an integrated layout
 
 skills:
   - name: md-workflow-skill-authoring
     layer: authoring
     path: 00_authoring/md-workflow-skill-authoring
-    status: lightweight_authoring_guide_aligned_revalidation_pending
+    status: active_lightweight_authoring_guide
     content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
 
   - name: md-workflow-tool-authoring
     layer: authoring
     path: 00_authoring/md-workflow-tool-authoring
-    status: active_tool_lifecycle_retained_lightweight_alignment_pending
+    status: active_tool_authoring_guide_alignment_review_pending
     content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml
 
   - name: md_workflow_manager
     layer: manager
     path: 00_manager/md_workflow_manager
-    status: lightweight_manager_core_refactored_task_directory_policy_aligned
+    status: active_lightweight_manager
     content_map: 00_authoring/content_maps/md_workflow_manager.yaml
 
   - name: structure_preparation_workflow
     layer: workflow
     path: 01_workflows/structure_preparation_workflow
-    status: lightweight_workflow_refactored_1_3_mapping_aligned_revalidation_pending
+    status: guide_implemented_revalidation_pending
     content_map: 00_authoring/content_maps/structure_preparation_workflow.yaml
-
-  - name: md_simulation
-    layer: workflow
-    path: 04_md_simulation
-    status: stage4_architecture_frozen_first_pass_implemented_validation_pending
-    content_map: 00_authoring/content_maps/md_simulation.yaml
-
-  - name: energy_minimization
-    layer: operation
-    path: 04_md_simulation/4.1_energy_minimization
-    status: first_pass_implemented_validation_pending
-    content_map: 00_authoring/content_maps/energy_minimization.yaml
-
-  - name: equilibration
-    layer: operation
-    path: 04_md_simulation/4.2_equilibration
-    status: first_pass_implemented_validation_pending
-    content_map: 00_authoring/content_maps/equilibration.yaml
-
-  - name: production_simulation
-    layer: operation
-    path: 04_md_simulation/4.3_production_simulation
-    status: first_pass_implemented_validation_pending
-    content_map: 00_authoring/content_maps/production_simulation.yaml
 
   - name: source_recognition
     layer: operation
     path: 02_operations/source_recognition
-    status: lightweight_step_interface_task_scoped_outputs_refactored_revalidation_pending
+    status: guide_implemented_revalidation_pending
     content_map: 00_authoring/content_maps/source_recognition.yaml
 
   - name: component_and_residue_classification_validator
     layer: validator
     path: 02_validators/component_and_residue_classification_validator
-    status: lightweight_step_interface_task_scoped_outputs_refactored_scientific_revalidation_pending
+    status: guide_implemented_revalidation_pending
     content_map: 00_authoring/content_maps/component_and_residue_classification_validator.yaml
 
   - name: chain_and_residue_selection
     layer: operation
     path: 02_operations/chain_and_residue_selection
-    status: lightweight_guide_scientific_rules_frozen_validation_pending
+    status: scientific_design_frozen_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/chain_and_residue_selection.yaml
 
   - name: chain_and_residue_selection_validator
     layer: validator
     path: 02_validators/chain_and_residue_selection_validator
-    status: lightweight_guide_validation_rules_frozen_validation_pending
+    status: validation_design_frozen_guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/chain_and_residue_selection_validator.yaml
 
   - name: chain_and_component_selection
     layer: operation
     path: 02_operations/chain_and_component_selection
-    status: legacy_reference_only_superseded_by_chain_and_residue_selection
+    status: legacy_reference_only_superseded
     content_map: 00_authoring/content_maps/chain_and_component_selection.yaml
 
   - name: chain_and_component_selection_validator
     layer: validator
     path: 02_validators/chain_and_component_selection_validator
-    status: legacy_reference_only_superseded_by_chain_and_residue_selection_validator
+    status: legacy_reference_only_superseded
     content_map: 00_authoring/content_maps/chain_and_component_selection_validator.yaml
 
   - name: altloc_occupancy_resolution
     layer: operation
     path: 02_operations/altloc_occupancy_resolution
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/altloc_occupancy_resolution.yaml
 
   - name: altloc_occupancy_validator
     layer: validator
     path: 02_validators/altloc_occupancy_validator
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/altloc_occupancy_validator.yaml
 
   - name: structure_completeness_validator
     layer: validator
     path: 02_validators/structure_completeness_validator
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_completeness_validator.yaml
 
   - name: missing_region_completion
     layer: operation
     path: 02_operations/missing_region_completion
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/missing_region_completion.yaml
 
   - name: missing_region_completion_validator
     layer: validator
     path: 02_validators/missing_region_completion_validator
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/missing_region_completion_validator.yaml
 
   - name: protein_protonation_assignment
     layer: operation
     path: 02_operations/protein_protonation_assignment
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/protein_protonation_assignment.yaml
 
   - name: protein_protonation_validator
     layer: validator
     path: 02_validators/protein_protonation_validator
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/protein_protonation_validator.yaml
 
   - name: structure_reorder_and_mapping
     layer: operation
     path: 02_operations/structure_reorder_and_mapping
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_reorder_and_mapping.yaml
 
   - name: structure_mapping_validator
     layer: validator
     path: 02_validators/structure_mapping_validator
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_mapping_validator.yaml
 
   - name: structure_preparation_validator
     layer: validator
     path: 02_validators/structure_preparation_validator
-    status: planned
+    status: guide_implemented_validation_pending
     content_map: 00_authoring/content_maps/structure_preparation_validator.yaml
+
+  - name: topology_integration_and_assembly
+    layer: operation
+    path: 02_operations/topology_integration_and_assembly
+    status: stage2_step_2_5_guide_implemented_refinement_pending
+    content_map: null
+
+  - name: md_simulation
+    layer: workflow
+    path: 04_md_simulation
+    status: stage4_frozen_guide_implemented_validation_pending
+    content_map: 00_authoring/content_maps/md_simulation.yaml
+
+  - name: energy_minimization
+    layer: operation
+    path: 04_md_simulation/4.1_energy_minimization
+    status: guide_implemented_validation_pending
+    content_map: 00_authoring/content_maps/energy_minimization.yaml
+
+  - name: equilibration
+    layer: operation
+    path: 04_md_simulation/4.2_equilibration
+    status: guide_implemented_validation_pending
+    content_map: 00_authoring/content_maps/equilibration.yaml
+
+  - name: production_simulation
+    layer: operation
+    path: 04_md_simulation/4.3_production_simulation
+    status: guide_implemented_validation_pending
+    content_map: 00_authoring/content_maps/production_simulation.yaml
+
+  - name: analysis_workflow
+    layer: workflow
+    path: 01_workflows/analysis_workflow
+    status: stage5_frozen_guide_implemented_validation_pending
+    content_map: 00_authoring/content_maps/analysis_workflow.yaml
+
+  - name: analysis_planning_and_orchestration
+    layer: operation
+    path: 02_operations/analysis_planning_and_orchestration
+    status: stage5_frozen_guide_implemented_tool_inventory_population_pending
+    content_map: 00_authoring/content_maps/analysis_planning_and_orchestration.yaml
 
 tools:
   registry: 05_tools/tool_registry.yaml
-  lightweight_policy:
-    retain_scientifically_useful_deterministic_tools: true
-    legacy_orchestration_tools_are_default_runtime: false
-    do_not_add_runtime_management_tools_without_new_evidence: true
-  items:
-    - name: runtime_schema_validator
-      status: ACTIVE_LEGACY
-      validation_evidence: 04_evals/runtime_schema_validator/VALIDATION.md
-    - name: source_recognition_deterministic
-      status: ACTIVE_LEGACY_INTERFACE_LIGHTWEIGHT_ADAPTATION_PENDING
-      validation_evidence: 04_evals/source_recognition_deterministic/VALIDATION.md
-    - name: runtime_dependency_preflight
-      status: ACTIVE_LEGACY_INTERFACE_NOT_REQUIRED_BY_LIGHTWEIGHT_1_2
-      validation_evidence: 04_evals/runtime_dependency_preflight/VALIDATION.md
-    - name: state_transaction
-      status: LEGACY_DESIGNED_FROZEN
-    - name: incremental_reference_checker
-      status: LEGACY_DESIGNED_FROZEN
-    - name: task_closure_renderer
-      status: LEGACY_DESIGNED_FROZEN
+  rule: tool status and versions are authoritative only in tool_registry.yaml; do not duplicate the full tool registry here
 
-migration_next:
-  - revalidate_lightweight_skill_authoring_static_checks
-  - lightweight_align_md_workflow_tool_authoring
-  - validate_redesigned_1_3_selection_guides_and_real_pdb_materialization
-  - validate_1_1_and_1_2_task_scoped_directory_behavior
-  - validate_cross_dialog_recovery_and_1_1_to_1_2_to_1_3_handoff
-  - validate_result_reuse_without_empty_task_directories
-  - validate_stage4_planned_run_binding_execution_and_run_specific_checks
+current_architecture_records:
+  stage2: 00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
+  stage3: 00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
+  stage4: 00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+  stage5: 00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+
+notes:
+  - This inventory is discovery metadata, not an architecture authority.
+  - Historical or Legacy files do not become current merely because they remain in Git.
+  - Concrete Stage 5 analysis tools are added to analysis_tool_inventory.yaml only when their referenced guide exists.
