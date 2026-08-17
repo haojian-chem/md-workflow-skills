@@ -6,20 +6,22 @@ Status: CURRENT
 
 ## Current authoring model
 
+- `00_authoring/SKILL.md` 是新 Skill authoring / maintenance 窗口的唯一 authoring 主入口。
 - 新科研 Skill 默认采用 `main Skill + references + only-when-justified supporting Skill`。
 - 不再强制 Workflow / Operation / Validator 分类。
 - `01_workflows/`、`02_operations/`、`02_validators/` 是历史布局/迁移中的现有路径，不是新 Skill 模板。
 - Skill 是 Agent guide，不是 parser / wrapper / dispatcher gate。
 - 多窗口 authoring：允许并鼓励按需读取外部相关 Skill；写入只限 owned `write_paths`；当前 Skill 不替其他 Skill 定义内部规则。
 - Stage architecture-freeze 统一集中在 `00_authoring/architecture_freezes/`。
-- Superseded/Legacy authoring Markdown 统一从 active path 移入 `00_authoring/archive/`。
+- Superseded/Legacy authoring 文件从 active path 移入 `00_authoring/archive/`。
 
-Current boundary authority:
+Current authoring boundary authority:
 
 ```text
-00_authoring/AUTHORING_RULES.md
-00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md
-00_authoring/md-workflow-skill-authoring/references/multi_window_authoring_protocol.md
+00_authoring/SKILL.md
+00_authoring/references/skill_boundaries.md
+00_authoring/references/content_ownership_and_deduplication.md
+00_authoring/references/multi_window_authoring_protocol.md
 ```
 
 ## Current architecture baseline
@@ -32,6 +34,10 @@ Current boundary authority:
 - Stage 5 — Analysis：integrated main Skill；architecture + first-pass guide frozen/implemented；analysis capability inventory population and concrete analysis Skill/Tool design pending。
 
 ## Current authority entry points
+
+Authoring:
+
+`00_authoring/SKILL.md`
 
 Runtime architecture:
 
@@ -134,18 +140,18 @@ Stage 5 main Skill only queries/verifies/uses these indexes. Each concrete analy
 
 ## Historical / superseded material rule
 
-Historical redesign, Workstream/route/runtime-projection validation, old benchmark protocols, superseded 1.3 drafts, and superseded Workflow/Operation/Validator authoring templates are not current architecture sources.
+Historical redesign, Workstream/route/runtime-projection validation, old benchmark protocols, superseded 1.3 drafts, and superseded role-specific authoring templates are not current architecture sources.
 
-需要保留的过期 authoring Markdown 集中在：
+需要保留的过期 authoring 文件集中在：
 
 `00_authoring/archive/`
 
-Current authoring conflict resolution:
+Current conflict resolution:
 
 ```text
 current Skill / Tool guide
 > matching architecture-freeze record in 00_authoring/architecture_freezes/
-> MD_WORKFLOW_MASTER_PLAN.md / this SYNC_STATUS.md
+> project-level Master Plan / this Sync Status
 > archived historical or Legacy files
 ```
 
