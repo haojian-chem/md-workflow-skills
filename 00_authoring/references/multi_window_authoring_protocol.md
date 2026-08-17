@@ -39,8 +39,10 @@ AGENTS.md
 - 直接相关的上下游/相邻 Skill；
 - 当前需要的 Tool guide / reference；
 - 涉及多窗口 writer 协调时再读取 `00_authoring/coordination/file_ownership.yaml` 或对应 window work order；
-- 涉及 Stage catalog / 建设状态时再读取 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 涉及 Stage catalog / 建设状态时读 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
 - 涉及跨 Stage runtime architecture 时再读取 `00_authoring/project_design/lightweight_runtime_v2_spec.md`。
+
+**如果当前任务是正式 Skill generation、freeze 建立/替换或 implementation milestone 更新，读取 Master Plan 不是可选项，而是状态同步前置。**
 
 不要把整个 `00_authoring/` 作为每个新窗口的固定 preload。
 
@@ -63,13 +65,15 @@ AGENTS.md
 
 不再通过每个 Skill 一份 content map 或一个全局 skill inventory 来授予/判断写入权。
 
+`MD_WORKFLOW_MASTER_PLAN.md` 通常仍是共享文件，但针对**当前 Skill authoring 直接造成的状态变化**存在一个窄的 status-only 写例外，见第 9 节。
+
 ## 4. Business Skill window
 
 每个业务窗口只拥有明确 `write_paths`。
 
 业务窗口**不应**因为“这些文件不归我写”就拒绝读取相关上下游 Skill。
 
-但没有明确重新分配时，只修改自己的 `write_paths`。
+但没有明确重新分配时，只修改自己的 `write_paths`，以及第 9 节定义的 status-only 共享写例外。
 
 一个文件同一时间只有一个 writer；一个 Skill 目录默认只有一个 writer window。
 
@@ -152,6 +156,8 @@ main Skill
 
 如果当前 main Skill 已经能清楚指导 Agent 完成任务，不为形式完整增加 supporting Skill。
 
+已确定的 Stage / Step package 目录可以提前保留；目录存在不代表内部 `SKILL.md` 已获批生成。
+
 ## 8. 不把 Agent 锁进 parser/workflow
 
 业务窗口需要检查：
@@ -163,10 +169,12 @@ main Skill
 
 只有科学/技术方法真正要求时，才规定强制软件/算法/格式路径。
 
-## 9. 写入冲突
+## 9. 写入冲突与状态同步例外
+
+一般规则：
 
 - 路径重叠时改为串行；
-- 共享接口修改交给 main window；
+- 共享科学/架构接口修改交给 main window；
 - 不通过“在自己 Skill 里复制一份外部规则”规避 ownership 冲突；
 - 不使用开发子 Agent 解决窗口冲突。
 
@@ -176,16 +184,41 @@ main Skill
 
 增加 assignment。
 
-## 10. 交付前去重检查
+### 9.1 Master Plan status-only 共享写
+
+`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 是 Stage / Step 建设状态和 current entry 的唯一 owner。为避免 Skill 完成后状态长期陈旧，完成当前 Skill / freeze 的窗口必须承担状态同步责任。
+
+写入前：
+
+```text
+refetch current main
+→ 读取 MD_WORKFLOW_MASTER_PLAN.md
+→ 读取 coordination/file_ownership.yaml
+→ 检查是否存在该共享文件的显式 writer
+```
+
+若不存在显式冲突，当前窗口可以只修改：
+
+- 自己负责的 Stage / Step 建设状态；
+- 该 Step 的 current `SKILL.md` / freeze entry；
+- 因本次生成直接导致的 Stage 汇总状态文字。
+
+不得借此修改其他 Stage 的 catalog、科学规则或 architecture。
+
+若已有显式 writer，则不并发修改；当前窗口必须向该 writer 给出精确状态 patch / handoff，并在交付中明确状态尚待落地。**不能因为共享文件不归当前业务窗口就完全忽略状态维护。**
+
+## 10. 交付前去重与状态检查
 
 交付前至少确认：
 
 - 当前 Skill 没有写其他环节“应该怎么做”；
 - 没有复制或改写另一个 owner 的规则；
 - 没有形成以后需要多处同步修改的 shadow specification；
-- 外部内容已经尽量缩成 `consume / require / handoff`。
+- 外部内容已经尽量缩成 `consume / require / handoff`；
+- 若本次改变了 Skill/freeze/validation 建设状态，Master Plan 已同步，或已有明确 writer handoff；
+- 若 Stage main Skill 维护该 Step 的 current/freeze-only entry，该入口已同步。
 
-任一项不满足时，先处理 ownership / deduplication，再交付。
+任一项不满足时，先处理 ownership / deduplication / status synchronization，再交付。
 
 ## 11. 交付
 
@@ -195,6 +228,7 @@ main Skill
 当前窗口负责什么
 修改了哪些 owned paths
 做了什么 validation
+状态 owner 是否已同步
 有哪些 cross-skill findings
 还有哪些未决问题
 ```
