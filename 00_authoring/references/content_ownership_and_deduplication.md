@@ -15,10 +15,10 @@ Status: CURRENT
 | Lightweight Runtime 总体架构 | `00_authoring/project_design/lightweight_runtime_v2_spec.md` |
 | Stage catalog / 建设状态 / current entry | `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` |
 | Skill 组织与职责边界 | `references/skill_boundaries.md` |
-| Manager 任务管理与初始规划 | `00_manager/md_workflow_manager/SKILL.md` |
-| Manager 轻量 planning catalog | `00_manager/md_workflow_manager/references/workflow_plan_index.yaml` |
+| Manager 任务管理与初始规划 | `00_manager/SKILL.md` |
+| Manager 轻量 planning catalog | `00_manager/references/workflow_plan_index.yaml` |
 | 当前科研职责主线 | 当前 main `SKILL.md` |
-| 当前职责的长科学规则/registry | 当前 `references/` |
+| 当前职责的长科学规则 / registry | 当前 `references/` |
 | 当前职责独有且稳定的结构化约束 | 当前 `schemas/` |
 | Skill-local deterministic helper | 当前 `scripts/` |
 | 跨 Skill deterministic capability | `05_tools/` 对应 Tool |
@@ -82,11 +82,9 @@ Legacy `03_contracts/**`、runtime projection、subagent protocol、route/event/
 
 ```text
 consume: 使用哪个正式结果
-require: 需要哪项已冻结能力/判据
+require: 需要哪项已冻结能力 / 判据
 handoff: 当前输出如何交给下游
 ```
-
-必要时可以说明为什么需要该接口，但不要展开 owner Skill 的内部实现。
 
 如果一句接口说明已经开始出现“对方先做 A，再做 B，参数用 C，最后检查 D”，通常说明已经越界。
 
@@ -96,9 +94,9 @@ handoff: 当前输出如何交给下游
 
 - 当前任务目标；
 - scope / responsibility boundary；
-- 当前输入/对象/证据要求；
+- 当前输入 / 对象 / 证据要求；
 - reuse 判据；
-- 核心执行/判断主线；
+- 核心执行 / 判断主线；
 - validation；
 - 结果与 handoff；
 - 特有用户确认条件；
@@ -120,16 +118,14 @@ Supporting Skill 必须拥有一项可独立描述的完整职责，不能只是
 
 - 为了形成“Operation + Validator”配对；
 - 为了把主 Skill 的几条规则搬出去；
-- 为了匹配 `01_workflows/02_operations/02_validators` 目录；
+- 为了匹配已经退役的 role-based scientific Skill layout；
 - 为了增加一个 dispatcher hop。
 
 Main Skill 只引用 supporting Skill 的能力和 handoff，不复制其内部完整规则。
 
-## 6. 外部 Skill 的接口级描述
+## 6. External Skill boundary
 
-当前 Skill 可以读取并理解其他 Skill，但只拥有与自身相关的**接口关系**。
-
-允许记录：
+当前 Skill 可以读取并理解其他 Skill，但只拥有与自身相关的接口关系：
 
 ```text
 consume: 上游哪个正式结果
@@ -137,48 +133,25 @@ require: 外部 Skill 的哪项已冻结能力
 handoff: 当前输出如何供下游使用
 ```
 
-禁止在当前 Skill 中重新定义外部 Skill 的：
+禁止在当前 Skill 中重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results、文件生命周期或任务计划规则。
 
-```text
-内部步骤
-默认参数
-方法选择
-validation
-结果文件生命周期
-official results
-任务计划规则
-```
-
-发现外部 Skill 缺失/冲突时，写 cross-skill finding / handoff 给其 owner，不在当前文件中建立第二份规则。
+发现外部 Skill 缺失 / 冲突时，写 cross-skill finding / handoff 给其 owner，不在当前文件中建立第二份规则。
 
 ## 7. `references/`
 
-适合保存当前 Skill 独有且按需读取的：
-
-- 长科学规则；
-- registry；
-- 数据表；
-- 长方法说明；
-- 大枚举；
-- 只有特定条件才需要读取的细节。
-
-Reference 不重新描述 `SKILL.md` 的完整主流程。
+适合保存当前 Skill 独有且按需读取的长科学规则、registry、数据表、方法说明、大枚举或条件性细节。Reference 不重新描述 `SKILL.md` 的完整主流程。
 
 ## 8. `schemas/`
 
-只在确有稳定、可机器校验的结构化 handoff/文件约束时创建。
+只在确有稳定、可机器校验的结构化 handoff / 文件约束时创建。
 
-不要把本可以由 Agent 直接理解的普通文本描述强制转换成 schema，只为了让流程看起来形式化。
-
-不要为 Task Sheet、route、subagent task/result 等重新建立 Legacy 式本地 schema 副本。
+不要把本可以由 Agent 直接理解的普通文本描述强制转换成 schema，只为了让流程看起来形式化；也不要为 Task Sheet、route、subagent task/result 等重新建立 Legacy 式本地 schema 副本。
 
 ## 9. `scripts/` 与 Tool
 
-Skill-local、不会跨 Skill 复用的小型确定性 helper 可以留在 `scripts/`。
+Skill-local、不会跨 Skill 复用的小型确定性 helper 可以留在 `scripts/`。跨 Skill 复用、需要独立测试与生命周期的确定性程序进入 `05_tools/`。
 
-跨 Skill 复用、需要独立测试与生命周期的确定性程序进入 `05_tools/`。
-
-Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否强制调用由当前科学/技术要求决定。
+Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否强制调用由当前科学 / 技术要求决定。
 
 ## 10. Validation ownership
 
@@ -191,8 +164,6 @@ Tool 的存在不代表当前 Skill 必须通过它才能理解任务；是否�
 
 只有 validation 本身复杂、可复用、边界清晰时才拆 supporting validation Skill。
 
-Tool 对自己生成的确定性输出负责机械/格式有效性；main Skill 对这些输出是否满足当前科研目标负责。
-
 ## 11. 完成前去重 / 越界自检
 
 每次 Skill 编写或修改完成前，至少检查：
@@ -201,13 +172,13 @@ Tool 对自己生成的确定性输出负责机械/格式有效性；main Skill 
 1. 我是否写了其他环节“应该怎么做”？
 2. 我是否复制或改写了另一个 owner 已经定义的规则？
 3. 是否存在一条规则以后修改时必须同步更新多个文件？
-4. 当前外部内容能否缩成 consume / require / handoff，而不是重新描述其内部实现？
+4. 当前外部内容能否缩成 consume / require / handoff？
 5. 是否又建立了一个 YAML/index 来重复 Skill 本身已经说明的职责或状态？
 ```
 
-任一答案为“是”时，先处理 ownership/去重问题，再认为当前 Skill 可以交付。
+任一答案为“是”时，先处理 ownership / 去重问题，再认为当前 Skill 可以交付。
 
-## 12. 拆分/重复警告
+## 12. 拆分 / 重复警告
 
 出现以下情况时必须检查并重构：
 
