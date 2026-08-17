@@ -24,14 +24,18 @@ Tool 不是新的科学决策层，也不是新的 runtime orchestration 层。
 ```text
 AGENTS.md
 → 00_authoring/SKILL.md
-→ 00_authoring/references/deterministic_tool_protocol.md
-→ 目标 Tool 的当前 tool.yaml / 实现 / tests
-→ 实际调用它的 main/supporting Skills
+→ 00_authoring/md-workflow-tool-authoring/SKILL.md
 ```
 
-需要注册或发布 Tool 时再读取 `05_tools/tool_registry.yaml`；涉及多窗口写入协调、inventory/status 或 Legacy 迁移时，再按需读取对应 authoring metadata / Legacy 材料。
+然后按实际 Tool 任务需要读取：
 
-不要为了 Tool authoring 预加载整个 `00_authoring/`。
+- `00_authoring/references/deterministic_tool_protocol.md`；
+- `05_tools/tool_registry.yaml`；
+- 目标 Tool 当前的 `tool.yaml`、实现和 tests；
+- 实际调用它的 main/supporting Skills；
+- 多窗口并行时才读取 `00_authoring/coordination/file_ownership.yaml` 或对应 work order。
+
+涉及 Legacy tool/runtime 迁移时才读取 `03_contracts/**` 或 `runtime/**`。
 
 先列出：
 
@@ -233,21 +237,18 @@ Tool 失败时：
 
 # 交付
 
-```yaml
-status: IMPLEMENTED | TESTED | ACTIVE | REVIEW_REQUIRED | BLOCKED
-name:
-version:
-role:
-created_files: []
-modified_files: []
-registry_updated:
-tests:
-  passed: []
-  failed: []
-cross_skill_findings: []
-open_questions: []
-next_action:
+交付只需要说明：
+
+```text
+Tool 状态与版本
+修改的文件
+registry 是否更新
+tests 结果
+cross-skill findings
+open questions / next action
 ```
+
+不要求为了 authoring 交付再创建一层 Skill inventory / content map。
 
 # 完成检查
 
