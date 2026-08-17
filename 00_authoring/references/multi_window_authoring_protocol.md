@@ -39,7 +39,8 @@ AGENTS.md
 - 直接相关的上下游/相邻 Skill；
 - 当前需要的 Tool guide / reference；
 - 涉及多窗口 writer 协调时再读取 `00_authoring/coordination/file_ownership.yaml` 或对应 window work order；
-- 涉及项目级阶段状态时再读取 `SYNC_STATUS.md` / `MD_WORKFLOW_MASTER_PLAN.md`。
+- 涉及 Stage catalog / 建设状态时再读取 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 涉及跨 Stage runtime architecture 时再读取 `00_authoring/project_design/lightweight_runtime_v2_spec.md`。
 
 不要把整个 `00_authoring/` 作为每个新窗口的固定 preload。
 
@@ -54,6 +55,7 @@ AGENTS.md
 - `00_authoring/assets/`；
 - `00_authoring/scripts/`；
 - `00_authoring/architecture_freezes/`；
+- `00_authoring/project_design/`；
 - `00_authoring/coordination/`；
 - Manager shared references；
 - Tool registry；
