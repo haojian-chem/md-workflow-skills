@@ -23,11 +23,10 @@ AGENTS.md
 
 随后仅按任务需要追加：
 
-- 目标 content map；
 - 对应 architecture freeze；
 - 与当前输入/输出/边界直接相关的上下游或相邻 Skill / Tool guide；
-- 涉及多窗口写入协调时的 `file_ownership.yaml`；
-- 涉及当前状态/发现时的 `skill_inventory.yaml` / `SYNC_STATUS.md`。
+- 涉及多窗口写入协调时的 `00_authoring/coordination/file_ownership.yaml`；
+- 涉及项目级状态时的 `00_authoring/SYNC_STATUS.md` / `MD_WORKFLOW_MASTER_PLAN.md`。
 
 `read_context` 可以在执行中继续扩展；它不是硬白名单，也不要求预读整个 `00_authoring/`。
 
@@ -54,7 +53,7 @@ write_paths: []
 
 - 可以按需读取未归本窗口写入的相关 Skill；
 - 只有 `write_paths` 表示修改权；
-- 不修改共享 authoring/index/architecture 文件；
+- 不修改未分配给当前窗口的共享 authoring/architecture 文件；
 - 不在当前 Skill 中替其他 Skill 定义内部逻辑。
 
 # Cross-Skill interface
@@ -67,13 +66,7 @@ provides_to_other_skills: []
 external_rules_referenced: []
 ```
 
-如果发现外部 Skill 需要修改：
-
-```yaml
-cross_skill_findings: []
-```
-
-由 owner window / main window 处理。
+如果发现外部 Skill 需要修改，记录简短 finding，由 owner window / main window 处理；不要求建立额外 finding schema。
 
 # Agent-guidance check
 
