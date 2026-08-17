@@ -1,11 +1,15 @@
-schema_version: 3
+schema_version: 4
 status: ready_for_new_assignments
 
 shared_files:
   owner_window: main
   write_paths:
     - AGENTS.md
+    - 00_authoring/README.md
+    - 00_authoring/AUTHORING_RULES.md
+    - 00_authoring/MD_WORKFLOW_MASTER_PLAN.md
     - 00_authoring/SYNC_STATUS.md
+    - 00_authoring/WORKFLOW*_ARCHITECTURE_FREEZE*.md
     - 00_authoring/md-workflow-skill-authoring/
     - 00_authoring/md-workflow-tool-authoring/
     - 00_authoring/skill_inventory.yaml
@@ -14,8 +18,7 @@ shared_files:
     - 00_manager/md_workflow_manager/references/
     - 03_contracts/
     - 05_tools/tool_registry.yaml
-    - design_records/
-  notes: 共享规则、跨 Workflow 路线协议、接口、content map、Tool 协议与 registry 仅由主窗口修改。
+  notes: Shared architecture/index/authoring files are modified only by the main authoring window. Historical Legacy files are not current design sources.
 
 tool_directory_policy:
   registry_owner: main
@@ -28,41 +31,45 @@ assignments: []
 
 review_queue:
   - skill_name: md_workflow_manager
-    required_action: executable_fast_full_validation_and_end_to_end_integration
+    required_action: validate_current_lightweight_planning_including_stage4_exception_and_stage5_5_1_handoff
   - skill_name: structure_preparation_workflow
-    required_action: revalidate_step_mapping_after_1_3_redesign
+    required_action: representative_validation_after_current_1_3_to_1_9_guides
   - skill_name: source_recognition
     required_action: real_file_copy_hash_conflict_and_manager_integration_tests
-  - skill_name: md-workflow-tool-authoring
-    required_action: review_active_tool_lifecycle_and_future_upgrade_path
   - skill_name: component_and_residue_classification_validator
     required_action: revalidate_residue_records_ordering_contract_and_existing_1_2_suite
   - skill_name: chain_and_residue_selection
     required_action: validate_selection_guidance_record_formats_and_real_pdb_materialization
   - skill_name: chain_and_residue_selection_validator
     required_action: validate_selection_structure_organization_mapping_checks
+  - skill_name: altloc_occupancy_resolution
+    required_action: representative_validation
+  - skill_name: structure_completeness_validator
+    required_action: representative_validation
+  - skill_name: missing_region_completion
+    required_action: representative_completion_validation
+  - skill_name: protein_protonation_assignment
+    required_action: representative_propka_and_force_field_naming_validation
+  - skill_name: structure_reorder_and_mapping
+    required_action: representative_mapping_validation
+  - skill_name: structure_preparation_validator
+    required_action: representative_stage1_final_validation
   - skill_name: md_simulation
-    required_action: validate_stage4_planned_run_binding_run_unit_maintenance_and_result_registration
+    required_action: validate_stage4_planned_run_binding_run_unit_maintenance_top_lineage_and_result_registration
   - skill_name: energy_minimization
-    required_action: validate_em_mdp_grompp_mdrun_fmax_and_bonded_geometry_guidance
+    required_action: validate_em_execution_and_checks
   - skill_name: equilibration
-    required_action: validate_nvt_npt_mdp_coupling_checkpoint_execution_and_equilibration_checks
+    required_action: validate_nvt_npt_execution_and_checks
   - skill_name: production_simulation
-    required_action: validate_production_mdp_tinit_checkpoint_execution_and_run_checks
+    required_action: validate_production_execution_and_checks
+  - skill_name: analysis_workflow
+    required_action: validate_stage5_manager_to_5_1_handoff_and_project_result_registration
+  - skill_name: analysis_planning_and_orchestration
+    required_action: populate_tool_inventory_then_validate_planning_reuse_and_dependency_orchestration
 
 alignment_queue: []
 
-unassigned_skills:
-  - altloc_occupancy_resolution
-  - altloc_occupancy_validator
-  - structure_completeness_validator
-  - missing_region_completion
-  - missing_region_completion_validator
-  - protein_protonation_assignment
-  - protein_protonation_validator
-  - structure_reorder_and_mapping
-  - structure_mapping_validator
-  - structure_preparation_validator
+unassigned_skills: []
 
 unassigned_tools:
   - state_transaction
