@@ -39,9 +39,9 @@ Manager 对话
 
 当用户要求创建、定位、整理或明确重新规划任务时：
 
-1. 读取 `00_manager/md_workflow_manager/SKILL.md`；
+1. 读取 `00_manager/SKILL.md`；
 2. 按其最小读取规则使用 `task_index.md` 和目标 Task Sheet；
-3. 只有创建或明确重新规划任务时才读取 Manager planning index；
+3. 只有创建或明确重新规划任务时才读取 `00_manager/references/workflow_plan_index.yaml`；
 4. 不默认读取具体科研 Skill、项目结果索引或 Legacy Runtime records。
 
 #### Task execution 请求
@@ -202,7 +202,7 @@ transaction closure
 - Runtime：`00_authoring/project_design/lightweight_runtime_v2_spec.md`
 - Stage catalog/status：`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
 - Stage freeze：`00_authoring/architecture_freezes/`
-- Manager：`00_manager/md_workflow_manager/SKILL.md`
+- Manager：`00_manager/SKILL.md`
 - Scientific Skills：对应 Stage root 下的 current `SKILL.md`
 - Tool：`05_tools/`
 - Legacy material：`03_contracts/`、`runtime/`、`00_authoring/archive/`
