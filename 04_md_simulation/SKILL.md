@@ -88,6 +88,7 @@ YAML root 直接为 list，不增加 `run_units:` wrapper。
   start_from_run_unit_id: npt.1
   status: 未完成
   path: /project/04_md_simulation/md.1/
+  top: /project/03_md_preparation/system/sys.top
 ```
 
 字段：
@@ -96,6 +97,7 @@ YAML root 直接为 list，不增加 `run_units:` wrapper。
 - `start_from_run_unit_id`
 - `status`
 - `path`
+- `top`
 
 允许状态：
 
@@ -107,10 +109,13 @@ YAML root 直接为 list，不增加 `run_units:` wrapper。
 
 `path` 必须指向该 formal run unit 自身的完整目录。多个 run-unit 目录可以共享同一个 Stage 4 parent directory，但不同 run unit 的 `path` 不应因此写成相同目录。
 
+`top` 必须记录该 run unit 实际用于 `grompp` 的主 `.top` 文件完整路径。多个 run unit 使用同一主 topology 时，应记录同一个 `top` 路径，不为每个 run unit 复制 topology。该字段用于轻量记录 topology lineage，并支持 Stage 5 等下游环节结合 `.tpr` 与 `top` 关系判断多个 run unit 是否来源于同一套体系/topology；如需严格确认 `.ndx` 可复用性，仍应进一步核验实际 `.tpr` / atom ordering compatibility。
+
 `run_unit.yaml` 只用于 instantiated run-unit discovery / maintenance：
 
 - 不记录未来 planned entries；
 - 不复制详细 `.mdp` 设置；
+- 不复制 `.top` / `.itp` 内容，只记录实际主 `.top` 完整路径；
 - 不记录 transient `running / failed / continuing` 状态；
 - 不替代真实 run files。
 
@@ -138,7 +143,7 @@ read planned entry
 - planned scientific requirement 与 candidate 实际有效设置的一致性；
 - candidate run result 是否已通过对应子 Skill 要求的检查。
 
-真实有效设置以实际 `.mdp` 和其他必要 run artifacts 为准，不以 `run_unit.yaml` 推断。
+`run_unit.yaml` 中的 `top` 可用于快速定位 candidate 所属的主 topology；真实有效设置和严格兼容性仍以实际 `.mdp`、`.tpr`、topology package 与其他必要 run artifacts 为准。
 
 统一复用判定：
 
@@ -181,6 +186,8 @@ current state + topology package + run requirement
 → execute gmx mdrun
 → run-specific validation
 ```
+
+在新 run unit 正式登记时，必须同时解析并记录本次 `grompp` 使用的主 `.top` 完整路径；后续不得根据 `.tpr` 文件名或 run-unit prefix 猜测其 topology 来源。
 
 最终实际 `.mdp` 是 detailed simulation settings 的权威记录。
 
@@ -265,5 +272,6 @@ Stage 4 在 `project_result_index.md` 中登记：
 - 创建 per-run `run_unit.yaml`；
 - 创建 `simulation_output_index`；
 - 把详细 `.mdp` 参数复制到 `run_unit.yaml`；
+- 把 `.top` / `.itp` 内容复制到 `run_unit.yaml`；
 - 因为一次失败就创建 `*.failed` run unit；
 - 为 validation 额外拆出 Stage 4 Validator layer。
