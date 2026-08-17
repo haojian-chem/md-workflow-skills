@@ -8,7 +8,8 @@ Status: CURRENT
 
 - [ ] 已读取 `00_authoring/AUTHORING_RULES.md`；
 - [ ] 已读取 current `SYNC_STATUS.md`；
-- [ ] 已确认当前 Skill 使用 main-Skill + on-demand supporting/reference 模型；
+- [ ] 已读取 `references/skill_generation_rules.md`；
+- [ ] 已确认当前 Skill 使用 main-Skill + on-demand reference/supporting 模型；
 - [ ] 未要求 Workflow / Operation / Validator 强制分类；
 - [ ] 未把 Agent 锁进 Legacy Workstream / route / event / transaction runtime；
 - [ ] 已明确 Skill 是指导 Agent 处理任务，不是 parser/workflow gate。
@@ -17,6 +18,7 @@ Status: CURRENT
 
 - [ ] 当前 main responsibility 已确认；
 - [ ] 当前 Skill 的 input/evidence、reuse、execution、validation、handoff 已有清楚边界；
+- [ ] 长且仍属于当前职责的内容优先放 `references/`；
 - [ ] supporting Skill 仅在复杂且边界清晰时拆分；
 - [ ] content map 已确认；
 - [ ] `write_paths` 已确认且无重叠。
@@ -62,7 +64,17 @@ Status: CURRENT
 - [ ] 当前 Skill 没有定义其他 Skill 的默认参数；
 - [ ] 当前 Skill 没有定义其他 Skill 的 validation / official results；
 - [ ] 外部 Skill 只以接口/正式结果/能力形式被引用；
+- [ ] main Skill 与 reference 没有完整重复同一规则；
 - [ ] 长但仍属于当前 Skill 的内容优先放 reference，而不是无必要拆 Skill。
+
+## Markdown 归档
+
+- [ ] 本次修改是否明确取代了旧 `.md` 已检查；
+- [ ] 被取代文件的仍有效内容已经迁移到 current owner；
+- [ ] current 文件已不再引用旧路径；
+- [ ] 需要保留的旧 Markdown 已移入 `00_authoring/archive/`；
+- [ ] 原 active path 不再保留 `SUPERSEDED` / `LEGACY` tombstone 副本；
+- [ ] archive 没有进入普通 startup/read list。
 
 ## 交付前四问
 
