@@ -1,0 +1,41 @@
+schema_version: 5
+skill_name: analysis
+skill_path: 05_analysis
+status: stage5_architecture_frozen_main_guide_implemented_tool_population_pending
+
+owned_content:
+  stage5_goal_and_5_1_catalog:
+    owner: 05_analysis/SKILL.md
+  manager_to_5_1_handoff:
+    owner: 05_analysis/SKILL.md
+  stage5_planning_and_reuse_organization:
+    owner: 05_analysis/SKILL.md
+  plan_item_model:
+    owner: 05_analysis/SKILL.md
+  prepared_input_index_usage:
+    owner: 05_analysis/SKILL.md
+  stage5_validation_ownership_boundary:
+    owner: 05_analysis/SKILL.md
+  stage5_project_result_registration:
+    owner: 05_analysis/SKILL.md
+  analysis_capability_inventory:
+    owner: 05_analysis/references/analysis_tool_inventory.yaml
+
+external_references:
+  - purpose: stage5_architecture_freeze
+    owner: 00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+    access: reference_only
+  - purpose: manager_planning_catalog
+    owner: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
+    access: reference_only
+  - purpose: stage4_run_unit_topology_lineage
+    owner: 04_md_simulation/SKILL.md
+    access: reference_only
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: authoring_reference
+
+notes:
+  - Stage 5 uses one integrated main Skill; it is not split by workflow/operation/validator role.
+  - Concrete analysis methods and prepared-input producers remain separate only when they have their own complex, clear responsibilities.
+  - 5.1 may read external Skill guides to understand capabilities but does not redefine them.
