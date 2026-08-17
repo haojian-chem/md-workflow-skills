@@ -151,11 +151,13 @@ reuse 条件
 科学 / 技术边界
 执行 / 判断方式
 validation
-results / handoff
+results
 何时读取额外 reference / supporting Skill / Tool
 ```
 
 这些是信息要求，不是固定 section schema。
+
+“不做什么”只在有实际边界价值时明确：例如防止高概率越界/误操作、保护数据或不可逆操作、阻止已明确否定的常见默认行为，或直接影响 validation/result correctness。不要为了“范围完整”罗列所有本 Skill 不负责的事项。
 
 详细边界：`references/skill_boundaries.md`。
 
@@ -221,7 +223,7 @@ Legacy runtime-dependent tools 位于 `../legacy/tools/`，不得为了调用它
 
 Validation 默认跟随结果 owner；只有复杂且边界清晰时才拆 supporting validation Skill。
 
-正式结果与 handoff 必须让下游能够定位并理解，而不要求重读上游全过程。
+正式结果必须让后续执行能够定位并理解，而不要求重读上游全过程。
 
 # Architecture freezes and archive
 
@@ -240,10 +242,11 @@ Legacy executable/runtime material：`../legacy/`。
 - [ ] supporting Skill 拆分有真实复杂度和边界价值；
 - [ ] 未建立不必要 parser/wrapper/dispatcher；
 - [ ] 未重新定义其他 owner 的内部规则；
+- [ ] 未为“范围完整”罗列无实际必要的 negative-scope 清单；
 - [ ] current scientific root 与 Stage 编号一致；
 - [ ] 预留 Step 目录没有被误写成“Skill 已生成”；
 - [ ] evals/tools/legacy 未被误当成 Stage Skill；
-- [ ] reuse、validation、results/handoff 足以支持跨对话继续；
+- [ ] reuse、validation、results 足以支持跨对话继续；
 - [ ] 若本次改变了 freeze / Skill / validation 建设状态，`MD_WORKFLOW_MASTER_PLAN.md` 已同步，或存在明确且未完成的 writer handoff；
 - [ ] 若 Stage main Skill 维护 current/freeze-only entry，其入口状态已同步；
 - [ ] 未重新引入 Legacy Workstream/route/event/transaction runtime。
