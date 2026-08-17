@@ -1,15 +1,13 @@
-schema_version: 4
+schema_version: 5
 skill_name: md-workflow-skill-authoring
-skill_type: authoring_guide
 skill_path: 00_authoring/md-workflow-skill-authoring
-architecture: lightweight_runtime_v2
-status: lightweight_aligned_revalidation_pending
+status: current_main_skill_authoring_model
 
 owned_content:
   authoring_flow:
     owner: 00_authoring/md-workflow-skill-authoring/SKILL.md
-  layer_boundaries:
-    owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+  skill_boundaries:
+    owner: 00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md
   content_ownership_and_deduplication:
     owner: 00_authoring/md-workflow-skill-authoring/references/content_ownership_and_deduplication.md
   progressive_disclosure:
@@ -18,81 +16,42 @@ owned_content:
     owner: 00_authoring/md-workflow-skill-authoring/references/multi_window_authoring_protocol.md
   deterministic_tool_protocol:
     owner: 00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md
-    status: lightweight_aligned_revalidation_pending
   official_source_notes:
     owner: 00_authoring/md-workflow-skill-authoring/references/official_sources.md
-  authoring_templates:
+  generic_skill_template:
+    owner: 00_authoring/md-workflow-skill-authoring/assets/skill.template.md
+  manager_template:
+    owner: 00_authoring/md-workflow-skill-authoring/assets/manager_skill.template.md
+  multi_window_assets:
     owner: 00_authoring/md-workflow-skill-authoring/assets/
   static_validation_tools:
     owner: 00_authoring/md-workflow-skill-authoring/scripts/
-    status: lightweight_applicability_revalidation_pending
-
-legacy_owned_content:
-  runtime_subagent_protocol:
-    owner: 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
-    status: legacy_frozen_explicit_banner_not_default_authoring_input
-  runtime_record_commit_protocol:
-    owner: 00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md
-    status: legacy_frozen_explicit_banner_not_default_authoring_input
 
 external_references:
   - purpose: repository_authoring_rules
     owner: 00_authoring/AUTHORING_RULES.md
-    access: required_startup
-
+    access: authoring_reference
   - purpose: lightweight_runtime_architecture
     owner: 00_authoring/lightweight_runtime_v2_spec.md
-    access: required_startup
-
+    access: authoring_reference
   - purpose: current_sync_status
     owner: 00_authoring/SYNC_STATUS.md
-    access: required_startup
-
+    access: authoring_reference
   - purpose: skill_inventory
     owner: 00_authoring/skill_inventory.yaml
-    access: required_startup
-
+    access: authoring_reference
   - purpose: file_ownership
     owner: 00_authoring/file_ownership.yaml
-    access: required_startup
-
+    access: authoring_reference
   - purpose: tool_authoring_skill
     owner: 00_authoring/md-workflow-tool-authoring/SKILL.md
-    access: reference_only_when_tool_work_is_required
-
+    access: reference_only
   - purpose: deterministic_tool_registry
     owner: 05_tools/tool_registry.yaml
-    access: reference_only_when_tool_work_is_required
-
-  - purpose: examples_and_test_fixtures
-    owner: 04_evals/md-workflow-skill-authoring/fixtures/
     access: reference_only
-    status: planned_lightweight_revalidation_required
-
-legacy_external_references:
-  status: frozen_not_default_authoring_inputs
-  items:
-    - 03_contracts/README.md
-    - 03_contracts/common_types.schema.yaml
-    - 03_contracts/confirmation_item.schema.yaml
-    - 03_contracts/workflow_route_fragment.schema.yaml
-    - 03_contracts/workflow_decision.schema.yaml
-    - 03_contracts/subagent_task.schema.yaml
-    - 03_contracts/subagent_result.schema.yaml
-    - 03_contracts/project_state.schema.yaml
-    - 03_contracts/workstream_state.schema.yaml
-    - 03_contracts/project_event.schema.yaml
-    - 03_contracts/manager_session.schema.yaml
-    - 03_contracts/route_record.schema.yaml
-    - 03_contracts/decision_record.schema.yaml
-    - 03_contracts/submission_record.schema.yaml
-    - 03_contracts/artifact_set.schema.yaml
-    - 03_contracts/state_snapshot.schema.yaml
 
 notes:
-  - New or refactored Skills target Lightweight Runtime v2 by default.
-  - Step-facing Skills collectively expose purpose, object requirements, reuse conditions, execution rules, validation requirements, and official results with one owner per rule.
-  - Stable Step base directories are distinct from task-scoped <base_work_directory>/<task_id>/ execution directories.
-  - Manager records task-scoped work paths but does not create them; Task Execution Agent creates them only when local execution is required after reuse checking.
-  - Deterministic Tool authoring now uses explicit business inputs and must not require Legacy task/route/event/transaction objects for Lightweight execution.
-  - Legacy runtime protocols remain for history/migration only, carry explicit LEGACY/FROZEN banners, and must not be copied into new Skill interfaces.
+  - New scientific Skills are organized as main Skill + references + only-when-justified supporting Skills.
+  - Workflow/Operation/Validator is not a required classification or directory taxonomy.
+  - Authoring windows may read relevant external Skills but may write only owned paths and may not redefine external Skill internals.
+  - Legacy layer_boundaries.md and old role-specific templates are SUPERSEDED history only.
