@@ -30,7 +30,7 @@ Status: ACTIVE CURRENT BASELINE
 
 ## 3. Stage 1 — Structure preparation
 
-Status: DEFINED; stage-oriented Skill layout active; representative validation/refinement continues.
+Status: PARTIALLY IMPLEMENTED.
 
 ```text
 1.1 Structure source recognition
@@ -44,7 +44,24 @@ Status: DEFINED; stage-oriented Skill layout active; representative validation/r
 1.9 Structure preparation validation
 ```
 
-Current entry: `01_structure_preparation/SKILL.md`
+Current implementation status:
+
+```text
+1.1–1.4  active Skills completed
+1.5      under current authoring/discussion in a separate window
+1.6–1.9  architecture frozen; no active Skill yet
+```
+
+Stage 1.6–1.9 freeze records:
+
+```text
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.8_REORDER_MAPPING_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
+```
+
+Freeze completion does not authorize runtime use or Skill generation. Formal 1.6–1.9 `SKILL.md` files are created only after explicit user approval.
 
 ## 4. Stage 2 — Topology / parameterization
 
@@ -128,7 +145,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：继续 representative validation/refinement；旧 role-based eval suites 已归档，current acceptance suites 按新接口逐项重建；
+- Stage 1：1.1–1.4 已完成；1.5 正在独立窗口 authoring；1.6–1.9 已冻结并保留 implementation-ready generation reference，但尚未获批生成 active Skills；
 - Stage 2：补齐缺失 2.x Skills / Tools；
 - Stage 3：补齐专用 `genion.mdp` 并做代表性执行验证；
 - Stage 4：完成 representative planned-run / run-unit validation；
@@ -139,7 +156,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ```text
 具体业务规则 → current Skill / reference
-Stage 已冻结架构 → matching architecture freeze
+尚未生成 Skill 的已冻结 Step / Stage 规则 → matching architecture freeze
 跨 Stage runtime → lightweight_runtime_v2_spec.md
 Stage catalog / 建设状态 / current entry → 本 Master Plan
 current deterministic tool → tools/
