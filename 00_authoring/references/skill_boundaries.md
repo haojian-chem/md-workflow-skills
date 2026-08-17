@@ -106,7 +106,20 @@ require: 当前职责依赖哪项已冻结能力
 
 不得重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results 或文件生命周期。
 
-## 9. Physical layout follows responsibility
+## 9. Negative scope / 禁止项
+
+Negative scope 只在边界本身需要被明确执行时出现，不要求列完整。
+
+适合明确写出的情况包括：
+
+- 当前职责与相邻职责容易混淆，不写会导致高概率越界；
+- 必须阻止 Agent 采用一个常见但已明确否定的默认行为；
+- 涉及安全、原始数据保护、不可逆修改或结果完整性；
+- 某项禁止条件直接决定 validation 或 result 是否有效。
+
+除此之外，不为“范围看起来完整”枚举本 Skill 不负责的所有事情。其它职责不需要通过当前 Skill 的 negative list 再描述一遍。
+
+## 10. Physical layout follows responsibility
 
 一个 Stage 可以采用：
 
