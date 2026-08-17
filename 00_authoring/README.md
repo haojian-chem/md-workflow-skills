@@ -1,55 +1,48 @@
 # Authoring directory guide
 
-本目录服务于 MD Workflow Skill / Tool 的设计、冻结、同步和多窗口 authoring。它不是科研项目运行目录。
+`00_authoring/` 服务于 MD Workflow Skill / Tool 的设计、冻结、同步和多窗口 authoring；它不是科研项目运行目录。
 
-## Current-authority rule
+## Single authoring entry
 
-开始 authoring 时优先使用：
-
-```text
-00_authoring/AUTHORING_RULES.md
-00_authoring/lightweight_runtime_v2_spec.md
-00_authoring/SYNC_STATUS.md
-00_authoring/MD_WORKFLOW_MASTER_PLAN.md
-00_authoring/skill_inventory.yaml
-00_authoring/file_ownership.yaml
-目标 content map
-目标当前 Skill / Tool guide
-```
-
-发生设计冲突时：
+新开的 **Skill authoring / maintenance 窗口**首先读取：
 
 ```text
-current Skill / Tool guide
-> matching architecture-freeze record
-> MD_WORKFLOW_MASTER_PLAN.md / SYNC_STATUS.md
-> archived / historical / Legacy files
+AGENTS.md
+→ 00_authoring/SKILL.md
+→ 当前负责的目标 Skill / 文件
 ```
 
-**文件存在不等于当前有效。** archive、Legacy 和 Git history 只用于历史追溯，不得用于重建当前接口。
+`00_authoring/SKILL.md` 是唯一 authoring 主入口。其他 authoring 文件按该 Skill 指引和当前任务需要读取，不要求启动时预加载整个目录。
 
-## Root layout
+`README.md` 只负责给人说明目录，不是第二份 authoring rule authority。
 
-`00_authoring/` 根目录只保留少量 current authoring 入口文件；阶段冻结记录和过期历史材料分别集中到专用目录：
+## Current layout
 
 ```text
 00_authoring/
-├── README.md
-├── AUTHORING_RULES.md
-├── MD_WORKFLOW_MASTER_PLAN.md
-├── SYNC_STATUS.md
-├── lightweight_runtime_v2_spec.md
+├── SKILL.md                    # 唯一 authoring main Skill
+├── README.md                   # 目录说明
+│
+├── references/                 # main Skill 的长/条件性规则
+├── assets/                     # 当前模板/检查清单
+├── scripts/                    # 当前 authoring 静态检查
+│
+├── architecture_freezes/       # Stage / Workflow 正式冻结记录
+├── archive/                    # 非 current 历史 authoring 材料
+│
+├── md-workflow-tool-authoring/ # Tool authoring supporting Skill
+├── content_maps/               # content ownership metadata
+├── content_map.schema.yaml
 ├── skill_inventory.yaml
 ├── file_ownership.yaml
-├── architecture_freezes/
-├── archive/
-├── content_maps/
-├── md-workflow-skill-authoring/
-├── md-workflow-tool-authoring/
+│
+├── MD_WORKFLOW_MASTER_PLAN.md  # 项目级阶段状态/入口
+├── SYNC_STATUS.md              # 当前同步状态
+├── lightweight_runtime_v2_spec.md
 └── window_work_orders/
 ```
 
-不要把新的 Stage freeze、临时 redesign、validation report 或 superseded Markdown 再散放回 `00_authoring/` 根目录。
+根目录的 project-level metadata/status 文件与 `SKILL.md` 是并列的项目资料，并不高于 main Skill。普通 Skill authoring 只有在当前任务需要这些信息时才读取。
 
 ## Current Skill model
 
@@ -57,7 +50,7 @@ current Skill / Tool guide
 
 ```text
 main Skill
-├── references/        # 仅放仍属于当前 Skill 的长/条件性细节
+├── references/        # 长而仍属于当前职责的细节
 ├── schemas/           # only when truly useful
 ├── scripts/           # Skill-local deterministic helper
 └── supporting Skill   # only for complex, clear boundaries
@@ -65,22 +58,11 @@ main Skill
 
 只有 main `SKILL.md` 是默认必需文件。不要先生成一套目录或角色分类，再把科研职责塞进去。
 
-生成、重构或冻结 Skill 时必须按需读取：
+详细生成/重构规则：
 
-`md-workflow-skill-authoring/references/skill_generation_rules.md`
+`references/skill_generation_rules.md`
 
-其中固定：
-
-```text
-一个职责 → 一个 main Skill
-长而同属当前职责 → reference
-复杂且独立 → supporting Skill
-确定性机械能力 → script / Tool
-已有 owner 的规则 → 引用，不复制
-已被取代的 Markdown → archive，不留在 active path
-```
-
-不再强制 Workflow / Operation / Validator 分类，也不要求新 Skill 落入：
+当前设计不强制 Workflow / Operation / Validator 分类，也不要求新 Skill 落入：
 
 ```text
 01_workflows/
@@ -89,13 +71,6 @@ main Skill
 ```
 
 这些目录仍包含历史时期创建、目前可能仍有效的 Skill，但只是现存物理路径，不是新 authoring 模板。
-
-当前 Stage 4 / Stage 5 已采用 stage-centric integrated main Skill：
-
-```text
-04_md_simulation/
-05_analysis/
-```
 
 ## Agent-guidance principle
 
@@ -118,64 +93,41 @@ write ownership must be narrow
 - 在当前 Skill 中替其他 Skill 定义内部流程、默认参数、validation 或 official results；
 - 复制/改写其他 owner 已有规则形成 shadow specification。
 
-发现跨 Skill 问题时提交 finding / handoff 给对应 owner 或 main window。
+详细协议：
 
-## Architecture freeze records
+`references/multi_window_authoring_protocol.md`
 
-当前 Stage architecture-freeze 统一放在：
+## Architecture freezes
 
-`00_authoring/architecture_freezes/`
+正式 Stage / Workflow freeze 统一位于：
 
-当前记录：
+`architecture_freezes/`
 
-```text
-architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
-architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
-architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
-architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
-```
+不得再次把新的 `WORKFLOW*_ARCHITECTURE_FREEZE*.md` 散放到 `00_authoring/` 根目录。
 
-以后新增 Stage freeze 也进入该目录，不再直接放到 `00_authoring/` 根目录。
+## Archive
 
-## Markdown archive
+被 current authority 明确取代的历史 authoring 文件移入：
 
-过期 Markdown 的 current 归档目录：
-
-`00_authoring/archive/`
+`archive/`
 
 规则：
 
-- authority 已明确被取代的 `.md` 从 active path 移出；
-- current 引用必须先迁移到新 owner；
-- active path 不同时保留 `SUPERSEDED` / `LEGACY` tombstone 和 archive 副本；
+- current 引用先迁移；
+- active path 不保留同名/同义 tombstone；
 - archive 不进入普通 startup/read list；
-- Git history 保存完整版本历史；
-- 不能因为文件“较旧”就归档仍然有效的 current guide / reference / architecture-freeze。
+- Git history 继续保存完整版本历史；
+- 归档依据是 authority 已被取代，不是文件年龄。
 
-Archive 边界见：
+## Authority
 
-`00_authoring/archive/README.md`
+发生内容冲突时，按具体职责判断 owner。通常：
 
-## Authoring support
+```text
+current Skill / Tool guide
+> matching current architecture freeze
+> project-level Master Plan / Sync Status
+> archived / historical / Legacy material
+```
 
-- `architecture_freezes/`：各 Stage 当前 architecture-freeze 集中目录；
-- `archive/`：非 current 的历史 authoring Markdown；
-- `md-workflow-skill-authoring/`：Skill 编写指导；
-- `md-workflow-tool-authoring/`：Tool 生命周期指导；
-- `content_maps/`：内容唯一归属；
-- `content_map.schema.yaml`：content map 结构；
-- `skill_inventory.yaml`：Skill discovery/status metadata；
-- `file_ownership.yaml`：多窗口写入所有权；
-- `SYNC_STATUS.md`：当前同步状态。
-
-当前普通科研 Skill 模板：
-
-`md-workflow-skill-authoring/assets/skill.template.md`
-
-旧 workflow/operation/validator 专用模板已经移入 archive，不再留在 active assets。
-
-## Legacy / superseded material
-
-旧 Workstream / route / event / runtime projection / transaction 架构已经冻结为 Legacy。
-
-需要保留的历史 authoring Markdown 应移入 `00_authoring/archive/`；普通 current authoring 不读取这些内容作为默认设计依据。Legacy contracts/runtime 等非 Markdown 历史材料仍按其当前专门边界管理。
+同一具体规则只能有一个 current owner；不要通过在多个文件重复一份规则来“提高权威性”。
