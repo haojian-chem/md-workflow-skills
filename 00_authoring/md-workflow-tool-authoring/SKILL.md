@@ -1,24 +1,35 @@
 ---
 name: md-workflow-tool-authoring
-description: 为本项目生成、测试、注册、升级、维护或废弃确定性共享工具时使用。用于 schema 校验、状态事务、引用检查、结构化渲染及其他可重复程序逻辑；不要用于运行具体 MD 科学任务或替代 Manager、Workflow、Operation、Validator 的判断。
+description: 为本项目设计、实现、测试、注册、升级或废弃确定性共享 Tool 时使用。Tool 提供精确、稳定、可测试的确定性能力；它不是 Agent 理解任务的 parser gate，也不替代 main Skill 的科学判断。
 ---
 
 # 目标
 
-把重复、缓慢或易产生不一致的确定性逻辑实现为受控共享工具，同时保持四层 Skill 的决策职责不变。
+把真正适合程序化的确定性动作实现为受控共享 Tool，同时保持：
 
-Tool 不是 Agent，也不是新的决策层。
+```text
+Agent 理解任务和科学判断
+→ 由当前 main Skill 指导
+
+确定性 parsing / transform / calculation / file write / mechanical validation
+→ 可由 Tool 提供
+```
+
+Tool 不是新的科学决策层，也不是新的 runtime orchestration 层。
 
 # 启动前读取
 
-1. 项目根 `AGENTS.md`；
-2. `00_authoring/SYNC_STATUS.md`；
-3. `00_authoring/skill_inventory.yaml`；
-4. `00_authoring/file_ownership.yaml`；
-5. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
-6. `05_tools/tool_registry.yaml`；
-7. 目标 Tool 的 `tool.yaml`、实现、tests 和调用方；
-8. 涉及 schema 时读取 `03_contracts/README.md`。
+1. `AGENTS.md`；
+2. `00_authoring/AUTHORING_RULES.md`；
+3. `00_authoring/SYNC_STATUS.md`；
+4. `00_authoring/skill_inventory.yaml`；
+5. `00_authoring/file_ownership.yaml`；
+6. `00_authoring/md-workflow-skill-authoring/references/deterministic_tool_protocol.md`；
+7. `05_tools/tool_registry.yaml`；
+8. 目标 Tool 的当前 `tool.yaml`、实现、tests；
+9. 实际调用它的 main/supporting Skills。
+
+涉及 Legacy tool/runtime 迁移时才读取 `03_contracts/**` 或 `runtime/**`。
 
 先列出：
 
@@ -28,45 +39,62 @@ Tool 不是 Agent，也不是新的决策层。
 仍未验证
 ```
 
-# 使用边界
+# 1. 先判断是否真的需要 Tool
 
-用于：
+优先 Tool 化：
 
-- 新建确定性工具；
-- 修复或优化现有工具；
-- 增加 cache、批量或增量模式；
-- 维护输入输出 contract；
-- 建立 fixtures、benchmark 和回归测试；
-- 注册、升级、废弃和迁移工具。
+- 精确 parsing / structured extraction；
+- hash / mapping；
+- 稳定文件变换；
+- 批量处理；
+- 可重复数值计算；
+- 明确格式校验；
+- 安全、可恢复的文件写入；
+- 高频重复且自然语言实现容易不一致的确定性动作。
 
-不用于：
+以下不足以成为新 Tool 的理由：
 
-- 选择 Workstream、路线或下一任务；
-- 科学质量判断；
-- 直接运行 MD 业务流程；
-- 在业务 task 中临时生成未注册脚本；
-- 修改工具权限之外的项目文件。
+- 只是包装一次简单读取；
+- 只是让 Agent 必须先经过 parser；
+- 只是为了把几行 guidance 搬出 Skill；
+- 只是为了恢复旧 route/event/state/transaction runtime；
+- 只是因为“程序化看起来更正式”。
 
-# 步骤 1：确认工具化必要性
+必须明确 Tool 的定位：
 
-只有满足至少一项时继续：
+```text
+required_capability
+preferred_implementation
+optional_helper
+```
 
-- 确定性逻辑重复出现；
-- LLM 执行耗时明显高于程序；
-- 自然语言结果不稳定；
-- 需要缓存、批量处理或增量检查；
-- 需要事务、原子写入或回滚；
-- 需要可重复 benchmark。
+具体 Tool 只有在科学/技术接口真正不可替代时才设为唯一实现。
 
-否则保留在现有 Skill 中，不新增工具。
+# 2. Tool 不承担的职责
 
-# 步骤 2：冻结 Tool contract
+Tool 不得：
+
+- 解释用户开放式科研意图；
+- 扩大任务目标；
+- 选择 Task 范围；
+- 决定其他 Skill 应做什么；
+- 作开放式科学判断；
+- 向用户提问；
+- 自行创建 Agent；
+- 把 parser 输出设成 Agent 理解原始科研文件的唯一许可入口；
+- 为普通 Lightweight Runtime 构造 Workstream、route、event、transaction 等旧对象；
+- 修改未授权路径。
+
+# 3. 冻结 Tool interface
+
+建议至少明确：
 
 ```yaml
 name:
 version:
 status: DESIGNED | IMPLEMENTED | TESTED | ACTIVE | DEPRECATED | RETIRED
-purpose: []
+capability:
+role: required_capability | preferred_implementation | optional_helper
 callers: []
 entrypoint:
 inputs: []
@@ -74,123 +102,132 @@ outputs: []
 read_paths: []
 write_paths: []
 side_effects: []
-cache:
-  enabled:
-  key:
-  location:
-error_model:
-  pass_exit_code:
-  validation_failure_exit_code:
-  tool_failure_exit_code:
 compatibility:
   minimum_python:
   dependencies: []
 ```
 
-输入输出必须机器可读。工具不得用自由文本代替关键状态、错误路径和耗时信息。
+只在真正有价值时增加 cache、transactional write、structured error 等字段。
 
-# 步骤 3：设计权限和副作用
+不要为了统一 Tool schema 把简单工具接口过度复杂化。
 
-- 只读工具默认不得修改项目权威文件；
-- cache 必须可删除、可重建、非权威；
-- 写入工具必须先生成候选文件并完成校验；
-- 多文件事务必须定义失败回滚；
-- 涉及科研业务文件时，只能由对应 Operation/Validator 调用；
-- Manager 只能直接调用管理状态、schema、引用、事务和摘要类工具。
+# 4. 输入输出原则
 
-# 步骤 4：实现
+优先显式业务接口：
 
-工具目录：
+```text
+明确文件/目录
++ 必要参数
+→ deterministic action
+→ 明确输出/report
+```
+
+不要设计成：
+
+```text
+runtime task object
+→ Tool 解包项目状态
+→ Tool 决定下一阶段
+→ Tool 写 route/event/state closure
+```
+
+Tool 可以输出 JSON/YAML/text/科研文件，具体格式由调用方真正需求决定；不是所有 Tool 都必须输出同一种结构化 receipt。
+
+# 5. 权限和副作用
+
+只读 Tool 默认不修改项目文件。
+
+写入型 Tool 必须明确：
+
+- 输入；
+- 输出位置或输出策略；
+- 是否允许覆盖；
+- 冲突行为；
+- 部分失败 cleanup；
+- 必要的执行前后 validation。
+
+共享 Tool 不得越过当前调用 Skill 授权自行管理其他科研职责。
+
+如果某个 Stage 明确把特定项目级索引交给 Tool 维护，例如 Stage 5 的 trajectory / ndx indexes，则以该 Stage main Skill 为授权来源。
+
+# 6. 实现
+
+Tool 目录：
 
 ```text
 05_tools/<tool-name>/
 ├── tool.yaml
 ├── <entrypoint>
 ├── tests/
-└── README.md          # 仅在 tool.yaml 不足以说明使用时创建
+└── README.md          # only when useful
 ```
 
 要求：
 
-- 默认无网络访问；
-- 路径参数显式，不依赖未声明当前目录；
-- 输出稳定 JSON 或 YAML；
-- 错误包含对象路径、schema/规则和简短原因；
+- 默认无网络访问，除非 Tool 明确需要且获授权；
+- 路径参数显式；
 - 不吞掉异常或伪造 PASS；
-- 不把 LLM 调用嵌入确定性工具；
-- 不复制共享 schema 定义。
+- 不嵌入 LLM 调用；
+- 不复制其他 Skill 的科学判断；
+- 不默认扫描整个项目来猜输入。
 
-# 步骤 5：FAST/FULL 校验工具要求
+# 7. Testing
 
-runtime schema 工具必须支持：
-
-```text
-FAST
-FULL
-```
-
-FAST：
-
-- 仅处理 changed paths；
-- 仅检查直接引用；
-- schema hash cache 命中时跳过 schema meta-validation；
-- 不扫描完整项目历史。
-
-FULL：
-
-- 校验全部适用 runtime instances；
-- 执行项目级交叉引用检查；
-- schema 变化或 cache 缺失时执行 meta-validation。
-
-不得增加模型强度分层逻辑；模型配置不属于 Tool contract。
-
-# 步骤 6：测试
-
-至少覆盖：
+测试覆盖应根据 Tool 的真实风险选择，例如：
 
 - 正常输入；
-- schema/输入错误；
-- 缺失文件；
-- cache hit 与 cache miss；
-- FAST 不扫描无关对象；
-- FULL 能发现跨对象引用错误；
+- 缺失/错误输入；
+- 边界值；
 - 权限越界；
-- 重复运行幂等性；
-- 性能 benchmark；
-- 旧版本兼容或明确迁移失败。
+- 重复运行；
+- 部分失败；
+- 输出 validation；
+- 性能 benchmark（确有性能要求时）；
+- compatibility / migration（确有版本接口时）。
 
-测试和 fixtures 放入：
+不再要求所有新 Tool 继承 Legacy runtime FAST/FULL schema-validation 测试模式。
 
-```text
-04_evals/<tool-name>/
-```
+测试/fixtures 放入：
 
-# 步骤 7：注册与发布
+`04_evals/<tool-name>/`
+
+# 8. 注册与发布
 
 只有实现和适用测试通过后才可在 `05_tools/tool_registry.yaml` 标记为 `ACTIVE`。
 
-注册信息至少包括：
+Registry 至少能定位：
 
-- name、version、status；
-- path、entrypoint；
-- callers；
-- read/write 权限；
-- input/output contract 摘要；
-- tests 与 benchmark 路径；
-- replacement/deprecation 信息。
+- name/version/status；
+- Tool 路径与 entrypoint；
+- capability / role；
+- 主要 caller；
+- 重要 read/write 权限；
+- tests / validation evidence；
+- replacement/deprecation 信息（如有）。
 
-# 步骤 8：维护
+# 9. Callers and ownership
 
-发生以下变化时重新评估工具：
+Tool authoring 时必须读取实际 caller Skills，理解它们为什么需要该 capability。
 
-- schema、contract 或目录结构变化；
-- 调用方输入输出变化；
-- cache key 或权限变化；
-- 性能显著退化；
-- 出现错误 PASS、漏检或不幂等；
-- 依赖版本不兼容。
+但 Tool guide 不重新定义 caller Skill 的：
 
-破坏性升级使用新 major version，并保留迁移说明。不得原地改变既有 contract 后仍声称兼容。
+- 科学任务目标；
+- 方法选择；
+- reuse；
+- project result registration；
+- 用户确认逻辑。
+
+如果 caller Skill 需要修改，记录 cross-skill finding 并交给对应 owner，不在 Tool 内偷偷改变 caller 语义。
+
+# 10. 失败和回退
+
+Tool 失败时：
+
+- 不把失败结果解释成成功；
+- 有已验证等价实现时可以回退；
+- 无等价实现且 capability 必需时，当前任务保持未完成；
+- 不降低科学 gate；
+- 不临时恢复 Legacy runtime 以绕过问题。
 
 # 交付
 
@@ -198,28 +235,26 @@ FULL：
 status: IMPLEMENTED | TESTED | ACTIVE | REVIEW_REQUIRED | BLOCKED
 name:
 version:
+role:
 created_files: []
 modified_files: []
 registry_updated:
 tests:
   passed: []
   failed: []
-benchmark:
-  command:
-  result:
-compatibility:
-  breaking:
-  migration:
+cross_skill_findings: []
 open_questions: []
 next_action:
 ```
 
-# 完成条件
+# 完成检查
 
-- 工具化必要性明确；
-- Tool contract、权限和副作用已冻结；
-- 实现无 LLM 决策逻辑；
-- fixtures 与 benchmark 覆盖核心路径；
-- registry、版本和兼容性信息一致；
-- 未破坏四层 Skill 的职责边界；
-- 未将未测试工具标记为 ACTIVE。
+- [ ] Tool 化确有确定性价值；
+- [ ] Tool 不是不必要 parser gate；
+- [ ] required / preferred / optional 定位清楚；
+- [ ] Tool 不承担开放式科学判断；
+- [ ] caller Skill 的职责没有被 Tool 重定义；
+- [ ] write scope 明确；
+- [ ] tests 覆盖真实风险；
+- [ ] 未恢复 Legacy orchestration；
+- [ ] 未把未测试 Tool 标记为 ACTIVE。
