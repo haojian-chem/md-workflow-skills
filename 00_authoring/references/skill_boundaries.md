@@ -13,7 +13,7 @@ main Skill first
 
 科研 Skill 不按 Workflow / Operation / Validator 分类。
 
-一个 main Skill 对应一个可由 Task Execution Agent 直接理解和推进的科研职责，并拥有自己的输入、reuse、核心科学/技术规则、validation 与 results/handoff。
+一个 main Skill 对应一个可由 Task Execution Agent 直接理解和推进的科研职责，并拥有自己的输入、reuse、核心科学/技术规则、validation 与 results。
 
 ## 2. Stage-oriented active layout
 
@@ -95,13 +95,14 @@ Legacy runtime-dependent tools 位于 `legacy/tools/`，不能因为历史状态
 
 ## 8. External Skill boundary
 
-Authoring 当前 Skill 时可以读取相关外部 Skill，但当前 Skill 对外只拥有接口关系：
+Authoring 当前 Skill 时可以读取相关外部 Skill，但当前 Skill 对外只定义自身确实需要的接口条件，例如：
 
 ```text
-consume: 哪个正式结果 / 接口
-require: 哪项已冻结能力
-handoff: 当前输出如何被对方消费
+consume: 当前职责实际消费哪个正式结果 / 接口
+require: 当前职责依赖哪项已冻结能力
 ```
+
+不要因为存在相邻或后续 Step，就在当前 Skill 中自动增加“如何交给下一环节”的 handoff 章节、handoff 文件或下游处理规则。普通相邻 Step 的流程关系由 Stage main Skill 表达；下游需要什么输入，由下游自己的 Object requirements / input contract 定义。
 
 不得重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results 或文件生命周期。
 
