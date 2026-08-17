@@ -26,7 +26,8 @@ AGENTS.md
 - 对应 architecture freeze；
 - 与当前输入/输出/边界直接相关的上下游或相邻 Skill / Tool guide；
 - 涉及多窗口写入协调时的 `00_authoring/coordination/file_ownership.yaml`；
-- 涉及项目级状态时的 `00_authoring/SYNC_STATUS.md` / `MD_WORKFLOW_MASTER_PLAN.md`。
+- 涉及 Stage catalog / 建设状态时的 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 涉及跨 Stage runtime architecture 时的 `00_authoring/project_design/lightweight_runtime_v2_spec.md`。
 
 `read_context` 可以在执行中继续扩展；它不是硬白名单，也不要求预读整个 `00_authoring/`。
 
