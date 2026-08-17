@@ -74,12 +74,11 @@ AGENTS.md
 
 之后由 `00_authoring/SKILL.md` 和当前任务决定是否按需读取：
 
-- 目标 content map；
 - 对应 architecture freeze；
 - 与当前输入、输出和边界直接相关的其他 Skill / Tool guide；
-- 涉及多窗口写入协调时的 `file_ownership.yaml`；
-- 涉及 inventory/status 时的 `skill_inventory.yaml` / `SYNC_STATUS.md`；
-- 涉及 runtime architecture 时的 `lightweight_runtime_v2_spec.md`。
+- 涉及多窗口写入协调时的 `00_authoring/coordination/file_ownership.yaml` 或 window work order；
+- 涉及项目级状态时的 `00_authoring/SYNC_STATUS.md` / `MD_WORKFLOW_MASTER_PLAN.md`；
+- 涉及 runtime architecture 时的 `00_authoring/lightweight_runtime_v2_spec.md`。
 
 **不要把整个 `00_authoring/` 作为新 authoring 窗口的固定 preload。**
 
