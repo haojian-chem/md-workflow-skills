@@ -50,7 +50,7 @@ Current implementation status:
 
 ```text
 1.1–1.4  active Skills completed
-1.5      under current authoring/discussion in a separate window
+1.5      active Skill generated; authoring/interface review completed
 1.6–1.9  architecture frozen; no active Skill yet
 ```
 
@@ -198,7 +198,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.4 已完成；1.5 正在独立窗口 authoring；1.6–1.9 已冻结、目录保留，但尚未获批生成 active Skills；
+- Stage 1：1.1–1.5 active Skills 已完成；其中 1.5 已完成正式生成与本轮 authoring/interface review；1.6–1.9 已冻结、目录保留，但尚未获批生成 active Skills；
 - Stage 2：2.1–2.6 环节与目录已确定；architecture freeze 已完成；2.5 详细方案也只属于 freeze；正式 Stage 2 Skill generation 尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
