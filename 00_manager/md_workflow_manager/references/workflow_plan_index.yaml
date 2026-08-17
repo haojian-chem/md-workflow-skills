@@ -1,5 +1,5 @@
 schema_version: 3
-status: active_partial
+status: active
 purpose: lightweight_manager_initial_planning
 
 runtime_policy:
@@ -40,35 +40,27 @@ workflows:
       - id: "1.1"
         name: source_recognition
         base_work_directory: 01_structure_preparation/01_source_recognition
-
       - id: "1.2"
         name: component_and_residue_classification
         base_work_directory: 01_structure_preparation/02_component_and_residue_classification
-
       - id: "1.3"
         name: chain_and_residue_selection
         base_work_directory: 01_structure_preparation/03_chain_and_residue_selection
-
       - id: "1.4"
         name: altloc_occupancy_resolution
         base_work_directory: 01_structure_preparation/04_altloc_occupancy_resolution
-
       - id: "1.5"
         name: completeness_check
         base_work_directory: 01_structure_preparation/05_completeness_check
-
       - id: "1.6"
         name: missing_region_completion
         base_work_directory: 01_structure_preparation/06_missing_region_completion
-
       - id: "1.7"
         name: protein_protonation_assignment
         base_work_directory: 01_structure_preparation/07_protein_protonation_assignment
-
       - id: "1.8"
         name: reorder_and_mapping
         base_work_directory: 01_structure_preparation/08_reorder_and_mapping
-
       - id: "1.9"
         name: validation
         base_work_directory: 01_structure_preparation/09_validation
@@ -82,23 +74,18 @@ workflows:
       - id: "2.1"
         name: parameterization_environment_and_assignment
         base_work_directory: 02_topology_preparation/01_parameterization_environment_and_assignment
-
       - id: "2.2"
         name: standard_residue_topology_generation
         base_work_directory: 02_topology_preparation/02_standard_residue_topology_generation
-
       - id: "2.3"
         name: topology_linked_nonstandard_parameterization
         base_work_directory: 02_topology_preparation/03_topology_linked_nonstandard_parameterization
-
       - id: "2.4"
         name: independent_nonstandard_parameterization
         base_work_directory: 02_topology_preparation/04_independent_nonstandard_parameterization
-
       - id: "2.5"
         name: topology_integration_and_assembly
         base_work_directory: 02_topology_preparation/05_topology_integration_and_assembly
-
       - id: "2.6"
         name: topology_validation
         base_work_directory: 02_topology_preparation/06_topology_validation
@@ -112,11 +99,9 @@ workflows:
       - id: "3.1"
         name: periodic_box_construction
         base_work_directory: 03_md_preparation/01_periodic_box_construction
-
       - id: "3.2"
         name: solvent_addition
         base_work_directory: 03_md_preparation/02_solvent_addition
-
       - id: "3.3"
         name: ion_addition
         base_work_directory: 03_md_preparation/03_ion_addition
@@ -132,13 +117,11 @@ workflows:
       - id: "4.1"
         name: energy_minimization
         execution_object_prefix: em
-
       - id: "4.2"
         name: equilibration
         execution_object_prefixes:
           - nvt
           - npt
-
       - id: "4.3"
         name: production_simulation
         execution_object_prefix: md
@@ -147,19 +130,22 @@ workflows:
     workflow_id: "5"
     name: analysis
     project_directory: 05_analysis
-    step_catalog_status: not_defined
-    steps: []
+    step_catalog_status: defined
+    steps:
+      - id: "5.1"
+        name: analysis_planning_and_orchestration
+        base_work_directory: 05_analysis/01_analysis_planning_and_orchestration
 
 planning_rules:
   - preserve_defined_step_order
-  - defined_step_order_is_the_default_planning_order_not_a_one-instance_only_constraint
+  - defined_step_order_is_the_default_planning_order_not_a_one-instance-only_constraint
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
   - md_simulation_task_sheet_uses_planned_run_route_instead_of_serialized_sub_stage_instances
   - md_simulation_formal_run_unit_ids_are_not_allocated_during_initial_planning
   - task_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_task_sheet
   - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
   - manager_does_not_evaluate_scientific_step_applicability
-  - task_execution_agent_may_remove_add_or_reorder_future_steps_or_run_entries_based_on_execution_evidence_or_explicit_user_scope_change
+  - task_execution_agent_may_remove_add_or_reorder_future_steps_or_stage_specific_plan_entries_based_on_execution_evidence_or_explicit_user_scope_change
   - do_not_create_start_end_or_route_objects_outside_the_stage4_task_sheet_planned_run_route
   - do_not_invent_steps_for_workflows_with_undefined_step_catalogs
   - task_sheet_work_directory_is_planned_as_base_work_directory_plus_task_id_when_the_workflow_uses_step_directories
