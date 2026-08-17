@@ -77,8 +77,8 @@ AGENTS.md
 - 对应 architecture freeze；
 - 与当前输入、输出和边界直接相关的其他 Skill / Tool guide；
 - 涉及多窗口写入协调时的 `00_authoring/coordination/file_ownership.yaml` 或 window work order；
-- 涉及项目级状态时的 `00_authoring/SYNC_STATUS.md` / `MD_WORKFLOW_MASTER_PLAN.md`；
-- 涉及 runtime architecture 时的 `00_authoring/lightweight_runtime_v2_spec.md`。
+- 涉及 Stage catalog / 建设状态时的 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 涉及跨 Stage runtime architecture 时的 `00_authoring/project_design/lightweight_runtime_v2_spec.md`。
 
 **不要把整个 `00_authoring/` 作为新 authoring 窗口的固定 preload。**
 
@@ -210,11 +210,12 @@ transaction closure
 
 ## 10. 当前 authority
 
-- Runtime：`00_authoring/lightweight_runtime_v2_spec.md`
+- Runtime：`00_authoring/project_design/lightweight_runtime_v2_spec.md`
 - Authoring：`00_authoring/SKILL.md`
 - Skill boundary：`00_authoring/references/skill_boundaries.md`
+- Stage catalog / 建设状态：`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
 - Manager：`00_manager/md_workflow_manager/`
-- Current Stage guides：以 `00_authoring/SYNC_STATUS.md` 和对应 `00_authoring/architecture_freezes/` record 为准
+- Current Stage guides：以对应 current Skill / `00_authoring/architecture_freezes/` record 为准
 - Tool：`05_tools/`
 - Legacy contracts：`03_contracts/`
 - Legacy runtime projection：`runtime/`
