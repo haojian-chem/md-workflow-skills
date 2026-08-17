@@ -24,13 +24,13 @@ skill_layout_policy:
 
 skills:
   - name: md-workflow-skill-authoring
-    path: 00_authoring/md-workflow-skill-authoring
-    status: active_current_authoring_guide
+    path: 00_authoring
+    status: active_root_authoring_guide
     content_map: 00_authoring/content_maps/md-workflow-skill-authoring.yaml
 
   - name: md-workflow-tool-authoring
     path: 00_authoring/md-workflow-tool-authoring
-    status: active_tool_authoring_guide_alignment_review_pending
+    status: active_tool_authoring_guide
     content_map: 00_authoring/content_maps/md-workflow-tool-authoring.yaml
 
   - name: md_workflow_manager
@@ -158,13 +158,14 @@ tools:
   rule: tool status and versions are authoritative only in tool_registry.yaml; do not duplicate the full tool registry here
 
 current_architecture_records:
-  stage2: 00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
-  stage3: 00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
-  stage4: 00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
-  stage5: 00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+  stage2: 00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
+  stage3: 00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
+  stage4: 00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+  stage5: 00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
 
 notes:
   - This inventory is discovery metadata, not an architecture authority.
+  - 00_authoring/SKILL.md is the single Skill-authoring entry point.
   - Do not infer scientific role from historical path names.
   - New Skills use the main-Skill + on-demand supporting/reference model.
   - Concrete Stage 5 analysis capabilities are added to 05_analysis/references/analysis_tool_inventory.yaml only when their referenced guide exists.
