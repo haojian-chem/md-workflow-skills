@@ -1,0 +1,17 @@
+schema_version: 1
+status: ready_for_assignments
+
+policy:
+  read_scope: broad_as_needed
+  write_scope: explicit_write_paths_only
+  one_writer_per_path: true
+  default_shared_owner: main_authoring_window
+  cross_skill_issue_handling: report_to_owner_or_main_window
+
+assignments: []
+
+notes:
+  - This file is only a lightweight multi-window write-lock/assignment record.
+  - It does not describe scientific Skill responsibilities, review queues, architecture status, Tool policy, or Skill inventory.
+  - Reading another Skill does not grant authority to modify it or define its internal rules.
+  - If no assignment exists for a shared authoring path, the main authoring window remains the writer.
