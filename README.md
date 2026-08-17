@@ -68,7 +68,7 @@ Runtime architecture：
 
 Manager：
 
-`00_manager/md_workflow_manager/SKILL.md`
+`00_manager/SKILL.md`
 
 ## Authoring
 
