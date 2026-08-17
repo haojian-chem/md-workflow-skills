@@ -119,21 +119,21 @@ Cross-Stage runtime authority: `00_authoring/project_design/lightweight_runtime_
 Unnumbered infrastructure:
 
 ```text
-evals/   tests / fixtures / validation evidence / benchmark
+evals/   current tests / fixtures / validation evidence / benchmark
 tools/   current Lightweight-compatible shared deterministic tools
-legacy/  old contracts / runtime / runtime-dependent tools
+legacy/  old contracts / runtime / tools / evals / CI workflows
 ```
 
 Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：继续 representative validation/refinement；
+- Stage 1：继续 representative validation/refinement；旧 role-based eval suites 已归档，current acceptance suites 按新接口逐项重建；
 - Stage 2：补齐缺失 2.x Skills / Tools；
 - Stage 3：补齐专用 `genion.mdp` 并做代表性执行验证；
 - Stage 4：完成 representative planned-run / run-unit validation；
 - Stage 5：填充 analysis capability inventory，并设计/验证具体 analysis capabilities；
-- Infrastructure：继续清理 `evals/` 内残留 Legacy suites / old paths，并只按 current interface 重新激活 `tools/`。
+- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Ownership rule
 
@@ -143,6 +143,7 @@ Stage 已冻结架构 → matching architecture freeze
 跨 Stage runtime → lightweight_runtime_v2_spec.md
 Stage catalog / 建设状态 / current entry → 本 Master Plan
 current deterministic tool → tools/
-legacy executable/runtime material → legacy/
+current evaluation → evals/
+legacy executable/runtime/test/CI material → legacy/
 historical design material → 00_authoring/archive/
 ```
