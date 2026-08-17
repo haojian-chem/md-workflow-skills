@@ -1,26 +1,11 @@
-[
-  {
-    "command": "python /mnt/data/md_workflow_phase1_v2/00_authoring/md-workflow-skill-authoring/scripts/validate_contracts.py /mnt/data/md_workflow_phase1_v2",
-    "returncode": 0,
-    "stdout": "RESULT: 0 error(s)\n",
-    "stderr": ""
-  },
-  {
-    "command": "python /mnt/data/md_workflow_phase1_v2/00_authoring/md-workflow-skill-authoring/scripts/validate_md_skill.py /mnt/data/md_workflow_phase1_v2 /mnt/data/md_workflow_phase1_v2/00_authoring/md-workflow-skill-authoring",
-    "returncode": 0,
-    "stdout": "RESULT: 0 error(s), 0 warning(s)\n",
-    "stderr": ""
-  },
-  {
-    "command": "python /mnt/data/md_workflow_phase1_v2/00_authoring/md-workflow-skill-authoring/scripts/validate_architecture_separation.py /mnt/data/md_workflow_phase1_v2",
-    "returncode": 0,
-    "stdout": "RESULT: 0 forbidden architecture reference(s)\n",
-    "stderr": ""
-  },
-  {
-    "command": "python /mnt/data/md_workflow_phase1_v2/00_authoring/md-workflow-skill-authoring/scripts/detect_cross_file_duplication.py /mnt/data/md_workflow_phase1_v2",
-    "returncode": 0,
-    "stdout": "RESULT: 0 duplicate block(s)\n",
-    "stderr": ""
-  }
-]
+{
+  "status": "SUPERSEDED_HISTORY_ONLY",
+  "current": false,
+  "reason": "This validation belongs to the previous authoring/contracts architecture and is not evidence for the current main-Skill model.",
+  "current_authority": [
+    "00_authoring/AUTHORING_RULES.md",
+    "00_authoring/md-workflow-skill-authoring/SKILL.md",
+    "00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md"
+  ],
+  "previous_blob_sha": "2a7ed63882adb731889e18f03fe5a57e2b011db2"
+}
