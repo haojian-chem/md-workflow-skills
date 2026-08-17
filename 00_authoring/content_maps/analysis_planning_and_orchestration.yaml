@@ -1,0 +1,39 @@
+schema_version: 4
+skill_name: analysis_planning_and_orchestration
+skill_type: operation
+skill_path: 02_operations/analysis_planning_and_orchestration
+architecture: lightweight_runtime_v2
+status: guide_implemented_validation_pending_tool_inventory_population_pending
+
+owned_content:
+  stage5_analysis_plan_expansion:
+    owner: 02_operations/analysis_planning_and_orchestration/SKILL.md
+  stage5_reuse_query_and_orchestration:
+    owner: 02_operations/analysis_planning_and_orchestration/SKILL.md
+  plan_item_numbering_status_and_minimum_fields:
+    owner: 02_operations/analysis_planning_and_orchestration/SKILL.md
+  prepared_input_query_and_dependency_planning:
+    owner: 02_operations/analysis_planning_and_orchestration/SKILL.md
+  orchestration_level_validation:
+    owner: 02_operations/analysis_planning_and_orchestration/SKILL.md
+  analysis_tool_inventory:
+    owner: 02_operations/analysis_planning_and_orchestration/references/analysis_tool_inventory.yaml
+
+external_references:
+  - purpose: stage5_workflow_boundary
+    owner: 01_workflows/analysis_workflow/SKILL.md
+    access: reference_only
+  - purpose: stage5_architecture_freeze
+    owner: 00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+    access: reference_only
+  - purpose: stage4_run_unit_topology_lineage
+    owner: 04_md_simulation/SKILL.md
+    access: reference_only
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: reference_only
+
+notes:
+  - 5.1 selects and orchestrates analysis Skills/Tools but does not duplicate their method-specific rules.
+  - trjconv maintains trajectory_index.yaml; make_ndx maintains ndx_index.yaml; 5.1 only queries, verifies, and consumes them.
+  - Each concrete Tool/analysis Skill validates its own output data.
