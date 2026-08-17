@@ -91,7 +91,27 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 不得先批量生成一套目录/模板，再把实际职责硬塞进去。
 
-## 5. 过期 Markdown 归档
+## 5. Architecture-freeze 文件位置
+
+当某个 Stage / Workflow 的架构已经明确敲定，需要保存正式 freeze record 时，统一写入：
+
+```text
+00_authoring/architecture_freezes/
+```
+
+规则：
+
+- 不在 `00_authoring/` 根目录散放新的 `WORKFLOW*_ARCHITECTURE_FREEZE*.md`；
+- freeze record 只保存阶段级已冻结架构、职责边界和明确拒绝项；
+- current Skill / reference 仍拥有具体执行规则，freeze record 不复制整套 Skill 内容；
+- 同一 Stage 有新的 freeze record 明确取代旧 freeze 时，先迁移 current 引用，再将被取代的旧 Markdown 移入 `00_authoring/archive/`；
+- `MD_WORKFLOW_MASTER_PLAN.md`、`SYNC_STATUS.md` 和相关 content map 只指向当前 freeze 路径。
+
+当前目录入口：
+
+`00_authoring/architecture_freezes/README.md`
+
+## 6. 过期 Markdown 归档
 
 当前 authoring/Skill 活跃路径中不应长期保留 `SUPERSEDED` / `LEGACY` / `HISTORY ONLY` Markdown tombstone。
 
@@ -119,7 +139,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 Archive 文件不是 current authority，普通 Skill authoring、Task Execution Agent 和 Manager 均不得默认读取。
 
-## 6. 什么不应归档
+## 7. 什么不应归档
 
 不要因为“文件较旧”就归档仍然有效的：
 
@@ -131,7 +151,7 @@ Archive 文件不是 current authority，普通 Skill authoring、Task Execution
 
 归档依据是**authority 已被明确取代**，不是文件日期。
 
-## 7. 替换检查
+## 8. 替换检查
 
 当新文件替换旧文件时，交付前确认：
 
@@ -140,15 +160,17 @@ Archive 文件不是 current authority，普通 Skill authoring、Task Execution
 - [ ] 同一规则没有在新旧文件各保留一份；
 - [ ] 旧 Markdown 已归档或删除，而不是继续留在 active 搜索路径；
 - [ ] archive 没有被加入默认 startup/read list；
+- [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
 - [ ] content map / inventory 只指向 current authority。
 
-## 8. 原则摘要
+## 9. 原则摘要
 
 ```text
 一个职责 → 一个 main Skill
 长而同属当前职责 → reference
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
+Stage architecture freeze → 00_authoring/architecture_freezes/
 已被取代的 Markdown → archive，不留在 active path
 已有 owner 的规则 → 引用，不复制
 ```
