@@ -23,7 +23,7 @@ owned_content:
 
 external_references:
   - purpose: stage5_architecture_freeze
-    owner: 00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+    owner: 00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
     access: reference_only
   - purpose: manager_planning_catalog
     owner: 00_manager/md_workflow_manager/references/workflow_plan_index.yaml
