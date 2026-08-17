@@ -3,7 +3,7 @@ skill_name: md_simulation
 skill_type: workflow
 skill_path: 04_md_simulation
 architecture: lightweight_runtime_v2
-status: first_pass_implemented_validation_pending
+status: stage4_architecture_frozen_first_pass_implemented_validation_pending
 
 owned_content:
   stage4_planned_run_route_semantics:
@@ -11,6 +11,8 @@ owned_content:
   formal_run_unit_identity_and_binding:
     owner: 04_md_simulation/SKILL.md
   project_level_run_unit_yaml_rules:
+    owner: 04_md_simulation/SKILL.md
+  run_unit_topology_lineage_top_field:
     owner: 04_md_simulation/SKILL.md
   continuation_vs_new_segment_boundary:
     owner: 04_md_simulation/SKILL.md
@@ -41,5 +43,7 @@ child_skills:
 
 notes:
   - Stage 4 keeps workflow/operation responsibility distinctions logically but uses one physical Stage directory.
+  - run_unit.yaml minimum fields are run_unit_id, start_from_run_unit_id, status, path, top.
+  - top is the full main .top path actually used for grompp and supports downstream topology lineage checks.
   - Run-specific MDP generation, grompp, mdrun option tendencies, and validation belong to the corresponding child Skill.
   - No separate Stage 4 Validator Skill is used.
