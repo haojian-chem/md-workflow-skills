@@ -2,12 +2,11 @@
 
 用于设计、维护和执行面向分子动力学科研任务的 Skill / Tool 体系。
 
-## Current scientific Skill layout
+## Current scientific layout
 
-Active scientific Skills 按 Stage / 科学职责组织：
+MD Workflow 的 Scientific Stage roots 固定为：
 
 ```text
-00_manager/
 01_structure_preparation/
 02_topology_preparation/
 03_md_preparation/
@@ -15,17 +14,36 @@ Active scientific Skills 按 Stage / 科学职责组织：
 05_analysis/
 ```
 
-其中：
+`00_manager/` 是独立的项目管理 package，不占用 Scientific Stage 编号。
+
+Stage / Step 目录可以在正式 Skill generation 前预留，因此：
+
+```text
+目录存在 ≠ Skill 已生成 ≠ runtime authority 已激活
+```
+
+当前总体建设状态：
+
+- Stage 1：partially implemented；已有正式 active Skills，同时仍有处于 authoring / freeze-only 状态的后续 Step；
+- Stage 2：architecture frozen；`2.1–2.6` Step package directories 已预留，尚无 active Stage 2 Skill；
+- Stage 3：architecture frozen；`3.1–3.3` Step package directories 已预留，尚无 active Stage 3 Skill；
+- Stage 4：active Skill generation completed；Stage main Skill 与 `4.1–4.3` Skills 已存在；
+- Stage 5：architecture frozen；`5.1` Step package directory 已预留，尚无 active Stage 5 Skill。
+
+例如当前 Stage 3 scientific source tree 为：
 
 ```text
 03_md_preparation/
-├── SKILL.md
 ├── 3.1_periodic_box_construction/
 ├── 3.2_solvent_addition/
 └── 3.3_ion_addition/
 ```
 
-Stage 3 的架构已经冻结，当前已建立 first-pass Step Skills；`3.3` 专用 `genion.mdp` 的精确模板内容和代表性执行验证仍待完成。
+这些目录当前是 future Skill package locations，不表示 first-pass Step Skills 已经生成。
+
+精确的 Stage / Step 建设状态与 current entry 统一读取：
+
+`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
 
 科研 Skill 不再按 Workflow / Operation / Validator 分根目录。Step 内部的 validation 默认由结果 owner 持有，只有复杂且独立时才拆 supporting Skill。
 
@@ -39,12 +57,12 @@ tools/      # current Lightweight-compatible shared deterministic tools
 legacy/     # old runtime contracts / runtime projections / legacy tools
 ```
 
-当前 `tools/tool_registry.yaml` 只登记已经适配 current Lightweight / Skill interface 且完成测试的共享 Tool。旧 `05_tools/` 中依赖 Legacy runtime 的工具已移入 `legacy/tools/`，不会因为历史 ACTIVE 状态自动成为 current Tool。
+当前 `tools/tool_registry.yaml` 只登记已经适配 current Lightweight / Skill interface、完成测试并明确 reactivated 的共享 Tool。旧 runtime-dependent 工具保留在 `legacy/tools/`，不会因为历史 ACTIVE 状态自动成为 current Tool。
 
-历史设计 Markdown 已从顶层 `design_records/` 移入：
+历史设计 Markdown 位于：
 
 ```text
-00_authoring/archive/legacy_runtime/design_records/
+00_authoring/archive/
 ```
 
 旧 runtime contracts / generated runtime material 分别位于：
