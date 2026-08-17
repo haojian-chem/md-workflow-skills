@@ -1,0 +1,10 @@
+schema_version: 5
+skill_name: <skill-name>
+skill_path: <project-relative-skill-directory>
+status: draft
+owned_content: {}
+external_references: []
+notes:
+  - Record content ownership and read-only external authorities only.
+  - Do not classify the Skill as workflow / operation / validator.
+  - Read scope is not encoded here; multi-window write ownership belongs to file_ownership.yaml / work order.
