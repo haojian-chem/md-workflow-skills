@@ -16,7 +16,7 @@ Status: ACTIVE CURRENT BASELINE
 
 编号语义：`1.3` 表示整个 MD Workflow 的第 1.3 阶段；`2.4`、`3.2`、`4.1`、`5.1` 同理。
 
-## 2. Current scientific Skill roots
+## 2. Scientific Stage roots
 
 ```text
 01_structure_preparation/
@@ -26,7 +26,9 @@ Status: ACTIVE CURRENT BASELINE
 05_analysis/
 ```
 
-只有这些 `01`–`05` 目录表示 MD Workflow Stage。`evals/`、`tools/`、`legacy/` 等基础设施目录不占用 Stage 编号。
+只有这些 `01`–`05` 目录表示 MD Workflow Stage。目录可以在对应 Skill 正式生成前预留；**目录存在不等于 Skill 已生成或已激活**。
+
+`evals/`、`tools/`、`legacy/` 等基础设施目录不占用 Stage 编号。
 
 ## 3. Stage 1 — Structure preparation
 
@@ -61,11 +63,11 @@ Stage 1.6–1.9 freeze records:
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
 ```
 
-Freeze completion does not authorize runtime use or Skill generation. Formal 1.6–1.9 `SKILL.md` files are created only after explicit user approval.
+Freeze completion does not authorize runtime use or Skill generation. Formal 1.6–1.9 `SKILL.md` files are created only after explicit user approval. Their Stage/Step directories remain reserved in the scientific tree.
 
 ## 4. Stage 2 — Topology / parameterization
 
-Status: ARCHITECTURE FROZEN; stage main Skill active; detailed implementation remains partial.
+Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 
 ```text
 2.1 Parameterization environment and assignment
@@ -76,15 +78,15 @@ Status: ARCHITECTURE FROZEN; stage main Skill active; detailed implementation re
 2.6 Topology validation
 ```
 
-Current entry: `02_topology_preparation/SKILL.md`
+Architecture authority:
 
-Current implemented detailed guide: `02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md`
+`00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
-Architecture authority: `00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
+Any Stage 2 `SKILL.md` materialized before explicit approval is authoring reference only, not runtime authority, and must be consolidated into the freeze before pseudo-Skill removal.
 
 ## 5. Stage 3 — System construction / solvation
 
-Status: ARCHITECTURE FROZEN; first-pass Stage/Step Skills active; exact 3.3 `genion.mdp` template and representative execution validation pending.
+Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 
 ```text
 3.1 Periodic box construction
@@ -92,20 +94,15 @@ Status: ARCHITECTURE FROZEN; first-pass Stage/Step Skills active; exact 3.3 `gen
 3.3 Ion addition
 ```
 
-Current guides:
+Architecture authority:
 
-```text
-03_md_preparation/SKILL.md
-03_md_preparation/3.1_periodic_box_construction/SKILL.md
-03_md_preparation/3.2_solvent_addition/SKILL.md
-03_md_preparation/3.3_ion_addition/SKILL.md
-```
+`00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
 
-Architecture authority: `00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
+The exact dedicated minimal `genion.mdp` template and representative execution validation remain implementation-time work. Any currently materialized Stage 3 `SKILL.md` files are not approved runtime Skills and must first be reconciled with the freeze so no agreed detail is lost.
 
 ## 6. Stage 4 — MD simulation
 
-Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; representative execution validation pending.
+Status: ARCHITECTURE FROZEN; ACTIVE SKILL GENERATION COMPLETED.
 
 ```text
 4.1 Energy minimization
@@ -113,21 +110,25 @@ Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; representative execution vali
 4.3 Production simulation
 ```
 
-Current guides under `04_md_simulation/`.
+Current active guides are under `04_md_simulation/`.
 
-Architecture authority: `00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
+Architecture authority:
+
+`00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
 
 ## 7. Stage 5 — Analysis
 
-Status: ARCHITECTURE AND FIRST-PASS MAIN GUIDE FROZEN; concrete analysis-capability population and representative validation pending.
+Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 
 ```text
 5.1 Analysis planning and orchestration
 ```
 
-Current guide: `05_analysis/SKILL.md`
+Architecture authority:
 
-Architecture authority: `00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
+
+Any currently materialized Stage 5 main-guide/inventory files are authoring reference only until explicitly approved Skill generation. Agreed details must be preserved in the freeze before those pseudo-current files are removed or repurposed.
 
 ## 8. Runtime and infrastructure
 
@@ -145,14 +146,31 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.4 已完成；1.5 正在独立窗口 authoring；1.6–1.9 已冻结并保留 implementation-ready generation reference，但尚未获批生成 active Skills；
-- Stage 2：补齐缺失 2.x Skills / Tools；
-- Stage 3：补齐专用 `genion.mdp` 并做代表性执行验证；
-- Stage 4：完成 representative planned-run / run-unit validation；
-- Stage 5：填充 analysis capability inventory，并设计/验证具体 analysis capabilities；
+- Stage 1：1.1–1.4 已完成；1.5 正在独立窗口 authoring；1.6–1.9 已冻结、目录保留，但尚未获批生成 active Skills；
+- Stage 2：architecture freeze 已完成；正式 2.x Skill generation 尚未获批；
+- Stage 3：architecture freeze 已完成；正式 3.1–3.3 Skill generation 尚未获批；
+- Stage 4：正式 Skill generation 已完成；
+- Stage 5：architecture freeze 已完成；正式 5.1 / analysis capability Skill generation 尚未获批；
 - Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
-## 10. Ownership rule
+## 10. Status maintenance rule
+
+本文件是 Stage / Step 建设状态与 current entry 的唯一 project-level owner。
+
+任何 authoring 工作只要真实改变以下状态，就必须在同一 authoring 流程中同步本文件：
+
+```text
+design / discussion
+architecture frozen
+Skill generation approved / in progress
+active Skill generated
+validation milestone changed
+superseded / retired
+```
+
+Skill authoring 窗口不得因为本文件是共享文件而静默跳过状态同步；具体多窗口写入规则见 `00_authoring/references/multi_window_authoring_protocol.md`。
+
+## 11. Ownership rule
 
 ```text
 具体业务规则 → current Skill / reference
