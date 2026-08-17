@@ -15,7 +15,8 @@ shared_files:
     - 00_authoring/AUTHORING_RULES.md
     - 00_authoring/MD_WORKFLOW_MASTER_PLAN.md
     - 00_authoring/SYNC_STATUS.md
-    - 00_authoring/WORKFLOW*_ARCHITECTURE_FREEZE*.md
+    - 00_authoring/architecture_freezes/
+    - 00_authoring/archive/
     - 00_authoring/md-workflow-skill-authoring/
     - 00_authoring/md-workflow-tool-authoring/
     - 00_authoring/skill_inventory.yaml
@@ -24,7 +25,7 @@ shared_files:
     - 00_manager/md_workflow_manager/references/
     - 03_contracts/
     - 05_tools/tool_registry.yaml
-  notes: Shared architecture/index/authoring files are modified only by the main authoring window. Business windows may read them and other relevant Skills as needed.
+  notes: Shared architecture/index/authoring files are modified only by the main authoring window. Business windows may read them and other relevant Skills as needed. Stage freeze records belong under 00_authoring/architecture_freezes/; superseded authoring Markdown belongs under 00_authoring/archive/.
 
 tool_directory_policy:
   registry_owner: main
