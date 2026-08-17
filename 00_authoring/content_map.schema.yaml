@@ -1,47 +1,40 @@
-schema_version: 1
-file_pattern: 00_authoring/content_maps/*.yaml
-required_fields:
+schema_version: 2
+current_content_map_version: 5
+legacy_supported_versions:
+  - 3
+  - 4
+
+v5_required_fields:
   schema_version:
     type: integer
     allowed:
-    - 3
+      - 5
   skill_name:
     type: string
-  skill_type:
-    type: enum
-    allowed:
-    - authoring_guide
-    - manager
-    - workflow
-    - operation
-    - validator
   skill_path:
     type: project_relative_path
     leading_slash_forbidden: true
-  contract_status:
-    type: enum
-    allowed:
-    - pending
-    - draft
-    - frozen
-  content_ownership_status:
-    type: enum
-    allowed:
-    - pending
-    - draft
-    - frozen
+  status:
+    type: string
   owned_content:
     type: mapping
   external_references:
     type: list
+
+v5_not_required:
+  - skill_type
+  - contract_status
+  - content_ownership_status
+
 owned_content_item:
   required_fields:
     owner:
       type: project_relative_path
       leading_slash_forbidden: true
   rules:
-  - The owner path must be inside skill_path.
-  - A content concept must have one canonical owner.
+    - The owner path should normally be inside skill_path or one of its owned supporting paths.
+    - A content concept must have one canonical owner.
+
 external_reference_item:
   required_fields:
     purpose:
@@ -50,18 +43,18 @@ external_reference_item:
       type: project_relative_path
       leading_slash_forbidden: true
     access:
-      type: enum
-      allowed:
-      - reference_only
-  optional_fields:
-    status:
-      type: enum
-      allowed:
-      - planned
-      - present
+      type: string
+  recommended_access_values:
+    - reference_only
+    - read_only
+    - authoring_reference
+
 rules:
-- Pending content ownership must use an empty owned_content mapping.
-- Window activity and file write ownership are not recorded in content maps.
-- Shared deduplication rules are not copied into each map.
-- Local references or schemas are listed only after their content purpose is defined.
-- All paths are relative to the project root.
+  - Content maps describe content ownership, not runtime orchestration.
+  - Current v5 maps do not classify scientific Skills as workflow / operation / validator.
+  - Window write ownership is not recorded in content maps.
+  - Read scope is not restricted by content maps; authors may read relevant external Skills as needed.
+  - Shared deduplication rules are not copied into each map.
+  - Local references/supporting Skills are listed only after their content purpose is defined.
+  - All paths are relative to the project root.
+  - Legacy v3/v4 maps may remain during migration but are not templates for new Skills.
