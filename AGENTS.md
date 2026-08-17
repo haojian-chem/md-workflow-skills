@@ -7,7 +7,7 @@
 1. 真实 MD 项目的运行与任务管理；
 2. MD Workflow Skill / Tool / runtime 架构的设计与维护。
 
-Skill architecture root 与真实 MD project root 必须区分。真实项目根目录不固定。
+Skill repository 与真实 MD project root 必须区分。真实项目根目录不固定。
 
 ## 2. 先判断当前模式
 
@@ -22,12 +22,10 @@ Skill architecture root 与真实 MD project root 必须区分。真实项目根
 ├── task_index.md
 ├── project_result_index.md
 └── tasks/
-    ├── T001.md
-    ├── T002.md
-    └── ...
+    └── Txxxx.md
 ```
 
-真实运行分成两个长期对话角色：
+真实运行默认使用两个长期对话角色：
 
 ```text
 Manager 对话
@@ -37,11 +35,9 @@ Manager 对话
 → 连续推进任务中的子环节
 ```
 
-Manager 与 Task Execution Agent 默认不在每个子环节之间往返。
-
 #### Manager 请求
 
-当用户要求创建、定位、整理或重新规划任务时：
+当用户要求创建、定位、整理或明确重新规划任务时：
 
 1. 读取 `00_manager/md_workflow_manager/SKILL.md`；
 2. 按其最小读取规则使用 `task_index.md` 和目标 Task Sheet；
@@ -53,11 +49,11 @@ Manager 与 Task Execution Agent 默认不在每个子环节之间往返。
 当用户要求继续、执行、检查、解释或排错已有任务时：
 
 1. 读取目标 `Txxxx.md`；
-2. 由任务单确定当前要处理的子环节/对象；
+2. 由任务单确定当前要处理的子环节 / 对象；
 3. 加载当前任务所需的 main Skill；
-4. 按当前 Skill / Stage 已冻结规则检查 reuse；
+4. 按当前 Skill / Stage 规则检查 reuse；
 5. 只读取当前对象、候选结果和当前工作明确需要的其他资料；
-6. 必要时按需读取 supporting Skill / reference / Tool guide；
+6. 必要时按需读取 references / supporting Skill / Tool guide；
 7. 执行后维护 Task Sheet、登记正式结果，并根据结果或用户明确要求调整后续计划。
 
 普通 task execution 不需要为了推进下一子环节返回 Manager。
@@ -76,43 +72,44 @@ AGENTS.md
 
 - 对应 architecture freeze；
 - 与当前输入、输出和边界直接相关的其他 Skill / Tool guide；
-- 涉及多窗口写入协调时的 `00_authoring/coordination/file_ownership.yaml` 或 window work order；
-- 涉及 Stage catalog / 建设状态时的 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
-- 涉及跨 Stage runtime architecture 时的 `00_authoring/project_design/lightweight_runtime_v2_spec.md`。
+- 涉及项目级阶段目录/建设状态时的 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`；
+- 涉及 runtime architecture 时的 `00_authoring/project_design/lightweight_runtime_v2_spec.md`；
+- 涉及多窗口写入协调时的 `00_authoring/coordination/file_ownership.yaml` 或 window work order。
 
 **不要把整个 `00_authoring/` 作为新 authoring 窗口的固定 preload。**
 
 Authoring 中必须区分：
 
 ```text
-read scope  ≠  write ownership
+read scope ≠ write ownership
 ```
 
 可以并且应该读取不属于当前写入范围的相关 Skill 来理解接口；未经明确分配，不得修改它们，也不得在当前 Skill 中替它们定义内部规则。
 
-## 3. Current Skill model
+## 3. Current scientific Skill layout
+
+科研 Skill 按 Stage / 科学职责组织。当前 active roots：
+
+```text
+01_structure_preparation/
+02_topology_preparation/
+04_md_simulation/
+05_analysis/
+```
+
+Stage 3 detailed Skills 尚未实现完成，不为形式完整建立空 Skill package。
 
 当前科研 Skill 设计原则：
 
 ```text
 main Skill
-├── references/        # 长规则/registry/按需细节
+├── references/        # 长规则 / registry / 按需细节
 ├── schemas/           # 只有确有稳定结构化约束时使用
 ├── scripts/           # Skill-local deterministic helper
 └── supporting Skill   # 仅复杂且边界清晰时拆出
 ```
 
-**不再强制把科研 Skill 分类为 Workflow / Operation / Validator。**
-
-仓库中现存：
-
-```text
-01_workflows/
-02_operations/
-02_validators/
-```
-
-是历史布局和迁移中的现有路径，不是新 Skill 的强制目录模板。
+**不再强制把科研 Skill 分类为 Workflow / Operation / Validator。** 历史 `01_workflows/`、`02_operations/`、`02_validators/` 已退出 active scientific Skill layout；需要保留的旧实现只用于 archive / Git history。
 
 Manager 是项目级管理 Skill；Tool 是确定性能力组件。
 
@@ -125,7 +122,7 @@ Skill 的首要作用是指导 Agent 如何处理科研任务，而不是把 Age
 - Agent 可以直接读取并理解实际科研文件；
 - parser / Tool 用于需要精确、稳定、批量、可测试的确定性动作；
 - 推荐 Tool 不自动等于唯一允许实现；
-- 只有科学方法或明确技术接口真正要求时，才规定不可替代的软件/算法/格式路径；
+- 只有科学方法或明确技术接口真正要求时，才规定不可替代的软件 / 算法 / 格式路径；
 - 不为简单判断增加无必要 schema、状态机或中间 workflow hop。
 
 ## 5. 跨 Skill 边界
@@ -151,7 +148,7 @@ official results
 计划维护规则
 ```
 
-发现外部 Skill 缺失/冲突时，交给 owner window / main authoring window 处理。
+发现外部 Skill 缺失或冲突时，交给 owner window / main authoring window 处理。
 
 ## 6. Runtime 最小读取原则
 
@@ -159,31 +156,20 @@ official results
 - Task Execution Agent 只加载当前动作需要的信息；
 - 不为了“全面了解”扫描整个项目；
 - 跨环节优先消费上游正式结果，而不是重读上游全过程；
-- 但当当前科学判断确实需要理解相邻 Skill 的接口时，可以按需读取；
+- 当前科学判断确需理解相邻 Skill 接口时，可以按需读取；
 - `project_result_index.md` 只用于结果检索，不保存当前任务状态。
 
 ## 7. 任务与结果记录
 
-`task_index.md`：
+`task_index.md`：只记录任务导航；任务级状态为 `未完成 | 已完成 | 已终止`。
 
-- 只记录任务导航；
-- 任务级状态：`未完成 | 已完成 | 已终止`。
+`tasks/Txxxx.md`：记录任务目标、动态计划、状态和最小恢复信息；普通子环节状态为 `待执行 | 未完成 | 已完成`。Stage-specific 内部对象可采用其 current Skill / freeze 已明确的局部状态规则。
 
-`tasks/Txxxx.md`：
-
-- 记录任务目标、计划、状态和最小恢复信息；
-- 普通子环节状态：`待执行 | 未完成 | 已完成`；
-- Stage-specific 内部对象可以使用其已冻结的局部状态规则。
-
-`project_result_index.md`：
-
-- 用于跨任务/跨对话正式结果检索；
-- 登记粒度由当前 Stage / Skill 定义；
-- 不建立通用 version registry。
+`project_result_index.md`：用于跨任务 / 跨对话正式结果检索；登记粒度由当前 Stage / Skill 定义；不建立通用 version registry。
 
 ## 8. Legacy Runtime
 
-以下体系已冻结，不再是默认真实运行入口：
+以下体系不再是默认真实运行入口：
 
 ```text
 runtime/**
@@ -194,6 +180,7 @@ runtime task / result
 project event
 artifact state machine
 transaction closure
+03_contracts/** 中的 Legacy contracts
 ```
 
 只有旧项目恢复、Legacy 调试、历史审计或用户明确要求时才按需读取。
@@ -208,14 +195,14 @@ transaction closure
 - Tool 只能在明确授权路径内写入；
 - 需要复现的复杂科研操作优先保存实际脚本、配置或软件输入文件。
 
-## 10. 当前 authority
+## 10. Current authority
 
-- Runtime：`00_authoring/project_design/lightweight_runtime_v2_spec.md`
 - Authoring：`00_authoring/SKILL.md`
 - Skill boundary：`00_authoring/references/skill_boundaries.md`
-- Stage catalog / 建设状态：`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
-- Manager：`00_manager/md_workflow_manager/`
-- Current Stage guides：以对应 current Skill / `00_authoring/architecture_freezes/` record 为准
+- Runtime：`00_authoring/project_design/lightweight_runtime_v2_spec.md`
+- Stage catalog/status：`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
+- Stage freeze：`00_authoring/architecture_freezes/`
+- Manager：`00_manager/md_workflow_manager/SKILL.md`
+- Scientific Skills：对应 Stage root 下的 current `SKILL.md`
 - Tool：`05_tools/`
-- Legacy contracts：`03_contracts/`
-- Legacy runtime projection：`runtime/`
+- Legacy material：`03_contracts/`、`runtime/`、`00_authoring/archive/`
