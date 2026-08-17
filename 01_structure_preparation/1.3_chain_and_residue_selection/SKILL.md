@@ -23,7 +23,7 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 开始本步骤时先在 `project_result_index.md` 中检查已有 1.3 正式结果。
 
-以下内容均等价且已有结果通过专属 Validator 时，可以直接复用：
+以下内容均等价且已有结果通过本步骤 validation 时，可以直接复用：
 
 - 当前结构相同；
 - 使用的 1.2 正式分类结果相同；
@@ -163,9 +163,9 @@ structures/target_xxx.pdb
 
 # Validation requirements
 
-完成 target 记录和 PDB 生成后，使用：
+完成 target 记录和 PDB 生成后，按：
 
-`02_validators/chain_and_residue_selection_validator/SKILL.md`
+`references/validation.md`
 
 验证 selection、PDB organization 和 mapping。验证未通过时当前 1.3 保持未完成。
 

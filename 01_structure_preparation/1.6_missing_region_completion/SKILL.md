@@ -53,11 +53,25 @@ description: 结构准备 1.6。严格按 1.5 repair report 执行缺失残基�
 
 # Validation requirements
 
-使用：
+逐项核验 1.5 repair report：
 
-`02_validators/missing_region_completion_validator/SKILL.md`
+- missing residue → 对应 residue 已补入正确 chain / residue 位置；
+- missing heavy atom → 对应 heavy atom 已存在；
+- extra atom → 已删除；
+- atom-name mismatch → 已按确认关系改名。
 
-只有 1.5 中要求由 1.6 处理的项目全部落实，且没有 unresolved repair item 时才算完成。
+同时检查：
+
+- `completion_report.yaml` 与实际 PDB 修改一致；
+- 没有超出 1.5 report 的未记录删除/改名；
+- 输出不存在重复 atom identity；
+- atom serial 连续且唯一；
+- PDB 可正常解析；
+- 新增残基/重原子的局部连接与几何没有明显不合理；
+- 没有添加本应留给后续步骤处理的最终 H；
+- `unresolved_items` 为空。
+
+任一应处理项目未解决时，1.6 保持未完成。Validation 不重新做 1.5 的问题判定，也不自行修复失败项。
 
 # Official results
 

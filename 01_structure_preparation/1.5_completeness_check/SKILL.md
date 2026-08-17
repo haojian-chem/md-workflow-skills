@@ -1,5 +1,5 @@
 ---
-name: structure_completeness_validator
+name: structure_completeness_check
 description: 结构准备 1.5。基于 1.4 当前 PDB 和前序已完成的 residue/atom 核对信息，生成当前保留结构的缺失与待修正报告；不修改结构。
 ---
 

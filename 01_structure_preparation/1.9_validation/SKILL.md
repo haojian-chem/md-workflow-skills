@@ -1,5 +1,5 @@
 ---
-name: structure_preparation_validator
+name: structure_preparation_validation
 description: 结构准备 1.9。对 Stage 1 最终 PDB / map 执行阶段级只读验证，并再次检查与目标力场的兼容性；不修复结构。
 ---
 

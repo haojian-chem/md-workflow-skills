@@ -1,18 +1,18 @@
 ---
-name: component_and_residue_classification_validator
+name: component_and_residue_classification
 description: Lightweight Runtime v2 的结构准备 1.2。对当前任务对象中的一个已确定结构 model 执行组分/残基分类、参考核验、关系检查和确认事项聚合，并输出供 1.3 直接消费的稳定 classification_result.yaml；不依赖 Legacy task/result/route/Workstream 闭环。
 ---
 
 # 目标与边界
 
-本 Validator 实现 `structure_preparation_workflow` 的 1.2。
+本 Skill 实现结构准备 1.2。
 
 它读取当前 Task Sheet 1.2 中记录的结构对象，不修改坐标文件，只在当前任务专属工作目录中生成分类证据、当前 observations、最终分类结果、报告和必要确认材料。
 
 权威归属：
 
 ```text
-上级步骤和交接：01_workflows/structure_preparation_workflow/SKILL.md
+上级阶段和交接：01_structure_preparation/SKILL.md
 科学语义：references/classification_rules.md
 字段与枚举：schemas/*.schema.yaml
 CLI 与模块边界：scripts/README.md
@@ -176,7 +176,7 @@ Task Execution Agent 进入 1.2 后，应在读取大量科学 references/schema
 
 # Preflight
 
-依赖检查通过后，执行本 Validator 的业务 Preflight：
+依赖检查通过后，执行本 Skill 的业务 Preflight：
 
 1. 当前任务单中的子环节是 1.2；
 2. `对象` 指向唯一明确的结构文件；

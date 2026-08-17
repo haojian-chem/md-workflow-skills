@@ -36,17 +36,16 @@ description: 结构准备 1.4。读取 1.3 生成的 target PDB，对存在多�
 
 # Validation requirements
 
-使用：
+检查：
 
-`02_validators/altloc_occupancy_validator/SKILL.md`
-
-验证：
-
-- 所有需要处理的多 conformer 部分均已唯一化；
-- 未选择构象原子已删除；
-- 未涉及 conformer 的结构内容未发生非预期改变；
+- 报告中记录的每个多 conformer 部分都有唯一保留构象；
+- 未选择构象对应的 atom records 已从输出 PDB 删除；
+- 不再存在同一待处理位置的多个未解决 conformer；
+- 未参与 conformer 选择的 residue / atoms 未被非预期删除、重命名或移动；
 - atom serial 连续且唯一；
 - 输出 PDB 可正常解析。
+
+任一检查失败时 1.4 保持未完成；validation 不自行修复结构。
 
 # Official results
 

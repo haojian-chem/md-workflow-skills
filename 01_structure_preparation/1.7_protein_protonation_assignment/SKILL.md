@@ -36,11 +36,15 @@ description: 结构准备 1.7。对蛋白质残基执行 PROPKA，并结合 PROP
 
 # Validation requirements
 
-使用：
+检查：
 
-`02_validators/protein_protonation_validator/SKILL.md`
+1. 报告中每个被赋值残基的最终 protonation state 与最终 residue name 一致；
+2. 最终 residue name 可由目标 force field 正常识别；
+3. 需要人工确认的 protonation decision 已解决；
+4. 除允许的 residue-name 修改外，输入和输出 heavy-atom set、atom name、坐标与顺序没有非预期变化；
+5. 1.7 没有生成最终氢原子。
 
-检查最终 residue name 与 protonation assignment 一致，并且目标 force field 中存在对应命名。
+任一 blocking 问题存在时 1.7 保持未完成；validation 不修改结构。
 
 # Official results
 

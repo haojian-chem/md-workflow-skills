@@ -64,17 +64,19 @@ Stage 1 chain identity 与后续 GROMACS `moleculetype` organization 是不同�
 
 # Validation requirements
 
-使用：
+检查：
 
-`02_validators/structure_mapping_validator/SKILL.md`
+1. 1.8 输入和输出 heavy-atom set 完全一致；
+2. topology-linked nonstandard unit 的最终 chain assignment 符合本 Skill 规则；
+3. 新补 missing residues 已位于 polymer chain 的正确 residue 位置；
+4. standard residue block 与 linked nonstandard block 的顺序符合规定；
+5. 同一 residue 的 atoms 连续，且没有无依据的 force-field-specific atom reorder；
+6. atom serial 连续且唯一；
+7. final map 覆盖最终 PDB 中全部 heavy atoms且无重复；
+8. map 中 final identity 与 PDB 逐 atom 一致；
+9. inherited atoms 与 completion-added atoms 的 provenance 可由上游结果追溯。
 
-验证：
-
-- 1.8 输入和输出 heavy-atom set 相同；
-- chain assignment 符合本 Skill 规则；
-- residue / object / atom order 符合规定；
-- atom serial 连续且唯一；
-- final map 与最终 PDB heavy atoms 一一对应并可追溯。
+任一项失败时 1.8 保持未完成；validation 不自行改 PDB 或 map。
 
 # Official results
 
