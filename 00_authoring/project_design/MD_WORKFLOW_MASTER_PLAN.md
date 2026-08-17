@@ -18,9 +18,26 @@ Status: ACTIVE CURRENT BASELINE
 
 编号语义：`1.3` 表示整个 MD Workflow 的第 1.3 阶段；`2.4`、`3.2`、`4.1`、`5.1` 同理。
 
-## 2. Stage 1 — Structure preparation
+## 2. Scientific Skill directory model
 
-Status: DEFINED; current guides exist; representative validation/refinement continues.
+当前 active 科研 Skill 按 Stage / 科学职责组织，不再按 Workflow / Operation / Validator 角色分根目录。
+
+```text
+01_structure_preparation/
+02_topology_preparation/
+04_md_simulation/
+05_analysis/
+```
+
+Stage 3 detailed Skill 尚未实施完成，因此不为目录整齐预先创建空 Skill package。
+
+一个 Stage 可以有 main `SKILL.md`，并在复杂且边界清晰时包含 1.x / 2.x / 4.x supporting or step Skills。Validation 默认跟随结果 owner；只有本身构成独立复杂职责时才拆 Skill。
+
+历史 `01_workflows/`、`02_operations/`、`02_validators/` 不再是 active scientific Skill roots；需要保留的历史实现仅进入 archive / Git history。
+
+## 3. Stage 1 — Structure preparation
+
+Status: DEFINED; stage-oriented Skill layout active; representative validation/refinement continues.
 
 Catalog:
 
@@ -38,17 +55,17 @@ Catalog:
 
 Current stage entry:
 
-`01_workflows/structure_preparation_workflow/SKILL.md`
+`01_structure_preparation/SKILL.md`
+
+Current substep Skills are colocated under `01_structure_preparation/1.x_*`.
 
 Manager planning catalog:
 
 `00_manager/md_workflow_manager/references/workflow_plan_index.yaml`
 
-Stage 1 现有物理路径仍包含历史目录命名；是否迁移由对应 Skill 重构任务决定，本文件不重新分类。
+## 4. Stage 2 — Topology / parameterization
 
-## 3. Stage 2 — Topology / parameterization
-
-Status: ARCHITECTURE FROZEN; implementation partial.
+Status: ARCHITECTURE FROZEN; stage main Skill active; detailed substep implementation remains partial.
 
 Catalog:
 
@@ -61,13 +78,21 @@ Catalog:
 2.6 Topology validation
 ```
 
+Current stage entry:
+
+`02_topology_preparation/SKILL.md`
+
+Current implemented detailed guide:
+
+`02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md`
+
 Architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
-Current implemented detailed guides are discovered from their actual current paths;本文件不复制 2.x 的内部规则。
+本文件不复制 2.x 的内部规则。
 
-## 4. Stage 3 — System construction / solvation
+## 5. Stage 3 — System construction / solvation
 
 Status: ARCHITECTURE FROZEN; detailed Skill implementation/refinement pending.
 
@@ -83,7 +108,9 @@ Architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
 
-## 5. Stage 4 — MD simulation
+在 current Stage 3 Skill 真正实现前，不创建空 `03_md_preparation/` Skill package 充当伪入口。
+
+## 6. Stage 4 — MD simulation
 
 Status: ARCHITECTURE AND FIRST-PASS GUIDES FROZEN; representative execution validation pending.
 
@@ -110,7 +137,7 @@ Architecture authority:
 
 Stage 4 的 run-unit 组织、字段和 binding 规则只由 Stage 4 current guide / freeze 定义，本文件不复制。
 
-## 6. Stage 5 — Analysis
+## 7. Stage 5 — Analysis
 
 Status: ARCHITECTURE AND FIRST-PASS MAIN GUIDE FROZEN; concrete analysis-capability population and representative validation pending.
 
@@ -133,7 +160,7 @@ Architecture authority:
 
 Stage 5 的 plan-item、prepared-input index、reuse 和 validation ownership 规则只由 Stage 5 current guide / freeze 及具体 capability owner 定义，本文件不复制。
 
-## 7. Runtime architecture
+## 8. Runtime architecture
 
 Cross-Stage default runtime architecture:
 
@@ -141,19 +168,19 @@ Cross-Stage default runtime architecture:
 
 具体 Stage 例外仍以对应 Stage current guide / freeze 为准。
 
-## 8. Current work status
+## 9. Current work status
 
 当前建设重点：
 
-- Stage 1：代表性 guide validation/refinement；按实际需要逐步清理历史物理布局；
-- Stage 2：补齐缺失 Skill / Tool implementation；
-- Stage 3：完成 Skill / template / validation implementation；
+- Stage 1：在新的 Stage-oriented layout 下继续代表性 validation/refinement；
+- Stage 2：在 `02_topology_preparation/` 下补齐缺失 2.x Skills / Tools；
+- Stage 3：按当前 main-Skill 模式完成具体 Skills；
 - Stage 4：完成 representative planned-run / run-unit execution validation；
 - Stage 5：填充 analysis capability inventory，并设计/验证具体 `trjconv`、`make_ndx` 和 analysis capabilities。
 
 本节是项目级建设状态的唯一 current 汇总；不再另设 current `SYNC_STATUS.md`。
 
-## 9. Ownership rule
+## 10. Ownership rule
 
 发生内容冲突时，不按文件层级猜 authority，而按具体职责定位 owner：
 
