@@ -64,14 +64,24 @@ Manager 与 Task Execution Agent 默认不在每个子环节之间往返。
 
 ### AUTHORING_OR_MAINTENANCE
 
-当用户要求编写、修改、审查或规划 Skill / Tool / Manager / Stage architecture 时：
+当用户要求编写、修改、审查或规划 Skill / Tool / Manager / Stage architecture 时，默认启动链只有：
 
-1. 读取 `00_authoring/AUTHORING_RULES.md`；
-2. 读取 current `SYNC_STATUS.md`、`skill_inventory.yaml`、`file_ownership.yaml`；
-3. 读取目标 content map 和目标当前 Skill；
-4. 按需读取与当前输入、输出和边界直接相关的其他 Skill / Tool guide；
-5. Lightweight Runtime v2 规格位于 `00_authoring/lightweight_runtime_v2_spec.md`；
-6. Legacy Runtime 文件默认只作为冻结历史材料。
+```text
+AGENTS.md
+→ 00_authoring/SKILL.md
+→ 当前负责的目标 Skill / 文件
+```
+
+之后由 `00_authoring/SKILL.md` 和当前任务决定是否按需读取：
+
+- 目标 content map；
+- 对应 architecture freeze；
+- 与当前输入、输出和边界直接相关的其他 Skill / Tool guide；
+- 涉及多窗口写入协调时的 `file_ownership.yaml`；
+- 涉及 inventory/status 时的 `skill_inventory.yaml` / `SYNC_STATUS.md`；
+- 涉及 runtime architecture 时的 `lightweight_runtime_v2_spec.md`。
+
+**不要把整个 `00_authoring/` 作为新 authoring 窗口的固定 preload。**
 
 Authoring 中必须区分：
 
@@ -202,10 +212,10 @@ transaction closure
 ## 10. 当前 authority
 
 - Runtime：`00_authoring/lightweight_runtime_v2_spec.md`
-- Authoring：`00_authoring/AUTHORING_RULES.md`
-- Skill boundary：`00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md`
+- Authoring：`00_authoring/SKILL.md`
+- Skill boundary：`00_authoring/references/skill_boundaries.md`
 - Manager：`00_manager/md_workflow_manager/`
-- Current Stage guides：以 `SYNC_STATUS.md` 和对应 architecture-freeze record 为准
+- Current Stage guides：以 `00_authoring/SYNC_STATUS.md` 和对应 `00_authoring/architecture_freezes/` record 为准
 - Tool：`05_tools/`
 - Legacy contracts：`03_contracts/`
 - Legacy runtime projection：`runtime/`
