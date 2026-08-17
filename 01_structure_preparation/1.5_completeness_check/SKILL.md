@@ -38,11 +38,14 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 
 - 当前实际接受检查的 PDB；
 - 1.2 正式 `classification_result.yaml`；
+- 与该 1.2 结果对应的正式 `reference_manifest.yaml`；
 - 1.3 当前 target 的 `target_xxx.yaml`；
 - 如果该 target 实际执行过 1.4：1.4 正式 `altloc_resolution_report.yaml`；
 - 当前检查实际需要的 force-field residue definition 或 CCD component file。
 
 当前 PDB 通常为 1.4 输出结构；如果当前 target 没有执行 1.4，则使用当前最新的 1.3 target PDB。
+
+`reference_manifest.yaml` 用于定位和核对 1.2 实际使用过的 force-field / CCD reference 及其文件 identity；1.5 不在本 Skill 中重新定义 1.2 的 manifest 结构。
 
 1.5 不设置 reuse 环节。进入本步骤后，对当前 target 完成本次检查并生成当前报告。
 
@@ -50,7 +53,7 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 
 1.5 的 atom-level completeness diagnosis 沿用 1.2 已定义的诊断语义，不在本 Skill 中重新建立问题类型或比较规则。
 
-如果用户在 1.2 已经明确指定过 atom-level completeness 的检查依据，1.5 沿用该依据。
+如果用户在 1.2 已经明确指定过 atom-level completeness 的检查依据，1.5 沿用该依据，并通过 1.2 `classification_result.yaml` 与对应 `reference_manifest.yaml` 定位实际 reference。
 
 如果用户在 1.2 没有明确指定检查依据，则在需要执行 1.5 新诊断前向用户确认。推荐：
 
@@ -60,6 +63,8 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 如果 standard residue 需要基于 force field 检查但目标 force field 尚未明确，先向用户确认具体 force field。
 
 如果 nonstandard residue 缺少可用的 CCD definition，或现有参考不足以形成可靠判断，不自行猜测；向用户说明当前对象和缺失的判据，由用户确认或提供参考后继续。
+
+如果 1.2 结果表明使用过某类 reference，但当前 `reference_manifest.yaml` 无法定位到实际文件，不能把仅有的 reference name 当作足以完成 1.5 新诊断的依据；先解决 reference 定位问题。
 
 # Execution guidance
 
@@ -84,6 +89,8 @@ chain_id + resid
 使用 1.3 target mapping 将 selected missing residues 定位到当前 target 的 `chain_id + resid`。
 
 同一 chain 中连续的 missing residues 合并为连续范围记录；单个 missing residue 使用 `start_resid == end_resid` 表示。
+
+这里的“连续”必须同时满足：这些 missing residues 在 1.2 authoritative `residue_records[]` 顺序中彼此连续，并且该连续区间没有跨过未被当前 target 选择的 residue。不能仅因为 1.3 重新分配后的 `resid` 数值相邻，就把原本被未选择区域分开的缺失区段合并。
 
 1.5 不根据 PDB residue-number gap、chain break 或坐标缺口重新猜测 missing residue。
 
@@ -147,6 +154,7 @@ structure: /absolute/path/to/current/target_001.pdb
 
 source_reports:
   classification_result: /absolute/path/to/classification_result.yaml
+  reference_manifest: /absolute/path/to/reference_manifest.yaml
   selection_target: /absolute/path/to/target_001.yaml
   altloc_resolution_report: /absolute/path/to/altloc_resolution_report.yaml
 
@@ -188,6 +196,8 @@ residue_issues:
 source_report: classification_result
 ```
 
+`reference_manifest` 作为 1.2 实际 reference provenance 的正式入口放在同一级，不要求每个 issue 重复写 manifest 路径。
+
 如果某个 issue 是 1.5 在当前结构上新完成的判断，则不写 `source_report: classification_result` 伪装成上游判断，而是直接记录本次实际使用的 reference file 完整绝对路径。
 
 对 force-field reference，可以在需要时同时记录实际 residue entry；对 CCD reference，记录实际使用的 CCD component file 完整绝对路径。
@@ -196,7 +206,7 @@ source_report: classification_result
 
 `missing_residues` 以当前 target 的 `chain_id + resid range` 记录。
 
-同一 chain 中连续缺失 residue 合并为一条 range。不同 chain 或不连续缺失区间分别记录。
+同一 chain 中只有在 1.2 authoritative residue order 上真正连续、且没有跨过未 selected residue 的 missing residues 才合并为一条 range。不同 chain、不同连续区间，或中间存在未 selected residue 的情况分别记录。
 
 ### Residue-issue organization
 
@@ -216,8 +226,9 @@ source_report: classification_result
 
 - 当前 target 与实际检查 PDB 已唯一确定；
 - 报告中的 `chain_id + resid` 与 1.3 target mapping 一致；
-- 当前 selection 中的 missing residues 已按范围记录；
-- 1.4 实际处理过的 selected residues 已基于当前 PDB完成 atom-level diagnosis；
+- 1.2 `classification_result.yaml` 与对应 `reference_manifest.yaml` 能够定位本次需要沿用的 reference basis；
+- 当前 selection 中的 missing residues 已按真实连续区间记录，没有因 1.3 resid 重新编号而跨未 selected residue 错误合并；
+- 1.4 实际处理过的 selected residues 已基于当前 PDB 完成 atom-level diagnosis；
 - 未被 1.4 处理的 selected residues 使用 1.2 已有 diagnosis，没有因 1.5 再次重复检查；
 - 每个 residue issue 都能定位到明确 residue，涉及 atom 时能够定位到明确 atom name；
 - 来自上游的判断能够通过 `source_report` 定位到 target 一级登记的完整报告路径；
