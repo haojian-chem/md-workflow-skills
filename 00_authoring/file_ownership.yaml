@@ -1,4 +1,4 @@
-schema_version: 5
+schema_version: 6
 status: ready_for_new_assignments
 
 window_policy:
@@ -11,13 +11,16 @@ shared_files:
   owner_window: main
   write_paths:
     - AGENTS.md
+    - 00_authoring/SKILL.md
     - 00_authoring/README.md
-    - 00_authoring/AUTHORING_RULES.md
+    - 00_authoring/references/
+    - 00_authoring/assets/
+    - 00_authoring/scripts/
     - 00_authoring/MD_WORKFLOW_MASTER_PLAN.md
     - 00_authoring/SYNC_STATUS.md
+    - 00_authoring/lightweight_runtime_v2_spec.md
     - 00_authoring/architecture_freezes/
     - 00_authoring/archive/
-    - 00_authoring/md-workflow-skill-authoring/
     - 00_authoring/md-workflow-tool-authoring/
     - 00_authoring/skill_inventory.yaml
     - 00_authoring/file_ownership.yaml
@@ -25,7 +28,7 @@ shared_files:
     - 00_manager/md_workflow_manager/references/
     - 03_contracts/
     - 05_tools/tool_registry.yaml
-  notes: Shared architecture/index/authoring files are modified only by the main authoring window. Business windows may read them and other relevant Skills as needed. Stage freeze records belong under 00_authoring/architecture_freezes/; superseded authoring Markdown belongs under 00_authoring/archive/.
+  notes: Shared architecture/index/authoring files are modified only by the main authoring window. Business windows may read them and other relevant Skills as needed. 00_authoring/SKILL.md is the single authoring entry point. Stage freeze records belong under 00_authoring/architecture_freezes/; superseded authoring files belong under 00_authoring/archive/.
 
 tool_directory_policy:
   registry_owner: main
@@ -78,7 +81,7 @@ review_queue:
   - skill_name: production_simulation
     required_action: validate_production_execution_and_checks
   - skill_name: analysis
-    required_action: populate capability inventory then validate stage5 planning reuse dependency orchestration and result registration
+    required_action: populate capability inventory then validate stage5 planning reuse_dependency_orchestration_and_result_registration
 
 alignment_queue:
   - review_legacy_scientific_skill_layouts_without_forcing_mass_migration
