@@ -1,37 +1,27 @@
 ---
 name: md-workflow-skill-authoring
-description: 设计、编写、拆分或重构本项目科研 Skill 时使用。当前模式以“主 Skill 指导 Agent 如何完成任务”为核心；不强制 Workflow/Operation/Validator 分类，不把 Agent 锁进固定 parser 或编排链，并严格区分多窗口的读取范围与写入所有权。
+description: 设计、编写、冻结、拆分或重构本项目科研 Skill 时使用。当前模式以 main Skill 指导 Agent 完成任务为核心；长/条件性细节进入 references，只有复杂且边界清晰时拆 supporting Skill；严格避免跨 Skill 越权定义、重复定义和过期 Markdown 留在 active path。
 ---
 
-# 目标
+# Purpose
 
-把科研工作要求转化为**Agent 可直接使用的任务处理指南**。
+把科研工作要求转化为 Agent 可直接使用、边界清楚、可维护的任务处理指南。
 
-当前设计原则：
+当前默认关系：
 
 ```text
 Manager
 → Task Sheet
 → Task Execution Agent
-→ 当前任务所需 main Skill
+→ 当前 main Skill
    ├─ 按需读取 references
-   ├─ 按需调用 supporting Skill
-   └─ 按需调用 deterministic Tool
+   ├─ 必要时调用 supporting Skill
+   └─ 必要时调用 deterministic Tool
 ```
 
-科研 Skill 的首要职责是告诉 Agent：
+Skill 的目标是指导 Agent 处理科研任务，不是把 Agent 锁进固定 parser、schema、wrapper 或多层 dispatcher。
 
-- 当前任务要解决什么；
-- 要理解哪些对象和证据；
-- 必须做哪些判断；
-- 哪些科学/技术边界不能越过；
-- 哪些方法/工具适合使用；
-- 怎样判断结果有效；
-- 如何记录和交接结果。
-
-Skill 不是为了把 Agent 包装成一个固定 parser/workflow runner。
-
-# 启动前
+# Startup
 
 开始 authoring / maintenance 时读取：
 
@@ -43,10 +33,10 @@ Skill 不是为了把 Agent 包装成一个固定 parser/workflow runner。
 6. `00_authoring/skill_inventory.yaml`；
 7. `00_authoring/file_ownership.yaml`；
 8. 目标 Skill 的 content map；
-9. 目标当前 Skill；
-10. 与当前输入/输出/边界直接相关的其他 Skill、Tool guide 和 architecture-freeze record。
+9. 当前目标 Skill；
+10. 与当前输入、输出和科学边界直接相关的上下游/相邻 Skill、Tool guide 和 architecture-freeze record。
 
-这里第 10 项很重要：**业务窗口可以并且应该读取不属于自己写入范围的相关 Skill。** 读取用于理解边界和 handoff，不意味着获得写入权或定义权。
+业务窗口可以并且应该读取不属于自己写入范围的相关 Skill。读取用于理解接口和避免重复，不代表获得写入权或定义权。
 
 提出修改前先列出：
 
@@ -56,156 +46,142 @@ Skill 不是为了把 Agent 包装成一个固定 parser/workflow runner。
 仍未验证
 ```
 
-# 1. 先确认当前 Skill 真正拥有的任务
+# Skill generation
 
-不要先问“这是 Workflow、Operation 还是 Validator”。
+新建、重构或冻结 Skill 时，必须按需读取：
 
-先回答：
+`references/skill_generation_rules.md`
+
+默认模型：
 
 ```text
-这个 Skill 指导 Agent 完成什么任务？
-这个任务的输入/证据是什么？
-这个 Skill 的科学判断边界在哪里？
-它消费哪些外部结果？
-它产生什么可继续使用的结果？
-哪些内容属于别的 Skill？
+一个职责
+→ 一个 main SKILL.md
+→ 长且仍属于当前职责的内容放 references/
+→ 只有复杂且独立时拆 supporting Skill
+→ 只有确有稳定机器约束/确定性能力时增加 schemas/scripts/Tool
 ```
 
-详细边界参考：
+不要先按 Workflow / Operation / Validator 分类，也不要先生成一套空目录再填内容。
+
+普通科研 Skill 模板：
+
+`assets/skill.template.md`
+
+Manager 使用独立模板：
+
+`assets/manager_skill.template.md`
+
+# Main Skill boundary
+
+main Skill 应足够让 Agent 回答：
+
+```text
+当前目标是什么？
+处理哪些输入/对象/证据？
+什么情况下可以复用已有结果？
+有哪些必须遵守的科学/技术边界？
+如何执行或判断？
+怎样确认结果有效？
+哪些结果和记录需要交接？
+何时需要额外 reference / supporting Skill / Tool？
+```
+
+这些是信息要求，不是固定 section schema。
+
+当前设计不强制 Workflow / Operation / Validator 分类。仓库中现有 `01_workflows/`、`02_operations/`、`02_validators/` 只是历史布局/迁移中的现存路径，不是新 Skill 的目录模板。
+
+详细边界：
 
 `references/skill_boundaries.md`
 
-Manager 是项目级管理 Skill，保留特殊职责；普通科研 Skill 不再强制分类为 Workflow / Operation / Validator。
+# Rule ownership and deduplication
 
-# 2. 设计 main Skill，而不是先拆层
-
-默认先写一个 main `SKILL.md`，确保 Agent 可以据此完成当前职责。
-
-主文件通常需要覆盖：
-
-```text
-purpose / goal
-scope and boundaries
-inputs / evidence
-reuse logic
-execution guidance
-validation
-results / handoff
-```
-
-这些是需要表达的信息，不是强制 section schema。
-
-只有以下情况才拆 supporting Skill：
-
-- 一块内容复杂且有清楚独立边界；
-- 可以独立按需加载；
-- 多个 main Skill 会复用它；
-- 需要独立测试或 validation 生命周期；
-- 拆出后能显著减少主 Skill 上下文，而不会制造额外编排层。
-
-如果只是内容较长但仍属于当前 Skill 的规则，优先放 `references/`，不要为了“层级完整”增加新 Skill。
-
-# 3. Skill 是指南，不是 parser gate
-
-编写每条执行规则时检查：
-
-> 这是当前科学/技术任务真正要求，还是只是为了让 Agent 必须经过某个 parser / wrapper / workflow？
-
-默认不要规定：
-
-```text
-必须 parser A → schema B → dispatcher C → 才能理解输入
-```
-
-如果 Agent 可以直接可靠读取当前文件并完成判断，就允许直接读取。
-
-应优先使用 Tool 的场景包括：
-
-- 精确 parsing；
-- 批量结构化提取；
-- hash / mapping；
-- 稳定文件变换；
-- 明确格式校验；
-- 高重复度、可测试的确定性计算。
-
-Tool 是能力组件。除非方法本身明确要求，Skill 不应仅因为某 Tool 已存在就把它写成唯一许可路径。
-
-若特定软件/算法是科学方法的一部分，可以明确要求，并说明它承担的实际方法职责。
-
-# 4. 外部 Skill：可以读，不可以代写
-
-Authoring 窗口应按需了解上下游和相邻 Skill。
-
-在当前 Skill 中，外部 Skill 只记录接口级关系：
-
-```text
-需要读取它的哪个正式结果
-需要调用它的什么能力
-当前 Skill 依赖它已冻结的哪个判据
-当前输出将被哪个下游能力消费
-```
-
-禁止在当前 Skill 内重新定义外部 Skill 的：
-
-- 内部步骤；
-- 默认参数；
-- 选择逻辑；
-- validation；
-- official results；
-- 文件保存规则；
-- 任务计划规则。
-
-发现外部规则有问题时：
-
-```text
-记录 finding / handoff
-→ 指明 owner Skill
-→ 交给 owner window / main window
-```
-
-不要把修正偷偷写进当前 Skill 作为“兼容规则”。
-
-**每次准备加入一条规则，都必须先执行 canonical rule-ownership gate：**
+向当前 Skill 加任何科学、执行、validation、结果或文件生命周期规则之前，必须执行：
 
 `references/content_ownership_and_deduplication.md`
 
-核心判断只有两步：
+核心判断：
 
 ```text
-这是当前 Skill 自己的规则？
-→ 是：当前 Skill 定义
-→ 否：引用已有 owner；若 owner 缺失/冲突则提交 finding
+这条规则属于当前 Skill 自己？
+├─ 是 → 当前 Skill 定义
+└─ 否
+   ↓
+   外部已有 owner？
+   ├─ 有 → 只引用，不复制/改写成第二份规范
+   └─ 没有或有冲突 → 提 cross-skill finding
 ```
 
-不得为了“当前 Skill 自洽”复制、改写或总结出一份可独立执行的外部规则；这会形成 shadow specification。
+当前 Skill 可以定义“我需要外部 Skill 提供什么”，不能定义“外部 Skill 应该怎样把它做出来”。
 
-详细多窗口协议：
+禁止 shadow specification：即使不是逐字复制，只要当前文件已经足以独立指导另一个 Skill 的内部执行，也属于越界重复。
+
+# Read broadly, write narrowly
+
+多窗口规则：
+
+```text
+read scope 可以宽
+write ownership 必须窄
+```
+
+详细协议：
 
 `references/multi_window_authoring_protocol.md`
 
-# 5. 读取范围与写入所有权分离
+业务窗口：
 
-多窗口时：
+- 按需读取直接相关的上下游、相邻 Skill；
+- 只修改分配的 `write_paths`；
+- 对外部 Skill 只记录 `consume / require / handoff`；
+- 发现外部问题时提交 finding，不在当前 Skill 偷偷补一份外部规则。
+
+启动/交付检查：
+
+`assets/multi_window_startup_checklist.md`
+
+# References and supporting Skills
+
+属于当前 Skill、但过长或只在特定条件下需要的内容优先放 `references/`。
+
+主 Skill 只说明：
 
 ```text
-read_paths 可以很宽
-write_paths 必须很窄
+何时读取
+→ 读取哪个 reference
+→ 解决什么局部问题
 ```
 
-读取其他 Skill 不需要拥有它。
+不要在 main Skill 和 reference 中各维护一份完整规则。
 
-写入必须满足：
+Supporting Skill 只有在内容复杂、可独立加载、边界稳定且独立维护确有价值时才拆分。不要为了分类、几条 validation 规则或减少几段文字而增加新的 Skill hop。
 
-- 当前路径位于本窗口分配的 `write_paths`；
-- 没有与其他窗口重叠；
-- 共享 authoring/index/architecture 文件只由 main window 修改；
-- 若用户明确扩大本窗口职责，再重新分配 write ownership。
+渐进披露：
 
-不要把 `read_paths` 写成“只能读取这些路径”的白名单。它只是启动上下文建议；需要理解接口时应继续按需读取相关外部 Skill。
+`references/progressive_disclosure.md`
 
-# 6. Reuse
+# Tool boundary
 
-Skill 应定义真正影响当前结果是否仍可用的条件，而不是根据文件名或目录存在猜 reuse。
+Tool 是确定性能力组件，不是 Agent 理解任务的许可层。
+
+适合 Tool 的内容包括精确 parsing、hash/mapping、批量结构化提取、稳定文件变换、格式校验和高重复度确定性计算。
+
+如果 Agent 可以可靠直接读取输入并完成开放式科学判断，不要仅因为已有 parser/Tool 就规定必须先经过它。
+
+详细规则：
+
+`references/deterministic_tool_protocol.md`
+
+Tool 开发由：
+
+`00_authoring/md-workflow-tool-authoring/SKILL.md`
+
+负责。
+
+# Reuse, validation and results
+
+当前 Skill 应定义真正影响本职责结果是否有效/可复用的条件，不根据文件名或目录存在猜测。
 
 通常：
 
@@ -216,178 +192,49 @@ Skill 应定义真正影响当前结果是否仍可用的条件，而不是根�
 用户明确要求重做/对照 → 不自动复用
 ```
 
-如果某 Stage 已冻结不同的 reuse 组织时机，例如 Stage 5 在 5.1 planning 时集中核验，则遵循该 Stage guide，不为了模板统一改回逐项模式。
+Validation 默认跟随当前结果 owner；只有复杂且边界清晰时才拆 supporting validation Skill。
 
-# 7. Execution guidance
+正式结果与 handoff 必须让下游能够定位并理解，不要求下游重新读取上游全过程。
 
-执行规则应区分：
+# Markdown archival
 
-```text
-必须遵守的科学/技术约束
-推荐路径 / tendency
-可替代实现
-明确禁止的做法
-```
+当 `.md` 已被 current authority 明确取代时，不在 active Skill/reference/assets 路径长期保留 `SUPERSEDED` / `LEGACY` tombstone。
 
-不要把“推荐”写成“唯一合法实现”。
+按：
 
-如果多个工具都能完成同一动作，Skill 可以给选择原则；Agent 根据当前对象、环境、用户要求和可用能力选择。
+`references/skill_generation_rules.md`
 
-如果有真正不可替代的顺序或软件要求，要明确原因。
-
-# 8. Validation
-
-Validation 默认由拥有当前动作/结果的 main Skill 或 Tool 定义。
-
-只有当 validation：
-
-- 本身复杂；
-- 有独立清楚边界；
-- 需要复用；
-- 需要独立测试/维护；
-
-才拆出 supporting validation Skill。
-
-不要为了形成 `Operation + Validator` 对而人工拆分。
-
-Validation 必须说明“什么证据意味着当前结果有效”，而不是只检查某个 parser/report 文件是否存在。
-
-# 9. Results and handoff
-
-Skill 必须让后续 Agent 能定位并理解真正需要的结果。
-
-应区分：
+执行归档：
 
 ```text
-正式结果 / handoff
-中间文件
-临时/debug/cache
+current owner 接管仍有效内容
+→ current 引用迁移完成
+→ 旧 Markdown 移入 00_authoring/archive/
+→ 从原 active path 删除
 ```
 
-`project_result_index.md` 的登记粒度由当前 Stage/Skill 决定，不强制所有 Skill 都逐文件登记。
+Archive 不属于默认 authoring/runtime 读取范围。不能因为文件较旧就归档仍有效的 current guide、reference 或 architecture-freeze。
 
-跨 Skill handoff 优先通过正式结果和清楚接口完成，不要求下游重新读取上游全过程。
+# Content map
 
-# 10. 文件组织
+Content map 只记录当前 owner、references/supporting content 和外部只读 authority。
 
-默认按科学职责组织，不按旧角色分类组织。
+它不是 runtime dispatcher，也不复制其他 Skill 的内部规则。
 
-典型：
+# Delivery check
 
-```text
-<skill-directory>/
-├── SKILL.md
-├── references/
-├── schemas/
-├── scripts/
-└── <supporting-skill>/SKILL.md   # only when justified
-```
+提交前至少确认：
 
-只创建实际需要的目录。
+- [ ] main Skill 能独立指导 Agent 完成当前职责；
+- [ ] 长/条件性细节使用 reference，而不是重复写两份；
+- [ ] supporting Skill 只在复杂且边界清晰时存在；
+- [ ] 未把 Agent 锁死到不必要 parser/wrapper/dispatcher；
+- [ ] 未重新定义其他 Skill 的内部规则；
+- [ ] 已有 owner 的规则只引用，没有 shadow specification；
+- [ ] 已按需读取相关上下游 Skill，但没有越过 write ownership；
+- [ ] 推荐路径和强制科学/技术要求已区分；
+- [ ] reuse、validation、results/handoff 足以支持跨对话继续；
+- [ ] 本次产生的过期 Markdown 已归档，不再留在 active path；
+- [ ] 没有重新引入 Legacy Workstream/route/event/transaction runtime。
 
-仓库中现有：
-
-```text
-01_workflows/
-02_operations/
-02_validators/
-```
-
-是历史布局/迁移中的现存路径，不是新 Skill 的强制模板。新 Skill 不得仅为了落入其中某类而拆分职责。
-
-渐进披露：
-
-`references/progressive_disclosure.md`
-
-# 11. Content ownership
-
-使用 content map 记录：
-
-- 当前 main Skill 拥有哪些规则；
-- supporting Skill / reference 各自拥有哪些明确内容；
-- 当前 Skill 只读哪些外部 authority。
-
-新 content map 不再使用 `workflow / operation / validator` 强制类型字段。
-
-详细规则及 rule-ownership gate：
-
-`references/content_ownership_and_deduplication.md`
-
-# 12. Tool candidates
-
-只有确定性、重复、稳定、可测试的动作才优先工具化。
-
-Tool request 至少说明：
-
-```yaml
-tool_request:
-  capability:
-  reason:
-  callers: []
-  required_inputs: []
-  expected_outputs: []
-  read_paths: []
-  write_paths: []
-  side_effects: []
-```
-
-同时说明：
-
-- Agent 仍需做哪些科学判断；
-- Tool 是否只是 optional helper；
-- Tool 不可用时是否有合理替代；
-- 为什么它不是不必要的 parser gate。
-
-Tool authoring：
-
-`00_authoring/md-workflow-tool-authoring/SKILL.md`
-
-# 13. 多窗口交付检查
-
-提交前检查：
-
-- [ ] 已按需读取直接相关的上下游/相邻 Skill；
-- [ ] 未修改未分配的 write path；
-- [ ] 当前 Skill 未重新定义外部 Skill 内部规则；
-- [ ] 对每条新增规则都通过了 rule-ownership gate；
-- [ ] 没有复制或改写已有 owner 的规则形成 shadow specification；
-- [ ] 没有一条规则需要未来在多个 owner 文件中同步修改；
-- [ ] 外部内容已尽量缩成 `consume / require / handoff`；
-- [ ] 没有因为旧目录而强制 Workflow/Operation/Validator 分类；
-- [ ] 没有为了形式化新增无价值 supporting Skill；
-- [ ] 没有把 Agent 锁死到不必要 parser/wrapper/dispatcher；
-- [ ] 推荐工具和强制方法要求区分清楚；
-- [ ] reuse、validation、handoff 足以支持跨对话继续；
-- [ ] 没有恢复 Legacy Workstream/route/event/transaction 依赖。
-
-# 14. 模板
-
-普通科研 Skill 使用：
-
-`assets/skill.template.md`
-
-Manager 可使用：
-
-`assets/manager_skill.template.md`
-
-旧 `workflow_skill.template.md`、`operation_skill.template.md`、`validator_skill.template.md` 仅保留为 `SUPERSEDED` 指向，不再作为当前模板。
-
-# 交付
-
-Authoring 对话返回精简摘要：
-
-```yaml
-status: DRAFTED | REVIEW_REQUIRED | BLOCKED
-skill_name:
-read_context: []
-owned_write_paths: []
-created_files: []
-modified_files: []
-validation:
-  errors: []
-  warnings: []
-cross_skill_findings: []
-tool_requests: []
-open_questions: []
-next_action:
-```
+Authoring 对话交付时精简报告本窗口修改、validation、cross-skill findings 和未决问题；不要复制其他 Skill 的内部设计。
