@@ -14,4 +14,6 @@ notes:
   - This file is only a lightweight multi-window write-lock/assignment record.
   - It does not describe scientific Skill responsibilities, review queues, architecture status, Tool policy, or Skill inventory.
   - Reading another Skill does not grant authority to modify it or define its internal rules.
-  - If no assignment exists for a shared authoring path, the main authoring window remains the writer.
+  - If no assignment exists for a shared authoring path, the main authoring window remains the default writer.
+  - Narrow exception: a Skill/freeze authoring window may update only its own Stage/Step implementation-status and current-entry lines in 00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md after refetching current main, provided no explicit assignment currently reserves that shared file.
+  - This status-only exception does not grant authority to change another Stage catalog, scientific rules, architecture, or unrelated project-design content.
