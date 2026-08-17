@@ -76,6 +76,14 @@ references/...
 
 每项说明何时需要读取/调用。
 
+长但仍属于当前 Skill 的规则优先放 `references/`。不要在 main Skill 和 reference 中各维护一份完整规则。
+
+Supporting Skill 只在内容复杂且有清楚独立边界时创建；不要为了角色分类或几条 validation 规则拆 Skill。
+
+生成/重构规则见：
+
+`00_authoring/md-workflow-skill-authoring/references/skill_generation_rules.md`
+
 # User confirmation
 
 如存在无法自动判断且会影响科学正确性的歧义，说明触发条件和确认前禁止进行的动作。
@@ -83,8 +91,11 @@ references/...
 # Self-check
 
 - [ ] 当前 Skill 是 Agent guide，不是 parser/workflow gate；
+- [ ] 一个清楚职责由一个 main Skill 持有；
+- [ ] 长/条件性细节进入 reference，而不是复制在多个文件；
 - [ ] 没有重新定义其他 Skill 的内部规则；
 - [ ] 没有因为旧目录而强制 Workflow/Operation/Validator 分类；
 - [ ] supporting Skill 只有在复杂且边界清晰时才拆；
 - [ ] 推荐与强制要求区分清楚；
-- [ ] reuse、validation、handoff 足以支持跨对话继续。
+- [ ] reuse、validation、handoff 足以支持跨对话继续；
+- [ ] 本次替换产生的过期 Markdown 已从 active path 移入 `00_authoring/archive/` 或明确不需要保留。
