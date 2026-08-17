@@ -4,14 +4,30 @@ Status: CURRENT
 
 本文件只记录当前同步状态和权威入口，不复制各 Stage 的完整科学规则。
 
+## Current authoring model
+
+- 新科研 Skill 默认采用 `main Skill + references + only-when-justified supporting Skill`。
+- 不再强制 Workflow / Operation / Validator 分类。
+- `01_workflows/`、`02_operations/`、`02_validators/` 是历史布局/迁移中的现有路径，不是新 Skill 模板。
+- Skill 是 Agent guide，不是 parser / wrapper / dispatcher gate。
+- 多窗口 authoring：允许并鼓励按需读取外部相关 Skill；写入只限 owned `write_paths`；当前 Skill 不替其他 Skill 定义内部规则。
+
+Current boundary authority:
+
+```text
+00_authoring/AUTHORING_RULES.md
+00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md
+00_authoring/md-workflow-skill-authoring/references/multi_window_authoring_protocol.md
+```
+
 ## Current architecture baseline
 
 - Lightweight Runtime v2：当前默认 runtime architecture。
-- Stage 1 — Structure preparation：catalog defined；1.3–1.9 current guides 已同步，代表性 validation/refinement 仍在进行。
+- Stage 1 — Structure preparation：catalog defined；当前 guides 已同步，代表性 validation/refinement 仍在进行；物理布局仍主要处于历史分类目录，后续按实际需要迁移，不强制一次性搬迁。
 - Stage 2 — Topology / parameterization：architecture frozen；implementation partial。
 - Stage 3 — System construction / solvation：architecture frozen；Step Skill/template implementation pending/refining。
-- Stage 4 — MD simulation：architecture + first-pass guides frozen/implemented；representative execution validation pending。
-- Stage 5 — Analysis：architecture + first-pass Workflow/5.1 guides frozen/implemented；analysis tool inventory population and concrete Tool/analysis Skill design pending。
+- Stage 4 — MD simulation：integrated main Skill + supporting run Skills；architecture + first-pass guides frozen/implemented；representative execution validation pending。
+- Stage 5 — Analysis：integrated main Skill；architecture + first-pass guide frozen/implemented；analysis capability inventory population and concrete analysis Skill/Tool design pending。
 
 ## Current authority entry points
 
@@ -48,12 +64,11 @@ Stage 4 current guides:
 04_md_simulation/4.3_production_simulation/SKILL.md
 ```
 
-Stage 5 current guides:
+Stage 5 current guide:
 
 ```text
-01_workflows/analysis_workflow/SKILL.md
-02_operations/analysis_planning_and_orchestration/SKILL.md
-02_operations/analysis_planning_and_orchestration/references/analysis_tool_inventory.yaml
+05_analysis/SKILL.md
+05_analysis/references/analysis_tool_inventory.yaml
 ```
 
 ## Stage 4 current run-unit record
@@ -84,7 +99,7 @@ Catalog:
 5.1 Analysis planning and orchestration
 ```
 
-Manager creates the 5.1 Task Sheet entry and records the user's explicit analysis goal/object/constraints. 5.1 owns concrete analysis-plan expansion, Stage 5 reuse query/check, tool discovery and orchestration.
+Manager creates the 5.1 Task Sheet entry and records the user's explicit analysis goal/object/constraints. Stage 5 main Skill owns concrete analysis-plan expansion, Stage 5 reuse query/check, capability discovery and orchestration.
 
 5.1 plan items use fixed local integer numbering and minimum fields:
 
@@ -109,17 +124,17 @@ Prepared-input indexes:
 
 ```text
 <project_root>/05_analysis/indexes/
-├── trajectory_index.yaml  # maintained by trjconv
-└── ndx_index.yaml         # maintained by make_ndx
+├── trajectory_index.yaml  # maintained by trjconv capability owner
+└── ndx_index.yaml         # maintained by make_ndx capability owner
 ```
 
-5.1 only queries/verifies/uses these indexes. Each concrete Tool/analysis Skill validates its own output data; Stage 5 has no generic Validator layer.
+Stage 5 main Skill only queries/verifies/uses these indexes. Each concrete analysis Skill/Tool validates its own output data; Stage 5 has no generic Validator layer.
 
 ## Historical / superseded material rule
 
-Historical redesign, Workstream/route/runtime-projection validation, old benchmark protocols and superseded 1.3 drafts are not current architecture sources.
+Historical redesign, Workstream/route/runtime-projection validation, old benchmark protocols, superseded 1.3 drafts, and superseded Workflow/Operation/Validator authoring templates are not current architecture sources.
 
-Current authoring should resolve conflicts in this order:
+Current authoring conflict resolution:
 
 ```text
 current Skill / Tool guide
@@ -132,8 +147,8 @@ Files marked `SUPERSEDED` or `LEGACY` must not be used to reconstruct current in
 
 ## Current pending work
 
-- Stage 1 representative guide validation/refinement.
-- Stage 2 missing Step/Validator/Tool implementation.
-- Stage 3 Step Skill/template/validation implementation.
+- Stage 1 representative guide validation/refinement and gradual physical-layout cleanup where useful.
+- Stage 2 missing Skill/Tool implementation under current main-Skill model.
+- Stage 3 Skill/template/validation implementation under current main-Skill model.
 - Stage 4 representative planned-run/run-unit execution validation.
-- Stage 5 analysis tool inventory population and concrete `trjconv` / `make_ndx` / analysis Skill design and validation.
+- Stage 5 analysis capability inventory population and concrete `trjconv` / `make_ndx` / analysis Skill design and validation.
