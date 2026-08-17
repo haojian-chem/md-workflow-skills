@@ -189,9 +189,24 @@ reference_manifest.yaml
 classification_report.md
 ```
 
-如果实际使用人工 relation decisions，再额外登记：
+如果实际使用人工 relation decisions，再额外形成正式结果：
 
 `relation_decisions.yaml`
+
+项目级正式结果索引：
+
+```text
+<project_root>/00_project_records/project_result_index.md
+```
+
+只登记以下两个 1.2 结果的完整绝对路径及简明说明：
+
+```text
+classification_result.yaml
+reference_manifest.yaml
+```
+
+`classification_report.md` 与 `relation_decisions.yaml` 保持为当前 Task 的正式结果，但不单独登记为 project-level result entry。
 
 以下属于当前 Task 的内部执行 / 诊断材料，不默认作为 project-level official result 单独登记：
 
