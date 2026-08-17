@@ -11,6 +11,8 @@ Status: CURRENT
 - `01_workflows/`、`02_operations/`、`02_validators/` 是历史布局/迁移中的现有路径，不是新 Skill 模板。
 - Skill 是 Agent guide，不是 parser / wrapper / dispatcher gate。
 - 多窗口 authoring：允许并鼓励按需读取外部相关 Skill；写入只限 owned `write_paths`；当前 Skill 不替其他 Skill 定义内部规则。
+- Stage architecture-freeze 统一集中在 `00_authoring/architecture_freezes/`。
+- Superseded/Legacy authoring Markdown 统一从 active path 移入 `00_authoring/archive/`。
 
 Current boundary authority:
 
@@ -49,10 +51,10 @@ Manager:
 Stage architecture records:
 
 ```text
-00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
-00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
-00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
-00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
+00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
+00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
 ```
 
 Stage 4 current guides:
@@ -134,16 +136,20 @@ Stage 5 main Skill only queries/verifies/uses these indexes. Each concrete analy
 
 Historical redesign, Workstream/route/runtime-projection validation, old benchmark protocols, superseded 1.3 drafts, and superseded Workflow/Operation/Validator authoring templates are not current architecture sources.
 
+需要保留的过期 authoring Markdown 集中在：
+
+`00_authoring/archive/`
+
 Current authoring conflict resolution:
 
 ```text
 current Skill / Tool guide
-> matching architecture-freeze record
+> matching architecture-freeze record in 00_authoring/architecture_freezes/
 > MD_WORKFLOW_MASTER_PLAN.md / this SYNC_STATUS.md
-> explicitly historical or Legacy files
+> archived historical or Legacy files
 ```
 
-Files marked `SUPERSEDED` or `LEGACY` must not be used to reconstruct current interfaces.
+Archive files must not be used to reconstruct current interfaces.
 
 ## Current pending work
 
