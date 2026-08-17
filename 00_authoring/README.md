@@ -1,6 +1,6 @@
 # Authoring directory guide
 
-`00_authoring/` 服务于 MD Workflow Skill / Tool 的设计、冻结、同步和多窗口 authoring；它不是科研项目运行目录。
+`00_authoring/` 服务于 MD Workflow Skill / Tool 的设计、冻结和多窗口 authoring；它不是科研项目运行目录。
 
 ## Single authoring entry
 
@@ -28,17 +28,25 @@ AGENTS.md
 ├── scripts/                    # 少量当前静态检查
 │
 ├── architecture_freezes/       # Stage / Workflow 正式冻结记录
+├── project_design/             # 项目级设计/状态资料，按需读取
 ├── coordination/               # 多窗口 write ownership / work orders
 ├── archive/                    # 非 current 历史 authoring 材料
 │
-├── md-workflow-tool-authoring/ # Tool authoring supporting Skill
-│
-├── MD_WORKFLOW_MASTER_PLAN.md  # 项目级阶段状态/入口
-├── SYNC_STATUS.md              # 当前同步状态
+└── md-workflow-tool-authoring/ # Tool authoring supporting Skill
+```
+
+`project_design/` 当前只保存真正有独立项目级职责的资料：
+
+```text
+project_design/
+├── README.md
+├── MD_WORKFLOW_MASTER_PLAN.md
 └── lightweight_runtime_v2_spec.md
 ```
 
-不再在 `00_authoring/` 根目录维护 `skill_inventory.yaml`、`file_ownership.yaml`、`content_map.schema.yaml`，也不再维护 `content_maps/` 这一套平行 Skill 元数据。
+不再单独维护 current `SYNC_STATUS.md`；Stage catalog、建设状态和 current entry 统一由 Master Plan 负责。
+
+不再维护 `skill_inventory.yaml`、`content_map.schema.yaml` 或 `content_maps/` 这一套平行 Skill metadata。
 
 多窗口 writer assignment 如确有需要，位于：
 
@@ -105,6 +113,21 @@ write ownership must be narrow
 
 不得再次把新的 `WORKFLOW*_ARCHITECTURE_FREEZE*.md` 散放到 `00_authoring/` 根目录。
 
+## Project design
+
+项目级设计资料统一位于：
+
+`project_design/`
+
+原则：
+
+- Master Plan 只拥有 Stage catalog / 建设状态 / current entry；
+- runtime spec 只拥有跨 Stage Runtime 通用架构；
+- 具体业务规则继续由对应 current Skill / reference 拥有；
+- Stage-specific 已冻结架构继续由 `architecture_freezes/` 拥有。
+
+因此 project-design 文档不是业务 Skill 的第二份规范。
+
 ## Archive
 
 被 current authority 明确取代的历史 authoring Markdown 移入：
@@ -121,13 +144,14 @@ write ownership must be narrow
 
 ## Authority
 
-发生内容冲突时，按具体职责判断 owner。通常：
+发生内容冲突时，按具体职责判断 owner，而不是按目录深浅判断：
 
 ```text
-current Skill / Tool guide
-> matching current architecture freeze
-> project-level Master Plan / Sync Status
-> archived / historical / Legacy material
+具体业务规则 → current Skill / reference
+Stage 已冻结架构 → architecture_freezes/
+跨 Stage runtime → project_design/lightweight_runtime_v2_spec.md
+Stage catalog / 建设状态 / current entry → project_design/MD_WORKFLOW_MASTER_PLAN.md
+历史材料 → archive / Git history
 ```
 
-同一具体规则只能有一个 current owner；不要额外建立 YAML metadata 来复制一份 Skill 的职责说明。
+同一具体规则只能有一个 current owner。
