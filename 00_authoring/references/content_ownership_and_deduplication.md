@@ -62,17 +62,20 @@ Status: CURRENT
 - 用 YAML/index 再描述一遍 Skill 已经拥有的职责和状态；
 - 简化重述到足以独立指导外部 Skill 内部执行。
 
-允许的接口级描述只有：
+必要的接口级描述限于当前职责真实消费或依赖的条件，例如：
 
 ```text
 consume
 require
-handoff
 ```
+
+不因存在下一环节而自动增加 handoff 规范。
 
 ## 4. Main Skill / reference / supporting Skill
 
-main Skill 保留当前职责的目标、输入、reuse、核心规则、validation、results/handoff、用户确认条件和按需 capability references。
+main Skill 保留当前职责的目标、输入、reuse、核心规则、validation、results、用户确认条件和按需 capability references。
+
+Negative scope 也受 ownership/minimality 约束：只有为了阻止实际越界、保护数据/不可逆操作、明确已否定的高概率默认行为，或直接保护 validation/result correctness 时才写；不枚举其它 owner 所负责事项作为“本 Skill 不做”清单。
 
 长而仍属于当前职责的内容放 `references/`，但 reference 不重新描述完整主流程。
 
@@ -80,7 +83,7 @@ Supporting Skill 只有复杂且独立时才拆；不得为了形成 Operation +
 
 ## 5. `schemas/` 与 `scripts/`
 
-`schemas/` 只用于确有稳定、机器可校验的 handoff/文件约束，不为了形式化普通自然语言规则而创建。
+`schemas/` 只用于确有稳定、机器可校验的文件/接口约束，不为了形式化普通自然语言规则而创建。
 
 Skill-local deterministic helper 可以留在当前 `scripts/`；跨 Skill 复用、需要独立生命周期的 current shared Tool 才进入 `tools/`。
 
@@ -113,9 +116,10 @@ Tool 负责自己 deterministic 输出的机械/格式有效性；main Skill 负
 1. 是否写了其他环节“应该怎么做”？
 2. 是否复制 / 改写了另一个 owner 已定义的规则？
 3. 是否一条规则以后需要同步更新多个 current owners？
-4. 外部内容能否缩成 consume / require / handoff？
-5. 是否又建立 metadata/index 来重复 Skill 本身？
-6. 是否误把 evals/tools/legacy 当成 Stage Skill root？
+4. 外部内容能否缩成当前职责真正需要的 consume / require？
+5. 是否为了“范围完整”罗列了无实际必要的“不做”事项？
+6. 是否又建立 metadata/index 来重复 Skill 本身？
+7. 是否误把 evals/tools/legacy 当成 Stage Skill root？
 ```
 
 任一答案为“是”时先处理 ownership / layout 问题。
