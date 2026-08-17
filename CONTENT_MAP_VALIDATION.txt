@@ -1,2 +1,5 @@
-checked_maps: 17
-errors: 0
+SUPERSEDED / HISTORY ONLY
+
+This file recorded an old 17-map schema-v3 validation result and is not current validation evidence.
+Current validator: 00_authoring/md-workflow-skill-authoring/scripts/validate_content_maps.py
+Current schema guidance: 00_authoring/content_map.schema.yaml
