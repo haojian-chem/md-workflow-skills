@@ -2,9 +2,7 @@
 
 Status: CURRENT
 
-本文件定义当前科研 Skill 的职责组织方式。
-
-核心原则：
+## 1. Core model
 
 ```text
 main Skill first
@@ -13,91 +11,73 @@ main Skill first
 → deterministic Tool only for deterministic capability
 ```
 
-当前设计不要求把科研 Skill 分类成 Workflow / Operation / Validator。
+科研 Skill 不按 Workflow / Operation / Validator 分类。
 
-## 1. Main Skill
-
-一个 main Skill 对应一个能够被 Task Execution Agent 直接理解和推进的科研职责。
-
-它至少应让 Agent 知道：
-
-- 当前目标；
-- 当前输入 / 对象 / 证据；
-- reuse 边界；
-- 必须遵守的科学 / 技术规则；
-- 可使用的工具或方法；
-- validation；
-- 结果和 handoff。
-
-main Skill 可以同时包含执行、判断和结果 validation，只要这些内容属于同一个清楚职责。
-
-不要为了“层次完整”把一个自然职责人工拆成 Operation + Validator 或 Workflow + Operation。
+一个 main Skill 对应一个可由 Task Execution Agent 直接理解和推进的科研职责，并拥有自己的输入、reuse、核心科学/技术规则、validation 与 results/handoff。
 
 ## 2. Stage-oriented active layout
 
-当前 active 科研 Skill 默认按 Stage / 科学职责组织，例如：
+Current scientific Skill roots：
 
 ```text
 01_structure_preparation/
 02_topology_preparation/
+03_md_preparation/
 04_md_simulation/
 05_analysis/
 ```
 
-Stage root 可以拥有一个 main `SKILL.md`，并按实际复杂度包含 1.x / 2.x / 4.x 等 step/supporting Skills。
+这些编号对应 MD Workflow Stage 1–5。
 
-Stage 编号和 Task Sheet step 是科学流程 / 任务计划语义，不等于必须建立额外角色层。
+Stage root 可以拥有一个 main `SKILL.md`，并按实际复杂度包含 1.x / 2.x / 3.x / 4.x / 5.x Step 或 supporting Skills。
 
-历史 `01_workflows/`、`02_operations/`、`02_validators/` 已退出 active scientific Skill layout。需要保留的历史实现只用于 `00_authoring/archive/` 或 Git history；不得把这些旧根目录作为新 Skill 的落位模板。
+Stage 编号和 Task Sheet step 是科学流程语义，不等于必须建立额外角色层。
 
-## 3. Supporting Skill
+## 3. Non-Skill infrastructure
 
-只有复杂且边界清晰的部分才值得拆 supporting Skill。
+以下不属于 Scientific Skill roots：
 
-适合拆分的情况：
+```text
+evals/
+tools/
+legacy/
+00_authoring/archive/
+```
 
-- 可以独立按需加载；
-- 有独立完整的科学 / 技术职责；
+因此测试、工具、legacy contracts/runtime 和历史设计材料不得借用 Stage 编号作为根目录前缀。
+
+## 4. Supporting Skill
+
+只有复杂且边界清晰时才拆 supporting Skill。适合拆分的情况包括：
+
+- 可独立按需加载；
+- 有完整独立科学/技术职责；
 - 被多个 main Skill 复用；
 - 需要独立测试或维护；
-- 内容足够复杂，拆分能显著降低主 Skill 上下文。
+- 拆分显著降低主 Skill 上下文。
 
-不适合拆分的情况：
+不因 validation 配对、目录对称、历史角色分类或减少几段文字而拆 Skill。
 
-- 只有几条规则；
-- 只是为了给 validation 单独一个文件；
-- 只是为了匹配历史 Workflow / Operation / Validator 分类；
-- 拆分后必须增加新的 dispatcher 才能工作；
-- supporting Skill 只是把主 Skill 的同一段话重复一遍。
+## 5. Reference
 
-## 4. Reference
+长但仍属于当前 Skill 的规则、registry、数据表、选择规则、方法说明、大枚举或条件性细节优先放 `references/`。
 
-长但仍属于当前 Skill 的内容优先放 `references/`：
+main Skill 必须说明何时读取 reference；不得启动时扫描整个 reference tree。
 
-- 长科学规则；
-- registry；
-- 数据表；
-- 选择规则；
-- 方法说明；
-- 大枚举；
-- 只有特定条件下才需要读取的细节。
+## 6. Validation ownership
 
-主 Skill 必须说明何时需要读取某 reference；不得默认启动时扫描整个 `references/`。
-
-## 5. Validation ownership
-
-Validation 默认跟随结果 owner。
+默认：
 
 ```text
 main Skill 产生 / 判断结果
 → main Skill 定义该结果如何验证
 ```
 
-如果 validation 本身成为一个复杂、独立、可复用职责，才拆 supporting validation Skill。
+只有 validation 本身成为复杂、独立、可复用职责时才拆 supporting validation Skill。
 
-Tool 对自己生成的确定性输出负责其机械 / 格式有效性；main Skill 仍负责判断这些输出是否满足当前科研任务。
+Tool 对自己生成的确定性输出负责机械/格式有效性；main Skill 仍负责判断其是否满足科研目标。
 
-## 6. Tool
+## 7. Tool
 
 Tool 是确定性能力组件：
 
@@ -107,21 +87,15 @@ Tool 是确定性能力组件：
 → 明确输出
 ```
 
-Tool 不负责：
+Current shared Tool root：`tools/`。
 
-- 理解用户开放式意图；
-- 选择科研目标；
-- 规划整个任务；
-- 决定其他 Skill 应该做什么；
-- 通过 parser 结果垄断 Agent 对原始数据的理解。
+Tool 不负责开放式用户意图、科研目标选择、任务规划或其它 Skill 的内部决策。
 
-Skill 可以推荐或调用 Tool，但除非科学 / 技术方法本身要求，不把 Tool 变成唯一允许路径。
+Legacy runtime-dependent tools 位于 `legacy/tools/`，不能因为历史状态自动作为 current implementation。
 
-## 7. External Skill boundary
+## 8. External Skill boundary
 
-Authoring 某个 Skill 时，应主动读取与它直接相关的其他 Skill 来理解接口。
-
-当前 Skill 对外部 Skill 只记录：
+Authoring 当前 Skill 时可以读取相关外部 Skill，但当前 Skill 对外只拥有接口关系：
 
 ```text
 consume: 哪个正式结果 / 接口
@@ -129,17 +103,15 @@ require: 哪项已冻结能力
 handoff: 当前输出如何被对方消费
 ```
 
-不得记录外部 Skill 的完整内部实现。
+不得重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results 或文件生命周期。
 
-发现外部 Skill 缺少必要规则时，提交 cross-skill finding，而不是在当前 Skill 中替它补规则。
+## 9. Physical layout follows responsibility
 
-## 8. Physical layout follows responsibility
+一个 Stage 可以采用：
 
-一个 Stage 可以：
+- 一个 main Skill；
+- main Skill + references；
+- main Skill + 少量 Step/supporting Skills；
+- Stage-specific execution object 结构，例如 Stage 4 run units。
 
-- 一个 main Skill 直接覆盖；
-- 一个 main Skill + references；
-- 一个 main Skill + 少量 step/supporting Skills；
-- 在确有复杂执行对象时采用 Stage-specific 结构，例如 Stage 4 run units。
-
-物理布局服从当前科学职责。没有 current Skill 的 Stage / step 不为了目录对称创建空 package；已有内容迁移时也不保留 role-based path compatibility copy。
+物理布局服从科研职责。没有 current Skill 的 Step 不为目录对称创建空 package；已有内容迁移也不保留 role-based compatibility copy。
