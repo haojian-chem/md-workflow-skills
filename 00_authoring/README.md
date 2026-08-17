@@ -23,10 +23,10 @@
 current Skill / Tool guide
 > matching architecture-freeze record
 > MD_WORKFLOW_MASTER_PLAN.md / SYNC_STATUS.md
-> historical redesign / validation / benchmark / Legacy Runtime files
+> archived / historical / Legacy files
 ```
 
-**文件存在不等于当前有效。** `SUPERSEDED` / `LEGACY` 文件只作为 Git 历史入口，不得用于重建当前接口。
+**文件存在不等于当前有效。** archive、Legacy 和 Git history 只用于历史追溯，不得用于重建当前接口。
 
 ## Current Skill model
 
@@ -34,10 +34,27 @@ current Skill / Tool guide
 
 ```text
 main Skill
-├── references/
+├── references/        # 仅放仍属于当前 Skill 的长/条件性细节
 ├── schemas/           # only when truly useful
-├── scripts/
+├── scripts/           # Skill-local deterministic helper
 └── supporting Skill   # only for complex, clear boundaries
+```
+
+只有 main `SKILL.md` 是默认必需文件。不要先生成一套目录或角色分类，再把科研职责塞进去。
+
+生成、重构或冻结 Skill 时必须按需读取：
+
+`md-workflow-skill-authoring/references/skill_generation_rules.md`
+
+其中固定：
+
+```text
+一个职责 → 一个 main Skill
+长而同属当前职责 → reference
+复杂且独立 → supporting Skill
+确定性机械能力 → script / Tool
+已有 owner 的规则 → 引用，不复制
+已被取代的 Markdown → archive，不留在 active path
 ```
 
 不再强制 Workflow / Operation / Validator 分类，也不要求新 Skill 落入：
@@ -75,9 +92,29 @@ write ownership must be narrow
 未经明确重新分配，不得：
 
 - 修改其他 Skill；
-- 在当前 Skill 中替其他 Skill 定义内部流程、默认参数、validation 或 official results。
+- 在当前 Skill 中替其他 Skill 定义内部流程、默认参数、validation 或 official results；
+- 复制/改写其他 owner 已有规则形成 shadow specification。
 
 发现跨 Skill 问题时提交 finding / handoff 给对应 owner 或 main window。
+
+## Markdown archive
+
+过期 Markdown 的 current 归档目录：
+
+`00_authoring/archive/`
+
+规则：
+
+- authority 已明确被取代的 `.md` 从 active path 移出；
+- current 引用必须先迁移到新 owner；
+- active path 不同时保留 `SUPERSEDED` / `LEGACY` tombstone 和 archive 副本；
+- archive 不进入普通 startup/read list；
+- Git history 保存完整版本历史；
+- 不能因为文件“较旧”就归档仍然有效的 current guide / reference / architecture-freeze。
+
+Archive 边界见：
+
+`00_authoring/archive/README.md`
 
 ## Current stage freeze records
 
@@ -96,16 +133,17 @@ WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
 - `content_map.schema.yaml`：content map 结构；
 - `skill_inventory.yaml`：Skill discovery/status metadata；
 - `file_ownership.yaml`：多窗口写入所有权；
-- `SYNC_STATUS.md`：当前同步状态。
+- `SYNC_STATUS.md`：当前同步状态；
+- `archive/`：非 current 的历史 authoring Markdown。
 
 当前普通科研 Skill 模板：
 
 `md-workflow-skill-authoring/assets/skill.template.md`
 
-旧 `workflow_skill.template.md` / `operation_skill.template.md` / `validator_skill.template.md` 已 `SUPERSEDED`。
+旧 workflow/operation/validator 专用模板已经移入 archive，不再留在 active assets。
 
 ## Legacy / superseded material
 
 旧 Workstream / route / event / runtime projection / transaction 架构已经冻结为 Legacy。
 
-Legacy contracts、runtime projection 和历史 authoring validation 可以保留用于历史追溯或明确迁移维护，但普通 current authoring 不读取这些内容作为默认设计依据。
+需要保留的历史 authoring Markdown 应移入 `00_authoring/archive/`；普通 current authoring 不读取这些内容作为默认设计依据。Legacy contracts/runtime 等非 Markdown 历史材料仍按其当前专门边界管理。
