@@ -66,6 +66,20 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 不要在 main Skill 和 reference 中各写一份完整规则。某条详细规则一旦下放给 reference，reference 是该细节的 owner，main Skill 只保留必要摘要和入口。
 
+### Negative scope / 禁止项
+
+“不做什么”不是 main Skill 的默认完整性要求。不要为了显得职责边界完整，系统性罗列所有相邻环节、下游环节或理论上可能发生但当前 Skill 不负责的事项。
+
+只有在以下情况之一成立时，才应明确写出 `不做 / 不得 / 禁止`：
+
+- 容易与当前职责混淆，不明确会高概率导致实际越界或误操作；
+- 用于保护当前 Skill 的 ownership，阻止其承担其他 owner 的职责；
+- 属于安全、数据完整性、不可逆操作或输入保护边界；
+- 是当前设计中已明确否定、且 Agent 很可能采用的默认行为；
+- 对 validation 或 result correctness 有直接影响。
+
+若上述必要性不存在，则不需要出现对应 negative-scope 条目。未被列出的外部职责自然由当前 Skill 的 purpose / scope、ownership 和 external-skill boundary 限制；不要通过冗长的“本 Skill 不负责……”清单重复描述其它环节。
+
 ## 3. Supporting Skill 的拆分门槛
 
 只有内容同时具备明显复杂度和清楚独立边界时才拆 supporting Skill，例如：
