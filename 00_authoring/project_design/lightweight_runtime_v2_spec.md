@@ -2,7 +2,7 @@
 
 Status: CURRENT DEFAULT RUNTIME ARCHITECTURE
 
-本文件只定义**跨 Stage 的通用运行架构**。具体科研规则、Stage-specific execution objects、字段和文件生命周期由对应 current Stage Skill / freeze 拥有。
+本文件只定义**跨 Stage 的通用运行架构**。具体科研规则、Stage-specific execution objects、字段和文件生命周期由对应 current Stage Skill 或 current architecture freeze 拥有；architecture freeze 可以是 current authoring authority，但不因此成为可执行 runtime Skill。
 
 ## 1. Goal
 
@@ -115,6 +115,8 @@ Task Execution Agent 长期持有一个 Task Sheet，并连续推进任务。
 
 普通子环节之间不返回 Manager 调度。
 
+如果某个已规划 Stage / Step 只有 architecture freeze、尚无获批生成的 current runtime Skill，则 Task Execution Agent 不得把 freeze 当作执行指南自行运行该 Stage / Step；应等待对应 Skill authoring / generation 完成。
+
 ## 5. Directory model
 
 普通 Step 的 task-specific 工作目录采用：
@@ -191,21 +193,31 @@ Task Execution Agent 不默认：
 
 跨 Stage runtime 只在这里承认“存在例外”，不复制例外内部 schema。
 
-Stage 4 current authority：
+Stage 4 current runtime authority：
 
 ```text
 04_md_simulation/SKILL.md
+```
+
+Stage 4 architecture authority：
+
+```text
 00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
 ```
 
-Stage 5 current authority：
+Stage 5 当前尚无 active runtime Skill。其 current architecture authority 为：
 
 ```text
-05_analysis/SKILL.md
 00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
 ```
 
-例如 Stage 4 run units、Stage 5 plan items / prepared-input indexes 的具体字段、reuse 和生命周期全部由上述 owner 定义。
+未来只有在用户明确批准 Stage 5 Skill generation 并正式生成后，以下路径才可成为 Stage 5 runtime authority：
+
+```text
+05_analysis/SKILL.md
+```
+
+因此，Stage 4 run-unit 的具体字段、reuse 和生命周期由 current Stage 4 Skill 定义；Stage 5 plan items / prepared-input indexes 等已冻结设计目前只作为后续 Skill generation 的 authoring input，不得在 runtime 中把 architecture freeze 当作可执行 Stage 5 Skill。
 
 ## 10. Legacy rule
 
