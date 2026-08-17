@@ -4,6 +4,10 @@ Status: ACTIVE CURRENT BASELINE
 
 本文件只保存 MD Workflow 的**当前阶段目录、冻结状态和权威文件入口**。具体科学规则不在这里重复；发生冲突时，以对应当前 Stage/main Skill 和明确 architecture-freeze 文件为准。
 
+当前 Stage architecture-freeze 统一集中在：
+
+`00_authoring/architecture_freezes/`
+
 ## 1. Top-level numbering
 
 固定顶层阶段：
@@ -75,7 +79,7 @@ Catalog:
 
 Architecture authority:
 
-`00_authoring/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
+`00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
 Implemented detailed work currently includes the existing guide:
 
@@ -103,7 +107,7 @@ Default scientific order:
 
 Architecture authority:
 
-`00_authoring/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`
 
 The IDs express default scientific order, not a once-only constraint; Task Sheet instances may repeat when required.
 
@@ -130,7 +134,7 @@ Current authority:
 
 Architecture record:
 
-`00_authoring/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md`
 
 Stage 4 uses one integrated main Skill plus supporting run-type Skills because those run types have clear, complex execution boundaries. This is a scientific/maintenance choice, not a Workflow/Operation classification requirement.
 
@@ -182,7 +186,7 @@ Current authority:
 
 Architecture record:
 
-`00_authoring/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
 
 Stage 5 uses one integrated main Skill. It is not split into `01_workflows/analysis_workflow` and `02_operations/analysis_planning_and_orchestration`.
 
@@ -247,12 +251,12 @@ For current work, use this precedence:
 
 ```text
 current Skill / Tool guide
-> matching architecture-freeze record
+> matching architecture-freeze record in 00_authoring/architecture_freezes/
 > this Master Plan / SYNC_STATUS
-> historical validation, redesign, benchmark, Legacy Runtime files
+> archived historical / Legacy files
 ```
 
-A historical file remaining in Git does not make it a current design source. Files explicitly marked `SUPERSEDED` or `LEGACY` are history-only and must not be used to reconstruct current interfaces.
+A historical file remaining in Git does not make it a current design source. Superseded/Legacy authoring Markdown should be kept under `00_authoring/archive/`, not beside current root authorities.
 
 ## 10. Current remaining work
 
