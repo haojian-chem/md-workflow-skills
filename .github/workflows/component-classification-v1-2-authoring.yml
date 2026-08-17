@@ -3,11 +3,11 @@ name: component-classification-v1-2-authoring
 on:
   pull_request:
     paths:
-      - "02_validators/component_and_residue_classification_validator/**"
+      - "01_structure_preparation/1.2_component_and_residue_classification/**"
+      - "01_structure_preparation/SKILL.md"
       - "00_authoring/SKILL.md"
       - "00_authoring/references/**"
       - "00_authoring/scripts/**"
-      - "01_workflows/structure_preparation_workflow/SKILL.md"
       - ".github/workflows/component-classification-v1-2-authoring.yml"
   workflow_dispatch:
 
@@ -32,14 +32,14 @@ jobs:
           overall=0
 
           python 00_authoring/scripts/validate_md_skill.py \
-            . 02_validators/component_and_residue_classification_validator \
+            . 01_structure_preparation/1.2_component_and_residue_classification \
             > authoring_validation_output/validate_md_skill.log 2>&1
           status=$?
           echo "validate_md_skill=$status" | tee -a authoring_validation_output/statuses.txt
           [ "$status" -eq 0 ] || overall=1
 
           python 00_authoring/scripts/detect_cross_file_duplication.py \
-            02_validators/component_and_residue_classification_validator \
+            01_structure_preparation/1.2_component_and_residue_classification \
             > authoring_validation_output/detect_cross_file_duplication.log 2>&1
           status=$?
           echo "detect_cross_file_duplication=$status" | tee -a authoring_validation_output/statuses.txt
