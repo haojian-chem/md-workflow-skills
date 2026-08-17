@@ -6,6 +6,8 @@ status: current_main_skill_authoring_model
 owned_content:
   authoring_flow:
     owner: 00_authoring/md-workflow-skill-authoring/SKILL.md
+  skill_generation_and_markdown_archival:
+    owner: 00_authoring/md-workflow-skill-authoring/references/skill_generation_rules.md
   skill_boundaries:
     owner: 00_authoring/md-workflow-skill-authoring/references/skill_boundaries.md
   content_ownership_and_deduplication:
@@ -54,4 +56,5 @@ notes:
   - New scientific Skills are organized as main Skill + references + only-when-justified supporting Skills.
   - Workflow/Operation/Validator is not a required classification or directory taxonomy.
   - Authoring windows may read relevant external Skills but may write only owned paths and may not redefine external Skill internals.
-  - Legacy layer_boundaries.md and old role-specific templates are SUPERSEDED history only.
+  - Superseded/Legacy authoring Markdown is moved out of active Skill paths into 00_authoring/archive/ after current references are migrated.
+  - Archive files are history-only and are not current content owners or default authoring inputs.
