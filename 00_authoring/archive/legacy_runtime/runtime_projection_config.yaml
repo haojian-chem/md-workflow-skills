@@ -1,0 +1,99 @@
+schema_version: 1
+branch_label: main
+runtime_root: runtime
+manifest_output: runtime_manifest.yaml
+manager:
+  source: 00_manager/md_workflow_manager/references/manager_runtime_source.yaml
+  output: manager_runtime_spec.yaml
+workflows:
+- workflow_name: structure_preparation_workflow
+  source: 01_workflows/structure_preparation_workflow/references/runtime_source.yaml
+  output: workflows/structure_preparation.runtime.yaml
+contracts:
+  output: task_contracts/index.yaml
+  include:
+    project_state: 03_contracts/project_state.schema.yaml
+    workstream_state: 03_contracts/workstream_state.schema.yaml
+    workflow_route_fragment: 03_contracts/workflow_route_fragment.schema.yaml
+    workflow_decision: 03_contracts/workflow_decision.schema.yaml
+    subagent_task: 03_contracts/subagent_task.schema.yaml
+    subagent_result: 03_contracts/subagent_result.schema.yaml
+    confirmation_item: 03_contracts/confirmation_item.schema.yaml
+  consumer_policy:
+    schema_validation: registered_deterministic_tool
+    llm_schema_body_read_allowed_when:
+    - explicit_contract_debug
+    - schema_authoring_or_migration
+    - runtime_validator_reports_schema_contract_conflict
+  notes:
+  - This index does not redefine schema fields.
+  - Contract authority remains in 03_contracts/.
+  - R4 builders may extend this index with builder identifiers without copying schema bodies.
+stage_registry: 00_manager/md_workflow_manager/references/stage_registry.yaml
+tool_registry: 05_tools/tool_registry.yaml
+provenance_sources:
+- AGENTS.md
+- 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
+- 00_authoring/md-workflow-skill-authoring/references/runtime_subagent_protocol.md
+- 00_authoring/md-workflow-skill-authoring/references/runtime_record_commit_protocol.md
+- 00_manager/md_workflow_manager/references/route_fast_path_protocol.md
+- 00_manager/md_workflow_manager/SKILL.md
+- 01_workflows/structure_preparation_workflow/SKILL.md
+manifest:
+  purpose: Compact runtime entry for real MD projects. This projection minimizes LLM-side loading of authoring documents while preserving links to authoritative sources.
+  authority:
+    runtime_is_source_of_truth: false
+    authoritative_sources_remain_in_authoring_tree: true
+    silent_runtime_only_semantic_changes_forbidden: true
+  loading_policy:
+    real_md_runtime_default:
+      load:
+      - AGENTS.md
+      - runtime/runtime_manifest.yaml
+      - runtime/manager_runtime_spec.yaml
+      - project current state needed for the request
+      do_not_load_by_default:
+      - 00_authoring/**
+      - design_records/**
+      - 03_contracts/*.schema.yaml bodies
+      - full Manager references
+      - manager_display_rules.md
+      - project_events.jsonl full history when direct record IDs are available
+      - backup scope/route/state files outside recovery
+      - unrelated Workflow SKILL.md files
+      - unrelated Operation/Validator Skills
+      - full project history
+    fallback_authoring_read_allowed_when:
+    - runtime_projection_missing
+    - runtime_projection_provenance_invalid
+    - runtime_contract_conflict
+    - project_needs_recovery
+    - semantic_route_replanning_not_expressible_by_compact_spec
+    - explicit_architecture_audit_or_debug
+  execution_backends:
+    DETERMINISTIC:
+      status: enabled_when_required_capability_is_ACTIVE
+      creates_foreground_agent: false
+    AGENT_TASK:
+      status: enabled
+      creates_foreground_agent: true
+    AGENT_SEQUENCE:
+      status: disabled_by_default
+      creates_foreground_agent: true
+      activation_requires:
+      - sequence_contract
+      - eligibility_validator
+      - multi_result_commit_support
+      - recovery_fixtures
+  foreground_agent_limit: 1
+  runtime_guards:
+  - normal_NEW_initialization_uses_ACTIVE_runtime_project_initializer
+  - do_not_manually_construct_initialization_state_when_initializer_is_ACTIVE
+  - do_not_parse_business_structure_content_during_manager_entry_or_initialization
+  - do_not_read_full_initialization_or_route_protocol_on_normal_compact_runtime_path
+  - do_not_read_backup_records_outside_recovery
+  - do_not_scan_project_event_history_when_direct_state_or_record_ids_are_available
+  - do_not_read_schema_bodies_when_a_registered_validator_can_consume_them
+  - do_not_repeat_authoring_reads_for_rules_already_projected_here
+  - do_not_enable_AGENT_SEQUENCE_until_activation_requirements_pass
+  - do_not_treat_runtime_projection_as_independent_authority
