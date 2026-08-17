@@ -52,7 +52,7 @@ python scripts/classify_structure.py --config <classification_config.yaml>
 
 配置固定 structure identity、classification mode、可选项目/力场/序列参考、`ccd.additional_library_paths` 和输出位置。内置 CCD-compatible root 由脚本固定，不写入配置。
 
-`classify_structure.py` 通过内部 adapter 调用 baseline engine，再规范化为当前 observations contract；内部 adapter schema 不是公共输出 contract。
+`classify_structure.py` 调用 `classification_engine.py` 完成 baseline parsing / classification，再规范化为当前 observations contract；`classification_observations_engine.schema.yaml` 只约束 engine 的内部输出，不是公共下游 contract。
 
 ## Relation checks
 
@@ -86,6 +86,8 @@ python scripts/add_ccd_reference.py \
 
 目标文件名来自 CIF component ID。相同 ID / 相同 SHA 幂等；不同 SHA 冲突。脚本不修改 residue registries。
 
+`sync_approved_ccd_seeds.py` 用于按批准 manifest 同步并验证内置 CCD seed set；它属于本 Skill package 的 reference-library maintenance capability，不属于每次 1.2 runtime 的必经步骤。
+
 ## Final integration
 
 ```bash
@@ -98,8 +100,8 @@ python scripts/build_classification_result.py \
 ## Shared modules
 
 ```text
-classification_engine*.py   baseline parsing/classification
-ccd_reference.py            indexed local CCD-compatible lookup
+classification_engine.py     baseline parsing/classification implementation
+ccd_reference.py             indexed local CCD-compatible lookup
 observation_state.py         current-state normalization, locking, relation apply, regrouping
 selection_identity.py        opaque component/residue/endpoint/relation IDs
 structure_records.py         selected-model structure records
@@ -108,6 +110,8 @@ sequence_missing.py          sequence and missing-residue evidence
 rtp_reference.py             RTP parsing and atom comparison
 classification_common.py     strict YAML, hashes, schema validation and atomic primitives
 ```
+
+这些 current modules 直接拥有各自实现；不再通过 `*_core.py` 或 pre-redesign fixture compatibility shim 暴露同一能力。
 
 ## I/O invariants
 
