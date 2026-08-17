@@ -3,7 +3,7 @@ name: component-classification-v1-2-real-mmcif
 on:
   pull_request:
     paths:
-      - "02_validators/component_and_residue_classification_validator/**"
+      - "01_structure_preparation/1.2_component_and_residue_classification/**"
       - "04_evals/component_and_residue_classification_validator/test_v1_2_real_mmcif_acceptance.py"
       - ".github/workflows/component-classification-v1-2-real-mmcif.yml"
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r 02_validators/component_and_residue_classification_validator/scripts/requirements.txt
+          python -m pip install -r 01_structure_preparation/1.2_component_and_residue_classification/scripts/requirements.txt
           python -m pip install pytest
       - name: Download official RCSB mmCIF entries
         run: |
