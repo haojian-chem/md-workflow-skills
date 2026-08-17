@@ -35,7 +35,7 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 → current: 1.4_altloc_occupancy_resolution/SKILL.md
 
 1.5 Completeness check
-→ under authoring/discussion; do not treat the current draft path as approved runtime authority until that authoring is completed
+→ current: 1.5_completeness_check/SKILL.md
 
 1.6 Structure completion / correction
 → freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
@@ -93,11 +93,11 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.4 → 1.5
 
-1.5 消费当前单一构象结构，并结合前序已经完成的 residue / atom 核对信息生成 repair report。具体 1.5 规则以其 authoring 完成后的正式 Skill 为准。
+1.5 消费当前 target 的当前结构，并结合 1.2 正式 completeness evidence、1.3 target mapping 和实际存在的 1.4 resolution report，生成该 target 独立的 `structure_completeness_report.yaml`。具体规则由 `1.5_completeness_check/SKILL.md` 拥有。
 
 ### 1.5 → 1.6
 
-冻结接口：1.6 只执行 1.5 已明确的 repair items，不扩大问题判定范围。具体规则当前由 1.6 architecture freeze 保存，尚无 runtime Skill。
+冻结接口：1.6 消费 1.5 正式 `structure_completeness_report.yaml`。具体规则当前由 1.6 architecture freeze 保存，尚无 runtime Skill。
 
 ### 1.6 → 1.7
 
