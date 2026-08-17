@@ -1,0 +1,8 @@
+schema_version: 1
+status: active
+purpose: current_lightweight_compatible_shared_tools
+
+# Only tools that are explicitly adapted to current Skill/Lightweight interfaces,
+# tested, and reactivated belong here.
+# Legacy runtime-dependent tools are preserved under legacy/tools/.
+tools: []
