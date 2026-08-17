@@ -1,26 +1,22 @@
-schema_version: 3
+schema_version: 4
 skill_name: structure_preparation_validator
 skill_type: validator
 skill_path: 02_validators/structure_preparation_validator
-contract_status: pending
-content_ownership_status: pending
-owned_content: {}
+architecture: lightweight_runtime_v2
+status: guide_implemented_validation_pending
+
+owned_content:
+  step_1_9_purpose_object_reuse_execution_validation_official_results:
+    owner: 02_validators/structure_preparation_validator/SKILL.md
+
 external_references:
-- purpose: layer_boundary
-  owner: 00_authoring/md-workflow-skill-authoring/references/layer_boundaries.md
-  access: reference_only
-- purpose: runtime_task_contract
-  owner: 03_contracts/subagent_task.schema.yaml
-  access: reference_only
-- purpose: runtime_result_contract
-  owner: 03_contracts/subagent_result.schema.yaml
-  access: reference_only
-- purpose: confirmation_item_contract
-  owner: 03_contracts/confirmation_item.schema.yaml
-  access: reference_only
-- purpose: examples_and_test_fixtures
-  owner: 04_evals/structure_preparation_validator/fixtures/
-  access: reference_only
-  status: planned
+  - purpose: stage1_workflow_boundary
+    owner: 01_workflows/structure_preparation_workflow/SKILL.md
+    access: reference_only
+  - purpose: lightweight_runtime_architecture
+    owner: 00_authoring/lightweight_runtime_v2_spec.md
+    access: reference_only
+
 notes:
-- Define the Skill contract before assigning content ownership or creating local references/schemas.
+  - Step 1.9 is read-only final Stage 1 validation plus target-force-field compatibility checking; it does not repair structures.
+  - Legacy runtime/subagent contracts are not current dependencies.
