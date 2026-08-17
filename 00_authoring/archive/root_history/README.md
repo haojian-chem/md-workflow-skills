@@ -2,7 +2,7 @@
 
 Status: ARCHIVE / HISTORY ONLY
 
-本目录保存曾经直接位于 `00_authoring/` 根目录、现已明确失效的 redesign / validation / benchmark / authoring-rule 材料。
+本目录保存曾经直接位于 `00_authoring/` 根目录、现已明确失效的 redesign / validation / benchmark / authoring-rule / sync-status 材料。
 
 这些文件：
 
@@ -15,11 +15,11 @@ Status: ARCHIVE / HISTORY ONLY
 
 `00_authoring/SKILL.md`
 
-当前项目级 authoring 状态入口按需读取：
+当前项目级设计/状态资料按需读取：
 
 ```text
-00_authoring/MD_WORKFLOW_MASTER_PLAN.md
-00_authoring/SYNC_STATUS.md
+00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md
+00_authoring/project_design/lightweight_runtime_v2_spec.md
 ```
 
 当前 Stage freeze 统一位于：
