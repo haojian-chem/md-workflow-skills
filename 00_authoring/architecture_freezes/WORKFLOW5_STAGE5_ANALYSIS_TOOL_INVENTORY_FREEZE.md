@@ -9,9 +9,9 @@ Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE INVENTORY**
 ```yaml
 # Stage 5 analysis capability inventory.
 #
-# This is a discovery aid for 5.1, not a parser or mandatory dispatcher schema.
-# Add an entry only when the referenced Skill/Tool guide exists and is intended
-# to be discoverable by Stage 5.
+# This is a discovery aid for the Stage 5 main Skill, not a parser or mandatory
+# dispatcher schema. Add an entry only when the referenced Skill/Tool guide
+# exists and is intended to be discoverable by Stage 5.
 #
 # Minimum fields:
 # - name
