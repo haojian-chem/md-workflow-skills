@@ -53,8 +53,8 @@ workflows:
         name: completeness_check
         base_work_directory: 01_structure_preparation/05_completeness_check
       - id: "1.6"
-        name: missing_region_completion
-        base_work_directory: 01_structure_preparation/06_missing_region_completion
+        name: structure_completion
+        base_work_directory: 01_structure_preparation/06_structure_completion
       - id: "1.7"
         name: protein_protonation_assignment
         base_work_directory: 01_structure_preparation/07_protein_protonation_assignment
