@@ -1,6 +1,6 @@
 ---
 name: structure_completion
-description: 结构准备 1.6。根据每个 target 的正式 structure_completeness_report.yaml 落实已确认的结构修复，完成缺失残基/重原子补全、confirmed extra atom 删除和 confirmed atom-name correction，并验证形成新的重原子结构与 completion report。
+description: 结构准备 1.6。根据每个 target 的正式 structure_completeness_report.yaml 落实已确认的结构修复，完成 confirmed extra atom 删除、confirmed atom-name correction、缺失重原子与缺失残基补全，并验证形成新的重原子结构与 completion report。
 ---
 
 # Purpose
@@ -18,7 +18,7 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 - 1.5 正式 `structure_completeness_report.yaml`；
 - `structure_completeness_report.yaml` 中 `structure` 字段记录的当前 target PDB；
 - 对 confirmed atom-name mismatch，1.5 报告所引用的上游正式证据中已经确认的 atom-name correspondence；
-- 对实际存在的 missing-residue / missing-heavy-atom repair item，可用于提供补全坐标的 reference structure / coordinate template。
+- 对实际存在的 missing-heavy-atom / missing-residue repair item，可用于提供补全坐标的 reference structure / coordinate template。
 
 需要追溯上游 identity / mapping evidence 时，优先使用 `structure_completeness_report.yaml` 中 `source_reports` 字段记录的正式结果路径，不为 1.6 重新建立上游结果接口。
 
@@ -61,15 +61,23 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 从 1.5 report 中提取当前 target 需要落实的 repair items，并确保每个 item 都能定位到当前 PDB 中明确的 residue / atom identity。
 
-按以下固定顺序处理：
+总体处理顺序：
 
 ```text
 confirmed extra atom deletion
 → confirmed atom-name correction
+→ missing-heavy-atom processing
+   ├─ atom-level anchors sufficient
+   │  → complete the listed missing heavy atoms
+   └─ atom-level anchors insufficient
+      → treat that repair item as whole-residue completion
+      → merge with adjacent missing-residue region when applicable
 → missing-residue completion
-→ missing-heavy-atom completion
+   (original missing residues + items adjusted from missing-heavy-atom handling)
 → final atom-serial renumbering
 ```
+
+这里的 whole-residue treatment 只是同一 repair item 的处理方式调整，不是新增 repair scope。
 
 如果某个 unexpected atom 已经属于 confirmed atom-name correspondence，不再把它同时作为 extra atom 删除。
 
@@ -81,21 +89,31 @@ confirmed extra atom deletion
 
 只执行已经确认的 observed atom name → reference atom name 对应关系。Rename 只修改 atom name，保留原坐标和 residue identity。
 
-## 4. Missing residues
-
-当前 repair set 含 missing residue 时，读取：
-
-`references/missing_residue_completion.md`
-
-该 reference 定义 AF3 residue correspondence、local alignment、internal / terminal missing-region handling、multiple-reference comparison、coordinate transplant 和局部 geometry judgment 的详细规则。
-
-## 5. Missing heavy atoms
+## 4. Missing heavy atoms
 
 当前 repair set 含 missing heavy atom 时，读取：
 
 `references/missing_heavy_atom_completion.md`
 
-该 reference 定义 coordinate-template correspondence、shared-heavy-atom alignment、coordinate transplant、必要时按 missing-residue 方法处理整个 residue，以及局部 geometry judgment 的详细规则。
+先按该 reference 判断当前 residue 是否满足 atom-level completion 所需的 shared-heavy-atom correspondence 与 alignment 条件。
+
+- 满足要求：按 atom-level 方法补入 report 已列出的 missing heavy atoms；
+- 不满足要求：不强行 transplant atom，将该 repair item 改按完整 residue completion 处理，并纳入下一步的 residue-level completion set。
+
+如果这种处理方式调整后的 residue 与原有 missing residues 连续，应作为同一个连续 completion region 处理，而不是先后独立补全。
+
+## 5. Missing residues
+
+只要 residue-level completion set 非空，就读取：
+
+`references/missing_residue_completion.md`
+
+该集合包括：
+
+- `structure_completeness_report.yaml` 原本列出的 missing residues；
+- 因 missing-heavy-atom anchor 不足而改按完整 residue completion 处理的 residue。
+
+对连续的 residue-level completion items 先合并为实际连续 completion region，再按 reference 中的 AF3 residue correspondence、local alignment、internal / terminal handling、multiple-reference comparison、coordinate transplant 和局部 geometry judgment 规则处理。
 
 ## 6. Final write
 
@@ -154,6 +172,13 @@ renamed_atoms:
     observed_atom_name: <old_name>
     reference_atom_name: <new_name>
 
+added_heavy_atoms:
+  - chain_id: A
+    resid: 125
+    residue_name: ARG
+    atom_names: [<atom_name>, ...]
+    coordinate_reference: /absolute/path/to/reference_or_component_file
+
 added_residues:
   - chain_id: A
     residues:
@@ -163,13 +188,6 @@ added_residues:
         residue_name: SER
     coordinate_reference: /absolute/path/to/reference_structure
     repair_adjustment: <only when applicable>
-
-added_heavy_atoms:
-  - chain_id: A
-    resid: 125
-    residue_name: ARG
-    atom_names: [<atom_name>, ...]
-    coordinate_reference: /absolute/path/to/reference_or_component_file
 
 unresolved_items: []
 ```
@@ -182,7 +200,7 @@ unresolved_items: []
 - 连续 missing residues 可以在一个 `added_residues` record 中成组记录，但每个实际新增 residue 的 `resid + residue_name` 必须明确；
 - deletion / rename 不重复复制 1.5 的 reference provenance；
 - completion operation 记录实际提供最终坐标的 reference / template；比较过但未用于最终坐标的候选 reference 不写入正式 completion report；
-- 如果原 missing-heavy-atom item 因局部共同重原子不足而改按 missing-residue 方法处理，在对应 `added_residues` record 中记录：
+- 如果原 missing-heavy-atom item 因 shared-heavy-atom anchors 不足而改按 missing-residue 方法处理，在对应 `added_residues` record 中记录：
 
 ```yaml
 repair_adjustment: insufficient shared-heavy-atom anchors; treated as missing residue
@@ -194,10 +212,10 @@ repair_adjustment: insufficient shared-heavy-atom anchors; treated as missing re
 
 Validation 属于 1.6 结果 owner。对当前 target 完成以下核验，并写入 `completion_validation.md`：
 
-- 1.5 中每个 required repair item 都已闭合：missing residue 已位于正确的 target chain / residue identity，missing heavy atom 已存在，confirmed extra atom 已删除，confirmed atom-name mismatch 已按确认关系修改；
+- 1.5 中每个 required repair item 都已闭合：missing heavy atom 已通过 atom-level completion 补入，或已按完整 residue completion 正确处理；missing residue 已位于正确的 target chain / residue identity；confirmed extra atom 已删除；confirmed atom-name mismatch 已按确认关系修改；
 - `completion_report.yaml` 与 `completed_structure.pdb` 中的实际修改一致；
 - 除 repair scope 以及 method reference 明确要求的整 residue replacement 外，没有未记录的额外删除、rename 或 coordinate replacement；
-- 新增 residue / heavy atom 满足对应 method reference 的 correspondence、alignment 和局部 geometry requirements；
+- 新增 heavy atom / residue 满足对应 method reference 的 correspondence、alignment 和局部 geometry requirements；
 - 不存在重复 residue / atom identity；
 - atom serial 连续且唯一；
 - PDB 可正常解析；
@@ -256,11 +274,11 @@ completion_report.yaml
 按实际 repair item 读取：
 
 ```text
-references/missing_residue_completion.md
-→ missing-residue coordinate completion
-
 references/missing_heavy_atom_completion.md
-→ missing-heavy-atom coordinate completion
+→ missing-heavy-atom completion and atom-level eligibility assessment
+
+references/missing_residue_completion.md
+→ residue-level coordinate completion
 
 scripts/README.md
 → deterministic helper CLI 与 task-local data formats
