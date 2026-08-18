@@ -104,7 +104,7 @@ Task Sheet 是可动态维护的计划，不是科学适用性判决。
 
 ### Ordinary Stage planning
 
-Stages 1–3 和 Stage 5 使用普通 sub-stage Task Sheet planning。
+Stages 1–3 使用普通 sub-stage Task Sheet planning。
 
 普通 Step 至少记录：状态、对象、工作目录；对象尚未形成时不猜测具体文件路径。
 
@@ -130,29 +130,29 @@ Formal run-unit identity、reuse / continuation / new-unit 判断由 Stage 4 Exe
 
 ### Stage 5 planning
 
-如果用户任务范围包含 Analysis，Manager 只建立：
+Stage 5 不设置编号化 sub-stage。如果用户任务范围包含 Analysis，Manager 只建立一个 stage-level 条目：
 
-`5.1 Analysis planning and orchestration`
+`5 Analysis`
 
 并记录用户明确提出的分析目标、对象、约束，以及用户明确指定的方法（如有）。
 
-Manager 不自行把高层分析目标展开成方法组合，不查询 Stage 5 reuse，也不规划 `trjconv` / `make_ndx` 细节。
+Manager 不创建 `5.1 Analysis planning and orchestration`，也不自行把高层分析目标展开成方法组合，不查询 Stage 5 reuse，不规划 `trjconv` / `make_ndx` 细节。
 
-具体 Stage 5 analysis plan 由：
+具体 Stage 5 analysis plan 由未来 current：
 
 `05_analysis/SKILL.md`
 
-在执行期展开。
+在执行期展开。Stage 5 main Skill 自己在 `5 Analysis` 条目内部维护 analysis plan items；Manager 不为 orchestration 另建 synthetic sub-stage 或 task-specific orchestration directory。
 
 ## Project initialization
 
 新 Lightweight 项目只建立稳定项目骨架和 planning index 已定义的 Stage / Step base directories；不提前创建 task-specific 科研目录。
 
-Manager 在 Task Sheet 中记录 `<base_work_directory>/<task_id>/`，但不创建该目录。
+Manager 在普通 Step 的 Task Sheet 条目中记录 `<base_work_directory>/<task_id>/`，但不创建该目录。
 
-Task Execution Agent 真正进入某 Step 后先按当前 Skill 检查 reuse；只有需要本地执行时才创建当前 task-specific directory。
+Task Execution Agent 真正进入某普通 Step 后先按当前 Skill 检查 reuse；只有需要本地执行时才创建当前 task-specific directory。
 
-Stage-specific project-level directories / indexes 由对应 Stage current Skill / freeze 管理，不由 Manager 发明额外 runtime state。
+Stage-specific project-level directories / indexes 或 stage-level planning structure 由对应 Stage current Skill / freeze 管理，不由 Manager 发明额外 runtime state。
 
 ## Dynamic plan and handoff
 
