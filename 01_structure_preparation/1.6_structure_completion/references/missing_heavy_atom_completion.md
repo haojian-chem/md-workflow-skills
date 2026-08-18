@@ -70,7 +70,9 @@ Anchor 选择优先考虑与缺失原子局部成键和几何环境直接相关�
 
 如果当前 residue 不存在至少 3 个适合且非共线的 shared heavy atoms，不继续进行 atom-level coordinate transplant。
 
-该 residue 直接按 `missing_residue_completion.md` 中的完整 residue completion 方法处理。这只是当前 repair item 的处理方式调整，不建立另一套 completion method。
+该 residue 改按 `missing_residue_completion.md` 中的完整 residue completion 方法处理。这只是当前 repair item 的处理方式调整，不建立另一套 completion method。
+
+完整 residue completion 需要能够支持 residue-level local alignment 的完整 coordinate reference。CCD 这类单个 component template 只能提供 residue 内部坐标，本身不能替代 missing-residue method 所需的 surrounding observed-residue context；如果没有可用的完整 reference，则该 repair item 保持 unresolved，而不是仅凭 CCD 强行替换整个 residue。
 
 此时：
 
@@ -120,6 +122,6 @@ Rigid transform 确定后：
 - fit RMSD 或其它实际使用的 alignment stability evidence；
 - transplant 后的关键 local-geometry evidence；
 - 明显 clash / close-contact evidence；
-- 如果改按 missing-residue 方法处理，能够说明 shared-heavy-atom anchor 不足的事实。
+- 如果改按 missing-residue 方法处理，能够说明 shared-heavy-atom anchor 不足，以及实际用于 whole-residue completion 的完整 reference。
 
 这些中间信息不要求采用固定文件名或 rigid schema，但必须足以支持 `completion_report.yaml` 与 `completion_validation.md` 的结论。
