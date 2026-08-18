@@ -202,6 +202,19 @@ Inventory 是能力发现入口，不复制具体 capability 的方法、命令�
 
 Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inventory 当作 capability 的完整执行接口**。凡某 capability 被纳入当前 Stage 5 plan，Stage 5 main Skill 必须先读取其 `entry`，再最终确定该 plan item 的 `inputs`、`settings` 和 dependencies。selection/reference 条件、关键 settings、正式输出语义以及其它 capability-specific 要求均由对应 `entry` 拥有，不复制进 inventory。
 
+### 7.1 Capability gaps and learning
+
+如果当前分析需求没有合适的已登记 capability，Stage 5 main Skill 负责**识别并记录 capability gap**，但不在 Stage 5 Skill 内临时接管缺失方法的设计、执行或 validation。
+
+下列事项由用户与 Agent 在 Stage 5 Skill 责任之外共同完成：
+
+- 用户明确指定的方法尚无对应 capability；
+- 或现有 capability 均不能可靠覆盖当前分析目标。
+
+Stage 5 可以记录和学习该过程中形成的流程、输入要求、关键设置、输出与核验经验。只有当该流程已经形成实际、可引用的 capability `entry` 后，才把它补充进 analysis capability inventory，供后续任务发现和复用。
+
+capability gap 本身不创建虚构 inventory entry，也不授权 Stage 5 main Skill 把自己变成临时 capability owner。待 capability 补充完成后，Stage 5 重新读取 inventory / `entry`，再按正常规则纳入或调整当前 plan。
+
 ## 8. Reuse and prepared inputs
 
 ### 8.1 `trajectory_index.yaml`
@@ -377,6 +390,7 @@ Stage 5 可以完成的前提：
 - 为 Stage 5 建立类似 Stage 4 `run_unit.yaml` 的 project-level analysis-unit identity；
 - 让 Manager 代替 Stage 5 main Skill 设计具体分析方法组合；
 - 让 Stage 5 main Skill 接管 `trjconv` / `make_ndx` 文件生命周期；
+- 在缺少 capability 时让 Stage 5 main Skill 临时接管该方法的设计、执行或 validation；
 - 建立 project-level `ndx_index.yaml` 或 `.ndx` 自动复用判定机制；
 - 使用统一 `prepared_input_index.yaml` 同时由多个 producer 维护；
 - 用 `source: md.N` 替代最终实际输入文件路径；
