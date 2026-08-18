@@ -48,3 +48,15 @@
         - pdb
         - cpt
   entry: 05_analysis/trjcat/SKILL.md
+
+- name: make_ndx
+  purpose: Generate or supplement the index groups required by a Stage 5 analysis item.
+  required_files:
+    - role: structure_or_index
+      types:
+        - gro
+        - g96
+        - pdb
+        - tpr
+        - ndx
+  entry: 05_analysis/make_ndx/SKILL.md
