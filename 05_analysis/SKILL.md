@@ -241,7 +241,9 @@ Direct reuse item 不标记 `已完成`，因为当前 Task 没有执行该分�
 <project_root>/05_analysis/indexes/trajectory_index.yaml
 ```
 
-可用其发现候选 trajectory。Stage 5 至少比较：
+先用该索引做候选发现和初筛。索引只承担轻量检索，不要求保存完整 trajectory processing metadata；初筛可优先使用其中直接提供的 source lineage、output selection、`dt` 等信息。
+
+候选缩小后，再沿对应 `producer_path` 读取 producer item / execution record，并在需要时检查实际文件，进一步核验与当前 consuming capability 相关的信息，例如：
 
 1. source system / atom-order reference；
 2. atom set / output selection；
@@ -300,6 +302,8 @@ results → 已确认有效、值得直接定位或供后续 item 消费的关�
 `results` 不要求统一子 schema，应按 capability 的产物语义记录。
 
 `project_result_index.md` 是**白名单登记**：各 capability 哪些正式结果文件允许进入项目级登记，由对应 capability owner 的 Skill / README 定义。
+
+对于集中管理的 reusable trajectory，具体 trajectory 文件只登记到 `trajectory_index.yaml`；`project_result_index.md` 不逐条登记这些 trajectory，而只登记 `trajectory_index.yaml` 这一项目级 trajectory 检索入口。
 
 本 Skill：
 
