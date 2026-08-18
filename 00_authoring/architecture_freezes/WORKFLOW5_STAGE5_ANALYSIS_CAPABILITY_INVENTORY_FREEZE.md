@@ -60,7 +60,7 @@ Inventory 只做 capability discovery，不复制具体 capability owner 的方�
 
 各 capability 哪些正式结果文件允许登记到 `project_result_index.md`，由对应 capability owner 在自己的 Skill / README 中定义；inventory 不新增 `registered_files`、`result_whitelist` 等集中字段，也不复制这些文件清单。
 
-`trjconv` / `trjcat` 产生的正式 processed/concatenated trajectory 如需进入集中 trajectory 管理，由对应 capability owner 的 Skill / README 定义其产物与登记规则；Stage 5 inventory 只负责发现 capability entry，不在这里复制 `trajectory_index.yaml` 的具体写入规则。
+`trjconv` / `trjcat` 产生的正式 processed/concatenated trajectory 共享同一套集中 trajectory 管理接口。两者拥有同等的 `trajectory_index.yaml` 维护职责：各自只对自己生成并通过 validation、且满足其登记条件的 trajectory 进行登记或更新，不建立独立的 `trjconv` / `trjcat` trajectory indexes。具体产物、命名、登记前提和写入规则由对应 capability owner 的 Skill / README 定义；Stage 5 inventory 只负责发现 capability entry。
 
 如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理；相关未覆盖需求可按 Stage 5 architecture freeze 的边界保留在 Task Sheet 的 Stage 5 plan items 区域之外。
 
