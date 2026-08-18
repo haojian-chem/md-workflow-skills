@@ -38,10 +38,11 @@ WORKFLOW3_STAGE3_3.3_ION_ADDITION_FREEZE.md
 WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
 
 WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
-WORKFLOW5_STAGE5_5.1_ANALYSIS_PLANNING_ORCHESTRATION_FREEZE.md
 WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md
 ```
 
 当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
 
 Stage 2 的 2.5 详细 generation input 已统一迁至上述三个 `WORKFLOW2_STAGE2_2.5_*_FREEZE.md`；后续正式生成 2.5 时不再追随旧 role-based `02_operations/...` 路径。
+
+Stage 5 的 analysis planning and orchestration 已由 `WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md` 直接作为 Stage-level architecture 拥有；旧 `5.1` freeze 已退出 current path 并归档。
