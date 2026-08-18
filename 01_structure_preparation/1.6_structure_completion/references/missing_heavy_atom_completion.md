@@ -78,7 +78,8 @@ Anchor 选择优先考虑与缺失原子局部成键和几何环境直接相关�
 
 - 当前 partial residue 的已有 atoms 不再作为该 residue 自身的 atom-level alignment anchor；
 - missing-residue method 使用 surrounding observed residues 和已经建立的 reference correspondence 完成整个 residue；
-- 如果它与相邻 missing residues 连续，可以作为同一个连续 completion region 处理；
+- 如果它与相邻 missing residues 在 target polymer 的实际 residue order 上连续，可以作为同一个连续 completion region 处理；不能仅根据 `resid` 数值相邻判断连续性；
+- whole-residue replacement 实际移除的 partial-residue atoms 也属于 1.6 的实际修改，应记录到 `completion_report.yaml` 的 `removed_atoms`；
 - `completion_report.yaml` 中对应的 `added_residues` record 记录：
 
 ```yaml
