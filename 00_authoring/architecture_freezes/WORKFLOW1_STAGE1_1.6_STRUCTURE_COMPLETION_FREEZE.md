@@ -32,7 +32,7 @@ Source preservation:
 
 - 当前 target 的现行 PDB；
 - 1.5 正式 `structure_completeness_report.yaml`；
-- 实际需要补全 missing residue / missing heavy atom 时的 coordinate reference / template；
+- 实际需要补全 missing heavy atom / missing residue 时的 coordinate reference / template；
 - 已经确认的 residue / atom identity 与 rename correspondence。
 
 Reference / template 只在对应 repair item 实际需要时提供，不是所有 1.6 execution 的无条件前置输入。
@@ -44,12 +44,20 @@ Reference / template 只在对应 repair item 实际需要时提供，不是所�
 ```text
 confirmed extra atom deletion
 → confirmed atom-name correction
+→ missing-heavy-atom processing
+   ├─ atom-level anchors sufficient
+   │  → complete listed missing heavy atoms
+   └─ atom-level anchors insufficient
+      → treat that repair item as whole-residue completion
+      → merge with adjacent missing-residue region when applicable
 → missing-residue completion
-→ missing-heavy-atom completion
+   (original missing residues + items adjusted from missing-heavy-atom handling)
 → final atom-serial renumbering
 ```
 
-1.6 不因 reference template 的额外差异自行增加 repair item。
+先处理 missing-heavy-atom items 的原因是：其中部分 residue 可能因 shared-heavy-atom anchors 不足而需要改按完整 residue completion 处理；如果这类 residue 与原有 missing residues 连续，应在 residue-level completion 前合并为同一连续区域。
+
+Whole-residue treatment 只是同一 repair item 的处理方式调整，不是新增 repair scope。
 
 ## 4. Missing-heavy-atom architecture
 
@@ -57,8 +65,8 @@ confirmed extra atom deletion
 - 不建立固定 `AF3 > CCD` 来源优先级，实际选择以可确认 correspondence 与局部几何适配为准；
 - 使用当前 residue 中已有 shared heavy atoms 做局部 rigid-body alignment；
 - 至少需要 3 个 uniquely mapped、non-collinear shared heavy atoms；
-- 只 transplant repair scope 中明确缺失的 heavy atoms，不替换已有 valid heavy-atom coordinates；
-- 如果不满足 atom-level anchor 要求，则该 residue 改按 missing-residue completion 方法处理；
+- 满足 atom-level anchor 要求时，只 transplant repair scope 中明确缺失的 heavy atoms，不替换已有 valid heavy-atom coordinates；
+- 不满足 atom-level anchor 要求时，该 repair item 改按完整 residue completion 方法处理，并纳入后续 residue-level completion set；
 - 不添加 final H。
 
 详细规则由 current：
@@ -69,13 +77,22 @@ confirmed extra atom deletion
 
 ## 5. Missing-residue architecture
 
+Residue-level completion set 包括：
+
+- 1.5 report 原本列出的 missing residues；
+- 因 missing-heavy-atom anchor 不足而改按完整 residue completion 处理的 residue。
+
+连续的 residue-level items 在 completion 前应合并为实际连续 region。
+
+方法要求：
+
 - 主要使用与当前 target 对应的完整 AF3 structure 或其它明确对应的完整 coordinate reference；
 - 使用 AF3 前，先对含 missing region 的整个 target polymer chain 建立完整 residue-level correspondence；
 - full polymer-chain correspondence 用于 identity mapping，不等于对整条 chain 做全局结构 alignment；
 - internal missing region 使用 local bilateral anchors，并由两侧共同确定一个 rigid transform；
 - anchor 从缺失区附近开始逐步扩展，不固定 N residues；
 - terminal missing region 使用 one-sided local anchor，不人为构造 bilateral constraint；
-- 只 transplant repair scope 中的 missing residues；
+- 只 transplant 当前 residue-level completion set 中需要补全的 residues；
 - reference numbering / chain identity 不替代 target identity；
 - 如果当前 reference 不能形成稳定、合理的 required local alignment，不强行插入。
 
@@ -104,8 +121,9 @@ Validation 属于 1.6 结果 owner，不恢复独立 Validator layer。
 至少确认：
 
 - 1.5 required repair items 全部闭合；
+- missing-heavy-atom item 已通过 atom-level completion 补入，或已经按完整 residue completion 正确处理；
 - `completion_report.yaml` 与最终 PDB 的实际修改一致；
-- 新增 residue / heavy atom 满足对应 correspondence、alignment 和局部 geometry requirements；
+- 新增 heavy atom / residue 满足对应 correspondence、alignment 和局部 geometry requirements；
 - 没有未记录的额外 structure edits；
 - duplicate identity、PDB parse、atom serial、final-H boundary 均满足要求；
 - `unresolved_items` 为空。
