@@ -1,8 +1,8 @@
 # Skill 1.6 deterministic helpers
 
-本目录只提供 1.6 可选的确定性结构处理能力。科学判断由 `../SKILL.md` 与 `../references/` 拥有；脚本不决定 repair scope、reference 选择、residue mapping、anchor expansion 或最终 PASS/FAIL。
+本目录提供 1.6 可选的确定性结构处理能力。科学判断由 `../SKILL.md` 与 `../references/` 定义；脚本不决定 repair scope、reference 选择、residue mapping、anchor expansion 或最终 PASS/FAIL。
 
-当前两个 helper：
+当前包含两个 helper：
 
 ```text
 transplant_coordinates.py
@@ -11,10 +11,10 @@ transplant_coordinates.py
 
 apply_structure_edits.py
 → 根据 Agent 已确定的 remove / rename / add / replace operations
-→ 写出最终 PDB 并连续重编号 atom serial
+→ 写出最终 PDB，并连续重编号 atom serial
 ```
 
-这里直接定义脚本使用的数据格式；当前不另建 rigid schema。配置可以是 task-local 临时 YAML；`transplant_coordinates.py` 的结果默认写 stdout，也可以按需保存为 task-local YAML。Skill 不要求固定中间文件名或项目级登记。
+本 README 直接定义两个脚本使用的数据格式，当前不另建 rigid schema。配置可以保存为 task-local 临时 YAML；`transplant_coordinates.py` 的结果默认写到 stdout，也可以按需保存为 task-local YAML。1.6 不要求这些中间数据使用固定文件名。
 
 ## Dependencies
 
@@ -35,7 +35,7 @@ python scripts/transplant_coordinates.py \
   [--output <transplant_result.yaml>]
 ```
 
-不提供 `--output` 时，YAML 写到 stdout。`--output` 只在 Agent 需要把结果作为当前任务的临时机器输入保存时使用。
+未提供 `--output` 时，结果 YAML 写到 stdout。只有 Agent 需要把结果保存为当前任务的临时机器输入时，才使用 `--output`。
 
 ### Input format
 
@@ -90,16 +90,16 @@ transplant_residues:         # optional
       residue_name: GLY
 ```
 
-Requirements:
+要求：
 
-- `alignment_atoms` 至少 3 对，且 reference 侧坐标与 target 侧坐标都不能共线；
-- 每个 atom / residue selector 必须在对应 model 中唯一定位；若存在无法消除的 altLoc 歧义，脚本失败而不是猜测；
-- `target` identity 是最终写入身份，`reference` identity 只用于坐标读取；
-- `transplant_residues` 输出 reference residue 的重原子，不输出 H；
-- `transplant_atoms` 只输出显式列出的 atom；
-- 允许同时包含 `transplant_atoms` 与 `transplant_residues`，但同一 target atom 不得重复出现。
+- `alignment_atoms` 至少包含 3 对原子，并且 target 侧和 reference 侧的对应坐标都不能共线；
+- 每个 atom / residue selector 必须在对应 model 中唯一定位；如果存在无法消除的 altLoc 歧义，脚本应失败，而不是自行猜测；
+- `target` 中的 identity 表示最终写入身份，`reference` 中的 identity 只用于读取坐标；
+- `transplant_residues` 只输出 reference residue 的重原子，不输出 H；
+- `transplant_atoms` 只输出显式列出的 atoms；
+- 可以同时使用 `transplant_atoms` 与 `transplant_residues`，但同一个 target atom 不能重复出现。
 
-完整 polymer-chain residue mapping、anchor 选择等科学工作信息由 Agent 按 `../references/missing_residue_completion.md` 维护；只有本次真正用于 rigid alignment / transplant 的对应关系需要传给脚本。
+完整 polymer-chain residue mapping、anchor 选择等科学工作信息由 Agent 按 `../references/missing_residue_completion.md` 维护；只有本次实际用于 rigid alignment / transplant 的对应关系需要传给脚本。
 
 ### Output format
 
@@ -137,7 +137,7 @@ transplanted_atoms:
       z: 3.456
 ```
 
-输出只表示确定性几何结果。它不包含 `PASS`、`acceptable`、`best_reference`、`should_use` 等科学 verdict。
+输出只表示确定性几何计算结果，不包含 `PASS`、`acceptable`、`best_reference`、`should_use` 等科学判断。
 
 ## 2. apply_structure_edits.py
 
@@ -213,27 +213,27 @@ replace_residues:
         coordinates: {x: 1.0, y: 2.0, z: 3.0}
 ```
 
-`replace_residues` 用于已经明确按完整 residue completion 处理的 partial residue：脚本先移除该 target residue 的现有 coordinate records，再写入给定完整重原子集合。是否需要 replace 由 Agent 根据 Skill/reference 判断，脚本不自行转换 repair type。
+`replace_residues` 用于已经明确需要按完整 residue completion 处理的 partial residue。脚本先移除该 target residue 的现有 coordinate records，再写入给定的完整重原子集合。是否需要执行 replace 由 Agent 根据 Skill/reference 判断，脚本不自行改变 repair type。
 
 ### Consuming transplant output
 
-`transplant_coordinates.py` 的 `transplanted_atoms` 可以由 Agent 直接转成 `add_atoms`，或按 target residue 分组后转成 `add_residues` / `replace_residues`。这一步是当前任务的工作数据整理，不要求产生固定命名中间文件。
+`transplant_coordinates.py` 输出的 `transplanted_atoms` 可以由 Agent 直接整理为 `add_atoms`，也可以按 target residue 分组后整理为 `add_residues` / `replace_residues`。这一步属于当前任务的工作数据整理，不要求产生固定命名的中间文件。
 
-如果 Agent 选择保存 `transplant_coordinates.py --output` 的 YAML，只把它作为 task-local working material；`apply_structure_edits.py` 不依赖任何固定文件名。
+如果 Agent 使用 `transplant_coordinates.py --output` 保存结果 YAML，该文件只作为 task-local working material；`apply_structure_edits.py` 不依赖任何固定文件名。
 
 ### Writer rules
 
-`apply_structure_edits.py`：
+`apply_structure_edits.py` 遵守以下机械规则：
 
 - selector 必须唯一命中需要 edit 的现有 PDB atom / residue；
-- 不从 reference structure 推断 target identity；
+- 不根据 reference structure 推断 target identity；
 - 不自行决定删除、rename、补 atom 或 replace residue；
 - 不添加 config 未提供的 atom；
 - 不接受 H 作为新增 atom；
 - 保持未被 edit 的 atom/residue identity 与相对顺序；PDB 文本由 gemmi 重新序列化，不承诺逐行保留输入文件格式；
-- 新增 atom 插入对应 residue，新增 residue 插入同 chain 的 residue 顺序位置；
+- 新增 atom 插入对应 residue，新增 residue 插入同一 chain 中正确的 residue 顺序位置；
 - 最终 ATOM/HETATM serial 从 1 开始连续、唯一重编号；
-- 输入含 `CONECT` record 时拒绝写入，因为 serial renumbering 需要显式 connectivity handling；
+- 输入含 `CONECT` record 时拒绝写入，因为 serial renumbering 需要额外的 connectivity handling；
 - `CRYST1` 只在输入本身存在时写出；
 - `output_structure` 已存在时默认失败，不静默覆盖。
 
@@ -245,4 +245,4 @@ replace_residues:
 3  unexpected internal failure
 ```
 
-这些 helper 的成功退出只说明确定性操作成功；1.6 科学 validation 仍按 `../SKILL.md` 执行。
+Helper 成功退出只表示确定性操作执行成功；1.6 的科学 validation 仍按 `../SKILL.md` 执行。
