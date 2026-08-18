@@ -182,13 +182,15 @@ index: 使用第 2 项生成的 ndx 文件
 name:
 purpose:
 required_files:
-skill:
+entry:
 ```
 
 - `name`：plan item 的 `capability` 引用名；
 - `purpose`：能力用途；
 - `required_files`：输入角色 + 可接受文件类型，不绑定项目具体文件名；
-- `skill`：对应 guide 路径。
+- `entry`：该 capability 的实际入口，可指向 Skill guide、Tool 或其它已登记能力入口。
+
+不增加统一 `type: skill/tool/script` 分类字段。Stage 5 只需要能从 `entry` 找到并调用/遵循对应 capability，不为了分类建立额外 schema。
 
 可以执行时生成的辅助文件，不因为“可能需要”就写成 hard required file。
 
