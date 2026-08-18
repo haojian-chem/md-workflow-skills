@@ -51,7 +51,7 @@ Stage 5 main Skill 负责：
 - 维护 `5 Analysis` 条目内部的 plan items；
 - 当执行证据破坏原计划前提时调整尚未完成的后续 plan。
 
-具体 analysis capability owner 负责自己的方法、执行细节、输出和 validation。
+具体 analysis capability owner 负责自己的方法、执行细节、输出、validation，以及哪些正式结果文件允许进入项目级结果登记。
 
 ## 3. Main-Skill principle
 
@@ -103,6 +103,8 @@ Stage 5 main Skill 在 `5 Analysis` 条目内维护局部整数编号：`1, 2, 3
 已完成
 已终止
 ```
+
+新加入当前 Stage 5 plan、尚未完成或终止的 item 默认记为 `未完成`。Stage 5 不再为 plan item 增加统一的 `待执行 / 执行中 / 失败` 等额外状态。
 
 规划期最小结构：
 
@@ -168,6 +170,35 @@ index: 使用第 2 项生成的 ndx 文件
 
 不要求 `from_item` / `output_role` 等专门 schema。
 
+### 5.1 Task-local directory layout
+
+Stage 5 不建立类似 Stage 4 `run_unit.yaml` 的 project-level run-unit 索引。每个实际执行 Stage 5 的 Task 使用自己的 analysis 工作目录：
+
+```text
+<project_root>/05_analysis/<task_id>/
+```
+
+其中 `<task_id>` 与 Task Sheet / `task_index.md` 中的任务编号一致，例如 `T001`。
+
+当前 Task 内实际执行的 plan item 默认使用：
+
+```text
+<project_root>/05_analysis/<task_id>/<编号>.<capability名>/
+```
+
+例如：
+
+```text
+05_analysis/T001/1.rmsd/
+05_analysis/T001/2.rdf/
+```
+
+该目录即普通实际执行 item 的默认 `path`。如果 direct reuse 导致当前 item 不执行，则不创建无用 task-local item 目录，`path` 可省略。
+
+这是默认工作目录组织，不把 capability 的产物生命周期收归 Stage 5 main Skill。某 capability 若有额外的集中管理产物要求，由对应 capability owner 的 Skill / README 定义实际产物存放与登记规则。
+
+`trjconv` 属于当前已知需要对 processed trajectory 做额外集中管理和登记的 capability：Stage 5 保留 task-local plan item / 工作记录，但 trajectory 的集中存放、允许登记的 trajectory 文件以及登记动作由 `trjconv` capability owner 定义。
+
 ## 6. Multiple trajectories / grouped analyses
 
 一个 plan item 对应一次统一定义的分析。
@@ -198,13 +229,26 @@ entry:
 - `required_files`：输入角色 + 可接受文件类型，不绑定项目具体文件名；
 - `entry`：该 capability 的实际入口，可指向 Skill guide、Tool 或其它已登记能力入口。
 
+首批 Stage 5 capability 的 authoring / implementation 集合固定为：
+
+```text
+trjconv
+make_ndx
+rmsd
+rmsf
+hbond
+rdf
+```
+
+这些名称定义首批需要为 Stage 5 准备的能力集合，但**不因写入 freeze 就自动成为 active inventory entry**。只有对应 capability 的实际 `entry` 已形成并可引用时，才能将该条目写入正式 `analysis_capability_inventory.yaml`。
+
 不增加统一 `type: skill/tool/script` 分类字段。Stage 5 只需要能从 `entry` 找到并调用/遵循对应 capability，不为了分类建立额外 schema。
 
 可以执行时生成的辅助文件，不因为“可能需要”就写成 hard required file。
 
-Inventory 是能力发现入口，不复制具体 capability 的方法、命令、selection、preprocessing 或 validation。
+Inventory 是能力发现入口，不复制具体 capability 的方法、命令、selection、preprocessing、validation 或结果登记白名单。
 
-Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inventory 当作 capability 的完整执行接口**。凡某 capability 被纳入当前 Stage 5 plan，Stage 5 main Skill 必须先读取其 `entry`，再最终确定该 plan item 的 `inputs`、`settings` 和 dependencies。selection/reference 条件、关键 settings、正式输出语义以及其它 capability-specific 要求均由对应 `entry` 拥有，不复制进 inventory。
+Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inventory 当作 capability 的完整执行接口**。凡某 capability 被纳入当前 Stage 5 plan，Stage 5 main Skill 必须先读取其 `entry`，再最终确定该 plan item 的 `inputs`、`settings` 和 dependencies。selection/reference 条件、关键 settings、正式输出语义、允许进入项目级结果登记的文件，以及其它 capability-specific 要求均由对应 `entry` / capability README 拥有，不复制进 inventory。
 
 ### 7.1 Capability gaps
 
@@ -225,28 +269,22 @@ Task Sheet 中如何表达和维护这类边界外事项，由当前 Agent / 用
 
 ### 8.1 `trajectory_index.yaml`
 
-Stage 5 只为具有明确 project-level reuse 价值的 prepared input 建立项目级索引。当前冻结保留：
+Stage 5 对 `trjconv` 产生、具有后续复用价值的 processed trajectory 保留额外的 project-level 登记入口：
 
 ```text
 <project_root>/05_analysis/indexes/trajectory_index.yaml
 ```
 
-维护者：负责产生处理后 trajectory 的 `trjconv` capability owner。
+该索引由 `trjconv` capability owner 维护。Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、决定集中存放位置、决定哪些 trajectory 文件可登记，或维护该索引。
 
-Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、决定存放位置或登记索引。
+`trjconv` capability owner 的 Skill / README 应拥有：
 
-最小记录方向：
+- processed trajectory 的集中管理规则；
+- 哪些 trajectory 文件允许进入该索引；
+- 登记所需的 reuse-relevant metadata；
+- 具体登记动作与 validation 前提。
 
-```yaml
-- path: /full/path/to/processed.xtc
-  input_trajectory: /full/path/to/input.xtc
-  atom_order_reference: /full/path/to/system.tpr
-  output_selection: System
-  processing:
-    # only processing conditions relevant to reuse
-```
-
-`processing` 只记录影响 reuse 的实际处理条件，如 PBC/center/fit、`dt`、time range 等；不要求所有条目使用完全相同字段。
+Stage 5 freeze 只保留索引存在及其消费边界，不复制 `trjconv` owner 的具体登记文件白名单。
 
 processed trajectory reuse 时，Stage 5 至少检查以下六类因素：
 
@@ -350,29 +388,24 @@ Stage 5 main Skill 只核验 orchestration 一致性：目标覆盖、capability
 
 ## 10. Project result registration
 
-`project_result_index.md` 按“分析事项”粒度登记：
+`project_result_index.md` 对 Stage 5 采用**白名单制**。
+
+白名单 ownership 下放到各 analysis capability：每个 capability 在自己的 Skill / README 中声明哪些通过 validation 的正式结果文件允许登记到 `project_result_index.md`。Stage 5 main Skill 不维护集中式文件白名单，也不自行扩大某 capability 的可登记文件集合。
+
+因此：
 
 ```text
-对哪些对象
-→ 做了哪些分析
-→ 详细记录入口
+capability owner 明确列为可登记
++ 当前产物已满足该 owner 的 validation / 登记前提
+→ 可以登记到 project_result_index.md
+
+未被 capability owner 明确列入白名单
+→ 不得因为文件存在、位于 results 中或“可能以后有用”而登记
 ```
 
-详细记录入口应能追溯到对应 Task Sheet / Stage 5 plan item，并进一步定位：
+项目级登记仍应能够追溯到对应 Task Sheet / Stage 5 plan item，并定位当前 capability、inputs、settings、状态以及被登记的白名单结果文件。Task Sheet 的 `results` 可以比 project-level 白名单更宽，用于当前任务恢复与依赖；`project_result_index.md` 只保留各 capability 明确允许登记的正式结果。
 
-```text
-capability
-inputs
-settings
-status
-path      # 当前 Task 实际执行该 item 时
-results   # when present
-reason    # when terminated
-```
-
-Task Sheet 的 `results` 是当前 item 的直接恢复/依赖入口；`project_result_index.md` 只承担跨任务正式结果检索，不要求复制每个 item 的全部 `results`。
-
-不把每个 `.xvg/.csv/.dat/.png/.xtc/.ndx` 单独复制成 project-level 索引项。
+`trjconv` 的 processed trajectory 额外登记规则由其 capability owner 定义；`trajectory_index.yaml` 与 `project_result_index.md` 是不同用途的登记入口，不由 Stage 5 main Skill把两者合并成统一文件清单。
 
 是否额外汇总多个分析结果、综合解释或生成报告，由当前用户任务决定，不是 Stage 5 固定完成职责。
 
@@ -387,7 +420,7 @@ Stage 5 main Skill 结束自身当前职责前，应确认：
 - direct reuse 导致的 `已终止` item 已明确引用此前通过 validation、且足以满足当前 item 需求的正式结果；
 - 其它 `已终止` item 已记录明确 `reason`，并保持依赖关系可追溯；
 - 需要直接恢复或供后续 item 消费的关键正式产物已按需写入 `results`；
-- 需要保留的正式分析事项已经按上述边界登记到 `project_result_index.md`。
+- 对应 capability owner 白名单要求登记的正式结果文件已经按规则登记到 `project_result_index.md`。
 
 Task Sheet 中如果仍有位于 Stage 5 plan items 区域之外的 capability gap、其它边界外事项或未解决任务要求，是否因此使整个 `5 Analysis` / Task 继续保持未完成，由当前 Task Execution Agent / 用户结合任务单判断。Stage 5 main Skill 不为这些边界外事项定义完成判据，也不因自己的 plan items 已处理完就自动修改整个 Stage / Task 的完成状态。
 
@@ -403,6 +436,8 @@ Task Sheet 中如果仍有位于 Stage 5 plan items 区域之外的 capability g
 - 为 Stage 5 建立类似 Stage 4 `run_unit.yaml` 的 project-level analysis-unit identity；
 - 让 Manager 代替 Stage 5 main Skill 设计具体分析方法组合；
 - 让 Stage 5 main Skill 接管 `trjconv` / `make_ndx` 文件生命周期；
+- 由 Stage 5 main Skill集中定义各 capability 的 `project_result_index.md` 文件白名单；
+- 把未被 capability owner 明确允许的文件登记进 `project_result_index.md`；
 - 在缺少 capability 时让 Stage 5 main Skill 临时接管该方法的设计、执行或 validation；
 - 为 capability gap 创建虚构 Stage 5 plan item、capability 或 inventory entry；
 - 由 Stage 5 main Skill 根据自己 plan items 的状态直接判定整个 `5 Analysis` / Task 已完成；
