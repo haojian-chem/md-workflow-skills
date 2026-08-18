@@ -190,6 +190,7 @@ Initial capability implementation cohort:
 
 ```text
 trjconv
+trjcat
 make_ndx
 rmsd
 rmsf
@@ -219,7 +220,7 @@ Historical design Markdown: `00_authoring/archive/`.
 - Stage 2：2.1–2.6 环节与目录已确定；architecture freeze 已完成；2.5 详细方案也只属于 freeze；正式 Stage 2 Skill generation 尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
-- Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；active capability inventory 已生成但当前为空；首批 `trjconv / make_ndx / rmsd / rmsf / hbond / rdf` capability entries 待后续分别生成；
+- Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；active capability inventory 已生成但当前为空；首批 `trjconv / trjcat / make_ndx / rmsd / rmsf / hbond / rdf` capability entries 待后续分别生成；
 - Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
