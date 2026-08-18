@@ -14,7 +14,7 @@ apply_structure_edits.py
 → 写出最终 PDB 并连续重编号 atom serial
 ```
 
-这里直接定义脚本使用的数据格式；当前不另建 rigid schema。配置/输出可以是 task-local 临时 YAML，也可以通过 stdout/stdin 方式传递；Skill 不要求固定中间文件名或项目级登记。
+这里直接定义脚本使用的数据格式；当前不另建 rigid schema。配置可以是 task-local 临时 YAML；`transplant_coordinates.py` 的结果默认写 stdout，也可以按需保存为 task-local YAML。Skill 不要求固定中间文件名或项目级登记。
 
 ## Dependencies
 
@@ -148,7 +148,7 @@ python scripts/apply_structure_edits.py \
   --config <structure_edit_config.yaml>
 ```
 
-本脚本只处理 PDB target，并写出新的 PDB；不覆盖输入文件。
+本脚本只处理单-model PDB target，并写出新的 PDB；不覆盖输入文件。
 
 ### Input format
 
@@ -217,7 +217,7 @@ replace_residues:
 
 ### Consuming transplant output
 
-`transplant_coordinates.py` 的 `transplanted_atoms` 可以由 Agent直接转成 `add_atoms`，或按 target residue 分组后转成 `add_residues` / `replace_residues`。这一步是当前任务的工作数据整理，不要求产生固定命名中间文件。
+`transplant_coordinates.py` 的 `transplanted_atoms` 可以由 Agent 直接转成 `add_atoms`，或按 target residue 分组后转成 `add_residues` / `replace_residues`。这一步是当前任务的工作数据整理，不要求产生固定命名中间文件。
 
 如果 Agent 选择保存 `transplant_coordinates.py --output` 的 YAML，只把它作为 task-local working material；`apply_structure_edits.py` 不依赖任何固定文件名。
 
@@ -230,9 +230,11 @@ replace_residues:
 - 不自行决定删除、rename、补 atom 或 replace residue；
 - 不添加 config 未提供的 atom；
 - 不接受 H 作为新增 atom；
-- 保留未修改 PDB records 的原顺序和内容；
+- 保持未被 edit 的 atom/residue identity 与相对顺序；PDB 文本由 gemmi 重新序列化，不承诺逐行保留输入文件格式；
 - 新增 atom 插入对应 residue，新增 residue 插入同 chain 的 residue 顺序位置；
 - 最终 ATOM/HETATM serial 从 1 开始连续、唯一重编号；
+- 输入含 `CONECT` record 时拒绝写入，因为 serial renumbering 需要显式 connectivity handling；
+- `CRYST1` 只在输入本身存在时写出；
 - `output_structure` 已存在时默认失败，不静默覆盖。
 
 ## Exit codes
