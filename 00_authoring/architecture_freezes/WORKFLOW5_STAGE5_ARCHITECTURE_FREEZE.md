@@ -202,7 +202,7 @@ Inventory 是能力发现入口，不复制具体 capability 的方法、命令�
 
 Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inventory 当作 capability 的完整执行接口**。凡某 capability 被纳入当前 Stage 5 plan，Stage 5 main Skill 必须先读取其 `entry`，再最终确定该 plan item 的 `inputs`、`settings` 和 dependencies。selection/reference 条件、关键 settings、正式输出语义以及其它 capability-specific 要求均由对应 `entry` 拥有，不复制进 inventory。
 
-### 7.1 Capability gaps and learning
+### 7.1 Capability gaps
 
 如果当前分析需求没有合适的已登记 capability，Stage 5 main Skill 负责**识别并记录 capability gap**，但不在 Stage 5 Skill 内临时接管缺失方法的设计、执行或 validation。
 
@@ -211,9 +211,9 @@ Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inv
 - 用户明确指定的方法尚无对应 capability；
 - 或现有 capability 均不能可靠覆盖当前分析目标。
 
-Stage 5 可以记录和学习该过程中形成的流程、输入要求、关键设置、输出与核验经验。只有当该流程已经形成实际、可引用的 capability `entry` 后，才把它补充进 analysis capability inventory，供后续任务发现和复用。
+capability gap 本身不创建虚构 inventory entry，也不授权 Stage 5 main Skill 把自己变成临时 capability owner。如果后续通过独立的 capability authoring / update 已形成实际可引用的 `entry`，Stage 5 再重新读取 inventory / `entry`，按正常规则纳入或调整当前 plan。
 
-capability gap 本身不创建虚构 inventory entry，也不授权 Stage 5 main Skill 把自己变成临时 capability owner。待 capability 补充完成后，Stage 5 重新读取 inventory / `entry`，再按正常规则纳入或调整当前 plan。
+“记录并学习用户与 Agent 完成 capability gap 时形成的流程，并据此辅助补充 capability”保留为 **future update direction**；本次 Stage 5 设计与实现不包含该 learning / capability-supplement mechanism。
 
 ## 8. Reuse and prepared inputs
 
