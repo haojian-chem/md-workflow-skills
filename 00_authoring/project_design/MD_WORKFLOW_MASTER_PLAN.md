@@ -163,33 +163,40 @@ Architecture authority:
 
 ## 7. Stage 5 — Analysis
 
-Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
+Status: MAIN SKILL ACTIVE; INITIAL CAPABILITIES PENDING IMPLEMENTATION.
 
 Stage 5 has **no numbered sub-stage**. Analysis planning and orchestration is the responsibility of the Stage 5 main Skill itself rather than a `5.1` wrapper.
 
-Reserved Stage root:
-
-`05_analysis/`
-
-Future active entry after explicit generation approval:
+Current active entry:
 
 `05_analysis/SKILL.md`
 
-There is currently **no active Stage 5 `SKILL.md`** and no active analysis capability inventory.
-
-Stage-level architecture authority:
-
-`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
-
-Frozen analysis capability inventory design:
-
-`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md`
-
-Future active inventory path after explicit Stage 5 Skill generation approval:
+Current active analysis capability inventory:
 
 `05_analysis/references/analysis_capability_inventory.yaml`
 
-Concrete analysis-capability Skills/Tools remain future implementation work after explicit approval.
+The inventory is active but currently has no capability rows because entries are added only after the referenced capability entry actually exists.
+
+Stage-level architecture record:
+
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md`
+
+Analysis capability inventory architecture record:
+
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md`
+
+Initial capability implementation cohort:
+
+```text
+trjconv
+make_ndx
+rmsd
+rmsf
+hbond
+rdf
+```
+
+These concrete capability entries remain pending implementation and are not active merely because they are listed here.
 
 ## 8. Runtime and infrastructure
 
@@ -211,7 +218,7 @@ Historical design Markdown: `00_authoring/archive/`.
 - Stage 2：2.1–2.6 环节与目录已确定；architecture freeze 已完成；2.5 详细方案也只属于 freeze；正式 Stage 2 Skill generation 尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
-- Stage 5：Stage-level analysis planning/orchestration architecture 已冻结；不设置 `5.1`；plan item 与 inventory 统一使用 capability 语义；未来 active entry 为 `05_analysis/SKILL.md`，当前正式 Stage 5 / analysis capability Skill generation 尚未获批；
+- Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；active capability inventory 已生成但当前为空；首批 `trjconv / make_ndx / rmsd / rmsf / hbond / rdf` capability entries 待后续分别生成；
 - Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
