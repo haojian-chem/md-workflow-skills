@@ -221,6 +221,17 @@ Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、�
 
 `processing` 只记录影响 reuse 的实际处理条件，如 PBC/center/fit、`dt`、time range 等；不要求所有条目使用完全相同字段。
 
+processed trajectory reuse 时，Stage 5 至少检查以下六类因素：
+
+1. 来源体系 / atom-order reference；
+2. 原子集合 / output selection；
+3. PBC 处理；
+4. center / fit / orientation 处理；
+5. 时间范围；
+6. 时间采样 / frame spacing。
+
+具体兼容要求由 consuming analysis capability 拥有；Stage 5 不另建一套统一 preprocessing 判据。
+
 ### 8.2 External index (`.ndx`) handling
 
 Stage 5 **不建立 project-level `ndx_index.yaml`，也不执行跨 Task 的 `.ndx` 自动复用扫描/判定**。
