@@ -10,7 +10,7 @@ Status: **FROZEN — NO ACTIVE SKILL GENERATION APPROVED YET**
 
 analysis capability inventory 的冻结设计：
 
-`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md`
 
 Stage 5 不设置编号化 sub-stage。此前 `5.1 Analysis planning and orchestration` 的职责已提升为 **Stage 5 main Skill 本身的职责**；`5.1` 不再是 current catalog identity。
 
@@ -57,7 +57,7 @@ Stage 5 main Skill 负责：
 - 集中查询当前已有可复用分析结果和 prepared inputs；
 - 做 Stage 5 reuse 核验；
 - 将分析目标展开为完整 Stage 5 plan；
-- 选择并调度对应 analysis Skill / prepared-input producer；
+- 选择并调度对应 analysis capability / prepared-input producer；
 - 维护 Task Sheet 中 Stage 5 条目内部的 plan items；
 - 当执行证据破坏原计划前提时调整后续 plan。
 
@@ -72,7 +72,7 @@ Manager
 Stage 5 main Skill
 → 决定“本任务具体做哪些分析、需要哪些输入、如何组织这些分析”
 
-analysis Skill / Tool
+analysis capability owner
 → 提供对应分析方法或确定性处理本身，并负责自己的输出 validation
 ```
 
@@ -134,7 +134,7 @@ plan item 状态只使用：
 
 ```text
 编号
-tool
+capability
 inputs
 settings
 status
@@ -143,9 +143,9 @@ path
 
 字段语义：
 
-- `tool`：引用 analysis capability inventory 中的条目名；
+- `capability`：引用 analysis capability inventory 中的条目名；该条目可指向 Skill、Tool 或其它已登记 capability owner；
 - `inputs`：当前 item 实际消费的输入；已有文件记录完整路径；
-- `settings`：tool-specific 当前任务设置，不建立 Stage 5 通用子 schema；
+- `settings`：capability-specific 当前任务设置，不建立 Stage 5 通用子 schema；
 - `status`：`未完成 / 已完成 / 已终止`；
 - `path`：该 item 相关文件的完整存放目录，用于查询定位，不指向单个结果文件。
 
@@ -176,9 +176,13 @@ index: 使用第 2 项生成的 ndx 文件
 
 Stage 5 main Skill 使用一个 Stage 5 analysis capability inventory 作为能力发现入口；正式文件仅在 Skill generation 获批后建立/启用。
 
+未来正式文件名：
+
+`05_analysis/references/analysis_capability_inventory.yaml`
+
 冻结设计见：
 
-`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_TOOL_INVENTORY_FREEZE.md`
+`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md`
 
 Inventory 是能力发现入口，不是新的调度层。
 
@@ -191,9 +195,11 @@ required_files:
 skill:
 ```
 
+`name` 是 plan item 的 `capability` 引用名。
+
 `required_files` 记录“文件角色 + 可接受文件类型”，不绑定具体项目文件名。可以在执行中生成的辅助文件不应仅因为可能需要就被写成 hard required file。
 
-Inventory 不复制具体 analysis Skill 的方法、命令、selection、preprocessing 或 validation 细节。
+Inventory 不复制具体 analysis capability owner 的方法、命令、selection、preprocessing 或 validation 细节。
 
 ## 8. Prepared-input indexes
 
@@ -259,9 +265,9 @@ Stage 5 只消费 Stage 4 current run-unit topology lineage；Stage 4 如何维�
 
 ## 9. Validation ownership
 
-Stage 5 不设置统一 Validator layer，也不要求 Stage 5 main Skill 重新验证所有具体工具输出。
+Stage 5 不设置统一 Validator layer，也不要求 Stage 5 main Skill 重新验证所有具体能力输出。
 
-各 concrete Skill/Tool 对自己的输出负责 validation，例如：
+各 concrete capability owner 对自己的输出负责 validation，例如：
 
 ```text
 trjconv    → 自己生成的 trajectory
@@ -271,7 +277,7 @@ RDF Skill  → RDF 执行及输出
 ...
 ```
 
-Stage 5 main Skill 只负责 planning/orchestration 层一致性。只有对应能力 owner 确认输出有效后，相关 plan item 才进入 `已完成`。
+Stage 5 main Skill 只负责 planning/orchestration 层一致性。只有对应 capability owner 确认输出有效后，相关 plan item 才进入 `已完成`。
 
 ## 10. Project result registration
 
@@ -286,7 +292,7 @@ Stage 5 在 `project_result_index.md` 中登记到“分析事项”粒度：
 详细记录入口应能追溯到对应 Task Sheet / Stage 5 plan item，并进一步定位：
 
 ```text
-tool
+capability
 inputs
 settings
 status
@@ -302,7 +308,7 @@ path
 Stage 5 可以完成的前提：
 
 - 当前分析目标所需 plan items 已完成，或有明确理由进入 `已终止`；
-- 每个 `已完成` item 已通过对应 Skill/Tool 自己的 validation；
+- 每个 `已完成` item 已通过对应 capability owner 自己的 validation；
 - 需要保留的分析事项已经按上述边界登记到 `project_result_index.md`。
 
 ## 12. Explicitly rejected defaults
