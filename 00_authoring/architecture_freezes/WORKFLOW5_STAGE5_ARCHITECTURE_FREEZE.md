@@ -196,6 +196,8 @@ entry:
 
 Inventory 是能力发现入口，不复制具体 capability 的方法、命令、selection、preprocessing 或 validation。
 
+Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inventory 当作 capability 的完整执行接口**。凡某 capability 被纳入当前 Stage 5 plan，Stage 5 main Skill 必须先读取其 `entry`，再最终确定该 plan item 的 `inputs`、`settings` 和 dependencies。selection/reference 条件、关键 settings、正式输出语义以及其它 capability-specific 要求均由对应 `entry` 拥有，不复制进 inventory。
+
 ## 8. Reuse and prepared inputs
 
 ### 8.1 `trajectory_index.yaml`
