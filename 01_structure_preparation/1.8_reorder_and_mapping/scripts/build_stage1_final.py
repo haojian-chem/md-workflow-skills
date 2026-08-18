@@ -387,59 +387,80 @@ def build_linked_units(
     stable_order: dict[str, int],
     relations: list[dict[str, Any]],
 ) -> tuple[list[LinkedUnit], dict[str, int]]:
-    linked_ids = [
-        residue_id
-        for residue_id, record in class_by_id.items()
-        if record["classification"]["topology_class"] == "TOPOLOGY_LINKED_NONSTANDARD"
-    ]
-    uf = UnionFind(linked_ids)
-
-    relation_pairs: list[tuple[str, str]] = []
+    all_ids = list(class_by_id)
+    uf = UnionFind(all_ids)
     for relation in relations:
         first_id, second_id = endpoint_residue_ids(relation)
-        relation_pairs.append((first_id, second_id))
-        if first_id in uf.parent and second_id in uf.parent:
+        if first_id in class_by_id and second_id in class_by_id:
             uf.union(first_id, second_id)
 
-    raw_groups = sorted(
-        uf.groups(),
-        key=lambda group: min(stable_order[residue_id] for residue_id in group),
-    )
+    standard_chain_indices = {
+        int(record["chain_index"])
+        for record in class_by_id.values()
+        if record["classification"]["topology_class"] == "STANDARD_RESIDUE"
+    }
+
+    raw_units: list[tuple[list[str], set[int]]] = []
+    for component in uf.groups():
+        linked_ids = [
+            residue_id
+            for residue_id in component
+            if class_by_id[residue_id]["classification"]["topology_class"]
+            == "TOPOLOGY_LINKED_NONSTANDARD"
+        ]
+        if not linked_ids:
+            continue
+        linked_ids.sort(key=lambda residue_id: stable_order[residue_id])
+        standard_sides = {
+            int(class_by_id[residue_id]["chain_index"])
+            for residue_id in component
+            if class_by_id[residue_id]["classification"]["topology_class"] == "STANDARD_RESIDUE"
+        }
+        if not standard_sides:
+            # Baseline linked residues can already belong to a polymer chain in the
+            # final 1.2 grouping even when no explicit topology relation is present.
+            linked_chain_indices = {int(class_by_id[residue_id]["chain_index"]) for residue_id in linked_ids}
+            standard_sides.update(linked_chain_indices & standard_chain_indices)
+        raw_units.append((linked_ids, standard_sides))
+
+    raw_units.sort(key=lambda item: stable_order[item[0][0]])
     units: list[LinkedUnit] = []
     residue_to_unit: dict[str, int] = {}
-    for unit_id, group in enumerate(raw_groups, start=1):
-        residue_ids = sorted(group, key=lambda residue_id: stable_order[residue_id])
+    for unit_id, (residue_ids, standard_sides) in enumerate(raw_units, start=1):
         unit = LinkedUnit(
             unit_id=unit_id,
             residue_ids=residue_ids,
             stable_order=stable_order[residue_ids[0]],
+            standard_chain_indices=standard_sides,
         )
+        if len(standard_sides) == 1:
+            unit.assigned_standard_chain_index = next(iter(standard_sides))
+        else:
+            unit.independent = True
         units.append(unit)
         for residue_id in residue_ids:
             residue_to_unit[residue_id] = unit_id
 
-    unit_by_id = {unit.unit_id: unit for unit in units}
-    for first_id, second_id in relation_pairs:
-        first_unit = residue_to_unit.get(first_id)
-        second_unit = residue_to_unit.get(second_id)
-
-        if first_unit is not None:
-            other = class_by_id.get(second_id)
-            if other and other["classification"]["topology_class"] == "STANDARD_RESIDUE":
-                unit_by_id[first_unit].standard_chain_indices.add(int(other["chain_index"]))
-        if second_unit is not None:
-            other = class_by_id.get(first_id)
-            if other and other["classification"]["topology_class"] == "STANDARD_RESIDUE":
-                unit_by_id[second_unit].standard_chain_indices.add(int(other["chain_index"]))
-
-    for unit in units:
-        if len(unit.standard_chain_indices) == 1:
-            unit.assigned_standard_chain_index = next(iter(unit.standard_chain_indices))
-        else:
-            # >1: multi-chain linked unit. 0: no standard-side assignment basis.
-            unit.independent = True
-
     return units, residue_to_unit
+
+
+def keep_present_units(
+    units: list[LinkedUnit],
+    residue_to_unit: dict[str, int],
+    blocks_by_residue_id: dict[str, ResidueBlock],
+) -> tuple[list[LinkedUnit], dict[str, int]]:
+    present_unit_ids = {
+        residue_to_unit[residue_id]
+        for residue_id in blocks_by_residue_id
+        if residue_id in residue_to_unit
+    }
+    filtered_units = [unit for unit in units if unit.unit_id in present_unit_ids]
+    filtered_mapping = {
+        residue_id: unit_id
+        for residue_id, unit_id in residue_to_unit.items()
+        if unit_id in present_unit_ids
+    }
+    return filtered_units, filtered_mapping
 
 
 def choose_independent_chain_id(
@@ -477,6 +498,7 @@ def assign_chain_and_resid(
     blocks_by_residue_id: dict[str, ResidueBlock],
     class_by_id: dict[str, dict[str, Any]],
     chain_map: dict[int, str],
+    residue_map: dict[tuple[int, int], dict[str, Any]],
 ) -> dict[int, LinkedUnit]:
     unit_by_id = {unit.unit_id: unit for unit in units}
     for residue_id, unit_id in residue_to_unit.items():
@@ -527,14 +549,13 @@ def assign_chain_and_resid(
             residue_id
             for unit in chain_units
             for residue_id in unit.residue_ids
-            if residue_id in blocks_by_residue_id
         }
-        preserved_resids = {
-            block.resid
-            for residue_id, block in blocks_by_residue_id.items()
-            if block.final_chain_id == chain_id and residue_id not in assigned_ids
+        reserved_resids = {
+            resid
+            for (mapped_chain_index, resid), mapping in residue_map.items()
+            if mapped_chain_index == chain_index and mapping["residue_id"] not in assigned_ids
         }
-        next_resid = max(preserved_resids, default=0) + 1
+        next_resid = max(reserved_resids, default=0) + 1
         for unit in sorted(chain_units, key=lambda item: item.stable_order):
             for residue_id in unit.residue_ids:
                 block = blocks_by_residue_id.get(residue_id)
@@ -546,6 +567,31 @@ def assign_chain_and_resid(
                 next_resid += 1
 
     return unit_by_id
+
+
+def normalize_polymer_ter_boundaries(
+    blocks: list[ResidueBlock],
+    unit_by_id: dict[int, LinkedUnit],
+    chain_map: dict[int, str],
+) -> None:
+    for index, block in enumerate(blocks[:-1]):
+        if block.polymer_class != "POLYMER" or not block.input_ter_after:
+            continue
+        next_block = blocks[index + 1]
+        if next_block.linked_unit_id is None:
+            continue
+        unit = unit_by_id.get(next_block.linked_unit_id)
+        if unit is None or unit.assigned_standard_chain_index is None:
+            continue
+        assigned_chain_id = chain_map.get(
+            unit.assigned_standard_chain_index,
+            chain_label_for_index(unit.assigned_standard_chain_index),
+        )
+        if block.final_chain_id == assigned_chain_id:
+            # The old TER separated polymer from a linked object at its pre-1.8
+            # position. After moving the linked unit, final writing will create the
+            # correct boundary at the new end of the polymer block.
+            block.input_ter_after = False
 
 
 def reorder_blocks(
@@ -564,7 +610,7 @@ def reorder_blocks(
     remaining = [block for block in blocks if block.residue_id not in assigned_residue_ids]
 
     # Independent linked units stay at their established object position, but multi-residue
-    # units are kept contiguous in the stable residue order.
+    # units are kept contiguous in stable residue order.
     for unit in sorted((u for u in units if u.independent), key=lambda item: item.stable_order):
         present = [blocks_by_residue_id[rid] for rid in unit.residue_ids if rid in blocks_by_residue_id]
         if len(present) <= 1:
@@ -658,7 +704,11 @@ def should_write_ter(
 ) -> bool:
     if block.linked_unit_id is not None:
         unit = unit_by_id[block.linked_unit_id]
-        present = {candidate.residue_id for candidate in blocks if candidate.linked_unit_id == unit.unit_id}
+        present = {
+            candidate.residue_id
+            for candidate in blocks
+            if candidate.linked_unit_id == unit.unit_id
+        }
         present_order = [residue_id for residue_id in unit.residue_ids if residue_id in present]
         return bool(present_order) and block.residue_id == present_order[-1]
 
@@ -790,13 +840,20 @@ def main() -> int:
             stable_order,
             topology_relations(classification),
         )
+        units, residue_to_unit = keep_present_units(
+            units,
+            residue_to_unit,
+            blocks_by_residue_id,
+        )
         unit_by_id = assign_chain_and_resid(
             units,
             residue_to_unit,
             blocks_by_residue_id,
             class_by_id,
             chain_map,
+            residue_map,
         )
+        normalize_polymer_ter_boundaries(blocks, unit_by_id, chain_map)
         ordered_blocks = reorder_blocks(
             blocks,
             units,
