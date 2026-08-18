@@ -174,7 +174,7 @@ Stage 5 不建立 Stage 4 式 project-level run-unit identity 或 `run_unit.yaml
 
 该目录作为普通实际执行 item 的默认 `path`。direct reuse 不创建无用 item 目录。
 
-如果 capability 有额外集中管理产物，其存放和登记规则由 capability owner 定义。特别是 `trjconv` 的 processed trajectory 可以有额外集中管理和 `trajectory_index.yaml` 登记；本 Skill只消费该接口，不定义其文件生命周期。
+如果 capability 有额外集中管理产物，其存放和登记规则由 capability owner 定义。`trjconv` 与 `trjcat` 产生的正式 trajectory 共享额外的集中管理和 `trajectory_index.yaml` 登记接口；两者各自维护自己生成并通过 validation 的 trajectory 记录。本 Skill只消费该接口，不定义其文件生命周期。
 
 ## Multiple trajectories / grouped analyses
 
@@ -252,7 +252,7 @@ Direct reuse item 不标记 `已完成`，因为当前 Task 没有执行该分�
 
 是否最终兼容由 consuming capability 的实际要求决定；本 Skill不建立一套独立的普适 preprocessing 等价规则。
 
-`trajectory_index.yaml` 的维护者、processed trajectory 的集中存放、可登记文件和 metadata 由 `trjconv` capability owner 定义。
+`trajectory_index.yaml` 是 `trjconv` 与 `trjcat` 共用的集中 trajectory 索引。两者拥有同等维护职责，各自只登记或更新自己生成并通过 validation、且满足自身登记条件的 trajectory；集中存放、可登记文件、命名和详细登记规则由对应 producer capability owner 定义。
 
 ## External index (`.ndx`)
 
