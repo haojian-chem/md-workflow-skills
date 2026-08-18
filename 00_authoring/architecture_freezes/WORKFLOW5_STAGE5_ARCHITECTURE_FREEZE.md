@@ -194,15 +194,15 @@ skill:
 
 Inventory 是能力发现入口，不复制具体 capability 的方法、命令、selection、preprocessing 或 validation。
 
-## 8. Prepared inputs and indexes
+## 8. Reuse and prepared inputs
+
+### 8.1 `trajectory_index.yaml`
 
 Stage 5 只为具有明确 project-level reuse 价值的 prepared input 建立项目级索引。当前冻结保留：
 
 ```text
 <project_root>/05_analysis/indexes/trajectory_index.yaml
 ```
-
-### 8.1 `trajectory_index.yaml`
 
 维护者：负责产生处理后 trajectory 的 `trjconv` capability owner。
 
@@ -256,6 +256,34 @@ current capability 所需 selections / groups
 当前 Task 内如果前置 item 已生成满足后续需求的 `.ndx`，后续多个 items 可以直接共享该 `results`；这是 Task 内显式依赖，不属于 project-level reuse。
 
 如果用户明确提供现有 `.ndx`，可以作为候选输入交给对应 capability。是否包含所需 group、是否与当前分析输入兼容，由对应 capability owner 核验；满足则使用，不满足则在当前 plan 中生成新的 index。
+
+### 8.3 Existing formal analysis result reuse
+
+Stage 5 查询 `project_result_index.md` 中已有正式分析事项后，对候选结果至少检查以下六类因素：
+
+1. 分析目标 / result semantics；
+2. 分析对象 / selection；
+3. 来源数据与分析范围；
+4. capability / method；
+5. 关键 settings；
+6. validation / result completeness。
+
+Stage 5 不为所有分析建立统一 settings schema；具体哪些 settings 会改变结果语义，由对应 capability owner 定义。
+
+复用结果分为三种：
+
+```text
+direct reuse
+→ 旧正式结果本身已完整回答当前需求
+
+reuse as input
+→ 旧结果可作为当前新 plan item 的输入，避免重复前置分析，但当前任务仍需要新的处理
+
+rerun
+→ 旧结果不能可靠满足当前需求，需要重新执行相应 analysis capability
+```
+
+如果候选信息不足，先追溯其 Task Sheet / Stage 5 plan item / `results` / 实际结果文件；仍无法确认时，不把该旧结果自动判定为等价的 direct reuse。
 
 ## 9. Validation ownership
 
