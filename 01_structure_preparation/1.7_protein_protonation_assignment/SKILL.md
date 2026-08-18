@@ -1,0 +1,300 @@
+---
+name: protein_protonation_assignment
+description: Structure preparation 1.7。针对当前蛋白重原子结构，在明确 target pH 与目标 protein force field / protonation naming convention 后，使用 PROPKA predicted pKa 与局部化学环境两类平级证据，对 Asp、Glu、His 完成 protonation assignment，并将结果落实为对应 residue naming。
+---
+
+# Purpose
+
+完成 Structure preparation `1.7 Protein protonation assignment`。
+
+本 Skill 对当前需要处理的蛋白质 heavy-atom structure：
+
+- 运行 PROPKA 获得 predicted pKa；
+- 独立完成 Henderson–Hasselbalch assessment；
+- 独立完成 local chemical environment assessment；
+- 综合两类平级证据，对 Asp / Glu / His 完成 protonation assignment；
+- 将最终 assignment 映射为目标 protein force field / protonation naming convention 对应的 residue name；
+- 生成 protonation-assigned heavy-atom structure、assignment report 和 validation result。
+
+# Inputs / evidence
+
+对每个 target，执行 1.7 时至少需要：
+
+- 当前任务认可的有效 heavy-atom structure；
+- 明确的 `target_pH`；
+- 当前使用的 protein force field，或明确的 protonation-state residue naming convention；
+- 可执行 PROPKA；
+- 当前任务中与 protonation 判断有关的已确认 chemical relation / structural evidence。
+
+当前结构只需要是当前任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step。
+
+如果 `target_pH` 或 protein force field / protonation naming convention 在当前任务上下文中尚未明确：
+
+- 当前 Agent 先使用已有正式项目信息确定；
+- 仍不能确定时向用户确认；
+- 不自行假设默认 pH 或默认 protein force field。
+
+需要 coordination、bonding 或其他 relation evidence 时，消费当前项目已经确认的正式信息，不在 1.7 重新建立外部分类或 relation 规则。
+
+# Processing scope
+
+当前 protonation-assignment scientific scope：
+
+- Asp；
+- Glu；
+- His。
+
+Asp / Glu 对一个 carboxyl protonation state 做判断。
+
+His 分别判断 `ND1` 与 `NE2` 两个位点的 protonation state，再由两个 site assignments 得到最终 His protonation state。
+
+# Execution guidance
+
+进入当前 target 后，直接基于当前输入重新执行 1.7；每次重新运行 PROPKA 并重新完成 protonation assignment，不进行既有 1.7 结果的 reuse assessment。
+
+## 1. Run PROPKA
+
+对完整的当前适用蛋白质结构运行 PROPKA，不为了 1.7 的 Asp / Glu / His assignment scope 而先裁掉其余蛋白环境。
+
+PROPKA 在本 Skill 中提供 predicted pKa evidence；其输出不直接等同于最终 residue naming decision。
+
+保留本次 PROPKA 输出及必要运行信息作为 task execution material。正式 `protonation_assignment_report.yaml` 只记录支持最终判定所需的 predicted pKa，不复制 PROPKA 原始输出结构。
+
+## 2. Evaluate every residue in scope
+
+对当前结构中属于 Asp / Glu / His scientific scope 的每一个 residue 都形成独立 assignment record，无论最终 residue name 是否发生变化。
+
+具体科学判据读取：
+
+`references/protonation_assignment_rules.md`
+
+每个 residue 至少完成：
+
+```text
+predicted pKa evidence
++ Henderson–Hasselbalch assessment
++ local chemical environment assessment
+→ final protonation assignment
+→ target-force-field residue-name mapping
+```
+
+如果 PROPKA 对某个 residue 没有给出可用 predicted pKa：
+
+- 该 residue 的 Henderson–Hasselbalch assessment 记为 `UNAVAILABLE`；
+- 不用默认溶液 pKa 补值；
+- local chemical environment assessment 仍独立进行。
+
+## 3. Resolve scientific ambiguity
+
+如果两类证据都不足以形成可靠结论，或两类明确 evidence 相互冲突且 Agent 复核实际 evidence 后仍不能可靠解决，则向用户确认。
+
+确认时说明当前 residue identity、predicted pKa / target pH、两类 assessment 及具体冲突或不确定性。
+
+assignment 未闭合时不发布该 target 的完成结果。
+
+## 4. Map assignment to residue naming
+
+根据当前 protein force field / protonation naming convention，将最终 protonation assignment 映射成合法 residue name。
+
+如果当前 naming convention 不能明确表示已经确定的 protonation state，不自行发明 residue name；向用户确认 representation 后再继续。
+
+## 5. Write structure
+
+将最终 residue-name assignment 写入当前 heavy-atom structure 的工作副本，并生成：
+
+`protonation_assigned_structure.pdb`
+
+本步骤允许的结构修改仅为 residue-name modification。
+
+写出前保持：
+
+- heavy-atom set 不变；
+- atom names 不变；
+- coordinates 不变；
+- residue / atom order 不变；
+- 不加入 final H。
+
+# Protonation assignment report
+
+每个 target 生成固定格式的：
+
+`protonation_assignment_report.yaml`
+
+报告覆盖当前处理范围内的全部 Asp / Glu / His。正式结构如下：
+
+```yaml
+target_id: target_001
+input_structure: /absolute/path/to/input.pdb
+output_structure: /absolute/path/to/protonation_assigned_structure.pdb
+
+target_pH: 7.0
+protein_force_field: <force-field-name>
+protonation_naming_convention: <naming-convention-or-reference>
+hh_delta_threshold: 1.0
+
+residues:
+  - chain_id: A
+    resid: 83
+    original_residue_name: ASP
+    residue_type: ASP
+
+    propka_pka: 4.1
+
+    henderson_hasselbalch_assessment:
+      delta_pka_ph: -2.9
+      judgment: DEPROTONATED
+
+    local_environment_assessment:
+      sites:
+        carboxyl:
+          judgment: DEPROTONATED
+          evidence:
+            - type: SALT_BRIDGE_OR_CHARGE_COMPENSATION
+              description: <concise evidence description>
+
+    final_assignment:
+      sites:
+        carboxyl: DEPROTONATED
+      protonation_state: DEPROTONATED
+      final_residue_name: ASP
+
+  - chain_id: A
+    resid: 57
+    original_residue_name: HIS
+    residue_type: HIS
+
+    propka_pka: 6.8
+
+    henderson_hasselbalch_assessment:
+      delta_pka_ph: -0.2
+      judgment: BORDERLINE
+
+    local_environment_assessment:
+      sites:
+        ND1:
+          judgment: PROTONATED
+          evidence:
+            - type: HYDROGEN_BOND
+              description: <concise evidence description>
+        NE2:
+          judgment: DEPROTONATED
+          evidence:
+            - type: METAL_COORDINATION
+              description: <concise evidence description>
+
+    final_assignment:
+      sites:
+        ND1: PROTONATED
+        NE2: DEPROTONATED
+      protonation_state: NEUTRAL_ND1_PROTONATED
+      final_residue_name: <force-field-specific-name>
+```
+
+固定字段语义：
+
+- `residue_type` 使用 `ASP | GLU | HIS` 表示当前 scientific object class；
+- `propka_pka` 为 PROPKA predicted pKa；没有可用值时写 `null`；
+- `hh_delta_threshold` 记录本次实际采用的 `|pKa - pH|` 默认/指定阈值；默认值为 `1.0`；
+- `henderson_hasselbalch_assessment.judgment` 使用 `PROTONATED | DEPROTONATED | BORDERLINE | UNAVAILABLE`；`UNAVAILABLE` 时 `delta_pka_ph: null`；
+- Asp / Glu 的 `local_environment_assessment.sites` 与 `final_assignment.sites` 使用 `carboxyl`；
+- His 使用 `ND1` 与 `NE2`；
+- local-environment site `judgment` 使用 `PROTONATED | DEPROTONATED | INCONCLUSIVE`；
+- `evidence` 为列表；没有支持当前 site judgment 的具体 evidence 时使用空列表；
+- evidence `type` 使用以下值之一：
+
+```text
+METAL_COORDINATION
+COVALENT_OR_SPECIAL_STATE
+PROJECT_SPECIFIC_EVIDENCE
+SALT_BRIDGE_OR_CHARGE_COMPENSATION
+BURIAL_OR_DESOLVATION
+HYDROGEN_BOND
+SOLVENT_EXPOSURE
+OTHER
+```
+
+- Asp / Glu 的 `final_assignment.protonation_state` 使用 `PROTONATED | DEPROTONATED`；
+- His 的 `final_assignment.protonation_state` 使用：
+
+```text
+NEUTRAL_ND1_PROTONATED
+NEUTRAL_NE2_PROTONATED
+POSITIVELY_CHARGED
+```
+
+正式 report 不增加可由现有字段直接推导的 `rename_required`、`changed` 或 confidence-score 字段。
+
+# Validation
+
+Validation 属于 1.7 result owner，并在 assignment 已经闭合、结构与 report 已写出后执行。
+
+只检查以下三类结果属性：
+
+1. **结果完整性**
+   - 当前处理范围内的全部 Asp / Glu / His 都有 assignment record；
+   - report 中的 residue identity 与输出结构可逐 residue 对应。
+
+2. **改名正确性**
+   - `final_residue_name` 与 final protonation assignment 一致；
+   - `final_residue_name` 符合当前 protein force field / protonation naming convention；
+   - `protonation_assigned_structure.pdb` 中的实际 residue name 与 report 一致。
+
+3. **结构未被意外修改**
+   - 除 residue-name modification 外，输入与输出的 heavy-atom set、atom names、coordinates、residue / atom order 均一致；
+   - 未加入 final H。
+
+Validation conclusion 使用：
+
+```text
+PASS
+FAIL
+```
+
+结果写入：
+
+`protonation_validation.md`
+
+Validation 不修改结构或 assignment report。
+
+# Official results
+
+每个 target 独立形成正式结果：
+
+```text
+<project_root>/01_structure_preparation/07_protein_protonation_assignment/<task_id>/<target_id>/
+├── protonation_assigned_structure.pdb
+├── protonation_assignment_report.yaml
+└── protonation_validation.md
+```
+
+只有 validation 为 `PASS` 时，当前 target 的 1.7 正式结果才完成。
+
+# Project result registration
+
+当前 target 通过 validation 后，将以下两个正式结果的完整绝对路径登记到：
+
+`<project_root>/00_project_records/project_result_index.md`
+
+登记白名单：
+
+```text
+protonation_assigned_structure.pdb
+protonation_assignment_report.yaml
+```
+
+`protonation_validation.md` 保留为当前 target 的正式结果，但不单独登记为 project-level result entry。
+
+`project_result_index.md` 的内部组织格式由项目级 record owner 管理，本 Skill 不重新定义。
+
+# Reference
+
+需要执行具体 protonation 判断时读取：
+
+`references/protonation_assignment_rules.md`
+
+该 reference 拥有：
+
+- Asp / Glu / His site semantics；
+- Henderson–Hasselbalch default threshold；
+- local chemical environment evidence；
+- 两类平级 evidence 的综合判定规则。
