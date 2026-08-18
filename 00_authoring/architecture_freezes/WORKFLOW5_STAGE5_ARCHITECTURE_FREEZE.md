@@ -206,14 +206,16 @@ Inventory 只支持 capability discovery 和初步输入匹配；**不得把 inv
 
 ### 7.1 Capability gaps
 
-如果当前分析需求没有合适的已登记 capability，Stage 5 main Skill 负责**识别并记录 capability gap**，但不在 Stage 5 Skill 内临时接管缺失方法的设计、执行或 validation。
+如果当前分析需求没有合适的已登记 capability，Stage 5 不为该缺失能力创建对应的 Stage 5 plan item，也不创建虚构 capability / inventory entry。该未覆盖需求或 capability gap **可以继续记录在 Task Sheet 中，但应位于 Stage 5 plan items 区域之外**，用于保留当前任务上下文和后续处理状态。
 
 下列事项由用户与 Agent 在 Stage 5 Skill 责任之外共同完成：
 
 - 用户明确指定的方法尚无对应 capability；
 - 或现有 capability 均不能可靠覆盖当前分析目标。
 
-capability gap 本身不创建虚构 inventory entry，也不授权 Stage 5 main Skill 把自己变成临时 capability owner。如果后续通过独立的 capability authoring / update 已形成实际可引用的 `entry`，Stage 5 再重新读取 inventory / `entry`，按正常规则纳入或调整当前 plan。
+Task Sheet 中如何表达和维护这类边界外事项，由当前 Agent / 用户结合任务决定；Stage 5 不为其定义专属 item schema、状态机或工作目录规则。
+
+如果后续通过独立的 capability authoring / update 已形成实际可引用的 `entry`，且当前任务仍需要该分析，Stage 5 再重新读取 inventory / `entry`，按正常规则创建相应 plan item。
 
 “记录并学习用户与 Agent 完成 capability gap 时形成的流程，并据此辅助补充 capability”保留为 **future update direction**；本次 Stage 5 设计与实现不包含该 learning / capability-supplement mechanism。
 
@@ -393,6 +395,7 @@ Stage 5 可以完成的前提：
 - 让 Manager 代替 Stage 5 main Skill 设计具体分析方法组合；
 - 让 Stage 5 main Skill 接管 `trjconv` / `make_ndx` 文件生命周期；
 - 在缺少 capability 时让 Stage 5 main Skill 临时接管该方法的设计、执行或 validation；
+- 为 capability gap 创建虚构 Stage 5 plan item、capability 或 inventory entry；
 - 为 plan item 失败后的修改/终止/新建方式建立统一自动判据；
 - 建立 project-level `ndx_index.yaml` 或 `.ndx` 自动复用判定机制；
 - 使用统一 `prepared_input_index.yaml` 同时由多个 producer 维护；
