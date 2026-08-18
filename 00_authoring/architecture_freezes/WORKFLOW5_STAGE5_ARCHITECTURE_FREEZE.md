@@ -112,7 +112,7 @@ capability
 inputs
 settings
 status
-path
+path    # 当前 Task 实际执行该 item 时必填；direct reuse 且当前 Task 不执行时可省略
 ```
 
 完成或终止时可按需增加：
@@ -130,7 +130,7 @@ reason
 - `inputs`：当前 item 实际消费的输入；已有文件记录完整路径；
 - `settings`：capability-specific 设置，不建立 Stage 5 通用子 schema；
 - `status`：`未完成 / 已完成 / 已终止`；
-- `path`：当前 item 相关文件的完整目录，用于查询和恢复，不指向单个结果文件；
+- `path`：当前 Task 实际执行该 item 时，记录 item 相关文件的完整目录，用于查询和恢复，不指向单个结果文件；若该 item 因 direct reuse 在当前 Task 中不执行，则可省略 `path`；
 - `results`：可选字段，记录已经通过对应 capability owner validation、值得直接定位或供后续 item 消费的关键正式结果/产物入口；direct reuse 时可指向被复用的既有正式结果；
 - `reason`：终止原因；direct reuse 时应说明已有正式结果已满足当前需求，并可注明其原 Task / result entry。
 
@@ -139,8 +139,8 @@ reason
 `path` 与 `results` 的边界：
 
 ```text
-path    → item 工作/文件目录与恢复定位入口
-results → 已确认有效、值得直接定位或供后续 item 消费的关键正式产物
+path    → 当前 Task 实际执行 item 的工作/文件目录与恢复定位入口
+results → 已确认有效、值得直接定位或供后续 item 消费的关键正式产物；direct reuse 时承担既有正式结果定位
 ```
 
 `results` 不建立统一子 schema，可按 capability 的产物语义记录，例如：
@@ -316,6 +316,7 @@ direct reuse
 → status: 已终止
 → reason 说明已有正式结果直接满足当前需求，并注明复用来源
 → results 指向被复用且已 validation 的正式结果/入口
+→ 当前 Task 不执行该 item 时，path 可省略
 
 reuse as input
 → 不为“复用动作”单独建立 plan item
@@ -361,7 +362,7 @@ capability
 inputs
 settings
 status
-path
+path      # 当前 Task 实际执行该 item 时
 results   # when present
 reason    # when terminated
 ```
