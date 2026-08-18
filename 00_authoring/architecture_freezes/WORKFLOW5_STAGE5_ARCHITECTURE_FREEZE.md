@@ -134,6 +134,8 @@ reason
 - `results`：可选字段，记录已经通过对应 capability owner validation、值得直接定位或供后续 item 消费的关键正式结果/产物入口；direct reuse 时可指向被复用的既有正式结果；
 - `reason`：终止原因；direct reuse 时应说明已有正式结果已满足当前需求，并可注明其原 Task / result entry。
 
+当执行失败、validation 不通过或后续证据要求调整计划时，**Stage 5 不规定“必须修改原 item”或“必须终止并新建 item”的统一判据**。具体处理方式由实际使用 Stage 5 Skill 的 Agent 或用户结合当前任务判断。Stage 5 只要求调整后的 Task Sheet 保持可追溯：已有编号不重排；若 item 进入 `已终止`，必须记录 `reason`；当前 plan 必须继续准确反映尚需执行的工作与有效依赖关系。
+
 `path` 与 `results` 的边界：
 
 ```text
@@ -378,7 +380,7 @@ Stage 5 可以完成的前提：
 - 需要直接恢复或供后续 item 消费的关键正式产物已按需写入 `results`；
 - 需要保留的分析事项已经按上述边界登记到 `project_result_index.md`。
 
-因失败、取消或其它原因终止的 item，如果会留下当前分析目标未覆盖，则必须由新的 plan item 补齐，或由用户明确修改/取消相应目标；不能仅凭 `已终止` 状态把 Stage 5 判为完成。
+因失败、取消、validation 失败或其它原因导致原计划不能继续时，由当前 Agent 或用户判断是调整既有 item、终止 item 后新增计划项，还是修改/取消相应目标。Stage 5 不固定这一决策方式；但在 Stage 5 判定完成前，当前有效计划必须已经覆盖仍然保留的分析目标，并保持状态、原因和依赖关系可追溯。
 
 ## 12. Explicitly rejected defaults
 
@@ -391,6 +393,7 @@ Stage 5 可以完成的前提：
 - 让 Manager 代替 Stage 5 main Skill 设计具体分析方法组合；
 - 让 Stage 5 main Skill 接管 `trjconv` / `make_ndx` 文件生命周期；
 - 在缺少 capability 时让 Stage 5 main Skill 临时接管该方法的设计、执行或 validation；
+- 为 plan item 失败后的修改/终止/新建方式建立统一自动判据；
 - 建立 project-level `ndx_index.yaml` 或 `.ndx` 自动复用判定机制；
 - 使用统一 `prepared_input_index.yaml` 同时由多个 producer 维护；
 - 用 `source: md.N` 替代最终实际输入文件路径；
