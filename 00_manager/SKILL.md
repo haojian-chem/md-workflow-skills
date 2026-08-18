@@ -138,7 +138,7 @@ Stage 5 不设置编号化 sub-stage。如果用户任务范围包含 Analysis�
 
 Manager 不创建 `5.1 Analysis planning and orchestration`，也不自行把高层分析目标展开成方法组合，不查询 Stage 5 reuse，不规划 `trjconv` / `make_ndx` 细节。
 
-具体 Stage 5 analysis plan 由未来 current：
+具体 Stage 5 analysis plan 由 current：
 
 `05_analysis/SKILL.md`
 
