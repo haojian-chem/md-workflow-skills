@@ -52,7 +52,8 @@ Current implementation status:
 1.1–1.4  active Skills completed
 1.5      active Skill generated; authoring/interface review completed
 1.6      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.6_structure_completion/SKILL.md
-1.7–1.9  architecture frozen; no active Skill yet
+1.7      active Skill generated; current entry: 01_structure_preparation/1.7_protein_protonation_assignment/SKILL.md
+1.8–1.9  architecture frozen; no active Skill yet
 ```
 
 Stage 1.6 architecture freeze remains the authoring/architecture record:
@@ -61,7 +62,7 @@ Stage 1.6 architecture freeze remains the authoring/architecture record:
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
 ```
 
-Stage 1.7–1.9 freeze records:
+Stage 1.7 architecture record and Stage 1.8–1.9 freeze records:
 
 ```text
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
@@ -69,7 +70,7 @@ Stage 1.7–1.9 freeze records:
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
 ```
 
-Freeze completion does not authorize runtime use or Skill generation. Formal 1.7–1.9 `SKILL.md` files are created only after explicit user approval. Their Stage/Step directories remain reserved in the scientific tree.
+1.7 已获用户明确批准并生成 active Skill。1.8–1.9 的 freeze completion 不授权 runtime use 或 Skill generation；其正式 `SKILL.md` 仍仅在用户明确批准后生成。
 
 ## 4. Stage 2 — Topology / parameterization
 
@@ -214,7 +215,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.6 active Skills 已完成；其中 1.5 已完成正式生成与 authoring/interface review，1.6 已按 current architecture freeze 正式生成并完成 post-generation authoring/interface consistency check；1.7–1.9 已冻结、目录保留，但尚未获批生成 active Skills；
+- Stage 1：1.1–1.7 active Skills 已完成；其中 1.5 已完成正式生成与 authoring/interface review，1.6 已按 current architecture freeze 正式生成并完成 post-generation authoring/interface consistency check，1.7 已按当前讨论与 architecture record 正式生成，current entry 为 `01_structure_preparation/1.7_protein_protonation_assignment/SKILL.md`；1.8–1.9 已冻结、目录保留，但尚未获批生成 active Skills；
 - Stage 2：2.1–2.6 环节与目录已确定；architecture freeze 已完成；2.5 详细方案也只属于 freeze；正式 Stage 2 Skill generation 尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
