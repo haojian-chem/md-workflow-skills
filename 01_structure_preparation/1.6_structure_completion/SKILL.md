@@ -20,23 +20,25 @@ description: 结构准备 1.6。按每个 target 的正式 structure_completenes
 - 对 confirmed atom-name mismatch，1.5 报告所引用的上游正式证据中已经确认的 atom-name correspondence；
 - 对实际存在的 missing-residue / missing-heavy-atom repair item，可用于提供补全坐标的 reference structure / coordinate template。
 
-优先从 `structure_completeness_report.yaml` 已登记的 `source_reports` 定位需要追溯的上游 identity / mapping evidence，不为 1.6 重新建立一套上游结果接口。
+优先从 `structure_completeness_report.yaml` 已登记的 `source_reports` 定位需要追溯的上游 identity / mapping evidence，不为 1.6 重新建立上游结果接口。
 
-如果当前 repair items 只包含 confirmed extra-atom deletion 或 confirmed atom-name correction，不要求为了形式完整额外提供 AF3 / CCD coordinate reference。
+当前 repair items 只包含 deletion / rename 时，不要求额外提供 AF3 / CCD coordinate reference。
 
 # Repair scope
 
-当前 repair set 只来自 `structure_completeness_report.yaml`。Coordinate reference / template 用于获得补全坐标，不改变 report 已经确定的 repair scope。
+当前 repair set 只来自 `structure_completeness_report.yaml`。Coordinate reference / template 用于获得补全坐标，不改变 report 已确定的 repair scope。
 
-1.6 不重新执行 completeness diagnosis，也不根据 AF3、CCD 或其它模板自行增加新的 missing / extra / mismatch item。
+如果某个 atom-name mismatch 不能从已有正式 evidence 定位到已确认的 observed → reference atom-name correspondence，不自行猜测 rename；该 item 保持 unresolved，直到 evidence 或用户确认足够。
 
-如果报告中的某个 atom-name mismatch 不能定位到已经确认的 observed → reference atom-name correspondence，不自行猜测 rename；该 item 保持 unresolved，直到现有证据能够确认或用户作出确认。
+# Reuse / execution assessment
 
-# Reuse
+进入当前 target 后先判断是否需要本地执行。
 
-进入当前 target 后，先检查是否需要本地执行。
+如果 `structure_completeness_report.yaml` 没有任何属于 1.6 的 repair item：
 
-如果 `structure_completeness_report.yaml` 没有任何属于 1.6 的 repair item，则不创建 1.6 task-specific execution directory，也不生成空的 completion results；由当前 Task Execution Agent 按 Stage 1 dynamic-plan 规则处理该任务项。
+- 不创建 1.6 task-specific execution directory；
+- 不生成空的 completion results；
+- 在当前任务记录中写明 1.6 execution outcome 为 `已终止`，原因是 1.5 未发现需要 1.6 处理的 repair item。
 
 已有 1.6 正式结果只有在以下内容均明确等价时才自动复用：
 
@@ -51,13 +53,13 @@ description: 结构准备 1.6。按每个 target 的正式 structure_completenes
 
 用户明确要求重做、重新比较 reference 或建立对照时，不自动复用。
 
-复用时直接引用既有正式结果，不为了当前任务复制一份结果或创建空目录。
+复用时直接引用既有正式结果，不复制结果或创建空目录；在当前任务记录中写明 1.6 execution outcome 为 `已终止`、复用原因及实际复用的正式结果路径。
 
 # Execution guidance
 
 ## 1. 建立当前 repair set
 
-从 1.5 report 中提取当前 target 需要落实的 repair items，并能够定位到当前 PDB 的明确 residue / atom identity。
+从 1.5 report 中提取当前 target 需要落实的 repair items，并能定位到当前 PDB 的明确 residue / atom identity。
 
 按以下固定顺序处理：
 
@@ -69,45 +71,63 @@ confirmed extra atom deletion
 → final atom-serial renumbering
 ```
 
-如果一个 unexpected atom 已经属于 confirmed atom-name correspondence，不把它同时当作 extra atom 删除。
+如果一个 unexpected atom 已属于 confirmed atom-name correspondence，不把它同时当作 extra atom 删除。
 
 ## 2. Confirmed extra atoms
 
-只删除 1.5 repair scope 中已经确认属于 extra atom 的原子。
-
-删除前核对当前 PDB 中的 chain / residue / atom identity 与 repair item 一致。不要因为模板中不存在某个原子就自行把它追加到 deletion scope。
+只删除当前 repair scope 中已经确认属于 extra atom 的原子。删除前核对当前 PDB identity 与 repair item 一致。
 
 ## 3. Confirmed atom-name corrections
 
-只执行已经确认的 observed atom name → reference atom name 对应关系。
-
-Rename 保留原坐标及原 residue identity，只修改已确认需要修改的 atom name。
+只执行已经确认的 observed atom name → reference atom name 对应关系。Rename 保留原坐标和 residue identity。
 
 ## 4. Missing residues
 
-只要当前 repair set 含 missing residue，按需读取：
+当前 repair set 含 missing residue时，读取：
 
 `references/missing_residue_completion.md`
 
-该 reference 拥有 AF3 residue correspondence、local alignment、internal / terminal missing-region handling、multiple-reference comparison、coordinate transplant 和局部几何判断的详细规则。
+该 reference 拥有 AF3 residue correspondence、local alignment、internal / terminal missing-region handling、multiple-reference comparison、coordinate transplant 和局部 geometry judgment 的详细规则。
 
 ## 5. Missing heavy atoms
 
-只要当前 repair set 含 missing heavy atom，按需读取：
+当前 repair set 含 missing heavy atom 时，读取：
 
 `references/missing_heavy_atom_completion.md`
 
-该 reference 拥有 coordinate-template correspondence、shared-heavy-atom alignment、coordinate transplant、必要时按 missing-residue 方法处理整个 residue，以及局部几何判断的详细规则。
+该 reference 拥有 coordinate-template correspondence、shared-heavy-atom alignment、coordinate transplant、必要时按 missing-residue 方法处理整个 residue，以及局部 geometry judgment 的详细规则。
 
 ## 6. Final write
 
-所有已经确定的 edits / transplanted coordinates 应作用于当前 target 的工作副本；不得覆盖 1.5 实际检查的输入 PDB。
+所有已经确定的 edits / transplanted coordinates 作用于当前 target 的工作副本；不覆盖 1.5 实际检查的输入 PDB。
 
-最终结构保持 target 自己的 chain / residue identity。Reference structure 的 chain ID、residue number 或 atom serial 不得直接替代 target identity。
+最终结构保持 target 自己的 chain / residue identity。Reference structure 的 chain ID、residue number 或 atom serial 只用于 reference coordinate lookup。
 
 完成所有修复后，按最终写入顺序将 atom serial 连续、唯一地重新编号，并生成 `completed_structure.pdb`。
 
-执行中保留足以支持结构写入、`completion_report.yaml` 和 validation 的 correspondence、actual reference、alignment / anchor、transplanted identity、geometry evidence 与必要 warning。除两个 method reference 明确要求的信息外，不要求为普通中间过程建立固定命名文件。
+执行中保留足以支持结构写入、`completion_report.yaml` 和 validation 的 correspondence、actual reference、alignment / anchor、transplanted identity、geometry evidence 与必要 warning。普通中间过程不要求固定命名文件。
+
+# Deterministic helpers
+
+本 Skill 提供两个可选 deterministic helper：
+
+```text
+scripts/transplant_coordinates.py
+→ 对 Agent 已确定的 correspondence / alignment atoms 做 rigid-body alignment
+→ 输出 transformed heavy-atom coordinates 与机械 fit evidence
+
+scripts/apply_structure_edits.py
+→ 应用 Agent 已确定的 remove / rename / add / replace operations
+→ 写出最终 PDB 并连续重编号 atom serial
+```
+
+需要使用 helper 时先读：
+
+`scripts/README.md`
+
+其中定义 CLI、输入/输出数据格式和两个脚本的衔接。当前不为这些 task-local working data 另建 rigid schema。
+
+Helper 不替代 reference 中的科学判断：reference / residue correspondence、anchor 选择、reference comparison、repair-type adjustment 和最终 validation 仍由 Agent 按本 Skill 与 references 判断。
 
 # Completion report
 
@@ -161,7 +181,7 @@ unresolved_items: []
 - `input_structure`、`source_completeness_report`、`output_structure` 和实际使用的 `coordinate_reference` 使用完整绝对路径；
 - 连续 missing residues 可以在一个 `added_residues` record 中成组记录，但每个实际新增 residue 的 `resid + residue_name` 必须明确；
 - deletion / rename 不重复复制 1.5 的 reference provenance；
-- completion operation 记录实际提供坐标的 reference / template；比较过但未用于最终坐标的候选 reference 不需要写入正式 completion report；
+- completion operation 记录实际提供坐标的 reference / template；比较过但未用于最终坐标的候选 reference 不写入正式 completion report；
 - 如果原 missing-heavy-atom item 因局部共同重原子不足而改按 missing-residue 方法处理，在对应 `added_residues` record 中记录：
 
 ```yaml
@@ -176,7 +196,7 @@ Validation 属于 1.6 结果 owner。对当前 target 完成以下核验，并�
 
 - 1.5 每个 required repair item 都已闭合：missing residue 已位于正确 target chain / residue identity，missing heavy atom 已存在，confirmed extra atom 已删除，confirmed atom-name mismatch 已按确认关系修改；
 - `completion_report.yaml` 与 `completed_structure.pdb` 的实际修改一致；
-- 除 report repair scope 以及 method reference 明确要求的整 residue replacement 外，没有未记录的额外删除、rename 或 coordinate replacement；
+- 除 repair scope 以及 method reference 明确要求的整 residue replacement 外，没有未记录的额外删除、rename 或 coordinate replacement；
 - 新增 residue / heavy atom 满足对应 method reference 的 correspondence、alignment 和局部 geometry requirements；
 - 不存在重复 residue / atom identity；
 - atom serial 连续且唯一；
@@ -191,11 +211,11 @@ PASS
 FAIL
 ```
 
-warning 独立记录；warning 本身不自动把 `PASS` 改成第三种状态。
+warning 独立记录；warning 本身不建立第三种 conclusion。
 
-以下情况属于 blocking failure：required repair 未解决、target identity 错误、必要 reference correspondence 不可靠、missing-residue completion 不能满足其 required alignment / junction conditions、明显不合理的局部连接或 severe steric clash、duplicate identity、PDB 无法解析、atom serial 不连续/不唯一、错误加入 final H，或 `unresolved_items` 非空。
+以下情况属于 blocking failure：required repair 未解决、target identity 错误、必要 reference correspondence 不可靠、missing-residue completion 不能满足 required alignment / junction conditions、明显不合理的局部连接或 severe steric clash、duplicate identity、PDB 无法解析、atom serial 不连续/不唯一、错误加入 final H，或 `unresolved_items` 非空。
 
-Validation 不重新做一次 1.5 completeness diagnosis。
+Validation 不重新执行 1.5 completeness diagnosis。
 
 # Official results
 
@@ -231,7 +251,7 @@ completion_report.yaml
 
 `project_result_index.md` 的内部组织格式由项目级 record owner 管理，本 Skill 不重新定义。
 
-# References
+# References / supporting capabilities
 
 按实际 repair item 读取：
 
@@ -241,12 +261,13 @@ references/missing_residue_completion.md
 
 references/missing_heavy_atom_completion.md
 → missing-heavy-atom coordinate completion
-```
 
-不要在当前 target 不涉及对应 repair type 时预读或执行相应方法。
+scripts/README.md
+→ deterministic helper CLI 与 task-local data formats
+```
 
 # User confirmation
 
-如果 repair scope 已经明确，但当前可用 evidence 仍不足以唯一建立 required reference correspondence、缺少可用 coordinate reference，或多个可行方案之间存在会影响结构正确性的实质科学歧义，向用户说明当前对象、现有证据和具体歧义后确认。
+如果 repair scope 已明确，但当前 evidence 仍不足以唯一建立 required reference correspondence、缺少可用 coordinate reference，或多个可行方案之间存在会影响结构正确性的实质科学歧义，向用户说明当前对象、现有 evidence 和具体歧义后确认。
 
-确认前不通过猜测扩大 repair scope，也不发布可误认作完成状态的正式结果。
+确认前不发布可误认作完成状态的正式结果。
