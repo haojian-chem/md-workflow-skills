@@ -44,7 +44,7 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 → freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
 
 1.8 Reorder and mapping
-→ freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.8_REORDER_MAPPING_FREEZE.md
+→ current: 1.8_reorder_and_mapping/SKILL.md
 
 1.9 Structure preparation validation
 → freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
@@ -111,11 +111,11 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.7 → 1.8
 
-冻结接口：1.8 消费已经落实蛋白质 protonation-state residue naming 的当前重原子结构，并形成 Stage 1 final structure / map。
+1.8 消费已经落实蛋白质 protonation-state residue naming 的当前重原子结构，并结合 1.3 target mapping 与 1.2 正式 classification / relation information，形成 Stage 1 final structure / map。具体规则由 `1.8_reorder_and_mapping/SKILL.md` 拥有。
 
 ### 1.8 → 1.9
 
-冻结接口：1.9 对 Stage 1 final PDB / map 做阶段级只读验证；失败时返回真正拥有问题的上游子环节处理，而不是在 1.9 修复。
+1.9 对 1.8 的 `stage1_final.pdb` + `stage1_final_map.yaml` 做阶段级只读验证；失败时返回真正拥有问题的上游子环节处理，而不是在 1.9 修复。
 
 ## Dynamic task plan
 
@@ -144,7 +144,7 @@ Task Execution Agent 在实际执行中可以依据当前结果和用户要求�
 
 ## Stage 1 completion
 
-Stage 1 catalog 与 1.7–1.9 architecture 已经冻结，但 Stage 1 不能在 1.7–1.9 formal Skills 尚未生成时声称具备完整 runtime implementation。
+Stage 1 catalog 已确定；1.8 已生成 current Skill，1.9 仍为 freeze-only。Stage 1 不能在正式 1.9 Skill 尚未生成时声称具备完整 runtime implementation。
 
 未来只有在当前任务所需上游工作完成，并且正式 1.9 Skill 的 blocking checks 全部通过后，才可把 Structure preparation 结果交给 Stage 2。
 
