@@ -2,9 +2,7 @@
 
 Status: **FROZEN — NO ACTIVE SKILL GENERATION APPROVED YET**
 
-本文件记录 Stage 5 — Analysis 的冻结架构。Stage 5 的具体分析方法、`trjconv` / `make_ndx` 等能力内部规则与各能力 validation 由未来相应 Skill/Tool 独立维护；本文件不提前固定这些方法细节。
-
-当前没有 active Stage 5 `SKILL.md`。未来正式生成时，Stage 5 main Skill 的 active entry 固定为：
+本文件记录 Stage 5 — Analysis 的 current architecture。当前没有 active Stage 5 `SKILL.md`；未来经用户明确批准后，main Skill 的 active entry 为：
 
 `05_analysis/SKILL.md`
 
@@ -12,117 +10,93 @@ analysis capability inventory 的冻结设计：
 
 `00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md`
 
-Stage 5 不设置编号化 sub-stage。此前 `5.1 Analysis planning and orchestration` 的职责已提升为 **Stage 5 main Skill 本身的职责**；`5.1` 不再是 current catalog identity。
-
-Stage 5 不使用 `01_workflows/` / `02_operations/` / `02_validators/` 强制分类。未来正式生成时，一个 Stage 5 main Skill 覆盖 analysis planning and orchestration 主线；只有出现复杂且边界清晰的分析能力时，再增加 supporting Skill。
-
 ## 1. Stage 5 catalog
 
-Stage 5 名称固定为：
+Stage 5 固定为：
 
 ```text
 5 Analysis
 ```
 
-Stage 5 不再设置：
+Stage 5 **不设置编号化 sub-stage**。此前 `5.1 Analysis planning and orchestration` 的职责由 Stage 5 main Skill 本身承担；`5.1` 不再是 current catalog identity。
 
-```text
-5.1 Analysis planning and orchestration
-```
+RMSD、RDF、PCA、trajectory preprocessing、index generation 等也不作为新的 `5.x`；它们是 Stage 5 内部 plan items，由对应 analysis capability owner 负责具体方法与 validation。
 
-RMSD、RDF、PCA、trajectory preprocessing、index generation 等也不作为新的 `5.x` sub-stage；它们是 Stage 5 内部 plan items，并由对应 analysis Skill / Tool 自己拥有具体方法和 validation。
+Stage 5 在 Task Sheet 中使用一个 `5 Analysis` stage-level 条目，不采用 Stage 4 的 project-level run-unit identity。
 
-Stage 5 在 Task Sheet 中采用 **stage-level planning item**，不采用 Stage 4 的 project-level run-unit 模型。
-
-## 2. Manager / Stage 5 responsibility boundary
+## 2. Manager / Stage 5 boundary
 
 Manager 只负责：
 
-- 判断当前任务范围是否包含 Stage 5；
-- 在初始 Task Sheet 中建立 `5 Analysis` stage-level 条目；
-- 原样记录用户明确提出的分析目标、分析对象和约束；
+- 判断任务范围是否包含 Stage 5；
+- 在初始 Task Sheet 中建立 `5 Analysis`；
+- 保留用户明确提出的分析目标、对象、约束；
 - 用户明确指定 RMSD、RDF 等方法时原样保留。
 
 Manager 不负责：
 
-- 把研究目标自行展开成具体分析方法组合；
-- 选择具体 analysis Skill / Tool；
+- 把研究目标展开成具体分析方法组合；
+- 选择具体 analysis capability；
 - 查询 Stage 5 reuse；
-- 决定 trajectory / ndx 的具体处理方式。
+- 决定 trajectory / index 的具体处理方式。
 
 Stage 5 main Skill 负责：
 
 - 理解当前分析目标；
 - 读取 analysis capability inventory；
-- 集中查询当前已有可复用分析结果和 prepared inputs；
+- 集中查询已有可复用正式分析结果和 prepared inputs；
 - 做 Stage 5 reuse 核验；
-- 将分析目标展开为完整 Stage 5 plan；
-- 选择并调度对应 analysis capability / prepared-input producer；
-- 维护 Task Sheet 中 Stage 5 条目内部的 plan items；
-- 当执行证据破坏原计划前提时调整后续 plan。
+- 将目标展开为完整 Stage 5 plan；
+- 选择并调度 analysis capability / prepared-input producer；
+- 维护 `5 Analysis` 条目内部的 plan items；
+- 当执行证据破坏原计划前提时调整尚未完成的后续 plan。
 
-具体 analysis Skill / Tool 负责自己的方法、执行细节、输出和 validation。
+具体 analysis capability owner 负责自己的方法、执行细节、输出和 validation。
 
-核心边界：
+## 3. Main-Skill principle
 
-```text
-Manager
-→ 记录“用户要分析什么”
+Stage 5 main Skill 是 Agent guide，不是 parser / dispatcher engine。
 
-Stage 5 main Skill
-→ 决定“本任务具体做哪些分析、需要哪些输入、如何组织这些分析”
+- 可以直接读取和理解 Task Sheet、索引和实际科研文件；
+- capability inventory 只用于发现已有能力，不是强制 parser；
+- Tool 只有在其确定性能力对当前任务真正有价值时调用；
+- 不为了形式化而强制引入额外 schema/workflow；
+- 具体 capability 的内部规则只由对应 owner 自己拥有，Stage 5 main Skill 不复制。
 
-analysis capability owner
-→ 提供对应分析方法或确定性处理本身，并负责自己的输出 validation
-```
+## 4. One-pass planning
 
-## 3. Main-Skill guidance principle
-
-未来 Stage 5 main Skill 是 Agent guide，不是 parser / dispatcher engine。
-
-规则：
-
-- Stage 5 main Skill 可以直接读取和理解当前 Task Sheet、索引和实际科研文件；
-- capability inventory 用于发现已有 analysis Skill / Tool，不是强制 parser；
-- 具体 Tool 只有在其确定性能力对当前任务真正有价值时调用；
-- 不为了形式化把简单文件理解强制转换成额外 schema/workflow；
-- 具体 analysis Skill 的内部规则只由该 Skill 自己拥有，Stage 5 main Skill 不复制。
-
-## 4. One-pass Stage 5 planning
-
-Stage 5 main Skill 在进入 Stage 5 时集中完成一次当前资源查询、reuse 核验和整体规划：
+进入 Stage 5 时集中完成一次当前资源查询、reuse 核验和整体规划：
 
 ```text
 read Task Sheet Stage 5 requirement
 → read analysis capability inventory
 → query existing formal analysis results
-→ query trajectory_index.yaml / ndx_index.yaml when relevant
+→ query trajectory_index.yaml when relevant
 → determine reusable inputs/results
-→ determine missing prepared inputs
-→ include trjconv / make_ndx or other required producers in the same plan
+→ determine missing required inputs
+→ include trjconv / index-generation / other required producers when needed
 → pre-assign intended use/dependency of future outputs
 → write the complete current plan into Task Sheet
 → execute the plan
 ```
 
-正常执行过程中，不为每个后续 plan item 重新进行一轮全局 reuse 查询。
+正常执行中，不为每个后续 item 重复全局 reuse 查询。
 
-如果前置执行失败、实际产物不满足规划条件、用户修改分析要求或其他证据破坏当前 plan 前提，Stage 5 main Skill 才重新调整尚未完成的后续 plan。
+只有前置失败、实际产物不满足规划条件、用户修改需求或其他证据破坏当前 plan 前提时，才调整尚未完成的后续 plan。
 
 ## 5. Plan item model
 
-Stage 5 main Skill 在 Task Sheet 的 `5 Analysis` 条目内追加编号化 plan items。
+Stage 5 main Skill 在 `5 Analysis` 条目内维护局部整数编号：`1, 2, 3, ...`。
 
-编号规则：
+规则：
 
-- 使用当前 Stage 5 条目内部局部整数编号 `1, 2, 3, ...`；
 - 不使用 `5.1`、`5.1.1`、`analysis.1` 等 project-level identity；
-- plan item 一旦加入，编号固定；
+- item 一旦加入，编号固定；
 - 原则上不删除、不重编号；
-- 不再执行的项目优先标记 `已终止`；
-- 新增项目使用下一个整数编号。
+- 不再执行的 item 标记 `已终止`；
+- 新增 item 使用下一个整数编号。
 
-plan item 状态只使用：
+状态只使用：
 
 ```text
 未完成
@@ -130,7 +104,7 @@ plan item 状态只使用：
 已终止
 ```
 
-每个 plan item 的规划期最小结构：
+规划期最小结构：
 
 ```text
 编号
@@ -149,24 +123,21 @@ results
 
 字段语义：
 
-- `capability`：引用 analysis capability inventory 中的条目名；该条目可指向 Skill、Tool 或其它已登记 capability owner；
+- `capability`：analysis capability inventory 中的条目名；可指向 Skill、Tool 或其他已登记 owner；
 - `inputs`：当前 item 实际消费的输入；已有文件记录完整路径；
-- `settings`：capability-specific 当前任务设置，不建立 Stage 5 通用子 schema；
+- `settings`：capability-specific 设置，不建立 Stage 5 通用子 schema；
 - `status`：`未完成 / 已完成 / 已终止`；
-- `path`：该 item 相关文件的完整存放目录，用于查询定位，不指向单个结果文件；
-- `results`：completion-time 可选字段，只记录当前 item 已通过对应 capability owner validation 的关键正式结果/产物入口；不要求罗列目录内全部输出文件。
+- `path`：当前 item 相关文件的完整目录，用于查询和恢复，不指向单个结果文件；
+- `results`：completion-time 可选字段，只记录已通过对应 capability owner validation 的关键正式结果/产物入口，不罗列目录内全部文件。
 
-`path` 与 `results` 的职责不同：
+`path` 与 `results` 的边界：
 
 ```text
-path
-→ 当前 plan item 的相关文件目录 / 恢复定位入口
-
-results
-→ 当前 item 最终确认有效、值得直接定位或供后续 item 消费的关键结果/产物
+path    → item 工作/文件目录与恢复定位入口
+results → 已确认有效、值得直接定位或供后续 item 消费的关键正式产物
 ```
 
-`results` 不建立统一 Stage 5 子 schema；具体键和值按 capability 的正式产物语义记录。例如：
+`results` 不建立统一子 schema，可按 capability 的产物语义记录，例如：
 
 ```yaml
 results:
@@ -180,9 +151,7 @@ results:
   trajectory: /full/path/to/processed.xtc
 ```
 
-只有对应 capability owner 已完成 validation 后，才把产物作为正式 `results` 记录。失败、未完成或仅用于 debug 的中间文件不因为存在于 `path` 下就进入 `results`。
-
-如果输入尚未生成，但已经由当前 plan 前置项目负责产生，使用直观描述记录依赖，例如：
+如果输入尚未生成但由当前 plan 的前置 item 负责产生，使用直观依赖描述，例如：
 
 ```text
 trajectory: 使用第 1 项生成的处理后轨迹
@@ -195,29 +164,17 @@ index: 使用第 2 项生成的 ndx 文件
 
 一个 plan item 对应一次统一定义的分析。
 
-如果多条 trajectory 作为同一次分析共同处理：
-
-- 可以在一个 plan item 中记录多条 trajectory；
-- 共同 topology/reference 类输入只记录一套；
-- 共用一套当前分析 settings。
+多条 trajectory 可以放在同一 item 中，当且仅当它们属于同一次分析并共享关键 settings；共同 topology/reference 类输入只记录一套。
 
 如果用户要求分别分析，或不同输入需要不同关键 settings，则拆成多个 plan items。
 
-最终 `inputs` 记录解析后的实际文件路径，不用单独 `source: md.N` 代替具体输入。`md.N` 等逻辑对象只作为 Stage 5 main Skill 查找实际文件时的线索。
+最终 `inputs` 记录解析后的实际文件路径；不使用 `source: md.N` 替代具体输入。`md.N` 等逻辑对象只作为查找实际文件时的线索。
 
 ## 7. Analysis capability inventory
 
-Stage 5 main Skill 使用一个 Stage 5 analysis capability inventory 作为能力发现入口；正式文件仅在 Skill generation 获批后建立/启用。
-
-未来正式文件名：
+未来正式 inventory：
 
 `05_analysis/references/analysis_capability_inventory.yaml`
-
-冻结设计见：
-
-`00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md`
-
-Inventory 是能力发现入口，不是新的调度层。
 
 每个实际可用条目至少记录：
 
@@ -228,29 +185,30 @@ required_files:
 skill:
 ```
 
-`name` 是 plan item 的 `capability` 引用名。
+- `name`：plan item 的 `capability` 引用名；
+- `purpose`：能力用途；
+- `required_files`：输入角色 + 可接受文件类型，不绑定项目具体文件名；
+- `skill`：对应 guide 路径。
 
-`required_files` 记录“文件角色 + 可接受文件类型”，不绑定具体项目文件名。可以在执行中生成的辅助文件不应仅因为可能需要就被写成 hard required file。
+可以执行时生成的辅助文件，不因为“可能需要”就写成 hard required file。
 
-Inventory 不复制具体 analysis capability owner 的方法、命令、selection、preprocessing 或 validation 细节。
+Inventory 是能力发现入口，不复制具体 capability 的方法、命令、selection、preprocessing 或 validation。
 
-## 8. Prepared-input indexes
+## 8. Prepared inputs and indexes
 
-项目级 Stage 5 索引目录：
+Stage 5 只为具有明确 project-level reuse 价值的 prepared input 建立项目级索引。当前冻结保留：
 
 ```text
-<project_root>/05_analysis/indexes/
-├── trajectory_index.yaml
-└── ndx_index.yaml
+<project_root>/05_analysis/indexes/trajectory_index.yaml
 ```
 
 ### 8.1 `trajectory_index.yaml`
 
-维护者：负责产生处理后 trajectory 的 `trjconv` Skill/Tool。
+维护者：负责产生处理后 trajectory 的 `trjconv` capability owner。
 
-Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、决定其存放位置或登记索引。
+Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、决定存放位置或登记索引。
 
-当前最小记录方向：
+最小记录方向：
 
 ```yaml
 - path: /full/path/to/processed.xtc
@@ -258,63 +216,56 @@ Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、�
   atom_order_reference: /full/path/to/system.tpr
   output_selection: System
   processing:
-    # only conditions relevant to reuse
+    # only processing conditions relevant to reuse
 ```
 
-`processing` 按实际处理内容记录影响 reuse 的信息，例如 PBC/center/fit、`dt`、time range 等；不要求所有 trajectory 使用完全相同字段。
+`processing` 只记录影响 reuse 的实际处理条件，如 PBC/center/fit、`dt`、time range 等；不要求所有条目使用完全相同字段。
 
-### 8.2 `ndx_index.yaml`
+### 8.2 External index (`.ndx`) handling
 
-维护者：`make_ndx` Skill/Tool。
+Stage 5 **不建立 project-level `ndx_index.yaml`，也不执行跨 Task 的 `.ndx` 自动复用扫描/判定**。
 
-Stage 5 main Skill 只查询、核验和使用，不负责生成 `.ndx`、决定其存放位置或登记索引。
+同一个 topology / TPR lineage 只能说明体系来源相关，不能证明现有 `.ndx` 已包含当前分析需要的 group。真正判断复用仍需检查当前 capability 的 selection/group 语义；考虑到 `.ndx` 文件小且生成成本低，项目级 reuse/index 机制没有足够收益。
 
-最小结构固定为：
-
-```yaml
-- path: /full/path/to/analysis.ndx
-  tpr: /full/path/to/reference.tpr
-```
-
-不在索引中复制 `.ndx` 已经保存的 group 名、group definition 或 atom indices。
-
-`.ndx` reuse 判断当前冻结为：
+Stage 5 不维护“哪些分析需要 `.ndx`”的固定表。判断依据是当前 analysis capability 的输入要求：
 
 ```text
-current tpr == indexed tpr
-→ 可复用
+current capability 所需 selections / groups
+→ 能否由该 capability 基于当前输入和其原生 selection/default-group 机制直接满足？
 
-different tpr
-+ 两份 tpr 所属 run unit 在 04_md_simulation/run_unit.yaml 中记录同一个 top
-→ 可复用
+能
+→ 不预生成外部 .ndx
 
-different top
-→ 不复用
+不能，且 capability 明确需要外部 index 输入
+→ 在当前 plan 中安排 index-generation capability
 ```
 
-默认不追加 atom count / atom ordering 的第二层核验。
+因此 Stage 5 判断的是**当前 capability 的 required inputs 是否已经满足**，而不是抽象判断“是否需要 group”。selection/group 能否直接表达、是否必须物化为 `.ndx`，由对应 capability owner 的接口/规则拥有。
 
-Stage 5 只消费 Stage 4 current run-unit topology lineage；Stage 4 如何维护该字段由 Stage 4 自己的 current Skill/freeze 拥有。
+当前 Task 内如果前置 item 已生成满足后续需求的 `.ndx`，后续多个 items 可以直接共享该 `results`；这是 Task 内显式依赖，不属于 project-level reuse。
+
+如果用户明确提供现有 `.ndx`，可以作为候选输入交给对应 capability。是否包含所需 group、是否与当前分析输入兼容，由对应 capability owner 核验；满足则使用，不满足则在当前 plan 中生成新的 index。
 
 ## 9. Validation ownership
 
-Stage 5 不设置统一 Validator layer，也不要求 Stage 5 main Skill 重新验证所有具体能力输出。
+Stage 5 不设置统一 Validator layer，也不重新验证所有具体能力输出。
 
-各 concrete capability owner 对自己的输出负责 validation，例如：
+例如：
 
 ```text
 trjconv    → 自己生成的 trajectory
 make_ndx   → 自己生成的 ndx
 RMSD Skill → RMSD 执行及输出
 RDF Skill  → RDF 执行及输出
-...
 ```
 
-Stage 5 main Skill 只负责 planning/orchestration 层一致性。只有对应 capability owner 确认输出有效后，相关 plan item 才进入 `已完成`，其关键正式产物才按需写入 `results`。
+只有对应 capability owner 确认输出有效后，相关 plan item 才进入 `已完成`，关键正式产物才按需写入 `results`。
+
+Stage 5 main Skill 只核验 orchestration 一致性：目标覆盖、capability/inputs/settings/依赖充分、编号和状态一致、后续项不依赖已终止或未产生所需输入的前置项。
 
 ## 10. Project result registration
 
-Stage 5 在 `project_result_index.md` 中登记到“分析事项”粒度：
+`project_result_index.md` 按“分析事项”粒度登记：
 
 ```text
 对哪些对象
@@ -333,38 +284,39 @@ path
 results   # when present
 ```
 
-Task Sheet 中的 `results` 是当前 item 的直接恢复/依赖入口；`project_result_index.md` 仍只承担跨任务正式结果检索，不要求把每个 item 的全部 `results` 内容复制成 project-level 明细。
+Task Sheet 的 `results` 是当前 item 的直接恢复/依赖入口；`project_result_index.md` 只承担跨任务正式结果检索，不要求复制每个 item 的全部 `results`。
 
-不把每个 `.xvg/.csv/.dat/.png/.xtc/.ndx` 单独复制成 project-level 结果索引项。
+不把每个 `.xvg/.csv/.dat/.png/.xtc/.ndx` 单独复制成 project-level 索引项。
 
-是否额外汇总多个分析结果、进行综合解释或生成报告，由当前用户任务决定，不是 Stage 5 main Skill 的固定职责。
+是否额外汇总多个分析结果、综合解释或生成报告，由当前用户任务决定，不是 Stage 5 固定完成职责。
 
 ## 11. Stage completion
 
 Stage 5 可以完成的前提：
 
 - 当前分析目标所需 plan items 已完成，或有明确理由进入 `已终止`；
-- 每个 `已完成` item 已通过对应 capability owner 自己的 validation；
-- 需要直接恢复或供后续 item 消费的关键正式产物已按需记录在对应 `results`；
+- 每个 `已完成` item 已通过对应 capability owner 的 validation；
+- 需要直接恢复或供后续 item 消费的关键正式产物已按需写入 `results`；
 - 需要保留的分析事项已经按上述边界登记到 `project_result_index.md`。
 
 ## 12. Explicitly rejected defaults
 
 不得默认：
 
-- 为 analysis planning and orchestration 再建立 `5.1` wrapper sub-stage；
-- 把 RMSD / RDF / PCA 等拆成 `5.1 / 5.2 / 5.3 / ...`；
-- 增加 Structural / Interaction / Conformational 等仅用于分类的中间执行层；
+- 为 analysis planning and orchestration 再建立 `5.1` wrapper；
+- 把 RMSD / RDF / PCA 等拆成新的 `5.x`；
+- 增加 Structural / Interaction / Conformational 等仅用于分类的执行层；
 - 为 Stage 5 建立类似 Stage 4 `run_unit.yaml` 的 project-level analysis-unit identity；
 - 让 Manager 代替 Stage 5 main Skill 设计具体分析方法组合；
-- 让 Stage 5 main Skill 维护 `trjconv` / `make_ndx` 产生文件的生命周期；
+- 让 Stage 5 main Skill 接管 `trjconv` / `make_ndx` 文件生命周期；
+- 建立 project-level `ndx_index.yaml` 或 `.ndx` 自动复用判定机制；
 - 使用统一 `prepared_input_index.yaml` 同时由多个 producer 维护；
 - 用 `source: md.N` 替代最终实际输入文件路径；
 - 用单一 `object` 字段承载全部分析对象语义；
 - 强制所有分析使用统一 `range / dt / target` schema；
 - 强制 Stage 5 main Skill 固定进行结果汇总；
 - 建立统一 Stage 5 Validator layer；
-- 为了旧目录分类把 Stage 5 拆到 `01_workflows/` 和 `02_operations/`；
+- 为旧目录分类建立 Workflow / Operation / Validator 层；
 - 把 Agent 锁进无必要 parser / wrapper / dispatcher 链。
 
-此前以 `5.1 Analysis planning and orchestration` 为 identity 的详细 freeze 已被本 Stage-level freeze 接管，并移入 `00_authoring/archive/stage5_history/` 仅供历史追溯。
+此前以 `5.1 Analysis planning and orchestration` 为 identity 的详细 freeze 已被本 Stage-level freeze 接管；历史材料仅保留在 `00_authoring/archive/stage5_history/`。
