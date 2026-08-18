@@ -42,6 +42,8 @@ Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE INVENTORY**
 
 Inventory 只做 capability discovery，不复制具体 capability owner 的方法、命令、selection、preprocessing、validation 或结果生命周期。
 
-如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理。Stage 5 可以记录和学习该过程中形成的流程；当流程已经形成实际、可引用的 capability `entry` 后，再补充 inventory 供后续任务发现和复用。
+如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理。
+
+“从已完成的 capability gap 流程中记录/学习经验，并据此补充 capability”保留为未来更新方向；**本次 Stage 5 设计不实现该学习/补充机制**。当前只有在另行完成 capability authoring、形成实际可引用的 `entry` 后，才可把该 capability 加入 inventory。
 
 Source pre-authorization blob: `12749eadc032daba95685c3fd450af0633613371`.
