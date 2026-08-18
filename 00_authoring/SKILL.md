@@ -155,17 +155,35 @@ results
 何时读取额外 reference / supporting Skill / Tool
 ```
 
-这些是信息要求，不是固定 section schema。
+这些是信息要求，不是固定 section schema，也不表示所有运行时判断都必须预先固化成 Skill 规则。
 
 “不做什么”只在有实际边界价值时明确：例如防止高概率越界/误操作、保护数据或不可逆操作、阻止已明确否定的常见默认行为，或直接影响 validation/result correctness。不要为了“范围完整”罗列所有本 Skill 不负责的事项。
 
 详细边界：`references/skill_boundaries.md`。
 
+# Rule necessity gate
+
+在判断一条规则归谁拥有之前，先判断它**是否有必要成为 Skill 的固定规则**。
+
+Skill 优先固定需要跨任务保持一致、且对当前职责正确性有实际价值的内容，例如：稳定科学/技术判据、输入/输出接口、reuse 与 validation 语义、安全或数据完整性边界、正式结果生命周期，以及不固定就会高概率造成越界或歧义的约束。
+
+如果某项决定可以由 Task Execution Agent 或用户根据当前任务上下文可靠判断，且不需要形成跨任务稳定语义、接口约束、科学判据或结果生命周期，则保留为运行时裁量；**不要因为“运行时可能遇到这种情况”就继续把它固化成统一决策树、状态转换规则、fallback 链或完整工作流。**
+
+前置 gate：
+
+```text
+这件事必须写成 Skill 固定规则吗？
+├─ 是：缺少固定规则会影响跨任务一致性、科学/技术正确性、接口/结果语义、安全或高概率边界执行
+│  → 继续 rule-ownership gate
+└─ 否：Agent / 用户可基于当前任务可靠判断
+   → 保留运行时裁量，不继续下钻为 Skill 规则
+```
+
 # Ownership and deduplication
 
 向当前 Skill 增加规则前，按需读取 `references/content_ownership_and_deduplication.md`。
 
-核心 gate：
+通过 rule-necessity gate 后，再执行 ownership gate：
 
 ```text
 这条规则属于当前 Skill 自己？
@@ -238,6 +256,7 @@ Legacy executable/runtime material：`../legacy/`。
 # Delivery check
 
 - [ ] main Skill 能直接指导 Agent 完成当前职责；
+- [ ] 未把可由 Agent / 用户按当前任务可靠判断的策略，无必要地固化成决策树、状态机、fallback 链或完整工作流；
 - [ ] 长/条件性细节没有在 main Skill 与 reference 重复；
 - [ ] supporting Skill 拆分有真实复杂度和边界价值；
 - [ ] 未建立不必要 parser/wrapper/dispatcher；

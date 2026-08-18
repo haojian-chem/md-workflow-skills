@@ -80,6 +80,37 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 若上述必要性不存在，则不需要出现对应 negative-scope 条目。未被列出的外部职责自然由当前 Skill 的 purpose / scope、ownership 和 external-skill boundary 限制；不要通过冗长的“本 Skill 不负责……”清单重复描述其它环节。
 
+### Rule necessity gate
+
+在对拟新增内容执行 ownership 判断之前，先判断它是否真的需要成为 Skill 的固定规则。
+
+Skill 应优先固定需要跨任务保持一致、且对职责正确性有实际价值的内容，例如：
+
+- 稳定的科学/技术判据；
+- 输入/输出接口和依赖语义；
+- reuse / validation / formal-result 语义；
+- 安全、数据完整性或不可逆操作边界；
+- 不固定就会高概率造成越界、歧义或不可恢复结果的约束。
+
+以下本身**不足以**构成规则化理由：
+
+- 运行时可能遇到某种异常或分支；
+- 为了让流程看起来完整；
+- 可以继续细分出更多状态转换；
+- Agent 将来“可能需要知道怎么选”。
+
+如果某项决定可以由 Task Execution Agent 或用户根据当前上下文可靠判断，且不要求形成跨任务稳定语义、接口约束、科学判据或结果生命周期，则保留为运行时裁量，不继续把它展开成统一 decision tree、状态机、fallback 链或完整工作流。
+
+判断顺序：
+
+```text
+这件事必须成为 Skill 固定规则吗？
+├─ 否 → 留给 Agent / 用户按当前任务判断；停止规则下钻
+└─ 是 → 再判断该规则归谁拥有
+```
+
+因此 **rule-necessity gate 必须先于 rule-ownership gate**。一条内容即使“没有其它 owner”，也不自动意味着当前 Skill 应该把它规则化。
+
 ## 3. Supporting Skill 的拆分门槛
 
 只有内容同时具备明显复杂度和清楚独立边界时才拆 supporting Skill，例如：
@@ -103,7 +134,9 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 ↓
 确认当前 Skill 的唯一职责与 write ownership
 ↓
-对拟新增规则执行 rule-ownership gate
+对拟新增内容先执行 rule-necessity gate
+↓
+只对确有必要固定的规则执行 rule-ownership gate
 ↓
 先完成 main SKILL.md 主线
 ↓
@@ -113,7 +146,7 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 ↓
 仅在确有机器约束/确定性能力时增加 schemas/scripts/Tool
 ↓
-检查越界定义、重复定义和 shadow specification
+检查越界定义、重复定义、shadow specification，以及是否把 Agent/用户的任务级裁量误固化成流程
 ↓
 完成本次要求的 validation / self-check
 ↓
@@ -285,6 +318,7 @@ Skill 当前是什么状态
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
+- [ ] 没有把可由 Agent / 用户基于当前任务可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
 - [ ] 被撤回的伪 Skill 已删除，但正确的 Stage / Step 目录仍保留；
 - [ ] archive 没有被加入默认 startup/read list；
 - [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
@@ -301,6 +335,7 @@ Skill 当前是什么状态
 长而同属当前职责 → reference
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
+可由 Agent / 用户基于当前任务可靠判断、无需跨任务稳定的策略 → 不固化为 Skill 规则
 已确定 Stage / Step package 路径 → 可先保留目录；目录存在 ≠ Skill 已生成
 Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architecture_freezes/
 freeze 完成 ≠ Skill generation 获批
