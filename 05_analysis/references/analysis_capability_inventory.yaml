@@ -1,0 +1,23 @@
+# Stage 5 analysis capability inventory.
+#
+# Discovery aid for 05_analysis/SKILL.md. This is not a parser or mandatory
+# dispatcher schema.
+#
+# Add an entry only when the referenced capability entry actually exists and is
+# intended to be discoverable by Stage 5.
+#
+# Minimum fields for each entry:
+# - name
+# - purpose
+# - required_files
+# - entry
+#
+# required_files records input roles and acceptable file types. It must not
+# duplicate capability-specific execution, selection, preprocessing, validation,
+# result-lifecycle, or project_result_index.md whitelist rules owned by the
+# referenced capability Skill / README.
+#
+# Initial planned capability cohort is documented in the Stage 5 architecture
+# freeze. No placeholder rows are created here before the corresponding entries
+# exist.
+[]
