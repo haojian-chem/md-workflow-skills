@@ -10,7 +10,20 @@ Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE INVENTORY**
 
 这里统一使用 **capability**，因为 Stage 5 可发现和调度的能力可以由科研/技术 Skill、确定性 Tool 或其它已登记能力 owner 提供；不能把所有 capability 都抽象成 Skill 或 Tool。
 
-冻结内容：
+首批 Stage 5 capability 的 authoring / implementation 集合固定为：
+
+```text
+trjconv
+make_ndx
+rmsd
+rmsf
+hbond
+rdf
+```
+
+这些名称定义首批需要为 Stage 5 准备的能力集合，但并不因为写入本 freeze 就自动成为 active inventory entry。只有对应 capability 的实际 `entry` 已形成并可引用时，才能把该条目加入正式 inventory。
+
+冻结的 inventory 结构：
 
 ```yaml
 # Stage 5 analysis capability inventory.
@@ -40,9 +53,13 @@ Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE INVENTORY**
 
 不增加统一 `type: skill/tool/script` 分类字段。Stage 5 只需要能从 `entry` 找到并调用/遵循对应 capability，不为了分类建立额外 schema。
 
-Inventory 只做 capability discovery，不复制具体 capability owner 的方法、命令、selection、preprocessing、validation 或结果生命周期。
+Inventory 只做 capability discovery，不复制具体 capability owner 的方法、命令、selection、preprocessing、validation、结果生命周期或项目级结果登记文件白名单。
 
-如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理。
+各 capability 哪些正式结果文件允许登记到 `project_result_index.md`，由对应 capability owner 在自己的 Skill / README 中定义；inventory 不新增 `registered_files`、`result_whitelist` 等集中字段，也不复制这些文件清单。
+
+`trjconv` 的 processed trajectory 额外集中管理和 `trajectory_index.yaml` 登记规则同样由 `trjconv` capability owner 的 Skill / README 拥有；Stage 5 inventory 只负责发现其 capability entry。
+
+如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理；相关未覆盖需求可按 Stage 5 architecture freeze 的边界保留在 Task Sheet 的 Stage 5 plan items 区域之外。
 
 “从已完成的 capability gap 流程中记录/学习经验，并据此补充 capability”保留为未来更新方向；**本次 Stage 5 设计不实现该学习/补充机制**。当前只有在另行完成 capability authoring、形成实际可引用的 `entry` 后，才可把该 capability 加入 inventory。
 
