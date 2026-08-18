@@ -37,8 +37,8 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 1.5 Completeness check
 → current: 1.5_completeness_check/SKILL.md
 
-1.6 Structure completion / correction
-→ freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
+1.6 Structure completion
+→ current: 1.6_structure_completion/SKILL.md
 
 1.7 Protein protonation assignment
 → freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
@@ -97,7 +97,7 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.5 → 1.6
 
-冻结接口：1.6 消费 1.5 正式 `structure_completeness_report.yaml`。具体规则当前由 1.6 architecture freeze 保存，尚无 runtime Skill。
+1.6 消费当前 target 的 1.5 正式 `structure_completeness_report.yaml` 及其 `structure` 指向的当前 PDB，并落实其中已明确的 repair items。具体规则由 `1.6_structure_completion/SKILL.md` 拥有。
 
 ### 1.6 → 1.7
 
@@ -138,7 +138,7 @@ Task Execution Agent 在实际执行中可以依据当前结果和用户要求�
 
 ## Stage 1 completion
 
-Stage 1 catalog 与 1.6–1.9 architecture 已经冻结，但 Stage 1 不能在 1.6–1.9 formal Skills 尚未生成时声称具备完整 runtime implementation。
+Stage 1 catalog 与 1.7–1.9 architecture 已经冻结，但 Stage 1 不能在 1.7–1.9 formal Skills 尚未生成时声称具备完整 runtime implementation。
 
 未来只有在当前任务所需上游工作完成，并且正式 1.9 Skill 的 blocking checks 全部通过后，才可把 Structure preparation 结果交给 Stage 2。
 
