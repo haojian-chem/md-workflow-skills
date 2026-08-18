@@ -56,12 +56,12 @@ def seqid_parts(residue) -> tuple[str, str]:
     return str(residue.seqid.num), norm_blank(residue.seqid.icode)
 
 
-def selector_label(selector: dict[str, Any], atom: bool = False) -> str:
-    text = f"chain={selector.get('chain_id')!r}, resid={selector.get('resid')!r}, icode={selector.get('insertion_code', '')!r}"
-    if selector.get("residue_name") is not None:
-        text += f", resname={selector.get('residue_name')!r}"
+def selector_label(sel: dict[str, Any], atom: bool = False) -> str:
+    text = f"chain={sel.get('chain_id')!r}, resid={sel.get('resid')!r}, icode={sel.get('insertion_code', '')!r}"
+    if sel.get("residue_name") is not None:
+        text += f", resname={sel.get('residue_name')!r}"
     if atom:
-        text += f", atom={selector.get('atom_name')!r}, altloc={selector.get('altloc', '')!r}"
+        text += f", atom={sel.get('atom_name')!r}, altloc={sel.get('altloc', '')!r}"
     return text
 
 
@@ -72,47 +72,45 @@ def find_chain(model, chain_id: str):
     return matches[0]
 
 
-def residue_matches(residue, selector: dict[str, Any]) -> bool:
-    if "resid" not in selector:
+def residue_matches(residue, sel: dict[str, Any]) -> bool:
+    if "resid" not in sel:
         raise ToolError("residue selector missing resid")
-    resid, insertion_code = seqid_parts(residue)
-    if resid != str(selector["resid"]):
+    resid, icode = seqid_parts(residue)
+    if resid != str(sel["resid"]):
         return False
-    if insertion_code != norm_blank(selector.get("insertion_code", "")):
+    if icode != norm_blank(sel.get("insertion_code", "")):
         return False
-    if selector.get("residue_name") is not None and residue.name != str(selector["residue_name"]):
+    if sel.get("residue_name") is not None and residue.name != str(sel["residue_name"]):
         return False
     return True
 
 
-def find_residue(model, selector: dict[str, Any]):
-    if "chain_id" not in selector:
+def find_residue(model, sel: dict[str, Any]):
+    if "chain_id" not in sel:
         raise ToolError("residue selector missing chain_id")
-    chain = find_chain(model, str(selector["chain_id"]))
-    matches = [(index, residue) for index, residue in enumerate(chain) if residue_matches(residue, selector)]
+    chain = find_chain(model, str(sel["chain_id"]))
+    matches = [(i, residue) for i, residue in enumerate(chain) if residue_matches(residue, sel)]
     if len(matches) != 1:
-        raise ToolError(f"residue selector must match exactly one residue ({selector_label(selector)}); matches={len(matches)}")
-    index, residue = matches[0]
-    return chain, index, residue
+        raise ToolError(f"residue selector must match exactly one residue ({selector_label(sel)}); matches={len(matches)}")
+    return chain, matches[0][0], matches[0][1]
 
 
-def find_atom(model, selector: dict[str, Any]):
-    if "atom_name" not in selector:
+def find_atom(model, sel: dict[str, Any]):
+    if "atom_name" not in sel:
         raise ToolError("atom selector missing atom_name")
-    chain, residue_index, residue = find_residue(model, selector)
-    atom_name = str(selector["atom_name"]).strip()
-    requested_altloc = selector.get("altloc")
+    chain, ri, residue = find_residue(model, sel)
+    atom_name = str(sel["atom_name"]).strip()
+    requested_altloc = sel.get("altloc")
     matches = []
-    for atom_index, atom in enumerate(residue):
+    for ai, atom in enumerate(residue):
         if atom.name.strip() != atom_name:
             continue
         if requested_altloc is not None and norm_blank(atom.altloc) != norm_blank(requested_altloc):
             continue
-        matches.append((atom_index, atom))
+        matches.append((ai, atom))
     if len(matches) != 1:
-        raise ToolError(f"atom selector must match exactly one atom ({selector_label(selector, atom=True)}); matches={len(matches)}")
-    atom_index, atom = matches[0]
-    return chain, residue_index, residue, atom_index, atom
+        raise ToolError(f"atom selector must match exactly one atom ({selector_label(sel, atom=True)}); matches={len(matches)}")
+    return chain, ri, residue, matches[0][0], matches[0][1]
 
 
 def require_list(config: dict[str, Any], key: str) -> list[Any]:
@@ -129,19 +127,19 @@ def make_atom(spec: dict[str, Any]) -> gemmi.Atom:
         raise ToolError("atom specification must be a mapping")
     name = spec.get("atom_name")
     element = spec.get("element")
-    coordinates = spec.get("coordinates")
+    coords = spec.get("coordinates")
     if not isinstance(name, str) or not name.strip():
         raise ToolError("added atom requires atom_name")
     if not isinstance(element, str) or not element.strip():
         raise ToolError(f"added atom {name!r} requires element")
     if element.strip().upper() == "H":
         raise ToolError("adding hydrogen is not allowed in Stage 1.6")
-    if not isinstance(coordinates, dict) or not all(key in coordinates for key in ("x", "y", "z")):
+    if not isinstance(coords, dict) or not all(k in coords for k in ("x", "y", "z")):
         raise ToolError(f"added atom {name!r} requires coordinates x/y/z")
     atom = gemmi.Atom()
     atom.name = name.strip()
     atom.element = gemmi.Element(element.strip())
-    atom.pos = gemmi.Position(float(coordinates["x"]), float(coordinates["y"]), float(coordinates["z"]))
+    atom.pos = gemmi.Position(float(coords["x"]), float(coords["y"]), float(coords["z"]))
     atom.occ = float(spec.get("occupancy", 1.0))
     atom.b_iso = float(spec.get("b_iso", 0.0))
     altloc = norm_blank(spec.get("altloc", ""))
@@ -159,12 +157,12 @@ def make_residue(target: dict[str, Any], atoms: list[dict[str, Any]]) -> gemmi.R
         resid = int(target["resid"])
     except Exception as exc:
         raise ToolError(f"resid must be an integer for PDB output: {target.get('resid')!r}") from exc
-    insertion_code = norm_blank(target.get("insertion_code", "")) or " "
-    if len(insertion_code) != 1:
+    icode = norm_blank(target.get("insertion_code", "")) or " "
+    if len(icode) != 1:
         raise ToolError("PDB insertion_code must be empty or one character")
     residue = gemmi.Residue()
     residue.name = str(target["residue_name"])
-    residue.seqid = gemmi.SeqId(resid, insertion_code)
+    residue.seqid = gemmi.SeqId(resid, icode)
     record_name = str(target.get("record_name", "ATOM")).upper()
     if record_name not in {"ATOM", "HETATM"}:
         raise ToolError("record_name must be ATOM or HETATM")
@@ -182,12 +180,12 @@ def make_residue(target: dict[str, Any], atoms: list[dict[str, Any]]) -> gemmi.R
     return residue
 
 
-def insertion_position(chain, resid: int, insertion_code: str) -> int:
-    wanted = (resid, insertion_code)
-    for index, residue in enumerate(chain):
+def insertion_position(chain, resid: int, icode: str) -> int:
+    wanted = (resid, icode)
+    for i, residue in enumerate(chain):
         current = (int(residue.seqid.num), norm_blank(residue.seqid.icode))
         if current > wanted:
-            return index
+            return i
     return len(chain)
 
 
@@ -222,6 +220,11 @@ def main() -> int:
         if output_path.exists():
             raise ToolError(f"output_structure already exists: {output_path}")
 
+        input_text = input_path.read_text(encoding="utf-8", errors="replace")
+        has_cryst1 = any(line.startswith("CRYST1") for line in input_text.splitlines())
+        if any(line.startswith("CONECT") for line in input_text.splitlines()):
+            raise ToolError("PDB input contains CONECT records; serial renumbering would require explicit connectivity handling")
+
         structure = gemmi.read_structure(str(input_path))
         if len(structure) != 1:
             raise ToolError(f"PDB input must contain exactly one model; observed {len(structure)}")
@@ -230,8 +233,8 @@ def main() -> int:
         for item in require_list(config, "remove_atoms"):
             if not isinstance(item, dict):
                 raise ToolError("remove_atoms entries must be mappings")
-            _, _, residue, atom_index, _ = find_atom(model, item)
-            del residue[atom_index]
+            _, _, residue, ai, _ = find_atom(model, item)
+            del residue[ai]
 
         for item in require_list(config, "rename_atoms"):
             if not isinstance(item, dict) or not isinstance(item.get("target"), dict):
@@ -248,10 +251,10 @@ def main() -> int:
         for item in require_list(config, "replace_residues"):
             if not isinstance(item, dict) or not isinstance(item.get("target"), dict) or not isinstance(item.get("atoms"), list):
                 raise ToolError("replace_residues entries require target mapping and atoms list")
-            chain, residue_index, _ = find_residue(model, item["target"])
+            chain, ri, _ = find_residue(model, item["target"])
             replacement = make_residue(item["target"], item["atoms"])
-            del chain[residue_index]
-            chain.add_residue(replacement, residue_index)
+            del chain[ri]
+            chain.add_residue(replacement, ri)
 
         for item in require_list(config, "add_residues"):
             if not isinstance(item, dict) or not isinstance(item.get("target"), dict) or not isinstance(item.get("atoms"), list):
@@ -264,8 +267,8 @@ def main() -> int:
             if any(residue_matches(residue, target) for residue in chain):
                 raise ToolError(f"add_residues target already exists ({selector_label(target)})")
             residue = make_residue(target, item["atoms"])
-            position = insertion_position(chain, int(target["resid"]), norm_blank(target.get("insertion_code", "")))
-            chain.add_residue(residue, position)
+            pos = insertion_position(chain, int(target["resid"]), norm_blank(target.get("insertion_code", "")))
+            chain.add_residue(residue, pos)
 
         for item in require_list(config, "add_atoms"):
             if not isinstance(item, dict) or not isinstance(item.get("target"), dict) or not isinstance(item.get("coordinates"), dict):
@@ -288,7 +291,10 @@ def main() -> int:
                     serial += 1
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        structure.write_pdb(str(output_path))
+        options = gemmi.PdbWriteOptions()
+        options.cryst1_record = has_cryst1
+        options.conect_records = False
+        structure.write_pdb(str(output_path), options)
         return 0
     except ToolError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
