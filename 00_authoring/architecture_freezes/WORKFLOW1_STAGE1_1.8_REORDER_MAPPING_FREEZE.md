@@ -1,177 +1,184 @@
-# Workflow 1 / Stage 1.8 Reorder and mapping architecture freeze
+# Workflow 1 / Stage 1.8 Reorder and mapping architecture record
 
-Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE SKILL**
+Status: **FROZEN AUTHORING RECORD — ACTIVE SKILL GENERATED**
 
-## 0. 文档定位
-
-本文件保存 `1.8 Reorder and mapping` 已经讨论并敲定的设计事实，以及后续正式生成 Skill 时需要直接继承的细节。
-
-它不是 `SKILL.md`，也不表示 1.8 已经获得正式 Skill generation / activation 许可。正式 Skill 生成时，应以本 freeze + 当时 current 的上游正式接口 + authoring rules 为输入。
-
-本文件迁移并保留此前误放入 active Skill 路径的 1.8 详细内容，同时合并保留历史 Operation / Validator 中的有效信息；不恢复旧 Workflow / Operation / Validator 角色分类。
-
-Source preservation:
-
-- former active pseudo-Skill: `01_structure_preparation/1.8_reorder_and_mapping/SKILL.md`, blob `2cb6e8f3953770c9b6f4d51a9cf18ac10992879c`
-- historical operation source: `02_operations/structure_reorder_and_mapping/SKILL.md`, blob `0c8b19728b2049dfbf40f73211ad010301996604`
-- historical validation source: `02_validators/structure_mapping_validator/SKILL.md`, blob `1054f16bac3f6af9a2d1afc7c7fe91af69f95a2b`
-
-## 1. Purpose and boundary
-
-1.8 的目标是把已经完成 conformer resolution、结构修正和蛋白质 protonation-state naming 的当前重原子结构，整理为 Stage 2 可稳定消费的最终 Stage 1 structure + heavy-atom mapping。
-
-1.8 只负责：
+Current runtime authority:
 
 ```text
-final Stage 1 chain assignment
+01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
+```
+
+本文件保存 1.8 在正式 Skill generation 时采用的最终架构事实。active Skill 生成后，后续可变执行细节由 current `SKILL.md` / helper 拥有；本文件不再维护第二套平行 mutable specification。
+
+## 1. Purpose
+
+1.8 将当前 target 的 current valid heavy-atom structure 整理为 Stage 1 final structure，并建立 Stage 2 可稳定消费的 heavy-atom identity map。
+
+职责：
+
+```text
+final Stage 1 chain assignment / representation
 + residue / object organization
-+ heavy-atom order organization
-+ final Stage 1 mapping
++ heavy-atom block organization
++ final heavy-atom mapping
 ```
 
-1.8 不负责：
+1.8 不做 structure repair、protonation assignment、标准 residue 最终补氢、force-field-specific all-atom ordering，也不根据后续 GROMACS `moleculetype` 反向改变 Stage 1 chain identity。
 
-- 新增或删除原子；
-- 重新执行 structure repair；
-- 改变 protonation state；
-- 生成标准残基最终 H；
-- 生成 force-field-specific final all-atom order；
-- 根据未来 GROMACS `moleculetype` 组织反向改变 Stage 1 chain identity。
+## 2. Inputs
 
-## 2. Required object / evidence
+每个 target 的正式输入收敛为：
 
-生成正式 1.8 Skill 时，至少应消费：
+- current valid heavy-atom PDB；
+- 1.3 对应 `targets/target_xxx.yaml`；
+- 1.2 正式 `classification_result.yaml`，且 `result_status: COMPLETE`。
 
-- 1.7 已验证的 `protonation_assigned_structure.pdb`；
-- 1.3 target identity / mapping；
-- 1.2 中需要的 component / residue / relation 信息；
-- 1.6 `completion_report.yaml`；
-- topology-linked nonstandard unit 与其 standard-side linked residues 的已确认关系。
+1.6 `completion_report.yaml`、1.7 `protonation_assignment_report.yaml` 与 `relation_decisions.yaml` 不再作为 1.8 强制输入。已经落实的结构变化由 current structure 体现；人工 relation decisions 已同步进入 1.2 正式结果。
 
-## 3. Frozen final Stage 1 chain assignment
+## 3. Reuse
 
-对于 topology-linked nonstandard unit：
+1.8 **不设置 reuse**。
 
-- 如果所有 standard-side linked residues 都属于同一条 standard chain，则该 nonstandard unit 归入该 chain，不单独建立 chain；
-- 如果 standard-side linked residues 跨多条 standard chain，则该 nonstandard unit 使用独立 chain identity。
+每次实际进入 1.8 都重新基于当前 target 的 current structure + 当前正式 1.2 / 1.3 identity information 生成结果。
 
-该规则由 Stage 1 / 1.8 拥有。
+## 4. Final chain assignment
 
-必须保持：
+对 topology-linked nonstandard unit：
+
+- 所有 standard-side linked residues 属于同一 standard chain → unit 使用该 standard chain 的 final PDB chain ID；
+- standard-side linked residues 跨多个 standard chains → unit 保持独立 chain identity。
+
+如果 1.2 / 1.3 已经给出与该规则一致的 chain organization，1.8 直接沿用，不建立第二套 chain model。
+
+跨多条 standard chain 的 linked unit 优先沿用已有独立 chain ID；只有现有表示不能可靠作为独立 chain 时，才按 1.3 固定序列：
 
 ```text
-Stage 1 chain identity ≠ GROMACS moleculetype organization
+A-Z → a-z → 0-9
 ```
 
-后续 Stage 2 可以基于 covalent connectivity 将多个 chain 组织进同一 `moleculetype`，但不得反向覆盖已经确定的 Stage 1 chain identity。
+选择当前 final structure 中未使用且不与所链接 standard chains 冲突的 chain ID。
 
-## 4. Frozen residue / object order
+Stage 1 chain identity 与未来 GROMACS `moleculetype` organization 保持独立。
 
-顺序规则冻结为：
+## 5. Residue / object order
 
-- 保持 1.2 / 1.3 已建立的稳定结构对象顺序；
-- 1.6 新补出的 missing residues 放回其所在 polymer chain 的正确 residue 位置；
-- 同一 chain 中 standard polymer residue block 保持 polymer 顺序；
-- 归入该 chain 的 topology-linked nonstandard unit 放在该 chain 的 standard polymer residue block 之后；
-- 多个 linked nonstandard units 之间保持上游稳定 object order；
-- 不按 attachment residue number 重新排序 linked units；
-- 不把 linked nonstandard unit 强行插到 attachment residue 的紧邻位置。
-
-## 5. Frozen heavy-atom order
-
-原子组织规则冻结为：
-
-- 同一 residue 的 heavy atoms 必须连续；
-- 保留已有稳定 atom order；
-- 1.6 新增 heavy atoms 纳入对应 residue；
-- 不为了匹配某个具体 force-field template 在 Stage 1 做 final force-field-specific atom ordering；
-- 1.8 输入与输出 heavy-atom set 必须完全一致；
-- 完成组织后按最终写入顺序重新连续编号 PDB atom serial。
-
-Stage 1 最终输出仍是 heavy-atom organization；Stage 2 / 2.2 才建立标准部分 force-field-specific all-atom order。
-
-## 6. Frozen mapping semantics
-
-1.8 生成 Stage 1 final heavy-atom map。
-
-每个最终 heavy atom 至少能够追溯：
-
-- final atom serial；
-- final chain identity；
-- final residue identity / number / name；
-- final atom name；
-- 对应的上游 `component_id` / `residue_id`；
-- atom origin；
-- 对继承 atom，保留可用的上游 atom serial / provenance。
-
-atom origin 的冻结语义为：
+同一 standard chain：
 
 ```text
-SOURCE
-ADDED_BY_COMPLETION
+standard polymer residue block
+TER
+assigned linked nonstandard unit 1
+TER
+assigned linked nonstandard unit 2
+TER
+...
 ```
 
-1.6 已删除的 atom 不进入 final map；其删除记录保留在 `completion_report.yaml` 中。
+规则：
 
-## 7. Reuse model to carry into Skill generation
+- standard polymer residue block 保持 polymer order；
+- 多个 assigned linked units 保持 1.2 正式 residue/object order 所确定的稳定 unit order；
+- multi-residue unit 内保持正式 residue order；
+- 不按 attachment residue number 重排 linked units；
+- 不把 linked unit 插到 attachment residue 紧邻位置；
+- 跨多个 standard chain 的 linked unit 保持独立 chain，不进入 standard-chain residue ordering；
+- 其它对象保持既有相对 organization。
 
-已有 1.8 结果只有在以下条件均明确等价时才可自动复用：
+## 6. Final resid
 
-- 输入结构相同；
-- 上游 identity / relation 信息相同；
-- completion provenance 相同；
-- chain-assignment 依据相同。
+默认保留 1.3 `resid`。
 
-明确变化时重新执行；信息不足时由后续正式 Skill 按 Lightweight Runtime 通用原则处理。
+唯一需要重新编号的主要情况是：归入某条 standard chain 的 topology-linked nonstandard unit。其 residues 按 stable unit / residue order 使用该 final chain 后续可用、不会与保留 residue identity 冲突的新 `resid`。
 
-## 8. Validation boundary
+standard polymer residue 的 `resid` 不因 1.8 reorder 改写。跨多条 standard chain 而保持独立 chain 的 linked unit，以及其它未 reassignment 对象，保持原 `resid`。
 
-Validation 属于 1.8 结果 owner，不需要恢复独立 Validator layer。
+## 7. Heavy-atom / PDB organization
 
-至少检查：
+1.8 输入与输出 atom set 一致，不新增或删除 atoms。
 
-1. 1.8 输入和输出 heavy-atom set 完全一致；
-2. topology-linked nonstandard unit 的最终 chain assignment 符合冻结规则；
-3. 新补 missing residues 已位于 polymer chain 的正确 residue 位置；
-4. standard residue block 与 linked nonstandard block 的顺序符合规定；
-5. 同一 residue 的 atoms 连续，且没有无依据的 force-field-specific atom reorder；
-6. atom serial 连续且唯一；
-7. final map 覆盖最终 PDB 中全部 heavy atoms 且无重复；
-8. map 中 final identity 与 PDB 逐 atom 一致；
-9. inherited atoms 与 completion-added atoms 的 provenance 可由上游结果追溯。
+同一 residue 内保持当前 atom order；不做 force-field-specific ordering。
 
-任一项失败时，1.8 不能视作完成。Validation 不自行改 PDB 或 map。
+不修改 coordinates、atom name、residue name、occupancy、B-factor、element 或 formal charge。
 
-## 9. Frozen results / handoff
+final PDB：
 
-后续正式 Skill 的结果方向至少包括：
+- `CRYST1` 当前存在时保留；
+- `POLYMER → ATOM`；
+- `BRANCHED / NONPOLYMER / WATER → HETATM`；
+- standard polymer block 后写 `TER`；
+- 每个 linked nonstandard unit 后写 `TER`；
+- `ATOM / HETATM / TER` 按实际写出顺序从 1 连续编号。
+
+## 8. Final map
+
+最终 map basename 冻结为：
+
+```text
+stage1_final_map.yaml
+```
+
+只记录 `stage1_final.pdb` 中实际存在的 heavy atoms，不记录 `TER`、missing-residue placeholder、已删除 atom 或 completion provenance。
+
+atom record 固定保存：
+
+```text
+serial
+chain_id
+resid
+residue_name
+atom_name
+component_id
+residue_id
+```
+
+此前 freeze 中的：
+
+```text
+origin: SOURCE | ADDED_BY_COMPLETION
+source_atom_serial
+```
+
+已在正式 authoring 讨论中明确取消。completion provenance 继续由真正的上游 owner 保存，1.8 不复制。
+
+## 9. Completion boundary
+
+1.8 只做最小 completion gate，确认 reorder / mapping 已完整执行、atom set 未增删、final PDB 与 map 已成功形成且逐 atom 唯一对应。
+
+Stage 1 总体结构正确性与 force-field compatibility validation 属于 1.9；1.8 不生成独立 validation report。
+
+## 10. Official results
+
+每个 target 的正式结果只有：
 
 ```text
 stage1_final.pdb
-stage1_final.map
-mapping_validation.md
+stage1_final_map.yaml
 ```
 
-既有 execution-directory 约定为：
+二者都登记到项目级：
 
 ```text
-01_structure_preparation/08_reorder_and_mapping/<task_id>/
+<project_root>/00_project_records/project_result_index.md
 ```
 
-该路径是科研项目 execution directory，不是本仓库 Skill source directory。
+真实项目 execution path：
 
-## 10. Handoff to 1.9 / Stage 2
+```text
+<project_root>/01_structure_preparation/08_reorder_and_mapping/<task_id>/<target_id>/
+```
 
-1.9 对 `stage1_final.pdb` + `stage1_final.map` 做 Stage 1 final read-only validation。
+## 11. Deterministic helper
 
-通过 1.9 后，Stage 2 消费的是经过 Stage 1 最终组织和映射的重原子结构；Stage 2 不应重新定义 1.8 已经拥有的 chain-assignment 规则。
+当前 Skill package 使用一个机械 helper：
 
-## 11. Skill-generation note
+```text
+01_structure_preparation/1.8_reorder_and_mapping/scripts/build_stage1_final.py
+```
 
-正式生成 1.8 Skill 时：
+它负责 stable identity binding、confirmed topology-effect relation 投影、linked-unit organization、PDB rewrite、serial / resid materialization 与 `stage1_final_map.yaml` 写出；不承担 relation/classification 科学判断。
 
-- 直接继承本 freeze 中 chain assignment / residue-object order / heavy-atom order / mapping semantics；
-- 保留 `SOURCE | ADDED_BY_COMPLETION` provenance 语义；
-- 不恢复旧 `Operation + Validator` 双层包装；
-- 不把 Stage 2 `moleculetype` 组织规则复制回 1.8；
-- 只有具体 map 文件格式、reference 拆分、确定性 helper 等尚未冻结内容，才在 authoring 阶段继续细化。
+## 12. Handoff
+
+1.9 只读消费 1.8 final PDB / map 做 Stage 1 final validation。
+
+Stage 2 可在此 heavy-atom identity/order 骨架上建立 force-field-specific all-atom order 和最终 topology organization，但不得反向覆盖 Stage 1 chain identity。
