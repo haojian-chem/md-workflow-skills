@@ -97,11 +97,17 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.5 → 1.6
 
-1.6 消费当前 target 的 1.5 正式 `structure_completeness_report.yaml` 及其 `structure` 指向的当前 PDB，并落实其中已明确的 repair items。具体规则由 `1.6_structure_completion/SKILL.md` 拥有。
+1.6 消费当前 target 的 1.5 正式 `structure_completeness_report.yaml`，以及其中 `structure` 字段记录的当前 PDB，并落实报告中已明确的 repair items。具体规则由 `1.6_structure_completion/SKILL.md` 拥有。
 
 ### 1.6 → 1.7
 
-冻结接口：如果 1.6 实际修改了结构，1.7 必须消费 1.6 当前正式结构，而不是旧输入。
+1.7 消费当前 target 在 1.6 处理后的当前结构：
+
+- 如果 1.6 本地执行并形成通过 validation 的正式结果，使用该次 `completed_structure.pdb`；
+- 如果 1.6 复用了等价的既有正式结果，使用被复用的 `completed_structure.pdb`；
+- 如果 1.6 因没有 repair item 而未执行，则沿用进入 1.6 前的当前结构。
+
+1.7 的内部执行规则由对应 current Skill / freeze 拥有，Stage main 只维护这里的结构 handoff。
 
 ### 1.7 → 1.8
 
