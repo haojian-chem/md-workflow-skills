@@ -14,12 +14,15 @@ Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE INVENTORY**
 
 ```text
 trjconv
+trjcat
 make_ndx
 rmsd
 rmsf
 hbond
 rdf
 ```
+
+其中 `trjconv` 与 `trjcat` 是独立 capability：`trjconv` 负责单轨迹转换/处理，`trjcat` 负责多轨迹拼接；不把 `trjcat` 作为 `trjconv` 的内部命令步骤隐藏。
 
 这些名称定义首批需要为 Stage 5 准备的能力集合，但并不因为写入本 freeze 就自动成为 active inventory entry。只有对应 capability 的实际 `entry` 已形成并可引用时，才能把该条目加入正式 inventory。
 
@@ -57,7 +60,7 @@ Inventory 只做 capability discovery，不复制具体 capability owner 的方�
 
 各 capability 哪些正式结果文件允许登记到 `project_result_index.md`，由对应 capability owner 在自己的 Skill / README 中定义；inventory 不新增 `registered_files`、`result_whitelist` 等集中字段，也不复制这些文件清单。
 
-`trjconv` 的 processed trajectory 额外集中管理和 `trajectory_index.yaml` 登记规则同样由 `trjconv` capability owner 的 Skill / README 拥有；Stage 5 inventory 只负责发现其 capability entry。
+`trjconv` / `trjcat` 产生的正式 processed/concatenated trajectory 如需进入集中 trajectory 管理，由对应 capability owner 的 Skill / README 定义其产物与登记规则；Stage 5 inventory 只负责发现 capability entry，不在这里复制 `trajectory_index.yaml` 的具体写入规则。
 
 如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理；相关未覆盖需求可按 Stage 5 architecture freeze 的边界保留在 Task Sheet 的 Stage 5 plan items 区域之外。
 
