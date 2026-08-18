@@ -130,7 +130,7 @@ plan item 状态只使用：
 已终止
 ```
 
-每个 plan item 最小结构：
+每个 plan item 的规划期最小结构：
 
 ```text
 编号
@@ -141,13 +141,46 @@ status
 path
 ```
 
+完成时可按需增加：
+
+```text
+results
+```
+
 字段语义：
 
 - `capability`：引用 analysis capability inventory 中的条目名；该条目可指向 Skill、Tool 或其它已登记 capability owner；
 - `inputs`：当前 item 实际消费的输入；已有文件记录完整路径；
 - `settings`：capability-specific 当前任务设置，不建立 Stage 5 通用子 schema；
 - `status`：`未完成 / 已完成 / 已终止`；
-- `path`：该 item 相关文件的完整存放目录，用于查询定位，不指向单个结果文件。
+- `path`：该 item 相关文件的完整存放目录，用于查询定位，不指向单个结果文件；
+- `results`：completion-time 可选字段，只记录当前 item 已通过对应 capability owner validation 的关键正式结果/产物入口；不要求罗列目录内全部输出文件。
+
+`path` 与 `results` 的职责不同：
+
+```text
+path
+→ 当前 plan item 的相关文件目录 / 恢复定位入口
+
+results
+→ 当前 item 最终确认有效、值得直接定位或供后续 item 消费的关键结果/产物
+```
+
+`results` 不建立统一 Stage 5 子 schema；具体键和值按 capability 的正式产物语义记录。例如：
+
+```yaml
+results:
+  data: /full/path/to/rmsd.xvg
+```
+
+或：
+
+```yaml
+results:
+  trajectory: /full/path/to/processed.xtc
+```
+
+只有对应 capability owner 已完成 validation 后，才把产物作为正式 `results` 记录。失败、未完成或仅用于 debug 的中间文件不因为存在于 `path` 下就进入 `results`。
 
 如果输入尚未生成，但已经由当前 plan 前置项目负责产生，使用直观描述记录依赖，例如：
 
@@ -225,7 +258,7 @@ Stage 5 main Skill 只查询、核验和使用，不负责生成 trajectory、�
   atom_order_reference: /full/path/to/system.tpr
   output_selection: System
   processing:
-    # only processing conditions relevant to reuse
+    # only conditions relevant to reuse
 ```
 
 `processing` 按实际处理内容记录影响 reuse 的信息，例如 PBC/center/fit、`dt`、time range 等；不要求所有 trajectory 使用完全相同字段。
@@ -277,7 +310,7 @@ RDF Skill  → RDF 执行及输出
 ...
 ```
 
-Stage 5 main Skill 只负责 planning/orchestration 层一致性。只有对应 capability owner 确认输出有效后，相关 plan item 才进入 `已完成`。
+Stage 5 main Skill 只负责 planning/orchestration 层一致性。只有对应 capability owner 确认输出有效后，相关 plan item 才进入 `已完成`，其关键正式产物才按需写入 `results`。
 
 ## 10. Project result registration
 
@@ -297,7 +330,10 @@ inputs
 settings
 status
 path
+results   # when present
 ```
+
+Task Sheet 中的 `results` 是当前 item 的直接恢复/依赖入口；`project_result_index.md` 仍只承担跨任务正式结果检索，不要求把每个 item 的全部 `results` 内容复制成 project-level 明细。
 
 不把每个 `.xvg/.csv/.dat/.png/.xtc/.ndx` 单独复制成 project-level 结果索引项。
 
@@ -309,6 +345,7 @@ Stage 5 可以完成的前提：
 
 - 当前分析目标所需 plan items 已完成，或有明确理由进入 `已终止`；
 - 每个 `已完成` item 已通过对应 capability owner 自己的 validation；
+- 需要直接恢复或供后续 item 消费的关键正式产物已按需记录在对应 `results`；
 - 需要保留的分析事项已经按上述边界登记到 `project_result_index.md`。
 
 ## 12. Explicitly rejected defaults
