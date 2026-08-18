@@ -127,12 +127,14 @@ reason
 字段语义：
 
 - `capability`：analysis capability inventory 中的条目名；可指向 Skill、Tool 或其他已登记 owner；
-- `inputs`：当前 item 实际消费的输入；已有文件记录完整路径；
-- `settings`：capability-specific 设置，不建立 Stage 5 通用子 schema；
+- `inputs`：当前 plan item 所要求或对应的输入。实际执行时记录当前执行实际消费的输入；direct reuse 时仍记录当前需求对应的输入，用于与候选既有结果进行等价性判断。已有文件记录完整路径；
+- `settings`：当前 plan item 定义的 capability-specific 分析设置。实际执行时对应当前执行设置；direct reuse 时仍记录当前需求要求的设置，用于与候选既有结果比较。不建立 Stage 5 通用子 schema；
 - `status`：`未完成 / 已完成 / 已终止`；
 - `path`：当前 Task 实际执行该 item 时，记录 item 相关文件的完整目录，用于查询和恢复，不指向单个结果文件；若该 item 因 direct reuse 在当前 Task 中不执行，则可省略 `path`；
 - `results`：可选字段，记录已经通过对应 capability owner validation、值得直接定位或供后续 item 消费的关键正式结果/产物入口；direct reuse 时可指向被复用的既有正式结果；
 - `reason`：终止原因；direct reuse 时应说明已有正式结果已满足当前需求，并可注明其原 Task / result entry。
+
+因此 direct reuse 虽然当前 Task 不执行该 capability，`inputs` 和 `settings` 仍然保留；它们描述的是**当前需求**，不是把旧任务的执行参数复制成当前执行记录。候选旧结果自己的 inputs / settings 应从其原 Task / result record 追溯，并与当前 item 比较。
 
 当执行失败、validation 不通过或后续证据要求调整计划时，**Stage 5 不规定“必须修改原 item”或“必须终止并新建 item”的统一判据**。具体处理方式由实际使用 Stage 5 Skill 的 Agent 或用户结合当前任务判断。Stage 5 只要求调整后的 Task Sheet 保持可追溯：已有编号不重排；若 item 进入 `已终止`，必须记录 `reason`；当前 plan 必须继续准确反映尚需执行的工作与有效依赖关系。
 
@@ -313,6 +315,7 @@ rerun
 ```text
 direct reuse
 → 当前 plan 仍保留对应 item
+→ inputs / settings 记录当前需求，用于与既有结果做 reuse 等价性判断
 → status: 已终止
 → reason 说明已有正式结果直接满足当前需求，并注明复用来源
 → results 指向被复用且已 validation 的正式结果/入口
