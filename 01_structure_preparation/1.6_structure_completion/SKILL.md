@@ -100,7 +100,7 @@ confirmed extra atom deletion
 - 满足要求：按 atom-level 方法补入 report 已列出的 missing heavy atoms；
 - 不满足要求：不强行 transplant atom，将该 repair item 改按完整 residue completion 处理，并纳入下一步的 residue-level completion set。
 
-如果这种处理方式调整后的 residue 与原有 missing residues 连续，应作为同一个连续 completion region 处理，而不是先后独立补全。
+如果这种处理方式调整后的 residue 与原有 missing residues 在 target polymer 的实际 residue order 上连续，应作为同一个连续 completion region 处理，而不是先后独立补全。不能仅因为重新编号后的 `resid` 数值相邻就判定为连续。
 
 ## 5. Missing residues
 
@@ -113,7 +113,7 @@ confirmed extra atom deletion
 - `structure_completeness_report.yaml` 原本列出的 missing residues；
 - 因 missing-heavy-atom anchor 不足而改按完整 residue completion 处理的 residue。
 
-对连续的 residue-level completion items 先合并为实际连续 completion region，再按 reference 中的 AF3 residue correspondence、local alignment、internal / terminal handling、multiple-reference comparison、coordinate transplant 和局部 geometry judgment 规则处理。
+对 residue-level completion items，先按照 target polymer 的实际 residue order 合并真正连续的 completion region，再按 reference 中的 residue correspondence、local alignment、internal / terminal handling、multiple-reference comparison、coordinate transplant 和局部 geometry judgment 规则处理。
 
 ## 6. Final write
 
@@ -206,6 +206,7 @@ unresolved_items: []
 repair_adjustment: insufficient shared-heavy-atom anchors; treated as missing residue
 ```
 
+- 如果 whole-residue completion 实际删除了原 partial residue 中已有的 atoms，这些实际删除也要逐项记录在 `removed_atoms` 中；
 - `unresolved_items` 只记录当前 repair scope 内未能完成的 item 及原因；用户明确改变当前 repair scope 时，不把已排除的 repair 伪装成 unresolved item。
 
 # Validation
