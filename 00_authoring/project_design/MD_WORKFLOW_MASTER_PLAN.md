@@ -165,7 +165,7 @@ Architecture authority:
 
 ## 7. Stage 5 — Analysis
 
-Status: MAIN SKILL ACTIVE; `trjconv` AND `trjcat` CAPABILITIES ACTIVE; OTHER INITIAL CAPABILITIES PENDING IMPLEMENTATION.
+Status: MAIN SKILL ACTIVE; `trjconv`, `trjcat`, AND `make_ndx` CAPABILITIES ACTIVE; OTHER INITIAL CAPABILITIES PENDING IMPLEMENTATION.
 
 Stage 5 has **no numbered sub-stage**. Analysis planning and orchestration is the responsibility of the Stage 5 main Skill itself rather than a `5.1` wrapper.
 
@@ -177,13 +177,14 @@ Current active analysis capability inventory:
 
 `05_analysis/references/analysis_capability_inventory.yaml`
 
-The inventory is active and currently contains the generated `trjconv` and `trjcat` capability entries.
+The inventory is active and currently contains the generated `trjconv`, `trjcat`, and `make_ndx` capability entries.
 
 Current active capability entries:
 
 ```text
-trjconv → 05_analysis/trjconv/SKILL.md
-trjcat  → 05_analysis/trjcat/SKILL.md
+trjconv  → 05_analysis/trjconv/SKILL.md
+trjcat   → 05_analysis/trjcat/SKILL.md
+make_ndx → 05_analysis/make_ndx/SKILL.md
 ```
 
 Stage-level architecture record:
@@ -206,7 +207,7 @@ hbond
 rdf
 ```
 
-`trjconv` and `trjcat` are active. The remaining concrete capability entries are still pending implementation and are not active merely because they are listed here.
+`trjconv`, `trjcat`, and `make_ndx` are active. The remaining concrete capability entries are still pending implementation and are not active merely because they are listed here.
 
 ## 8. Runtime and infrastructure
 
@@ -228,7 +229,7 @@ Historical design Markdown: `00_authoring/archive/`.
 - Stage 2：2.1–2.6 环节与目录已确定；architecture freeze 已完成；2.5 详细方案也只属于 freeze；正式 Stage 2 Skill generation 尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
-- Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv` 与 `trjcat` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md` 与 `05_analysis/trjcat/SKILL.md`；`make_ndx / rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
+- Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
 - Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
