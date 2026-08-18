@@ -130,11 +130,8 @@ workflows:
     workflow_id: "5"
     name: analysis
     project_directory: 05_analysis
-    step_catalog_status: defined
-    steps:
-      - id: "5.1"
-        name: analysis_planning_and_orchestration
-        base_work_directory: 05_analysis/01_analysis_planning_and_orchestration
+    step_catalog_status: no_numbered_substages
+    planning_mode: stage_level
 
 planning_rules:
   - preserve_defined_step_order
@@ -142,6 +139,7 @@ planning_rules:
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
   - md_simulation_task_sheet_uses_planned_run_route_instead_of_serialized_sub_stage_instances
   - md_simulation_formal_run_unit_ids_are_not_allocated_during_initial_planning
+  - analysis_task_sheet_uses_stage_level_entry_without_5_1_substage
   - task_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_task_sheet
   - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
   - manager_does_not_evaluate_scientific_step_applicability
