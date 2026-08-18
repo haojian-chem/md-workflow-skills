@@ -20,4 +20,16 @@
 # Initial planned capability cohort is documented in the Stage 5 architecture
 # freeze. No placeholder rows are created here before the corresponding entries
 # exist.
-[]
+
+- name: trjconv
+  purpose: Process an existing trajectory according to a Stage 5 plan item and produce a traceable processed trajectory when needed.
+  required_files:
+    - role: trajectory
+      types:
+        - xtc
+        - trr
+        - tng
+        - gro
+        - g96
+        - pdb
+  entry: 05_analysis/trjconv/SKILL.md
