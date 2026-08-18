@@ -192,6 +192,8 @@ residues:
 
 固定字段语义：
 
+- `protein_force_field` 记录当前实际使用的 protein force field；如果任务只明确提供独立 protonation naming convention、并未确定具体 protein force field，则写 `null`；
+- `protonation_naming_convention` 记录最终 residue-name mapping 的实际依据；如果直接使用已命名 protein force field 的默认命名规则，则写 `force_field_default`，否则记录实际 convention / reference；
 - `residue_type` 使用 `ASP | GLU | HIS` 表示当前 scientific object class；
 - `propka_pka` 为 PROPKA predicted pKa；没有可用值时写 `null`；
 - `hh_delta_threshold` 记录本次实际采用的 `|pKa - pH|` 默认/指定阈值；默认值为 `1.0`；
