@@ -33,3 +33,18 @@
         - g96
         - pdb
   entry: 05_analysis/trjconv/SKILL.md
+
+- name: trjcat
+  purpose: Concatenate multiple trajectory inputs according to a Stage 5 plan item and produce a traceable concatenated trajectory.
+  required_files:
+    - role: trajectories
+      types:
+        - xtc
+        - trr
+        - tng
+        - h5md
+        - gro
+        - g96
+        - pdb
+        - cpt
+  entry: 05_analysis/trjcat/SKILL.md
