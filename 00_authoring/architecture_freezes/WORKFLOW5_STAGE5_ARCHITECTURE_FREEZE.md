@@ -115,11 +115,14 @@ status
 path
 ```
 
-完成时可按需增加：
+完成或终止时可按需增加：
 
 ```text
 results
+reason
 ```
+
+其中 `reason` 在 `status: 已终止` 时必须记录。
 
 字段语义：
 
@@ -128,7 +131,8 @@ results
 - `settings`：capability-specific 设置，不建立 Stage 5 通用子 schema；
 - `status`：`未完成 / 已完成 / 已终止`；
 - `path`：当前 item 相关文件的完整目录，用于查询和恢复，不指向单个结果文件；
-- `results`：completion-time 可选字段，只记录已通过对应 capability owner validation 的关键正式结果/产物入口，不罗列目录内全部文件。
+- `results`：可选字段，记录已经通过对应 capability owner validation、值得直接定位或供后续 item 消费的关键正式结果/产物入口；direct reuse 时可指向被复用的既有正式结果；
+- `reason`：终止原因；direct reuse 时应说明已有正式结果已满足当前需求，并可注明其原 Task / result entry。
 
 `path` 与 `results` 的边界：
 
@@ -287,6 +291,23 @@ rerun
 → 旧结果不能可靠满足当前需求，需要重新执行相应 analysis capability
 ```
 
+对应当前 Task Sheet 的记录规则：
+
+```text
+direct reuse
+→ 当前 plan 仍保留对应 item
+→ status: 已终止
+→ reason 说明已有正式结果直接满足当前需求，并注明复用来源
+→ results 指向被复用且已 validation 的正式结果/入口
+
+reuse as input
+→ 不为“复用动作”单独建立 plan item
+→ 当前新的处理 item 直接在 inputs 中消费旧正式结果
+
+rerun
+→ 正常建立并执行当前 analysis item
+```
+
 如果候选信息不足，先追溯其 Task Sheet / Stage 5 plan item / `results` / 实际结果文件；仍无法确认时，不把该旧结果自动判定为等价的 direct reuse。
 
 ## 9. Validation ownership
@@ -302,9 +323,9 @@ RMSD Skill → RMSD 执行及输出
 RDF Skill  → RDF 执行及输出
 ```
 
-只有对应 capability owner 确认输出有效后，相关 plan item 才进入 `已完成`，关键正式产物才按需写入 `results`。
+只有对应 capability owner 确认当前执行输出有效后，实际执行的相关 plan item 才进入 `已完成`，关键正式产物才按需写入 `results`。direct reuse item 不因当前 Task 未执行而进入 `已完成`；它保持 `已终止`，并引用此前已经 validation 的正式结果。
 
-Stage 5 main Skill 只核验 orchestration 一致性：目标覆盖、capability/inputs/settings/依赖充分、编号和状态一致、后续项不依赖已终止或未产生所需输入的前置项。
+Stage 5 main Skill 只核验 orchestration 一致性：目标覆盖、capability/inputs/settings/依赖充分、编号和状态一致；后续项不得依赖没有产生或引用有效所需输入的已终止前置项。若已终止项属于 direct reuse 且其 `results` 已明确指向有效正式结果，则该结果可以被后续 item 使用。
 
 ## 10. Project result registration
 
@@ -325,6 +346,7 @@ settings
 status
 path
 results   # when present
+reason    # when terminated
 ```
 
 Task Sheet 的 `results` 是当前 item 的直接恢复/依赖入口；`project_result_index.md` 只承担跨任务正式结果检索，不要求复制每个 item 的全部 `results`。
@@ -337,10 +359,13 @@ Task Sheet 的 `results` 是当前 item 的直接恢复/依赖入口；`project_
 
 Stage 5 可以完成的前提：
 
-- 当前分析目标所需 plan items 已完成，或有明确理由进入 `已终止`；
+- 当前分析目标所需 plan items 已完成，或已终止且记录明确原因，同时当前分析目标仍然被覆盖；
 - 每个 `已完成` item 已通过对应 capability owner 的 validation；
+- direct reuse 导致的 `已终止` item 已明确引用此前通过 validation、且足以满足当前需求的正式结果；
 - 需要直接恢复或供后续 item 消费的关键正式产物已按需写入 `results`；
 - 需要保留的分析事项已经按上述边界登记到 `project_result_index.md`。
+
+因失败、取消或其它原因终止的 item，如果会留下当前分析目标未覆盖，则必须由新的 plan item 补齐，或由用户明确修改/取消相应目标；不能仅凭 `已终止` 状态把 Stage 5 判为完成。
 
 ## 12. Explicitly rejected defaults
 
