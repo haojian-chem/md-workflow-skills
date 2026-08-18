@@ -376,17 +376,22 @@ Task Sheet 的 `results` 是当前 item 的直接恢复/依赖入口；`project_
 
 是否额外汇总多个分析结果、综合解释或生成报告，由当前用户任务决定，不是 Stage 5 固定完成职责。
 
-## 11. Stage completion
+## 11. Stage 5 Skill completion boundary
 
-Stage 5 可以完成的前提：
+Stage 5 main Skill 只判断**自己负责的 Stage 5 plan items** 是否已经处理到可结束当前 Skill 职责的状态，不负责据此宣称整个 `5 Analysis` 或整个 Task 已完成。
 
-- 当前分析目标所需 plan items 已完成，或已终止且记录明确原因，同时当前分析目标仍然被覆盖；
+Stage 5 main Skill 结束自身当前职责前，应确认：
+
+- 当前 Stage 5 plan items 中没有仍需由 Stage 5 继续推进的 `未完成` item；
 - 每个 `已完成` item 已通过对应 capability owner 的 validation；
-- direct reuse 导致的 `已终止` item 已明确引用此前通过 validation、且足以满足当前需求的正式结果；
+- direct reuse 导致的 `已终止` item 已明确引用此前通过 validation、且足以满足当前 item 需求的正式结果；
+- 其它 `已终止` item 已记录明确 `reason`，并保持依赖关系可追溯；
 - 需要直接恢复或供后续 item 消费的关键正式产物已按需写入 `results`；
-- 需要保留的分析事项已经按上述边界登记到 `project_result_index.md`。
+- 需要保留的正式分析事项已经按上述边界登记到 `project_result_index.md`。
 
-因失败、取消、validation 失败或其它原因导致原计划不能继续时，由当前 Agent 或用户判断是调整既有 item、终止 item 后新增计划项，还是修改/取消相应目标。Stage 5 不固定这一决策方式；但在 Stage 5 判定完成前，当前有效计划必须已经覆盖仍然保留的分析目标，并保持状态、原因和依赖关系可追溯。
+Task Sheet 中如果仍有位于 Stage 5 plan items 区域之外的 capability gap、其它边界外事项或未解决任务要求，是否因此使整个 `5 Analysis` / Task 继续保持未完成，由当前 Task Execution Agent / 用户结合任务单判断。Stage 5 main Skill 不为这些边界外事项定义完成判据，也不因自己的 plan items 已处理完就自动修改整个 Stage / Task 的完成状态。
+
+因失败、取消、validation 失败或其它原因导致原计划不能继续时，由当前 Agent 或用户判断是调整既有 item、终止 item 后新增计划项，还是修改/取消相应目标；Stage 5 不固定这一决策方式。
 
 ## 12. Explicitly rejected defaults
 
@@ -400,6 +405,7 @@ Stage 5 可以完成的前提：
 - 让 Stage 5 main Skill 接管 `trjconv` / `make_ndx` 文件生命周期；
 - 在缺少 capability 时让 Stage 5 main Skill 临时接管该方法的设计、执行或 validation；
 - 为 capability gap 创建虚构 Stage 5 plan item、capability 或 inventory entry；
+- 由 Stage 5 main Skill 根据自己 plan items 的状态直接判定整个 `5 Analysis` / Task 已完成；
 - 为 plan item 失败后的修改/终止/新建方式建立统一自动判据；
 - 建立 project-level `ndx_index.yaml` 或 `.ndx` 自动复用判定机制；
 - 使用统一 `prepared_input_index.yaml` 同时由多个 producer 维护；
