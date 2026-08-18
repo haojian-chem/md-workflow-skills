@@ -205,19 +205,19 @@ Stage 4 architecture authority：
 00_authoring/architecture_freezes/WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
 ```
 
-Stage 5 当前尚无 active runtime Skill。其 current architecture authority 为：
-
-```text
-00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
-```
-
-未来只有在用户明确批准 Stage 5 Skill generation 并正式生成后，以下路径才可成为 Stage 5 runtime authority：
+Stage 5 current runtime authority：
 
 ```text
 05_analysis/SKILL.md
 ```
 
-因此，Stage 4 run-unit 的具体字段、reuse 和生命周期由 current Stage 4 Skill 定义；Stage 5 plan items / prepared-input indexes 等已冻结设计目前只作为后续 Skill generation 的 authoring input，不得在 runtime 中把 architecture freeze 当作可执行 Stage 5 Skill。
+Stage 5 architecture record：
+
+```text
+00_authoring/architecture_freezes/WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md
+```
+
+因此，Stage 4 run-unit 的具体字段、reuse 和生命周期由 current Stage 4 Skill 定义；Stage 5 plan items、prepared-input reuse、capability discovery 与 result-registration 边界由 current Stage 5 Skill / references 定义。Architecture freeze 只保留 authoring / architecture record，不作为 Stage 5 runtime 执行入口。
 
 ## 10. Legacy rule
 
