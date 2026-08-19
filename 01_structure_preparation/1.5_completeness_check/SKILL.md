@@ -5,6 +5,12 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.5-specific 的对象、执行、validation 与 results 规则；本步骤明确不设置 reuse。
+
 完成结构准备 `1.5 Completeness check`。
 
 本 Skill 对当前 target 的当前结构执行完整性检查，并形成该 target 独立的正式 `structure_completeness_report.yaml`。
