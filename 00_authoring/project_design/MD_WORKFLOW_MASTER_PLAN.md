@@ -211,7 +211,14 @@ rdf
 
 ## 8. Runtime and infrastructure
 
-Cross-Stage runtime authority: `00_authoring/project_design/lightweight_runtime_v2_spec.md`
+Cross-Stage runtime authority: `00_runtime/SKILL.md`
+
+Unnumbered active packages:
+
+```text
+00_manager/   project task management / initial planning
+00_runtime/   cross-Stage Task Execution runtime
+```
 
 Unnumbered infrastructure:
 
@@ -254,7 +261,7 @@ Skill authoring 窗口不得因为本文件是共享文件而静默跳过状态�
 ```text
 具体业务规则 → current Skill / reference
 尚未生成 Skill 的已冻结 Step / Stage 规则 → matching architecture freeze
-跨 Stage runtime → lightweight_runtime_v2_spec.md
+跨 Stage runtime → 00_runtime/SKILL.md
 Stage catalog / 建设状态 / current entry → 本 Master Plan
 current deterministic tool → tools/
 current evaluation → evals/
