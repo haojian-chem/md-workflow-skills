@@ -41,18 +41,18 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 → current: 1.6_structure_completion/SKILL.md
 
 1.7 Protein protonation assignment
-→ freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
+→ current: 1.7_protein_protonation_assignment/SKILL.md
 
 1.8 Reorder and mapping
 → current: 1.8_reorder_and_mapping/SKILL.md
 
 1.9 Structure preparation validation
-→ freeze only: ../00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
+→ current: 1.9_validation/SKILL.md
 ```
 
 这些编号表达 Stage/Step 身份，不表示 Workflow / Operation / Validator 分类。
 
-**freeze-only 不是 runtime Skill。** Architecture freeze 只能作为 authoring input；在用户明确批准正式 Skill generation 前，Task Execution Agent 不得把 freeze 当作可执行 `SKILL.md`。
+Architecture freeze 只作为 authoring input；只有对应 `SKILL.md` 已按许可正式生成后，才作为 runtime Skill 使用。
 
 ## Runtime use
 
@@ -66,8 +66,6 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 → 根据实际结果调整尚未执行的后续计划
 → 继续下一实际需要的子环节
 ```
-
-如果计划进入尚未正式生成 Skill 的子环节，则当前 runtime 不应根据 architecture freeze 自行执行；应先完成对应 Skill authoring / generation。
 
 普通已实现子环节之间不需要返回 Manager 调度，也不需要额外 Workflow dispatcher。
 
@@ -107,7 +105,7 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 - 如果 1.6 复用了等价的既有正式结果，使用被复用的 `completed_structure.pdb`；
 - 如果 1.6 因没有 repair item 而未执行，则沿用进入 1.6 前的当前结构。
 
-1.7 的内部执行规则由对应 current Skill / freeze 拥有，Stage main 只维护这里的结构 handoff。
+1.7 的内部执行规则由 `1.7_protein_protonation_assignment/SKILL.md` 拥有，Stage main 只维护这里的结构 handoff。
 
 ### 1.7 → 1.8
 
@@ -115,7 +113,7 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.8 → 1.9
 
-1.9 对 1.8 的 `stage1_final.pdb` + `stage1_final_map.yaml` 做阶段级只读验证；失败时返回真正拥有问题的上游子环节处理，而不是在 1.9 修复。
+1.9 对 1.8 的 `stage1_final.pdb` + `stage1_final_map.yaml` 做阶段级只读验证；失败时返回真正拥有问题的上游子环节处理，而不是在 1.9 修复。具体规则由 `1.9_validation/SKILL.md` 拥有。
 
 ## Dynamic task plan
 
@@ -144,8 +142,10 @@ Task Execution Agent 在实际执行中可以依据当前结果和用户要求�
 
 ## Stage 1 completion
 
-Stage 1 catalog 已确定；1.8 已生成 current Skill，1.9 仍为 freeze-only。Stage 1 不能在正式 1.9 Skill 尚未生成时声称具备完整 runtime implementation。
+Stage 1 的 1.1–1.9 current Skills 均已正式生成。
 
-未来只有在当前任务所需上游工作完成，并且正式 1.9 Skill 的 blocking checks 全部通过后，才可把 Structure preparation 结果交给 Stage 2。
+对于实际 target，只有当前任务所需的上游工作已经完成，并且 1.9 的 blocking checks 全部通过、overall conclusion 为 `PASS` 时，才可把 `stage1_final.pdb` + `stage1_final_map.yaml` 作为 Stage 1 final structure / identity results 交给 Stage 2。
+
+`structure_preparation_validation.md` 是 Stage 1 final validation 的正式 completion evidence；是否被 Stage 2 读取由实际核验需要决定。
 
 本 Stage main Skill 不另造阶段级重复结果包、route、decision、event 或 runtime state。
