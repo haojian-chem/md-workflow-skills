@@ -5,6 +5,12 @@ description: Stage 1.1 Structure source recognition。对当前任务中明确�
 
 # 1.1 Structure source recognition
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.1-specific 的对象、reuse、执行、validation 与 results 规则。
+
 ## Purpose
 
 为当前任务建立后续 Stage 1 可直接消费的明确结构来源：
