@@ -5,6 +5,12 @@ description: Stage 5 `trjconv` capability guide。用于按当前 Stage 5 plan i
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 在 shared Task Execution 规则和 Stage 5 main Skill 的 plan-item 规则基础上，只负责当前 `trjconv` item 的具体执行、检查与结果维护。
+
 本 Skill 指导 Agent 落实当前 Stage 5 plan item 中已经确定的 `trjconv` 处理要求。
 
 本 Skill 不重新推导分析目标或重新决定 Stage 5 capability routing；当前 item 的 `inputs` / `settings` 是执行依据。
