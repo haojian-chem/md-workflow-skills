@@ -5,6 +5,12 @@ description: Stage 1.8 Reorder and mapping。把当前 target 的有效重原子
 
 # 1.8 Reorder and mapping
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.8-specific 的对象、执行、completion gate 与 results 规则；本步骤明确不设置 reuse。
+
 ## Purpose
 
 将当前 target 已完成前序结构准备的 **current valid heavy-atom structure** 整理为 Stage 1 最终结构，并建立逐原子的稳定 identity mapping。
