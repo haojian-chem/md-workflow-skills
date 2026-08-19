@@ -5,6 +5,12 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 
 # 1 Structure preparation
 
+跨 Stage 的通用 Task Execution 规则读取：
+
+`../references/task_execution_rules.md`
+
+本 Skill 只在此基础上定义 Stage 1-specific 的阶段关系与计划调整语义，不复制 shared Task Execution 规则。
+
 ## Purpose
 
 将初始结构来源推进为经过 Stage 1 最终验证、可交给 Stage 2 topology preparation 的结构结果。
