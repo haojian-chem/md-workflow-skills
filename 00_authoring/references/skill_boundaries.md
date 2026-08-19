@@ -46,6 +46,16 @@ legacy/
 
 因此测试、工具、legacy contracts/runtime 和历史设计材料不得借用 Stage 编号作为根目录前缀。
 
+### AGENTS.md boundary
+
+`AGENTS.md` 是为了测试 / Agent 调用方便而临时生成的辅助文件。它可以指向测试时需要加载的 main `SKILL.md`，但：
+
+- 不属于任何 Skill package；
+- 不是 Skill main / reference / supporting Skill 的组成部分；
+- 不能作为某条 Skill 规则已经被正式引用、依赖或在真实 Skill runtime 中可达的依据。
+
+正式 Skill 的依赖、reference 与 supporting Skill 关系，必须由对应 `SKILL.md` 及其 package 内部的正式引用建立。
+
 ## 4. Supporting Skill
 
 只有复杂且边界清晰时才拆 supporting Skill。适合拆分的情况包括：
