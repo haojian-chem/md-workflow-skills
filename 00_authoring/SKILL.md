@@ -9,18 +9,24 @@ description: 设计、编写、冻结、审查或重构本项目科研 Skill 时
 
 Skill 的目标是指导 Agent 处理科研任务，而不是把 Agent 锁进固定 parser、schema、wrapper、dispatcher 或人为 workflow engine。
 
-真实任务的默认 runtime 关系为：
+真实任务的默认关系为：
 
 ```text
 Manager
 → Task Sheet
-→ 00_runtime/SKILL.md
 → Task Execution Agent
 → 当前科研 main Skill
-   ├─ 按需 references
+   ├─ repository shared task-execution reference
+   ├─ 按需 local references
    ├─ 必要时 supporting Skill
    └─ 必要时 deterministic Tool
 ```
+
+跨 Stage 的通用 Task Execution 规则统一读取：
+
+`../references/task_execution_rules.md`
+
+该文件是 shared reference，不是独立 Skill 或额外执行环节。Authoring 不在本文件复制其中的通用 Task Sheet / reuse / validation / result-registration 规则。
 
 # New-window startup
 
@@ -32,11 +38,11 @@ AGENTS.md
 
 之后只按任务需要读取：
 
+- 构筑、审查或重构科研执行 Skill 时必须读取 `../references/task_execution_rules.md`；
 - 对应 Stage / Step 的 `architecture_freezes/`；
 - 与当前输入/输出/边界直接相关的相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
 - 项目级 Stage catalog/status 需要时读 `project_design/MD_WORKFLOW_MASTER_PLAN.md`；
-- 跨 Stage runtime 需要时读 `../00_runtime/SKILL.md`；
 - 多窗口写入协调需要时读 `coordination/`。
 
 提出或实施迭代修改前恢复：
@@ -63,20 +69,18 @@ Scientific roots 按 MD Workflow Stage 固定为：
 
 这些 Stage / Step 目录可以在正式 `SKILL.md` 生成前预先保留，用于稳定规划路径和后续 Skill package 落位；**目录存在不等于 Skill 已生成或已激活**。
 
-以下是 unnumbered active packages，不是 Scientific Skill root：
-
-```text
-../00_manager/
-../00_runtime/
-```
+`../00_manager/` 是独立的 unnumbered 项目管理 package，不是 Scientific Skill root。
 
 以下为 unnumbered repository infrastructure：
 
 ```text
+../references/
 ../evals/
 ../tools/
 ../legacy/
 ```
+
+其中仓库级 `references/` 只保存确有跨 Skill 共用价值的 shared references；它本身不是新的执行层。
 
 历史 Workflow / Operation / Validator role-based roots 已退出 current layout，不保留 compatibility copy。
 
@@ -95,6 +99,12 @@ Scientific roots 按 MD Workflow Stage 固定为：
 ```
 
 普通模板：`assets/skill.template.md`。
+
+所有正式科研执行 Skill 都必须在 main `SKILL.md` 中显式引用仓库级：
+
+`references/task_execution_rules.md`
+
+引用只建立通用 Task Execution 规则的可达性；Stage/Step/capability 自己的科学规则仍由其自身拥有。
 
 **Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
 
@@ -125,6 +135,8 @@ current Skill / freeze
 
 ```text
 读取 current main + 对应 freeze + authoring rules
+↓
+读取 references/task_execution_rules.md 并确认执行 Skill 的共享规则引用
 ↓
 生成 / 修改目标 Skill package
 ↓
@@ -224,13 +236,15 @@ write ownership 必须窄
 
 Supporting Skill 只有在内容复杂、可独立加载、边界稳定且独立维护有价值时才拆；不要为了 validation 配对、目录对称或角色分类增加 Skill hop。
 
+仓库级 `../references/task_execution_rules.md` 是跨 Skill shared reference，不因被多个执行 Skill 使用而变成 supporting Skill。
+
 # Tool boundary
 
 Tool 是确定性能力组件，不是 Agent 理解任务的许可层。
 
 适合 Tool：精确 parsing、hash/mapping、批量结构化提取、稳定文件变换、格式校验和高重复度确定性计算。
 
-Current shared Tool root：`tools/`。
+Current shared Tool root：`../tools/`。
 
 Tool authoring：`md-workflow-tool-authoring/SKILL.md`。
 
@@ -238,16 +252,11 @@ Legacy runtime-dependent tools 位于 `../legacy/tools/`，不得为了调用它
 
 # Reuse, validation and results
 
-通常：
+跨 Skill 的默认 Task Execution 语义读取：
 
-```text
-明确等价 → 自动复用
-明确不等价 → 重新执行
-信息不足 → 当前 Task Execution Agent 向用户确认
-用户明确要求重做/对照 → 不自动复用
-```
+`../references/task_execution_rules.md`
 
-Validation 默认跟随结果 owner；只有复杂且边界清晰时才拆 supporting validation Skill。
+具体 Skill 是否设置 reuse、哪些条件影响等价性、validation 如何判定以及哪些文件属于正式结果，仍由对应结果 / scientific responsibility owner 定义；authoring 不在这里维护第二份通用执行规范。
 
 正式结果必须让后续执行能够定位并理解，而不要求重读上游全过程。
 
@@ -264,6 +273,8 @@ Legacy executable/runtime material：`../legacy/`。
 # Delivery check
 
 - [ ] main Skill 能直接指导 Agent 完成当前职责；
+- [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 未把 shared Task Execution reference 误建成独立 runtime Skill / dispatcher；
 - [ ] 未把可由 Agent / 用户按当前任务可靠判断的策略，无必要地固化成决策树、状态机、fallback 链或完整工作流；
 - [ ] 长/条件性细节没有在 main Skill 与 reference 重复；
 - [ ] supporting Skill 拆分有真实复杂度和边界价值；
