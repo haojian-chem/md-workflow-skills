@@ -5,6 +5,12 @@ description: Stage 5 Analysis 总 Skill。用于把 Task Sheet 中的 `5 Analysi
 
 # 5 Analysis
 
+通用 Task Execution 规则读取：
+
+`../references/task_execution_rules.md`
+
+本 Skill 只在此基础上定义 Stage 5-specific 的 analysis planning、plan-item maintenance、reuse orchestration 与 capability 调度规则。
+
 ## Purpose
 
 本 Skill 是 Stage 5 的 main runtime entry。
@@ -315,7 +321,7 @@ results → 已确认有效、值得直接定位或供后续 item 消费的关�
 
 ## Stage 5 Skill completion boundary
 
-本 Skill只判断自己负责的 Stage 5 plan items 是否已经处理到可以结束当前 Skill 职责的状态。
+本 Skill只判断自己负责的 Stage 5 plan items 是否已经处理到可以结束当前 Skill职责的状态。
 
 结束当前职责前确认：
 
