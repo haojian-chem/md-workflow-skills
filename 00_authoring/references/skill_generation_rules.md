@@ -66,6 +66,14 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 不要在 main Skill 和 reference 中各写一份完整规则。某条详细规则一旦下放给 reference，reference 是该细节的 owner，main Skill 只保留必要摘要和入口。
 
+仓库级 shared reference：
+
+```text
+references/task_execution_rules.md
+```
+
+保存各科研执行 Skill 共同遵守的跨 Stage Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+
 ### Negative scope / 禁止项
 
 “不做什么”不是 main Skill 的默认完整性要求。不要为了显得职责边界完整，系统性罗列所有相邻环节、下游环节或理论上可能发生但当前 Skill 不负责的事项。
@@ -125,10 +133,11 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 
 ## 4. 生成顺序
 
-新建或重构 Skill 时按以下顺序：
+新建或重构科研执行 Skill 时按以下顺序：
 
 ```text
-读取 00_authoring/SKILL.md + 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
+读取 00_authoring/SKILL.md + references/task_execution_rules.md
++ 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
 ↓
 读取 MD_WORKFLOW_MASTER_PLAN.md 中目标 Stage / Step 的当前建设状态
 ↓
@@ -138,7 +147,7 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 ↓
 只对确有必要固定的规则执行 rule-ownership gate
 ↓
-先完成 main SKILL.md 主线
+先完成 main SKILL.md 主线，并显式引用 references/task_execution_rules.md
 ↓
 识别长/条件性细节 → references/
 ↓
@@ -230,7 +239,7 @@ current → superseded / retired / replaced
 - 若 Master Plan 已有显式 writer，则不并发写，向该 writer 提交精确的状态变更；交付时必须明确该同步仍待落地，不能宣称 repository integration 已全部完成；
 - 不建立新的 `SYNC_STATUS.md`、`status.yaml`、skill inventory 或其他 parallel 状态层。
 
-## 7. Project-design 与 runtime 的位置
+## 7. Project-design 与 shared Task Execution reference
 
 项目级 authoring 设计资料位于：
 
@@ -245,15 +254,15 @@ MD_WORKFLOW_MASTER_PLAN.md
 → Stage numbering / catalog / 建设状态 / current entry
 ```
 
-跨 Stage Task Execution runtime **不属于 authoring project-design Markdown**。其 current runtime owner 是：
+跨 Stage Task Execution 通用规则位于仓库级：
 
 ```text
-00_runtime/SKILL.md
+references/task_execution_rules.md
 ```
 
-Authoring 在涉及跨 Stage runtime 边界时读取该 runtime Skill，但不得在 `project_design/` 再维护第二份 runtime specification。
+该文件是 shared reference，不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。Authoring 在构筑或审查科研执行 Skill 时读取它；各 execution Skill 通过自身 `SKILL.md` 显式引用它。
 
-不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design 文档；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
+不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design 或 shared Task Execution reference；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
 
 不再单独维护 current `SYNC_STATUS.md`。如果某项内容只是“当前 Stage 建设到哪里”，归入 Master Plan；如果是具体规则，则归入真正的规则 owner。
 
@@ -321,8 +330,10 @@ Skill 当前是什么状态
 交付前确认：
 
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
+- [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
+- [ ] 没有把 shared Task Execution reference 误建成独立 Skill / dispatcher；
 - [ ] 没有把可由 Agent / 用户基于当前任务可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
 - [ ] 被撤回的伪 Skill 已删除，但正确的 Stage / Step 目录仍保留；
 - [ ] archive 没有被加入默认 startup/read list；
@@ -345,7 +356,7 @@ Skill 当前是什么状态
 Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architecture_freezes/
 freeze 完成 ≠ Skill generation 获批
 Skill generation 改变状态 → 必须同步 MD_WORKFLOW_MASTER_PLAN.md
-跨 Stage Task Execution runtime → 00_runtime/SKILL.md
+跨 Stage Task Execution 通用规则 → references/task_execution_rules.md
 项目级 authoring design / status → 00_authoring/project_design/
 多窗口 writer assignment → 00_authoring/coordination/
 已被取代的 Markdown → archive
