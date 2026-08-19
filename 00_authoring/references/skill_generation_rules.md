@@ -119,6 +119,65 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 
 因此 **rule-necessity gate 必须先于 rule-ownership gate**。一条内容即使“没有其它 owner”，也不自动意味着当前 Skill 应该把它规则化。
 
+### Terminology and writing precision
+
+Skill 的正式文本必须先完成术语归一化，再进行措辞润色。讨论阶段的用户口语、简称、临时称呼和不完整表述只用于理解语义，**不得自动继承为 Skill 的正式术语**。
+
+#### Canonical terminology
+
+- 同一 execution object、artifact、state、scientific concept 或判断对象，在同一 Skill 及其 references 中使用一个稳定的正式术语；不要为了语言变化轮换同义词。
+- 如果 current Skill、architecture freeze、上游正式接口或 shared reference 已经为该对象建立明确术语，优先沿用该术语；用户本轮对话中的口语化说法不能覆盖已有 canonical term。
+- 如果确实需要引入新术语，首次出现时明确它指什么，之后保持同一称呼；不要让一个术语在同一 Skill 中指代多个不同对象。
+- 文件名、字段名、命令、软件选项、section name、enum、identifier 等机器或接口级名称保持原文，不做自由翻译或改名。
+- 不要求为每个 Skill 另建 glossary；默认通过生成前术语归一化和交付前全文检查保证一致性。
+
+#### Semantic explicitness
+
+科学/技术判断应写出实际判断关系，不要把完整含义压缩成未定义的抽象标签。
+
+如果一句话使用 `兼容 / 合理 / 正确 / 有效 / 一致 / 匹配 / compatible / valid / reasonable / correct / consistent` 等词，但不展开就可能存在多种解释，则必须明确：
+
+```text
+检查什么对象
+→ 检查它的什么属性
+→ 以什么 reference / criterion 为依据
+→ 按什么关系作出判断
+```
+
+例如，不写：
+
+```text
+heavy-atom name 是否兼容
+```
+
+应写成能够直接指导执行的具体关系，例如：
+
+```text
+检查 final PDB 中标准残基的重原子名称，确认这些名称能够被目标力场中对应残基的定义正确识别。
+```
+
+只有在完整关系已经在当前上下文中明确定义、缩写不会损失判断对象或判据时，才可以在后文使用较短表述。
+
+#### Language normalization
+
+中文 Skill 以中文叙述为主体。英文只在保留原文确有信息价值时使用，例如：
+
+- 软件、方法、力场等正式专名；
+- 文件名、字段名、命令、命令行选项、配置键和软件原生语法；
+- 项目已经固定为英文且翻译会造成接口或术语歧义的正式术语。
+
+普通技术概念如果可以准确、自然地用中文表达，则使用中文，不为了显得技术化而中英混排。必要时可以在首次出现时用“中文（英文原词）”建立与软件文档或外部术语的对应，后文保持一种固定表述。
+
+例如，若语义只是“目标力场中对应残基的定义”，不应无必要写成“目标力场对应 `residue definition`”；只有在需要明确指向软件中的具体原生实体或字段时才保留相应英文。
+
+生成或重构完成后，必须额外检查：
+
+- 同一对象是否出现多套名称；
+- 用户口语/简称是否被误写成正式术语；
+- 是否存在没有展开 reference / criterion 的抽象判断句；
+- 是否存在无信息增益的中英文混排；
+- main Skill 与 local references 对同一对象的术语是否一致。
+
 ## 3. Supporting Skill 的拆分门槛
 
 只有内容同时具备明显复杂度和清楚独立边界时才拆 supporting Skill，例如：
@@ -143,6 +202,8 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 ↓
 确认当前 Skill 的唯一职责与 write ownership
 ↓
+对讨论记录、freeze、current interfaces 中的对象和术语做归一化，确定 canonical terminology
+↓
 对拟新增内容先执行 rule-necessity gate
 ↓
 只对确有必要固定的规则执行 rule-ownership gate
@@ -156,6 +217,8 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 仅在确有机器约束/确定性能力时增加 schemas/scripts/Tool
 ↓
 检查越界定义、重复定义、shadow specification，以及是否把 Agent/用户的任务级裁量误固化成流程
+↓
+检查术语一致性、判断关系是否具体、以及是否存在无必要的中英文混排
 ↓
 完成本次要求的 validation / self-check
 ↓
@@ -331,6 +394,9 @@ Skill 当前是什么状态
 
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 同一对象 / artifact / state / scientific concept 没有因用户口语、简称或措辞变化而出现多套正式术语；
+- [ ] 科学/技术判断已明确检查对象、属性、reference / criterion 和判断关系，没有用未定义的“兼容 / 合理 / 正确 / 有效 / 一致”等抽象词代替实际判据；
+- [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
 - [ ] 没有把 shared Task Execution reference 误建成独立 Skill / dispatcher；
@@ -352,6 +418,9 @@ Skill 当前是什么状态
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
 可由 Agent / 用户基于当前任务可靠判断、无需跨任务稳定的策略 → 不固化为 Skill 规则
+同一对象 → 一个 canonical term；用户口语/简称不自动进入 Skill 正式术语
+科学/技术判断 → 写明对象、属性、reference / criterion 与实际判断关系
+中文 Skill → 中文为主体；只保留有信息价值的英文原文
 已确定 Stage / Step package 路径 → 可先保留目录；目录存在 ≠ Skill 已生成
 Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architecture_freezes/
 freeze 完成 ≠ Skill generation 获批
