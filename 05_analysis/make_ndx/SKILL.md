@@ -5,6 +5,12 @@ description: Stage 5 `make_ndx` capability guide。用于按当前 Stage 5 plan 
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 在 shared Task Execution 规则和 Stage 5 main Skill 的 plan-item 规则基础上，只负责当前 `make_ndx` item 的具体执行、检查与 results。
+
 本 Skill 指导 Agent 落实当前 Stage 5 plan item 中已经确定的 index-group 要求，产出与当前结构/原子编号一致、可被后续 analysis capability 明确使用的 `.ndx` 文件。
 
 本 Skill 不重新判断当前分析是否需要 external index，也不重新决定 Stage 5 capability routing；当前 item 的 `inputs` / `settings` 是执行依据。
