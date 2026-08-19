@@ -57,7 +57,7 @@ Stage 2 需要阶段级 main Skill。未来正式生成后的 runtime entry 固�
 02_topology_preparation/SKILL.md
 ```
 
-该 main Skill 的独立职责是 **Stage 2-specific orchestration 与跨 2.1–2.6 的共享接口语义**，而不是重新执行任何一个 2.x Step 的科研处理。
+该 main Skill 的独立职责是 **Stage 2 内部科研编排与跨 2.1–2.6 的共享接口语义**，而不是重新执行任何一个 2.x Step 的科研处理。
 
 Stage 2 的总体执行关系为：
 
@@ -69,20 +69,20 @@ Manager
 → 2.1 产生当前体系的 parameterization environment / assignment result
 → Stage 2 main Skill依据该正式结果维护尚未执行的 Stage 2 计划
 → 2.2 / 2.3 / 2.4 按实际对象完成 topology acquisition / parameterization
-→ Stage 2 main Skill确认当前 assignment 所要求的 producer obligations 已闭合
+→ Stage 2 main Skill确认当前 assignment 要求的上游结果已经齐备
 → 2.5 integration and assembly
 → 2.6 topology validation
 ```
 
 Manager 仍只负责初始 Task Sheet planning，不读取 Stage 2 科研结果判断具体 scientific applicability。普通执行过程中不返回 Manager 调度；Stage 2 main Skill只拥有 Stage 2 内部、必须依据当前科研结果才能确定的计划调整与跨 Step 关系。
 
-Stage 2 main Skill **不是独立编号 Step**，不在 Task Sheet 中创建 synthetic `2.0`、`Stage 2 planning` 或其它额外环节，也不创建 `stage2_plan.yaml`、route object 或第二套 runtime state。Task Sheet 继续是 Stage 2 计划载体。
+Stage 2 main Skill **不是独立编号 Step**，不在 Task Sheet 中创建 `2.0`、`Stage 2 planning` 或其它额外规划环节，也不创建 `stage2_plan.yaml`、route 对象或第二套 runtime state。Task Sheet 继续是 Stage 2 计划载体。
 
 ## 1.2 2.1 与 Stage 2 main Skill 的边界
 
 `2.1 Parameterization environment and assignment` 保持完整独立科研 Step。
 
-2.1 自己拥有：
+2.1 负责：
 
 - 当前体系 parameterization environment 的建立；
 - Stage 2 processing objects 的拆分 / 聚合；
@@ -94,16 +94,16 @@ Stage 2 main Skill **不是独立编号 Step**，不在 Task Sheet 中创建 syn
 
 Stage 2 main Skill不重新做这些科学判断，也不把 2.1 拆成“Stage-level environment + Step-level assignment”两套职责。
 
-Stage 2 main Skill只消费 2.1 已确认的当前正式结果，并据此维护下游计划与 readiness：
+Stage 2 main Skill只消费 2.1 已确认的当前正式结果，并据此维护下游计划与 2.5 进入条件：
 
 ```text
-2.1 decides what the current system requires
-Stage 2 main decides how the remaining Stage 2 Task Sheet reflects that result
+2.1 决定当前体系需要哪些参数化工作
+Stage 2 main Skill据此维护其余 Stage 2 Task Sheet
 ```
 
-如果 2.1 的 parameterization environment 或 assignment 在后续发生会影响既有结果语义的实质变化，Stage 2 main Skill必须重新核验受影响的下游工作是否仍满足当前 assignment；不因为上游变化机械重做全部未受影响结果，也不得在 readiness 判断中继续使用已经与当前 assignment 不一致的旧结果。
+如果 2.1 的 parameterization environment 或 assignment 在后续发生会影响既有结果语义的实质变化，Stage 2 main Skill必须重新核验受影响的下游工作是否仍满足当前 assignment；不因为上游变化机械重做全部未受影响结果，也不得在 2.5 进入条件判断中继续使用已经与当前 assignment 不一致的旧结果。
 
-## 1.3 Stage 2 plan expansion
+## 1.3 Stage 2 计划展开
 
 Manager 可以按照 planning index 把 2.1–2.6 作为初始 catalog 写入 Task Sheet，但这不表示所有 2.2–2.4 工作都已被判定为实际适用。
 
@@ -115,51 +115,51 @@ Manager 可以按照 planning index 把 2.1–2.6 作为初始 catalog 写入 Ta
 → 2.2 内部的 pdb2gmx processing-group 拆分仍属于 2.2 内部实现，不因此拆成多个 2.2 Task Sheet 项
 
 每个 topology-linked nonstandard unit
-→ 一个 2.3 processing item
+→ 一个 2.3 工作项
 
 每个需要独立参数化的 topology type
-→ 一个 2.4 processing item
+→ 一个 2.4 工作项
 
 FF-direct solvent / ion
 → 不建立 2.4 参数化工作项
-→ 作为 2.5 的 direct input obligation
+→ 作为 2.5 的直接输入
 ```
 
-因此 2.3 和 2.4 可以在同一 Task Sheet 中按实际对象出现多次。初始 generic 2.3 / 2.4 条目应按 2.1 的实际结果替换、展开或删除，而不是为了保持 catalog 外观保留无对象的空步骤。
+因此 2.3 和 2.4 可以在同一 Task Sheet 中按实际对象出现多次。初始占位的 2.3 / 2.4 条目应按 2.1 的实际结果替换、展开或删除，而不是为了保持 catalog 外观保留无对象的空步骤。
 
 Stage 2 main Skill只根据 2.1 的正式 assignment 展开执行对象，不自行重新分类 residue、重建 topology-linked unit 或重新选择参数化方法。
 
-## 1.4 2.5 readiness 与 fan-in
+## 1.4 2.5 输入就绪条件与汇合关系
 
-Stage 2 是一个由 2.1 决定实际工作集合、由 2.5 统一收敛的 fan-out / fan-in 结构。
+Stage 2 的实际工作集合由 2.1 决定；2.2 / 2.3 / 2.4 按对象展开，随后在 2.5 统一汇合。
 
-进入 2.5 前，Stage 2 main Skill必须对照**当前有效的 2.1 assignment**确认所有必要 producer obligations 已闭合：
+进入 2.5 前，Stage 2 main Skill必须对照**当前有效的 2.1 assignment**确认所有必要上游结果已经齐备：
 
 - 若存在 `STANDARD_RESIDUE`，当前体系已有满足当前 assignment 的有效 2.2 结果；
 - 每个 topology-linked nonstandard unit 都已有满足当前 assignment 的有效 2.3 结果；
 - 每个需要独立参数化的 topology type 都已有满足当前 assignment 的有效 2.4 结果；
 - 每个 FF-direct solvent / ion 都仍能从当前 parameterization environment 定位到 2.1 已确认的完整 topology definition；
-- 不存在尚未解决、会导致当前体系 topology acquisition 不完整的 assignment obligation。
+- 不存在尚未解决、会导致当前体系 topology acquisition 不完整的 assignment 项。
 
-这里的 Stage-level readiness 只检查**当前 assignment 的覆盖是否闭合**。它不重新执行 2.2 / 2.3 / 2.4 的科学 validation，也不替 2.5 检查实际 integration artifact 的内部一致性。
+这里的阶段级检查只判断**当前 assignment 要求的结果覆盖是否闭合**。它不重新执行 2.2 / 2.3 / 2.4 的科学 validation，也不替 2.5 检查实际 integration artifact 的内部一致性。
 
-2.5 自己仍负责其输入文件 / definition 是否可实际读取和用于 assembly，以及 integration / assembly 的具体 validation。Stage 2 main Skill不得通过重新推断整个体系组成来替代 2.1，也不得通过重复检查 producer 内部科学细节来替代各结果 owner。
+2.5 自己仍负责确认其实际输入文件 / definition 可以读取并用于 assembly，以及完成 integration / assembly 的具体 validation。Stage 2 main Skill不得通过重新推断整个体系组成来替代 2.1，也不得通过重复检查上游结果内部科学细节来替代各结果 owner。
 
 ## 1.5 2.6 与 Stage 2 completion
 
 2.6 是 Stage 2 final validation owner。Stage 2 main Skill不建立第二套 final validation，也不另造阶段级结果包。
 
-如果 2.6 识别到 blocking defect，2.6 只报告缺陷及其真正 owner；Stage 2 main Skill据此维护尚未完成 / 需要重新进入的 Stage 2 计划，使问题回到对应的 2.1–2.5 owner 处理。
+如果 2.6 识别到阻断性问题，2.6 只报告问题及其真正 owner；Stage 2 main Skill据此维护尚未完成或需要重新进入的 Stage 2 计划，使问题回到对应的 2.1–2.5 owner 处理。
 
 若修正改变了 2.5 final package，则必须在必要的 2.5 assembly 更新后重新进入 2.6。只有当前任务所需的 Stage 2 工作已闭合、2.5 final package 为当前有效版本且正式 2.6 validation 通过，Stage 2 才完成并可交给 Workflow 3。
 
-## 1.6 Stage 2 shared interfaces
+## 1.6 Stage 2 共享接口
 
-跨多个 Stage 2 producer / consumer 且必须保持统一语义的接口由 Stage 2 main Skill拥有 Stage-level contract；具体生成算法仍由各 Step owner 拥有。
+跨多个 Stage 2 producer / consumer 且必须保持统一语义的接口，由 Stage 2 main Skill拥有统一的阶段级接口定义；具体生成算法仍由各 Step owner 拥有。
 
-当前已冻结的统一 `*.map` 语义属于 Stage 2 shared interface。正式 Skill generation 时，其详细 contract 可以放在 Stage 2 main Skill 自己的 local reference 中，由 2.2 / 2.3 / 2.4 / 2.5 按需引用；不得在多个 Step Skill 中各维护一份可独立漂移的 shadow specification。
+当前已冻结的统一 `*.map` 语义属于 Stage 2 共享接口。正式 Skill generation 时，其详细接口定义可以放在 Stage 2 main Skill 自己的 local reference 中，由 2.2 / 2.3 / 2.4 / 2.5 按需引用；不得在多个 Step Skill 中各维护一份可独立漂移的重复规范。
 
-2.1 产生的 parameterization environment / assignment result仍由 2.1 拥有；Stage 2 main Skill只负责确保后续 orchestration 与 readiness 使用同一当前有效结果，不建立第二份 Stage-level assignment record。
+2.1 产生的 parameterization environment / assignment result仍由 2.1 拥有；Stage 2 main Skill只负责确保后续科研编排与 2.5 进入条件使用同一当前有效结果，不建立第二份阶段级 assignment record。
 
 ---
 
@@ -265,7 +265,7 @@ corresponding *.map
 
 # 4. 统一 `*.map` 规则
 
-`*.map` 是 Stage 2 shared interface；其 canonical contract 由 Stage 2 main Skill拥有，2.2 / 2.3 / 2.4 负责按该 contract 生成各自产物，2.5 负责按同一 contract 消费，不在各 Step 内重新定义第二套 map 语义。
+`*.map` 是 Stage 2 共享接口；其统一接口定义由 Stage 2 main Skill拥有，2.2 / 2.3 / 2.4 负责按该定义生成各自产物，2.5 负责按同一接口消费，不在各 Step 内重新定义第二套 map 语义。
 
 `*.map` 只回答“当前输出原子是谁、来自哪里”，不承担 connectivity、bond 描述、topology-link 删除逻辑或 linked-site chemical decision。
 
@@ -577,16 +577,16 @@ topology_integration_report.yaml
 ## 已冻结
 
 - Stage 2 设置阶段级 main Skill，未来 runtime entry 为 `02_topology_preparation/SKILL.md`；
-- Stage 2 main Skill拥有 Stage 2-specific orchestration、2.1 正式结果驱动的下游计划维护、2.5 readiness / fan-in、2.6 failure 后的 Stage-specific plan adjustment，以及 Stage 2 shared interface contract；
-- Stage 2 main Skill不是编号 Step，不建立 synthetic planning step、`stage2_plan.yaml`、route object 或第二套 runtime state；
+- Stage 2 main Skill拥有 Stage 2 内部科研编排、由 2.1 正式结果驱动的下游计划维护、2.5 输入就绪条件、2.6 失败后的 Stage 2 计划调整，以及 Stage 2 共享接口定义；
+- Stage 2 main Skill不是编号 Step，不建立额外规划 Step、`stage2_plan.yaml`、route 对象或第二套 runtime state；
 - 2.1 保持完整独立科研 Step，parameterization environment / object assignment 不部分或整体移入 Stage 2 main Skill；
 - 2.1–2.6 六步架构；
 - 2.1 assignment 与 parameterization environment；
-- 2.1 结果驱动 2.2 / 2.3 / 2.4 实际 Task Sheet work-set 展开：全部 standard residue 对应一个 2.2 work item；每个 topology-linked unit 对应一个 2.3 processing item；每个需要独立参数化的 topology type 对应一个 2.4 processing item；FF-direct solvent / ion 不创建 2.4 参数化 work item；
-- 2.5 进入前必须对照当前有效 2.1 assignment 确认所有 topology acquisition / parameterization obligations 已闭合；
+- 2.1 结果驱动 2.2 / 2.3 / 2.4 实际 Task Sheet 工作集合展开：全部 standard residue 对应一个 2.2 工作项；每个 topology-linked unit 对应一个 2.3 工作项；每个需要独立参数化的 topology type 对应一个 2.4 工作项；FF-direct solvent / ion 不创建 2.4 参数化工作项；
+- 2.5 进入前必须对照当前有效 2.1 assignment 确认所有 topology acquisition / parameterization 所需结果已经齐备；
 - 2.3 processing unit = topology-linked nonstandard unit，可包含一个或多个 nonstandard residues；
 - 2.2 / 2.3 / 2.4 主要职责与输出层级；
-- map 基本职责与字段，并作为 Stage 2 shared interface 由未来 Stage 2 main Skill统一拥有 contract；
+- map 基本职责与字段，并作为 Stage 2 共享接口由未来 Stage 2 main Skill统一拥有接口定义；
 - 2.3 判断 standard-side deletion、2.5 执行；
 - Workflow 1 → Stage 2 的 topo-linked chain assignment handoff；
 - 2.5 final moleculetype organization；
