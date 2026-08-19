@@ -28,7 +28,7 @@ Status: ACTIVE CURRENT BASELINE
 
 只有这些 `01`–`05` 目录表示 MD Workflow Stage。Stage / Step 目录可以在对应 Skill 正式生成前预留；**目录存在不等于 Skill 已生成或已激活**。
 
-`evals/`、`tools/`、`legacy/` 等基础设施目录不占用 Stage 编号。
+`references/`、`evals/`、`tools/`、`legacy/` 等基础设施目录不占用 Stage 编号。
 
 ## 3. Stage 1 — Structure preparation
 
@@ -209,23 +209,27 @@ rdf
 
 `trjconv`, `trjcat`, and `make_ndx` are active. The remaining concrete capability entries are still pending implementation and are not active merely because they are listed here.
 
-## 8. Runtime and infrastructure
+## 8. Task execution and infrastructure
 
-Cross-Stage runtime authority: `00_runtime/SKILL.md`
+Cross-Stage Task Execution shared rules:
 
-Unnumbered active packages:
+`references/task_execution_rules.md`
+
+该文件是 shared reference，不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 通过各自 main `SKILL.md` 显式引用它。
+
+Unnumbered active package:
 
 ```text
 00_manager/   project task management / initial planning
-00_runtime/   cross-Stage Task Execution runtime
 ```
 
 Unnumbered infrastructure:
 
 ```text
-evals/   current tests / fixtures / validation evidence / benchmark
-tools/   current Lightweight-compatible shared deterministic tools
-legacy/  old contracts / runtime / tools / evals / CI workflows
+references/  cross-Skill shared references
+evals/       current tests / fixtures / validation evidence / benchmark
+tools/       current Lightweight-compatible shared deterministic tools
+legacy/      old contracts / runtime / tools / evals / CI workflows
 ```
 
 Historical design Markdown: `00_authoring/archive/`.
@@ -237,7 +241,7 @@ Historical design Markdown: `00_authoring/archive/`.
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
-- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
+- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；跨 Skill Task Execution 共用规则集中于 `references/task_execution_rules.md`；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
 
@@ -261,7 +265,7 @@ Skill authoring 窗口不得因为本文件是共享文件而静默跳过状态�
 ```text
 具体业务规则 → current Skill / reference
 尚未生成 Skill 的已冻结 Step / Stage 规则 → matching architecture freeze
-跨 Stage runtime → 00_runtime/SKILL.md
+跨 Stage Task Execution 通用规则 → references/task_execution_rules.md
 Stage catalog / 建设状态 / current entry → 本 Master Plan
 current deterministic tool → tools/
 current evaluation → evals/
