@@ -77,13 +77,13 @@ Stage 1.7–1.9 architecture records:
 
 Status: ARCHITECTURE FROZEN; **NO ACTIVE SKILL GENERATION APPROVED YET**.
 
-Stage 2 architecture includes a Stage-level main Skill plus six numbered scientific Steps. The future Stage-level runtime entry is fixed as:
+Stage 2 架构包括一个阶段级 main Skill 和六个编号科研 Step。未来阶段级 runtime entry 固定为：
 
 `02_topology_preparation/SKILL.md`
 
-The Stage-level main Skill architecture is frozen but no active file has been generated. It owns Stage 2-specific orchestration, 2.1-result-driven downstream Task Sheet maintenance, 2.5 readiness / fan-in, 2.6 failure-driven Stage-specific plan adjustment, and shared Stage 2 interface contracts. It does not absorb or duplicate the scientific responsibility of 2.1–2.6.
+Stage 2 main Skill 的架构已经冻结，但尚未生成 active 文件。它负责 Stage 2 内部科研编排、由 2.1 结果驱动的后续 Task Sheet 维护、2.5 输入就绪条件、2.6 失败后的 Stage 2 计划调整，以及 Stage 2 共享接口定义；不吸收或重复 2.1–2.6 的具体科研职责。
 
-`2.1 Parameterization environment and assignment` remains a complete independent scientific Step; its parameterization-environment construction and object/method/source assignment are not moved into the Stage 2 main Skill.
+`2.1 Parameterization environment and assignment` 保持完整独立科研 Step；parameterization environment 的建立以及对象 / 方法 / 来源 assignment 不移入 Stage 2 main Skill。
 
 ```text
 2.1 Parameterization environment and assignment
@@ -105,7 +105,7 @@ Reserved Step directories:
 02_topology_preparation/2.6_topology_validation/
 ```
 
-There is currently **no active Stage 2 `SKILL.md` or active 2.x `SKILL.md`**. The Stage main entry and Step directories are architecture-defined / reserved only.
+当前**没有 active Stage 2 `SKILL.md`，也没有 active 2.x `SKILL.md`**。Stage main entry 与各 Step 目录目前都只属于已冻结架构 / 预留 package path。
 
 Stage-level architecture authority:
 
@@ -245,7 +245,7 @@ Historical design Markdown: `00_authoring/archive/`.
 ## 9. Current work status
 
 - Stage 1：1.1–1.8 active Skills 已生成；其中 1.5 已完成正式生成与 authoring/interface review，1.6 已按 current architecture freeze 正式生成并完成 post-generation authoring/interface consistency check，1.7 已按当前讨论与 architecture record 正式生成并完成 post-generation authoring/interface consistency check，1.8 已按当前最终设计正式生成并完成 post-generation authoring/interface consistency check，current entry 为 `01_structure_preparation/1.8_reorder_and_mapping/SKILL.md`；1.9 已冻结、目录保留，但尚未获批生成 active Skill；
-- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；future Stage main entry 为 `02_topology_preparation/SKILL.md`，其中 2.1 保持完整独立 Step，Stage main 负责 Stage 2-specific orchestration / shared interfaces；2.5 详细方案仍只属于 freeze；Stage main 与全部 2.x active Skill generation 均尚未获批；
+- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；future Stage main entry 为 `02_topology_preparation/SKILL.md`，其中 2.1 保持完整独立 Step，Stage main 负责 Stage 2 内部科研编排与共享接口；2.5 详细方案仍只属于 freeze；Stage main 与全部 2.x active Skill generation 均尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
