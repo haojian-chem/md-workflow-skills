@@ -5,6 +5,12 @@ description: Stage 4.3 Production simulation Skill。负责 md.* run unit 的 MD
 
 # 4.3 Production simulation
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 在 shared Task Execution 规则和父级 Stage 4 规则基础上，只定义 production-specific 执行与检查。
+
 ## Purpose
 
 执行当前 planned run entry 中属于 `MD` 的 production scientific segment，并完成对应 `md.N` formal run unit。
