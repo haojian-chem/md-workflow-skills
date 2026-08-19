@@ -4,17 +4,18 @@
 
 本仓库同时用于真实 MD 项目运行和 Skill / Tool authoring。Skill repository 与真实 MD project root 必须区分。
 
-真实 MD 项目默认使用 Lightweight Runtime v2：
+真实 MD 项目默认运行链：
 
 ```text
 Manager
 → Task Sheet
+→ 00_runtime/SKILL.md
 → long-lived Task Execution Agent
-→ current main Skill
+→ current Stage / Step main Skill
 → 按需 references / supporting Skills / deterministic Tools
 ```
 
-Manager 请求读取 `00_manager/SKILL.md`；任务执行从目标 `Txxxx.md` 和当前 Step Skill 开始。普通执行不返回 Manager 调度。
+Manager 请求读取 `00_manager/SKILL.md`；Task Sheet 建立后，任务执行先读取 `00_runtime/SKILL.md`，再从目标 `Txxxx.md` 定位当前项并进入对应 current scientific Skill。普通执行不返回 Manager 调度。
 
 Skill authoring / maintenance 默认启动链：
 
@@ -48,7 +49,12 @@ Stage / Step 目录可以在正式 Skill generation 前预留，因此：
 
 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
 
-Manager 是独立 package：`00_manager/`。
+Manager 与 Task Execution runtime 是独立的 unnumbered packages：
+
+```text
+00_manager/
+00_runtime/
+```
 
 科研 Skill 不再按 Workflow / Operation / Validator 分类。Validation 默认跟随结果 owner；只有复杂、独立且可复用时才拆 supporting Skill。
 
@@ -153,7 +159,7 @@ write ownership 必须窄
 ```text
 Authoring                  → 00_authoring/SKILL.md
 Skill boundaries           → 00_authoring/references/skill_boundaries.md
-Cross-Stage runtime        → 00_authoring/project_design/lightweight_runtime_v2_spec.md
+Cross-Stage runtime        → 00_runtime/SKILL.md
 Stage catalog/status       → 00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md
 Stage/Step architecture freeze → 00_authoring/architecture_freezes/
 Manager                    → 00_manager/SKILL.md
