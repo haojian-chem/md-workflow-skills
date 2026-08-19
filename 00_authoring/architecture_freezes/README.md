@@ -43,7 +43,7 @@ WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md
 
 当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
 
-Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为 Stage-level main Skill，负责 Stage 2-specific orchestration 与 shared interfaces；`2.1 Parameterization environment and assignment` 保持完整独立 Step，不并入 Stage main。上述内容仍只属于 architecture freeze，尚未授权生成 active Skill。
+Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为阶段级 main Skill，负责 Stage 2 内部科研编排与共享接口；`2.1 Parameterization environment and assignment` 保持完整独立 Step，不并入 Stage main。上述内容仍只属于 architecture freeze，尚未授权生成 active Skill。
 
 Stage 2 的 2.5 详细 generation input 已统一迁至上述三个 `WORKFLOW2_STAGE2_2.5_*_FREEZE.md`；后续正式生成 2.5 时不再追随旧 role-based `02_operations/...` 路径。
 
