@@ -1,6 +1,6 @@
 ---
 name: structure_preparation_validation
-description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基的目标力场定义与重原子、非标准残基的 CCD 定义，以及 final map 的残基对应关系，并生成独立 validation 报告。
+description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的残基对应关系，并生成独立验证报告。
 ---
 
 # 1.9 Structure preparation validation
@@ -13,9 +13,9 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 ## Purpose
 
-对当前 target 的 Stage 1 最终结构独立执行一次只读检查，形成可供后续处理和 Stage 2 使用前审阅的 `structure_preparation_validation.md`。
+对当前 target 的 Stage 1 最终结构独立执行一次只读检查，形成供后续处理和 Stage 2 使用前审阅的 `structure_preparation_validation.md`。
 
-1.9 检查当前最终结果本身，不重新执行 1.4–1.8 的内部处理逻辑，也不在检查过程中修改、补全、删除或改名任何 atom / residue。
+1.9 检查当前最终结果本身，不重新执行 1.4–1.8 的内部处理逻辑，也不在检查过程中修改、补全、删除或改名任何原子或残基。
 
 报告逐项记录实际检查结果和发现的问题。1.9 不为整个 target 生成 `PASS / FAIL`，也不根据问题数量自行决定是否进入 Stage 2；是否返回上游处理或继续后续任务，由当前 Task Execution Agent 与用户根据报告中的实际结果决定。
 
@@ -28,21 +28,21 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 - 1.8 正式 `stage1_final.pdb`；
 - 1.8 正式 `stage1_final_map.yaml`；
 - 与当前 target 对应的 1.2 正式 `classification_result.yaml`；
-- 当前 target 的 1.5 正式 `structure_completeness_report.yaml`，以及其中可定位的实际 reference；
+- 当前 target 的 1.5 正式 `structure_completeness_report.yaml`，以及其中能够定位的实际参考文件；
 - 当前指定目标力场中用于标准残基检查的实际 `*.rtp` 文件；
-- 1.5 已确认并实际用于 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 的 CCD component files。
+- 1.5 已确认并实际用于 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 的 CCD 文件。
 
-`classification_result.yaml` 用于读取当前 residue 的正式 `topology_class` 和已确认 topology relations。不得根据 residue name、ATOM/HETATM record 或当前空间位置重新分类。
+`classification_result.yaml` 用于读取对应残基的正式 `topology_class` 和 `confirmed_relations`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
-`stage1_final_map.yaml` 用于把 final PDB residue 与 1.2 已物化的 `residue_id` / `component_id` 对应起来；1.9 不重新构建 1.3 / 1.8 的 mapping 规则。
+`stage1_final_map.yaml` 用于把 final PDB 中的残基与 1.2 已物化的 `residue_id` / `component_id` 对应起来；1.9 不重新构建 1.3 / 1.8 的映射规则。
 
-如果目标力场尚未唯一确定，或 1.5 已确认的 CCD 无法从当前正式结果中可靠定位，不自行选择新的 reference。先向用户说明缺失的判据，待 reference 明确后再完成对应检查。
+如果目标力场尚未唯一确定，或 1.5 已确认的 CCD 无法从当前正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
 
 ## No reuse
 
 1.9 **不设置 reuse**。
 
-每次实际进入 1.9，都针对当前 `stage1_final.pdb`、当前 `stage1_final_map.yaml` 和当前指定 reference 重新执行本次检查；不通过 `project_result_index.md` 查找或复用既有 1.9 报告。
+每次实际进入 1.9，都针对当前 `stage1_final.pdb`、当前 `stage1_final_map.yaml` 和当前指定的参考文件重新执行本次检查；不通过 `project_result_index.md` 查找或复用既有 1.9 报告。
 
 ## Work directory and multiple targets
 
@@ -67,13 +67,13 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 对 `STANDARD_RESIDUE` 使用当前指定目标力场中的标准残基定义。
 
-残基定义的定位沿用 1.2 已确定的精确 `*.rtp` 同名匹配语义：按 final PDB 中的 `residue_name` 查找精确同名 residue block，不通过大小写归一化、模糊匹配、字符串增删或端基 patch 构造替代条目。
+标准残基定义的定位沿用 1.2 已确定的精确 `*.rtp` 同名匹配语义：按 final PDB 中的 `residue_name` 查找精确同名的 residue block，不通过大小写归一化、模糊匹配、字符串增删或端基 patch 构造替代条目。
 
 ### TOPOLOGY_LINKED_NONSTANDARD / INDEPENDENT_NONSTANDARD
 
-对 `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`，沿用 1.5 已确认的 CCD。通过当前 1.5 `structure_completeness_report.yaml` 及其引用的正式 reference information 定位本次实际 CCD component file。
+对 `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`，沿用 1.5 已确认的 CCD。通过当前 1.5 `structure_completeness_report.yaml` 及其引用的 `reference_manifest.yaml` 或实际 CCD 文件路径，定位本次使用的 CCD 文件。
 
-1.9 不为非标准残基重新选择 CCD，也不使用 alternate atom name 自动替代 final PDB 中实际 atom name。
+1.9 不为非标准残基重新选择 CCD，也不使用 alternate atom name 自动替代 final PDB 中实际原子名。
 
 ### SOLVENT_COMPONENT / ION_COMPONENT
 
@@ -102,68 +102,68 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 独立检查当前 `stage1_final.pdb` 是否只保留唯一构象。
 
-对于 PDB 表示，已保留 atom 不应再存在未解决的 `altLoc`。如果仍发现 alternate-conformation / `altLoc` 记录，按当前 final PDB 中的 `chain_id + resid + residue_name` 定位并如实记录；1.9 不重新决定应选择哪个构象。
+对于 PDB 表示，已保留原子不应再存在未解决的 `altLoc`。如果仍发现 alternate conformation / `altLoc` 记录，按当前 final PDB 中的 `chain_id + resid + residue_name` 定位并如实记录；1.9 不重新决定应选择哪个构象。
 
 ### 4. STANDARD_RESIDUE 残基定义
 
 对 final PDB 中所有 `STANDARD_RESIDUE`：
 
 1. 读取 final PDB 的 `residue_name`；
-2. 在当前指定目标力场的 `*.rtp` 中查找精确同名 residue block；
-3. 记录找不到对应定义的 residue。
+2. 在当前指定目标力场的 `*.rtp` 中查找精确同名的 residue block；
+3. 记录找不到对应定义的残基。
 
 本项只检查残基名是否存在对应力场定义，不在此处比较重原子。
 
-1.7 已落实到 final PDB 的质子化状态 residue name 也在本项按相同规则检查，不另设独立 protonation 检查项目。
+1.7 已落实到 final PDB 的质子化状态残基名也在本项按相同规则检查，不另设独立质子化检查项目。
 
 ### 5. STANDARD_RESIDUE 重原子
 
 对能够在目标力场中找到精确同名定义的 `STANDARD_RESIDUE`，独立比较：
 
 ```text
-final PDB 中该 residue 的重原子名称及出现次数
+final PDB 中该残基的重原子名称及出现次数
 ↔
 目标力场同名 residue block 中定义的重原子名称及出现次数
 ```
 
-逐 residue 检查并如实记录：
+逐残基检查并如实记录：
 
 - 目标力场定义中存在、final PDB 中缺失的重原子；
 - final PDB 中存在、目标力场定义中没有的额外重原子；
 - 同一重原子名称出现次数不符合定义的情况。
 
-如果某个 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 存在 1.2 已确认且已应用 topology effect 的 relation，在该 residue 的本项检查记录中标明这一关系背景。该关系不自动改变或豁免标准残基的比较结果；相对于目标力场定义多出的或缺少的重原子均按实际结果记录。
+如果某个 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 存在于 1.2 `confirmed_relations` 中，且对应 relation 的 `topology_effect_applied: true`，在该标准残基的本项检查记录中标明这一已确认连接关系。该关系不自动改变或豁免标准残基的比较结果；相对于目标力场定义多出的或缺少的重原子均按实际结果记录。
 
 ### 6. TOPOLOGY_LINKED_NONSTANDARD
 
-对每个 `TOPOLOGY_LINKED_NONSTANDARD`，使用 1.5 已确认的 CCD component file 独立检查：
+对每个 `TOPOLOGY_LINKED_NONSTANDARD`，使用 1.5 已确认的 CCD 文件独立检查：
 
 - final PDB 的 `residue_name` 与 CCD component ID 精确一致；
-- final PDB 中该 residue 的重原子名称及出现次数与 CCD 定义的重原子名称及出现次数严格一致。
+- final PDB 中该残基的重原子名称及出现次数与 CCD 定义的重原子名称及出现次数严格一致。
 
-逐 residue 记录缺失、额外或重复的重原子名称。已确认 topology relation 不作为修改 CCD 比较结果的自动例外。
+逐残基记录缺失、额外或重复的重原子名称。已确认连接关系不作为修改 CCD 比较结果的自动例外。
 
 ### 7. INDEPENDENT_NONSTANDARD
 
-对每个 `INDEPENDENT_NONSTANDARD`，使用 1.5 已确认的 CCD component file，按与上一项相同的规则检查：
+对每个 `INDEPENDENT_NONSTANDARD`，使用 1.5 已确认的 CCD 文件，按与上一项相同的规则检查：
 
 - final PDB 的 `residue_name` 与 CCD component ID 精确一致；
-- final PDB 中该 residue 的重原子名称及出现次数与 CCD 定义严格一致；
+- final PDB 中该残基的重原子名称及出现次数与 CCD 定义严格一致；
 - 缺失、额外或重复的重原子名称均如实记录。
 
 ### 8. stage1_final_map.yaml 残基对应
 
-独立确认 `stage1_final.pdb` 中每个 residue 在 `stage1_final_map.yaml` 中存在对应记录。
+独立确认 `stage1_final.pdb` 中每个残基在 `stage1_final_map.yaml` 中存在对应记录。
 
-对 final PDB residue 使用当前实际：
+对 final PDB 中的残基使用当前实际：
 
 ```text
 chain_id + resid + residue_name
 ```
 
-在 map 的 atom records 中确认存在同一 residue 的记录即可。
+在 map 的 atom records 中确认存在同一残基的记录即可。
 
-1.9 不重新执行 1.8 的逐 atom mapping validation，不重新比较每个 atom 的 serial / atom_name，也不重新推导 `component_id` / `residue_id`。
+1.9 不重新执行 1.8 的逐原子映射检查，不重新比较每个原子的 serial / `atom_name`，也不重新推导 `component_id` / `residue_id`。
 
 ## Report organization
 
@@ -177,8 +177,8 @@ stage1_final.pdb
 stage1_final_map.yaml
 classification_result.yaml
 structure_completeness_report.yaml
-目标力场 reference
-本次实际使用的 CCD component files
+目标力场参考文件
+本次实际使用的 CCD 文件
 ```
 
 正文按以下章节组织：
@@ -196,7 +196,7 @@ structure_completeness_report.yaml
 ## 8. stage1_final_map.yaml 残基对应
 ```
 
-每个检查项先给出简短的实际结果摘要；发现问题时再列具体对象。没有问题的普通 residue 不逐个展开。
+每个检查项先给出简短的实际结果摘要；发现问题时再列具体对象。没有问题的普通残基不逐个展开。
 
 问题定位默认使用 final PDB 的：
 
@@ -204,11 +204,11 @@ structure_completeness_report.yaml
 chain_id + resid + residue_name
 ```
 
-涉及重原子差异时，在同一 residue 下分别列出实际缺失、额外或重复的 atom name，并记录对应力场条目或 CCD 文件。
+涉及重原子差异时，在同一残基下分别列出实际缺失、额外或重复的原子名，并记录对应力场条目或 CCD 文件。
 
-第 5 项中，与 `TOPOLOGY_LINKED_NONSTANDARD` 存在已确认 topology relation 的 `STANDARD_RESIDUE` 应单独标明关系背景及其实际重原子比较结果；不把这一信息拆成新的检查项目。
+第 5 项中，与 `TOPOLOGY_LINKED_NONSTANDARD` 存在已确认连接关系的 `STANDARD_RESIDUE` 应单独标明关系背景及其实际重原子比较结果；不把这一信息拆成新的检查项目。
 
-报告只写检查事实，例如“未发现……”“发现 N 个 residue 存在……”。不设置 section-level 或 overall `PASS / FAIL`，不建立新的状态枚举，也不生成自动 Stage 2 handoff 结论。
+报告只写检查事实，例如“未发现……”或“发现 N 个残基存在……”。不设置 section-level 或 overall `PASS / FAIL`，不建立新的状态枚举，也不生成自动 Stage 2 交接结论。
 
 ## Completion requirements
 
@@ -217,11 +217,11 @@ chain_id + resid + residue_name
 正式结束当前 target 的 1.9 前确认：
 
 - 当前 `stage1_final.pdb`、`stage1_final_map.yaml` 和 `classification_result.yaml` 已唯一确定；
-- STANDARD_RESIDUE 检查所需的目标力场 reference 已明确；
+- `STANDARD_RESIDUE` 检查所需的目标力场参考文件已明确；
 - 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能定位到 1.5 已确认的 CCD；
 - 八项检查均已按当前对象实际执行并写入报告；
-- 发现的问题能够定位到具体 residue，涉及重原子时能够定位到具体 atom name；
-- 报告记录了本次实际使用的 reference；
+- 发现的问题能够定位到具体残基，涉及重原子时能够定位到具体原子名；
+- 报告记录了本次实际使用的参考文件；
 - 1.9 没有修改 `stage1_final.pdb`、`stage1_final_map.yaml` 或任何上游正式结果；
 - 报告没有生成整体 `PASS / FAIL` 或自动后续决策。
 
