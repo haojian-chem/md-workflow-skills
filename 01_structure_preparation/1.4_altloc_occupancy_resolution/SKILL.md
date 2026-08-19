@@ -5,6 +5,12 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.4-specific 的对象、执行、validation 与 results 规则；本步骤明确不设置内部 reuse。
+
 完成结构准备 `1.4 Alternate conformation / altLoc resolution`。
 
 本 Skill 的职责是：识别当前结构中需要处理的 alternate conformations，结合结构记录与当前化学环境选择后续保留的构象，将该选择落实到结构文件，并留下可追溯的决策记录。
