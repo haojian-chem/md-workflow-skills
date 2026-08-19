@@ -163,7 +163,7 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 
 不得先批量生成一套目录、YAML metadata 或模板，再把实际职责硬塞进去。
 
-**Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把 freeze 转写为 active `SKILL.md`。
+**Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
 
 ## 5. Architecture-freeze 文件位置与粒度
 
@@ -230,23 +230,28 @@ current → superseded / retired / replaced
 - 若 Master Plan 已有显式 writer，则不并发写，向该 writer 提交精确的状态变更；交付时必须明确该同步仍待落地，不能宣称 repository integration 已全部完成；
 - 不建立新的 `SYNC_STATUS.md`、`status.yaml`、skill inventory 或其他 parallel 状态层。
 
-## 7. Project-design 文档
+## 7. Project-design 与 runtime 的位置
 
-项目级设计资料统一位于：
+项目级 authoring 设计资料位于：
 
 ```text
 00_authoring/project_design/
 ```
 
-当前职责分工：
+当前其中只承担 project-level design / status 的文件：
 
 ```text
 MD_WORKFLOW_MASTER_PLAN.md
 → Stage numbering / catalog / 建设状态 / current entry
-
-lightweight_runtime_v2_spec.md
-→ 跨 Stage Lightweight Runtime 通用架构
 ```
+
+跨 Stage Task Execution runtime **不属于 authoring project-design Markdown**。其 current runtime owner 是：
+
+```text
+00_runtime/SKILL.md
+```
+
+Authoring 在涉及跨 Stage runtime 边界时读取该 runtime Skill，但不得在 `project_design/` 再维护第二份 runtime specification。
 
 不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design 文档；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
 
@@ -340,7 +345,8 @@ Skill 当前是什么状态
 Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architecture_freezes/
 freeze 完成 ≠ Skill generation 获批
 Skill generation 改变状态 → 必须同步 MD_WORKFLOW_MASTER_PLAN.md
-跨 Stage project design → 00_authoring/project_design/
+跨 Stage Task Execution runtime → 00_runtime/SKILL.md
+项目级 authoring design / status → 00_authoring/project_design/
 多窗口 writer assignment → 00_authoring/coordination/
 已被取代的 Markdown → archive
 无独立用途的旧 YAML/schema/index → 删除 active copy，Git history 保留
