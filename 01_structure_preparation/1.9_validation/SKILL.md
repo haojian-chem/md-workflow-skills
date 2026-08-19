@@ -100,7 +100,7 @@ PASS / FAIL
 - 1.7 形成的 protonation-state residue name 在当前实际使用的 naming convention / force-field definitions 中存在；
 - 1.6 / 1.7 / 1.8 的修改没有重新产生新的 blocking residue-name、atom-name 或 heavy-atom incompatibility。
 
-`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、solvent / ion 等对象不使用 standard-residue template 判定其 atom set 是否正确；它们只需保持与 1.2 正式 classification / identity 一致，并能够按已确定的 Stage 2 路线继续处理。
+`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、solvent / ion 等对象不使用 standard-residue template 判定其 atom set 是否正确。1.9 只确认这些对象仍与 1.2 正式 classification / identity 一致；其 Stage 2 assignment、topology acquisition 和 parameterization 由 Stage 2 自己决定。
 
 如果某种 terminal representation 差异属于当前目标 force field / Stage 2 工具正常的 termini processing 可以处理的情况：
 
@@ -211,13 +211,16 @@ owner / handoff destination
 
 ## Stage 1 completion / Stage 2 handoff
 
-只有当前 target 的 1.9 overall conclusion 为 `PASS` 时，Stage 1 对该 target 才完成，可将以下 Stage 1 final results 交给 Stage 2：
+只有当前 target 的 1.9 overall conclusion 为 `PASS` 时，Stage 1 对该 target 才完成。
+
+交给 Stage 2 的 Stage 1 final structure / identity results 是：
 
 ```text
 stage1_final.pdb
 stage1_final_map.yaml
-structure_preparation_validation.md
 ```
+
+`structure_preparation_validation.md` 是当前 target 已通过 Stage 1 final validation 的正式 completion evidence，可供后续核验，但不被 1.9 定义为 Stage 2 必须消费的业务输入。
 
 1.9 只确认 Stage 1 final heavy-atom structure / map 可以进入 Stage 2。
 
