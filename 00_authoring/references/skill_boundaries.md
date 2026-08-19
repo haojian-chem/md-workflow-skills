@@ -38,13 +38,14 @@ Stage 编号和 Task Sheet step 是科学流程语义，不等于必须建立额
 以下不属于 Scientific Skill roots：
 
 ```text
+references/
 evals/
 tools/
 legacy/
 00_authoring/archive/
 ```
 
-因此测试、工具、legacy contracts/runtime 和历史设计材料不得借用 Stage 编号作为根目录前缀。
+因此 shared references、测试、工具、legacy contracts/runtime 和历史设计材料不得借用 Stage 编号作为根目录前缀。
 
 ### AGENTS.md boundary
 
@@ -70,9 +71,17 @@ legacy/
 
 ## 5. Reference
 
-长但仍属于当前 Skill 的规则、registry、数据表、选择规则、方法说明、大枚举或条件性细节优先放 `references/`。
+长但仍属于当前 Skill 的规则、registry、数据表、选择规则、方法说明、大枚举或条件性细节优先放 Skill 自己的 `references/`。
 
 main Skill 必须说明何时读取 reference；不得启动时扫描整个 reference tree。
+
+确有跨多个科研执行 Skill 共用价值、且不属于任何单一 Stage / Step 科学职责的通用 Task Execution 规则统一位于：
+
+```text
+references/task_execution_rules.md
+```
+
+该文件是仓库级 shared reference，不是独立 Skill、dispatcher 或额外 runtime 环节。所有正式科研执行 Skill 的 main `SKILL.md` 必须显式引用它；引用只建立通用执行规则的可达性，不改变各 Skill 对具体科学规则、validation 与 results 的 ownership。
 
 ## 6. Validation ownership
 
