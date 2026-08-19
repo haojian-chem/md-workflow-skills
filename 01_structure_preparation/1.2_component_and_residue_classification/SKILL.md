@@ -5,6 +5,12 @@ description: Stage 1.2 Component and residue classification。对当前已确定
 
 # 1.2 Component and residue classification
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.2-specific 的对象、reuse、执行、validation 与 results 规则。
+
 ## Purpose
 
 对当前 target 的一个已确定 structure model 完成：
