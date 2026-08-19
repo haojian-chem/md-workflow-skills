@@ -15,7 +15,7 @@ MD_WORKFLOW_MASTER_PLAN.md
 职责：
 
 - `MD_WORKFLOW_MASTER_PLAN.md`：只保存顶层阶段编号、各 Stage catalog、建设状态和 current authority 入口；
-- 跨 Stage Task Execution runtime 的 current owner 为 `../../00_runtime/SKILL.md`，不在本目录维护平行 runtime specification；
+- 跨 Stage 通用 Task Execution 规则位于 `../../references/task_execution_rules.md`，不在本目录维护平行 specification；
 - 具体 Stage 科学/执行规则由对应 current `SKILL.md` / references 拥有；
 - 已冻结的 Stage 架构记录位于 `../architecture_freezes/`。
 
