@@ -265,3 +265,18 @@ active Skill generated
 validation milestone changed
 superseded / retired
 ```
+
+Skill authoring 窗口不得因为本文件是共享文件而静默跳过状态同步；具体多窗口写入规则见 `00_authoring/references/multi_window_authoring_protocol.md`。
+
+## 11. Ownership rule
+
+```text
+具体业务规则 → current Skill / reference
+尚未生成 Skill 的已冻结 Step / Stage 规则 → matching architecture freeze
+跨 Stage Task Execution 通用规则 → references/task_execution_rules.md
+Stage catalog / 建设状态 / current entry → 本 Master Plan
+current deterministic tool → tools/
+current evaluation → evals/
+legacy executable/runtime/test/CI material → legacy/
+historical design material → 00_authoring/archive/
+```
