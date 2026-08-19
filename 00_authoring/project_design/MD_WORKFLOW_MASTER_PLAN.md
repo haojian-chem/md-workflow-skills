@@ -32,7 +32,7 @@ Status: ACTIVE CURRENT BASELINE
 
 ## 3. Stage 1 — Structure preparation
 
-Status: PARTIALLY IMPLEMENTED.
+Status: ACTIVE SKILL GENERATION COMPLETED.
 
 ```text
 1.1 Structure source recognition
@@ -54,7 +54,7 @@ Current implementation status:
 1.6      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.6_structure_completion/SKILL.md
 1.7      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.7_protein_protonation_assignment/SKILL.md
 1.8      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
-1.9      architecture frozen; no active Skill yet
+1.9      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.9_validation/SKILL.md
 ```
 
 Stage 1.6 architecture freeze remains the authoring/architecture record:
@@ -71,7 +71,7 @@ Stage 1.7–1.9 architecture records:
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
 ```
 
-1.7 与 1.8 已获用户明确批准并生成 active Skills。1.9 仍为 freeze-only；其 freeze completion 不授权 runtime use 或 Skill generation，正式 `SKILL.md` 仍仅在用户明确批准后生成。
+1.7、1.8 与 1.9 均已获用户明确批准并生成 active Skills；当前 runtime 细节由对应 current `SKILL.md` 拥有，architecture freeze 保留为 authoring/architecture record。
 
 ## 4. Stage 2 — Topology / parameterization
 
@@ -244,7 +244,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.8 active Skills 已生成；其中 1.5 已完成正式生成与 authoring/interface review，1.6 已按 current architecture freeze 正式生成并完成 post-generation authoring/interface consistency check，1.7 已按当前讨论与 architecture record 正式生成并完成 post-generation authoring/interface consistency check，1.8 已按当前最终设计正式生成并完成 post-generation authoring/interface consistency check，current entry 为 `01_structure_preparation/1.8_reorder_and_mapping/SKILL.md`；1.9 已冻结、目录保留，但尚未获批生成 active Skill；
+- Stage 1：1.1–1.9 active Skills 已生成；其中 1.5 已完成正式生成与 authoring/interface review，1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成并完成 post-generation authoring/interface consistency check；1.9 current entry 为 `01_structure_preparation/1.9_validation/SKILL.md`；
 - Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；future Stage main entry 为 `02_topology_preparation/SKILL.md`，其中 2.1 保持完整独立 Step，Stage main 负责 Stage 2 内部科研编排与共享接口；2.5 详细方案仍只属于 freeze；Stage main 与全部 2.x active Skill generation 均尚未获批；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
