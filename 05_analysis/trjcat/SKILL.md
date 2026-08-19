@@ -5,6 +5,12 @@ description: Stage 5 `trjcat` capability guide。用于按当前 Stage 5 plan it
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 在 shared Task Execution 规则和 Stage 5 main Skill 的 plan-item 规则基础上，只负责当前 `trjcat` item 的具体执行、检查与结果维护。
+
 本 Skill 指导 Agent 落实当前 Stage 5 plan item 中已经确定的 `trjcat` 处理要求。
 
 本 Skill 不重新推导分析目标或重新决定 Stage 5 capability routing；当前 item 的 `inputs` / `settings` 是执行依据。
@@ -71,7 +77,7 @@ gmx trjcat -f part1.xtc part2.xtc -o joined.xtc -settime
 
 执行后检查输出 trajectory 是否与当前 item 要求一致。重点确认预期输入片段已经进入输出，并检查时间顺序、时间范围、重叠处理和实际 frame spacing 是否符合本次拼接要求；输出还应能作为一个一致的 trajectory 正常读取和使用。
 
-检查保持任务导向，不建立独立 Validator、固定检查表或额外 validation metadata。
+检查保持任务导向，不建立独立 Validator、固定 metadata schema 或 project-level group registry。
 
 # Reusable trajectory management
 
