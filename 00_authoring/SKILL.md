@@ -108,6 +108,18 @@ Scientific roots 按 MD Workflow Stage 固定为：
 
 **Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
 
+# Terminology and writing quality
+
+生成、重构或审查 Skill 时，正式文本不能直接继承讨论阶段的口语、简称或临时称呼。详细规则见 `references/skill_generation_rules.md` 的 `Terminology and writing precision`。
+
+至少执行以下约束：
+
+- 同一 execution object、artifact、state、scientific concept 或判断对象使用一个稳定的 canonical term；已有 current Skill、freeze、正式接口或 shared reference 已确定术语时优先沿用，不因用户本轮口语表达而改名。
+- 科学/技术判断必须写出实际判断关系。若“兼容、合理、正确、有效、一致、匹配”等词在未展开时可能有多种解释，则明确检查对象、属性、reference / criterion 和判断关系，不用抽象标签替代可执行判据。
+- 中文 Skill 以中文叙述为主体；软件/方法/力场专名、文件名、字段名、命令、软件原生语法及确有必要保留的固定英文术语可以使用英文。普通技术概念能准确自然地用中文表达时，不做无信息增益的中英文混排。
+
+Skill 完成后必须检查全文术语一致性、抽象判断句和无必要中英文混排；这属于 authoring self-check，而不是后续执行 Skill 的运行时 validation。
+
 # Authoring status maintenance
 
 `project_design/MD_WORKFLOW_MASTER_PLAN.md` 是项目级 **Stage / Step 建设状态与 current entry 的唯一状态 owner**。既然维护这个状态文件，任何真正改变实现状态的 authoring 工作都必须同步它；不能把状态维护留给“以后某个窗口顺手更新”。
@@ -274,6 +286,9 @@ Legacy executable/runtime material：`../legacy/`。
 
 - [ ] main Skill 能直接指导 Agent 完成当前职责；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 同一对象没有因用户口语、简称或措辞变化而出现多套正式术语；已有 canonical term 未被随意改写；
+- [ ] 科学/技术判断没有用未定义的抽象词代替实际判据；需要时已写明检查对象、属性、reference / criterion 和判断关系；
+- [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] 未把 shared Task Execution reference 误建成独立 runtime Skill / dispatcher；
 - [ ] 未把可由 Agent / 用户按当前任务可靠判断的策略，无必要地固化成决策树、状态机、fallback 链或完整工作流；
 - [ ] 长/条件性细节没有在 main Skill 与 reference 重复；
