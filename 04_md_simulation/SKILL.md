@@ -5,6 +5,12 @@ description: Stage 4 分子动力学模拟总 Skill。管理 planned run route�
 
 # 4 MD simulation
 
+通用 Task Execution 规则读取：
+
+`../references/task_execution_rules.md`
+
+本 Skill 仅在此基础上定义 Stage 4-specific 的 run route、run-unit、binding/reuse/continuation 与共享结果组织规则。
+
 ## Purpose
 
 负责 Stage 4 的总体执行规则。
