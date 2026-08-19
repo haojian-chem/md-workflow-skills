@@ -5,6 +5,12 @@ description: Stage 4.1 Energy minimization Skill。负责 em.* run unit 的 MDP 
 
 # 4.1 Energy minimization
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 在 shared Task Execution 规则和父级 Stage 4 规则基础上，只定义 EM-specific 执行与检查。
+
 ## Purpose
 
 执行当前 planned run entry 中属于 `EM` 的 scientific segment，并完成对应 `em.N` formal run unit。
