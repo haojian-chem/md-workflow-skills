@@ -77,7 +77,7 @@ gmx trjcat -f part1.xtc part2.xtc -o joined.xtc -settime
 
 执行后检查输出 trajectory 是否与当前 item 要求一致。重点确认预期输入片段已经进入输出，并检查时间顺序、时间范围、重叠处理和实际 frame spacing 是否符合本次拼接要求；输出还应能作为一个一致的 trajectory 正常读取和使用。
 
-检查保持任务导向，不建立独立 Validator、固定 metadata schema 或 project-level group registry。
+检查保持任务导向，不建立独立 Validator、固定检查表或额外 validation metadata。
 
 # Reusable trajectory management
 
