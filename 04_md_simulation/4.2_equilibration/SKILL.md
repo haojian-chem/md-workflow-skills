@@ -5,6 +5,12 @@ description: Stage 4.2 Equilibration Skill。负责 nvt.* / npt.* run unit 的 M
 
 # 4.2 Equilibration
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 在 shared Task Execution 规则和父级 Stage 4 规则基础上，只定义 NVT/NPT-specific 执行与检查。
+
 ## Purpose
 
 执行当前 planned run entry 中属于 `NVT` 或 `NPT` 的 equilibration scientific segment，并完成对应 `nvt.N` 或 `npt.N` formal run unit。
