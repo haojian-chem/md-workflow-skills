@@ -14,7 +14,7 @@ MD Workflow 的 Scientific Stage roots 固定为：
 05_analysis/
 ```
 
-`00_manager/` 是独立的项目管理 package，不占用 Scientific Stage 编号。
+`00_manager/` 是独立的项目管理 package，`00_runtime/` 是独立的跨 Stage Task Execution runtime package；两者都不占用 Scientific Stage 编号。
 
 Stage / Step 目录可以在正式 Skill generation 前预留，因此：
 
@@ -74,19 +74,20 @@ legacy/runtime/
 
 ## Runtime model
 
-真实项目默认采用 Lightweight Runtime v2：
+真实项目默认运行链：
 
 ```text
 Manager
 → Task Sheet
+→ 00_runtime/SKILL.md
 → long-lived Task Execution Agent
-→ current main Skill
+→ current Stage / Step main Skill
 → 按需 references / supporting Skills / deterministic Tools
 ```
 
 Manager：`00_manager/SKILL.md`
 
-Cross-Stage runtime：`00_authoring/project_design/lightweight_runtime_v2_spec.md`
+Cross-Stage Task Execution runtime：`00_runtime/SKILL.md`
 
 Stage catalog / 建设状态：`00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md`
 
