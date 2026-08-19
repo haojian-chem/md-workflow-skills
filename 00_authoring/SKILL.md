@@ -9,11 +9,12 @@ description: 设计、编写、冻结、审查或重构本项目科研 Skill 时
 
 Skill 的目标是指导 Agent 处理科研任务，而不是把 Agent 锁进固定 parser、schema、wrapper、dispatcher 或人为 workflow engine。
 
-默认关系：
+真实任务的默认 runtime 关系为：
 
 ```text
 Manager
 → Task Sheet
+→ 00_runtime/SKILL.md
 → Task Execution Agent
 → 当前科研 main Skill
    ├─ 按需 references
@@ -35,7 +36,7 @@ AGENTS.md
 - 与当前输入/输出/边界直接相关的相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
 - 项目级 Stage catalog/status 需要时读 `project_design/MD_WORKFLOW_MASTER_PLAN.md`；
-- 跨 Stage runtime 需要时读 `project_design/lightweight_runtime_v2_spec.md`；
+- 跨 Stage runtime 需要时读 `../00_runtime/SKILL.md`；
 - 多窗口写入协调需要时读 `coordination/`。
 
 提出或实施迭代修改前恢复：
@@ -62,12 +63,19 @@ Scientific roots 按 MD Workflow Stage 固定为：
 
 这些 Stage / Step 目录可以在正式 `SKILL.md` 生成前预先保留，用于稳定规划路径和后续 Skill package 落位；**目录存在不等于 Skill 已生成或已激活**。
 
-以下为 unnumbered repository infrastructure，不是 Scientific Skill root：
+以下是 unnumbered active packages，不是 Scientific Skill root：
 
 ```text
-evals/
-tools/
-legacy/
+../00_manager/
+../00_runtime/
+```
+
+以下为 unnumbered repository infrastructure：
+
+```text
+../evals/
+../tools/
+../legacy/
 ```
 
 历史 Workflow / Operation / Validator role-based roots 已退出 current layout，不保留 compatibility copy。
