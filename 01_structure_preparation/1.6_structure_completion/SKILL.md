@@ -5,6 +5,12 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.6-specific 的对象、reuse / execution assessment、执行、validation 与 results 规则。
+
 完成结构准备 `1.6 Structure completion`。
 
 本 Skill 将 `structure_completeness_report.yaml` 中已明确的 structure repair items 落实到当前 retained target structure，得到完成这些修复后的重原子结构。
