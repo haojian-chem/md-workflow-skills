@@ -1,6 +1,6 @@
 ---
 name: md_workflow_manager
-description: Lightweight Runtime v2 的项目管理入口。负责任务定位、任务创建、初始规划、显式重新规划和项目级任务整理；通过 Task Sheet 向独立的 Task Execution Agent 交接，不执行具体科研子环节。
+description: MD Workflow 的项目管理入口。负责任务定位、任务创建、初始规划、显式重新规划和项目级任务整理；通过 Task Sheet 向独立的 Task Execution runtime 交接，不执行具体科研子环节。
 ---
 
 # Purpose
@@ -146,11 +146,11 @@ Manager 不创建 `5.1 Analysis planning and orchestration`，也不自行把高
 
 ## Project initialization
 
-新 Lightweight 项目只建立稳定项目骨架和 planning index 已定义的 Stage / Step base directories；不提前创建 task-specific 科研目录。
+新项目只建立稳定项目骨架和 planning index 已定义的 Stage / Step base directories；不提前创建 task-specific 科研目录。
 
 Manager 在普通 Step 的 Task Sheet 条目中记录 `<base_work_directory>/<task_id>/`，但不创建该目录。
 
-Task Execution Agent 真正进入某普通 Step 后先按当前 Skill 检查 reuse；只有需要本地执行时才创建当前 task-specific directory。
+Task Execution runtime 真正进入某普通 Step 后先按当前 Skill 检查 reuse；只有需要本地执行时才创建当前 task-specific directory。
 
 Stage-specific project-level directories / indexes 或 stage-level planning structure 由对应 Stage current Skill / freeze 管理，不由 Manager 发明额外 runtime state。
 
@@ -163,10 +163,15 @@ Manager
 → locate/create task
 → initial planning
 → write Txxxx.md
+→ 00_runtime/SKILL.md
 → Task Execution Agent continuously executes and maintains the task
 ```
 
-Task Execution Agent 可以根据实际科学结果或用户明确范围变化，调整尚未执行的未来计划。已经实际执行并形成有意义历史的内容不得为了整洁而静默删除。
+Task Sheet 创建或定位完成后，真实科研执行的跨 Stage 通用规则由：
+
+`00_runtime/SKILL.md`
+
+负责。Manager 不在本文件复制 Task Execution 的通用 runtime 机制。
 
 普通 Step 之间不回 Manager 调度。
 
