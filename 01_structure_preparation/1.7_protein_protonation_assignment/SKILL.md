@@ -5,6 +5,12 @@ description: Structure preparation 1.7。针对当前蛋白重原子结构，在
 
 # Purpose
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.7-specific 的对象、执行、validation 与 results 规则；本步骤明确每次重新执行，不做既有 1.7 结果的 reuse assessment。
+
 完成 Structure preparation `1.7 Protein protonation assignment`。
 
 本 Skill 对当前需要处理的蛋白质 heavy-atom structure：
