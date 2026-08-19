@@ -5,6 +5,12 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 # 目标
 
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 仅补充 1.3-specific 的对象、reuse、执行、validation 与 results 规则。
+
 完成结构准备阶段 `1.3 Chain and Residue Selection`。
 
 本步骤先确定后续研究实际保留的研究对象，再为每个 target 生成对应 PDB，并记录新结构编号与 1.2 内部身份的映射。
