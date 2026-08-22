@@ -72,8 +72,8 @@ workflows:
     step_catalog_status: defined
     steps:
       - id: "2.1"
-        name: parameterization_environment_and_assignment
-        base_work_directory: 02_topology_preparation/01_parameterization_environment_and_assignment
+        name: topology_preparation_setup
+        base_work_directory: 02_topology_preparation/01_topology_preparation_setup
       - id: "2.2"
         name: standard_residue_topology_generation
         base_work_directory: 02_topology_preparation/02_standard_residue_topology_generation
