@@ -25,7 +25,7 @@ Stage / Step 目录可以在正式 Skill generation 前预留，因此：
 当前总体建设状态：
 
 - Stage 1：partially implemented；已有正式 active Skills，同时仍有处于 authoring / freeze-only 状态的后续 Step；
-- Stage 2：architecture frozen；`2.1–2.6` Step package directories 已预留，尚无 active Stage 2 Skill；
+- Stage 2：architecture frozen；`2.1 Topology preparation setup` 已生成 active Skill，Stage main 与 `2.2–2.6` 仍为 freeze-only；
 - Stage 3：architecture frozen；`3.1–3.3` Step package directories 已预留，尚无 active Stage 3 Skill；
 - Stage 4：active Skill generation completed；Stage main Skill 与 `4.1–4.3` Skills 已存在；
 - Stage 5：architecture frozen；`5.1` Step package directory 已预留，尚无 active Stage 5 Skill。
