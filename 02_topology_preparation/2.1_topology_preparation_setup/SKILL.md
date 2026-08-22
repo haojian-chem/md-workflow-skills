@@ -11,7 +11,7 @@ description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数
 
 本 Skill 只定义 2.1 的力场/参数来源确定、已有 Stage 2 结果适用性判断、处理对象划分以及 Task Sheet 更新规则。
 
-## Purpose
+## 目标
 
 根据 Stage 1 已确定的当前体系及对象分类，明确 Stage 2 后续实际使用的力场和其它参数定义来源，并把当前体系需要执行的 2.2–2.5 工作落实到当前 Task Sheet。
 
@@ -22,8 +22,9 @@ description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数
 2.1 至少读取：
 
 - 当前 Task Sheet；
-- Stage 1 当前正式最终结构，以及用于识别当前残基/组件身份的正式映射信息；
-- 与当前体系对应的 1.2 `classification_result.yaml`，用于读取 `STANDARD_RESIDUE`、`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 分类及已确认拓扑关系；
+- 当前 target 的 Stage 1 正式 `stage1_final.pdb`；
+- 与该结构对应的 `stage1_final_map.yaml`，用于保持当前残基/组件身份；
+- 与当前体系对应的 1.2 正式 `classification_result.yaml`，用于读取 `STANDARD_RESIDUE`、`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 分类及已确认拓扑关系；
 - 当前任务或用户已经指定的力场及其它参数定义来源；
 - `<project_root>/00_project_records/project_result_index.md` 中可检索的已有 2.2–2.5 正式结果。
 
