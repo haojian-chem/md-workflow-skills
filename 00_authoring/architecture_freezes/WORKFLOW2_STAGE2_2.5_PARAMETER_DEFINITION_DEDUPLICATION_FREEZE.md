@@ -19,7 +19,7 @@
 
 不得把它们分别拆成六个 `.itp`。
 
-`[ defaults ]` 不属于本汇总规则；它由 2.1 已确认的 parameterization environment / force-field topology hierarchy 管理。
+`[ defaults ]` 不属于本汇总规则；它由当前实际引用的 force-field topology hierarchy 管理，其来源由当前 Task Sheet 的 2.1 工作项记录。
 
 # 2. Collection
 
