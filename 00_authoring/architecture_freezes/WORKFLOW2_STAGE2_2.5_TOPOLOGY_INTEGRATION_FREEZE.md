@@ -1,6 +1,6 @@
 ---
 name: topology_integration_and_assembly
-description: Lightweight Runtime v2 的 2.5 Topology integration and assembly。将 2.2 standard topology、2.3 topo-linked nonstandard unit、2.4 independent nonstandard、以及 2.1 已确认可直接使用的 solvent/ion definitions 整合成 final all-atom topology package；负责 final atom ordering/index、final moleculetype 组织、linked-site modification、charge replacement、bonded-term migration、parameter-definition 汇总和 final topology/coordinate/map assembly，但不替代 2.6 topology validation，也不重新执行 2.3 parameterization。
+description: Lightweight Runtime v2 的 2.5 Topology integration and assembly。将 2.2 standard topology、2.3 topo-linked nonstandard unit、2.4 independent nonstandard、以及当前 Task Sheet 中 2.1 已记录可直接使用的 solvent/ion definitions 整合成 final all-atom topology package；负责 final atom ordering/index、final moleculetype 组织、linked-site modification、charge replacement、bonded-term migration、parameter-definition 汇总和 final topology/coordinate/map assembly，但不替代 2.6 topology validation，也不重新执行 2.3 parameterization。
 ---
 
 # 目标
@@ -35,11 +35,11 @@ final topology package
 
 至少需要：
 
-- 2.1 parameterization environment / assignment；
+- 当前 Task Sheet 中 2.1 已记录的力场及其它参数定义来源、2.5 处理对象与直接输入；
 - 2.2 standard-only structure、topology、molecule `.itp`、map；
 - 每个 2.3 topo-linked nonstandard **unit** 的 parameterization result、map、linked-site modification information；
 - 2.4 independent nonstandard type-level topology 与当前体系实例 structure/map；
-- 2.1 已确认可以直接引用的 solvent/ion topology definitions；
+- 当前 Task Sheet 中 2.1 已记录可以直接引用的 solvent/ion topology definitions；
 - Workflow 1 最终结构整理/映射结果中已经确定的 chain identity / chain assignment；
 - 当前体系信息中已经确认的 expected charge / composition 等 2.5 所需体系事实。
 
@@ -56,7 +56,7 @@ final topology package
 1. 2.2 standard topology/structure/map 输入相同；
 2. 所有实际参与的 2.3 nonstandard unit 结果及 linked-site modification information 相同；
 3. 所有实际参与的 2.4 type/instance 结果相同；
-4. parameterization environment 与实际引用 force-field include tree 相同；
+4. 2.1 已记录的力场及其它参数定义来源与实际引用 force-field include tree 相同；
 5. final system composition、chain assignment 与 covalent connectivity 组织相同；
 6. expected charge 等影响 assembly 的体系信息相同；
 7. `nrexcl`、`[ exclusions ]`、attachment-site atom type、parameter conflict 等用户决定相同；
