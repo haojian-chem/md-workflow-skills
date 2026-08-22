@@ -1,75 +1,119 @@
+---
+name: topology_preparation_setup
+description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数定义来源，检查已有 Stage 2 正式结果对当前体系的适用性，并把当前对象落实为实际的 2.2–2.5 Task Sheet 工作项。
+---
+
 # 2.1 Topology preparation setup
+
+通用 Task Execution 规则读取：
+
+`../../references/task_execution_rules.md`
+
+本 Skill 只定义 2.1 的力场/参数来源确定、已有 Stage 2 结果适用性判断、处理对象划分以及 Task Sheet 更新规则。
 
 ## Purpose
 
-2.1 确定当前体系进入 Stage 2 topology preparation 前所需的力场及参数定义来源，并根据当前体系对象确定后续处理环节。
+根据 Stage 1 已确定的当前体系及对象分类，明确 Stage 2 后续实际使用的力场和其它参数定义来源，并把当前体系需要执行的 2.2–2.5 工作落实到当前 Task Sheet。
 
-2.1 完成后更新当前 Task Sheet，使实际需要执行的 2.2–2.5 工作项与当前体系一致。
+2.1 的规划信息直接写入当前 Task Sheet；后续工作项不依赖额外的 2.1 报告或独立规划文件。
 
-## Input
+## Inputs and evidence
 
-2.1 读取：
+2.1 至少读取：
 
-- Stage 1 完成后的当前体系结构；
-- 当前体系对象分类信息；
-- 当前可用的力场及参数定义来源；
 - 当前 Task Sheet；
-- 项目级 `project_result_index.md` 中已登记的 2.2–2.5 正式结果。
+- Stage 1 当前正式最终结构，以及用于识别当前残基/组件身份的正式映射信息；
+- 与当前体系对应的 1.2 `classification_result.yaml`，用于读取 `STANDARD_RESIDUE`、`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 分类及已确认拓扑关系；
+- 当前任务或用户已经指定的力场及其它参数定义来源；
+- `<project_root>/00_project_records/project_result_index.md` 中可检索的已有 2.2–2.5 正式结果。
 
-## Execution
+2.1 沿用 1.2 已确认分类，不根据残基名、文件 record 类型或当前空间位置重新分类对象。
 
-### 确定力场及参数定义来源
+若当前任务尚不能唯一确定应使用的力场或其它参数定义来源，先向用户确认；不自行选择新的力场组合。
 
-确认当前体系使用的力场及其它参数定义来源，并记录实际路径。
+## 确定力场及参数定义来源
 
-当使用多个力场或参数定义来源时，检查同一 `STANDARD_RESIDUE` 是否存在重复定义，并确定当前体系采用的定义来源。
+确认当前体系后续实际使用的力场及其它参数定义来源，并把能够定位这些定义的实际路径记录在 Task Sheet 的 2.1 工作项中。
 
-### 判断已有 Stage 2 结果是否适用于当前体系
+一个体系可以同时使用多个来源。存在多个来源时，对当前体系全部 `STANDARD_RESIDUE` 的 residue name 检查是否在多个已选来源中重复定义。
 
-读取项目级 `project_result_index.md`，检查已有 2.2–2.5 正式结果是否可以用于当前体系。
+若同一 `STANDARD_RESIDUE` 在多个已选来源中都有定义，必须明确当前体系对该 residue name 实际采用哪个定义来源，并把选择结果与对应路径写入 2.1 工作项。不存在重复定义时，记录已完成检查即可。
 
-判断条件：
+`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 是否能够直接进入 2.5，也以这里已经确认的实际参数定义来源为依据。
 
-- 2.2：来源结构一致，且使用相同力场；
-- 2.3：使用同一个 `.mol2`，且参数生成方法一致；
-- 2.4：使用同一个 `.mol2`，且参数生成方法一致；
-- 2.5：合并使用的输入文件一致。
+## 已有 Stage 2 结果适用性判断
 
-### 确定对象对应处理环节
+`project_result_index.md` 只作为已有正式结果的检索入口。对找到的 2.2–2.5 正式结果，按以下条件判断其是否可用于当前体系：
 
-根据当前体系对象确定后续处理环节：
+- **2.2**：正式结果来源于与当前体系相同的源结构，并使用相同力场；
+- **2.3**：正式结果使用的 `.mol2` 与当前处理对象使用的 `.mol2` 相同，且参数生成方法相同；
+- **2.4**：正式结果使用的 `.mol2` 与当前 residue name 对应处理使用的 `.mol2` 相同，且参数生成方法相同；
+- **2.5**：该正式结果进行整合时使用的输入文件集合与当前 2.5 需要使用的输入文件集合一致。
 
-- `STANDARD_RESIDUE` → 2.2；
-- 需要共同参数化的非标准残基组合 → 2.3；
-- 按 residue name 需要独立参数化的非标准残基 → 2.4；
-- 已有完整 topology definition 的 `SOLVENT_COMPONENT` / `ION_COMPONENT` → 2.5；
-- 缺少完整 topology definition 的 `SOLVENT_COMPONENT` / `ION_COMPONENT` → 2.4。
+满足对应条件时，在当前 Task Sheet 的相应工作项中直接引用原正式结果；跨任务使用已有结果时不复制无意义副本。判断所需信息不足时，按仓库级 Task Execution 规则向用户确认。
 
-对于需要共同参数化的非标准残基组合，根据实际拓扑连接关系判断。残基之间存在 topology connection，或多个非标准残基与同一标准残基形成需要共同处理的拓扑关系时，可作为同一 2.3 处理项。
+## 确定 2.2–2.5 处理对象
 
-### 更新 Task Sheet
+### `STANDARD_RESIDUE`
 
-根据对象分配结果更新当前 Task Sheet：
+当前体系存在 `STANDARD_RESIDUE` 时，全部标准残基共同对应一个 2.2 工作项。
 
-- 记录 2.1 当前使用的力场及参数定义来源路径；
-- 记录多力场情况下标准残基定义检查结果；
-- 建立实际需要执行的 2.2、2.3、2.4、2.5 工作项；
-- 标记已有正式结果可直接用于当前体系的工作项。
+2.1 只确定这个 2.2 工作项覆盖当前体系全部 `STANDARD_RESIDUE`；2.2 内部如何组织具体拓扑生成属于 2.2 自身职责。
 
-## Results
+### `TOPOLOGY_LINKED_NONSTANDARD`
 
-2.1 不生成独立报告，不登记 `project_result_index.md`。
+根据当前已确认拓扑关系，判断哪些非标准残基需要在同一次参数化处理中共同处理。
 
-2.1 的结果体现在更新后的 Task Sheet 中。
+一个 2.3 工作项可以覆盖一个或多个 `TOPOLOGY_LINKED_NONSTANDARD` 残基。残基之间存在需要共同处理的拓扑连接，或多个非标准残基与同一标准残基形成需要联合处理的拓扑关系时，可以归入同一个 2.3 工作项。
 
-2.2–2.5 正式结果由对应处理环节登记到项目级索引。
+除这些稳定关系外，不把“一个非标准残基对应一个 2.3 工作项”固化为规则；具体组合由 Agent 根据当前已确认拓扑关系和实际参数化对象判断。
 
-## Completion criteria
+### `INDEPENDENT_NONSTANDARD`
 
-2.1 完成条件：
+按 residue name 建立 2.4 工作项。同一 residue name 在当前 Stage 2 中使用同一套参数定义，因此同名 `INDEPENDENT_NONSTANDARD` 只建立一个 2.4 工作项。
 
-- 当前体系使用的力场及参数定义来源已确定；
-- 多来源定义检查已完成；
-- 当前体系对象已完成处理环节分配；
-- 已有 Stage 2 结果适用性判断已完成；
-- Task Sheet 已更新。
+若同名残基实际需要不同参数定义，不能在同一 residue name 下静默建立多套参数；先向用户确认是否需要区分 residue name，再继续规划。
+
+### `SOLVENT_COMPONENT` / `ION_COMPONENT`
+
+检查当前已经确认的力场/参数定义来源是否为该 component 提供可直接用于 2.5 的完整 molecule topology definition。
+
+- 已有完整定义：作为 2.5 的直接输入，不建立对应 2.4 参数化工作项；
+- 缺少完整定义：按实际 component / residue name 建立对应 2.4 工作项。
+
+### 2.5
+
+Stage 2 当前体系保留一个 2.5 工作项，用于汇合当前体系实际需要的 2.2、2.3、2.4 正式结果，以及能够直接使用的 `SOLVENT_COMPONENT` / `ION_COMPONENT` topology definition。
+
+2.1 只确定这些输入来源和工作对象，不定义 2.5 的内部整合规则。
+
+## 更新 Task Sheet
+
+完成上述判断后，直接维护当前 Task Sheet：
+
+- 在 2.1 工作项中记录本次实际使用的力场及其它参数定义来源路径；
+- 存在多个来源时，记录 `STANDARD_RESIDUE` 重复定义检查，以及发生重复时实际采用的定义来源；
+- 当前体系存在 `STANDARD_RESIDUE` 时，建立或保留一个覆盖全部标准残基的 2.2 工作项；
+- 为每个实际需要共同参数化的非标准残基组合建立一个 2.3 工作项，并使工作项能够定位对应残基及其已确认拓扑关系；
+- 为每个需要独立参数化的 residue name 建立一个 2.4 工作项；
+- 建立或保留一个 2.5 工作项，并记录能够直接进入 2.5 的 `SOLVENT_COMPONENT` / `ION_COMPONENT` 参数定义来源；
+- 对已经判定可用于当前体系的 2.2–2.5 正式结果，在对应工作项中直接引用原结果。
+
+初始 Task Sheet 中仅用于 catalog 占位、但当前体系没有实际处理对象的 2.2–2.4 项，可以在规划更新时删除；已经形成有意义执行历史的任务项按仓库级 Task Execution 规则保留。
+
+2.1 只展开和调整 2.2–2.5 的实际处理对象；既有 2.6 任务项继续保留为 Stage 2 后续验证步骤。
+
+完成 Task Sheet 更新后，按仓库级 Task Execution 规则更新当前 2.1 工作项状态。
+
+## Result boundary
+
+2.1 本身不生成独立报告，也不向 `project_result_index.md` 登记新的正式结果。
+
+2.1 的当前工作结果体现在 Task Sheet 中的：
+
+- 力场及其它参数定义来源路径；
+- 多来源时的 `STANDARD_RESIDUE` 重复定义检查与实际来源选择；
+- 当前体系实际的 2.2–2.5 工作项及其处理对象；
+- 对已有 2.2–2.5 正式结果的引用。
+
+2.2–2.5 的正式结果及其登记语义由各自结果 owner 定义，2.1 不复制这些规则。
