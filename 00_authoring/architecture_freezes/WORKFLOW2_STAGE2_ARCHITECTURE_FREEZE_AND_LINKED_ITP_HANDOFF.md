@@ -8,11 +8,11 @@
 
 - Stage 2 需要阶段级 main Skill；其未来 runtime entry 固定为 `02_topology_preparation/SKILL.md`，阶段级职责边界：**冻结**；
 - `2.1–2.6` 的步骤结构、主要职责、核心输入输出关系和关键边界：**冻结**；
-- `2.1 Parameterization environment and assignment` 保持完整独立 Step，不部分或整体并入 Stage 2 main Skill：**冻结**；
+- `2.1 Topology preparation setup` 保持完整独立 Step，不部分或整体并入 Stage 2 main Skill；当前 active entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
 - 核酸/DNA/RNA 的 2.3 截断细节：**尚未专项冻结**；
 - 最终文件 basename / schema / 目录名：**仍可在实现层细化**；
-- **Stage 2 尚未获批生成 active Skill；Stage 2 main Skill 与当前 2.1–2.6 scientific directories 均仍为 freeze-only / reserved package paths。**
+- **当前只有 2.1 已生成 active Skill；Stage 2 main Skill 与 2.2–2.6 仍为 freeze-only / reserved package paths。**
 
 2.5 更详细、可直接用于后续 Skill generation 的冻结材料位于：
 
@@ -32,7 +32,7 @@ Workflow 2 的目标是：从 Workflow 1 已完成结构识别、分类、选择
 
 Stage 2 冻结为六个步骤：
 
-1. `2.1 Parameterization environment and assignment`
+1. `2.1 Topology preparation setup`
 2. `2.2 Standard residue topology generation`
 3. `2.3 Topology-linked nonstandard parameterization`
 4. `2.4 Independent nonstandard parameterization`
@@ -66,10 +66,10 @@ Manager
 → 按已定义 catalog 建立初始 Task Sheet
 → Task Execution Agent 进入 Stage 2
 → Stage 2 main Skill
-→ 2.1 产生当前体系的 parameterization environment / assignment result
-→ Stage 2 main Skill依据该正式结果维护尚未执行的 Stage 2 计划
+→ 2.1 确定当前使用的力场及其它参数定义来源、判断已有 Stage 2 正式结果适用性，并直接把实际 2.2–2.5 工作项写入 Task Sheet
+→ Stage 2 main Skill维护后续 Stage 2 工作项的完成状态与跨 Step 关系
 → 2.2 / 2.3 / 2.4 按实际对象完成 topology acquisition / parameterization
-→ Stage 2 main Skill确认当前 assignment 要求的上游结果已经齐备
+→ Stage 2 main Skill确认 2.1 已确定的必要上游工作已经齐备
 → 2.5 integration and assembly
 → 2.6 topology validation
 ```
@@ -80,68 +80,63 @@ Stage 2 main Skill **不是独立编号 Step**，不在 Task Sheet 中创建 `2.
 
 ## 1.2 2.1 与 Stage 2 main Skill 的边界
 
-`2.1 Parameterization environment and assignment` 保持完整独立科研 Step。
+`2.1 Topology preparation setup` 保持完整独立科研 Step。
 
 2.1 负责：
 
-- 当前体系 parameterization environment 的建立；
-- Stage 2 processing objects 的拆分 / 聚合；
-- topology-linked nonstandard unit 的识别；
-- independent nonstandard topology type 的识别；
-- FF-direct solvent / ion 与需要进入 2.4 的 solvent / ion 的区分；
-- 各实际对象的 topology acquisition / parameterization assignment；
-- 2.1 正式结果及其 validation / reuse 语义。
+- 确定当前体系实际使用的力场及其它参数定义来源，并记录实际路径；
+- 多来源情况下检查当前 `STANDARD_RESIDUE` 是否在多个来源中重复定义，并明确实际采用的定义来源；
+- 依据 1.2 分类与已确认拓扑关系，确定当前体系实际需要的 2.2–2.5 处理对象；
+- 从 `project_result_index.md` 检索已有 2.2–2.5 正式结果，并按 2.1 current Skill 的规则判断其是否适用于当前体系；
+- 直接更新当前 Task Sheet，使 2.2–2.5 工作项与当前体系实际处理对象一致。
 
-Stage 2 main Skill不重新做这些科学判断，也不把 2.1 拆成“Stage-level environment + Step-level assignment”两套职责。
+2.1 的规划信息直接写入 Task Sheet，不生成独立的 Stage 2 assignment result 或第二份规划记录。
 
-Stage 2 main Skill只消费 2.1 已确认的当前正式结果，并据此维护下游计划与 2.5 进入条件：
+Stage 2 main Skill不重新做上述科学判断。2.1 完成后，Stage 2 main Skill维护这些工作项的完成状态、跨 Step 关系与后续 2.5 进入条件。
 
-```text
-2.1 决定当前体系需要哪些参数化工作
-Stage 2 main Skill据此维护其余 Stage 2 Task Sheet
-```
-
-如果 2.1 的 parameterization environment 或 assignment 在后续发生会影响既有结果语义的实质变化，Stage 2 main Skill必须重新核验受影响的下游工作是否仍满足当前 assignment；不因为上游变化机械重做全部未受影响结果，也不得在 2.5 进入条件判断中继续使用已经与当前 assignment 不一致的旧结果。
+若后续实际使用的力场、参数定义来源或处理对象发生实质变化，受影响的 2.2–2.5 工作项及已有正式结果适用性必须重新核验；不因为局部变化机械重做全部未受影响结果。
 
 ## 1.3 Stage 2 计划展开
 
 Manager 可以按照 planning index 把 2.1–2.6 作为初始 catalog 写入 Task Sheet，但这不表示所有 2.2–2.4 工作都已被判定为实际适用。
 
-2.1 完成后，Stage 2 main Skill根据当前正式 assignment 维护尚未执行的 Stage 2 计划：
+2.1 根据当前体系直接维护尚未执行的 2.2–2.5 工作项：
 
 ```text
 存在 STANDARD_RESIDUE
-→ 保留一个 2.2 工作项处理当前体系全部标准残基
-→ 2.2 内部的 pdb2gmx processing-group 拆分仍属于 2.2 内部实现，不因此拆成多个 2.2 Task Sheet 项
+→ 一个 2.2 工作项处理当前体系全部标准残基
 
-每个 topology-linked nonstandard unit
+每个实际需要共同参数化的 TOPOLOGY_LINKED_NONSTANDARD 残基组合
 → 一个 2.3 工作项
 
-每个需要独立参数化的 topology type
+每个需要独立参数化的 residue name
 → 一个 2.4 工作项
 
-FF-direct solvent / ion
-→ 不建立 2.4 参数化工作项
+已有完整 molecule topology definition 的 SOLVENT_COMPONENT / ION_COMPONENT
+→ 不建立对应 2.4 工作项
 → 作为 2.5 的直接输入
+
+当前体系
+→ 保留一个 2.5 工作项
 ```
 
-因此 2.3 和 2.4 可以在同一 Task Sheet 中按实际对象出现多次。初始占位的 2.3 / 2.4 条目应按 2.1 的实际结果替换、展开或删除，而不是为了保持 catalog 外观保留无对象的空步骤。
+因此 2.3 和 2.4 可以在同一 Task Sheet 中按实际对象出现多次。初始占位但没有当前实际处理对象的 2.2–2.4 条目可由 2.1 按 Task Execution 通用规则调整；已有实际执行历史的条目不得为了整理计划而静默删除。
 
-Stage 2 main Skill只根据 2.1 的正式 assignment 展开执行对象，不自行重新分类 residue、重建 topology-linked unit 或重新选择参数化方法。
+Stage 2 main Skill在 2.1 之后只维护当前已经确定的工作集合与完成状态，不重新分类 residue、不重新决定 2.3 组合，也不重新选择 2.1 已确认的力场/参数定义来源。
 
 ## 1.4 2.5 输入就绪条件与汇合关系
 
-Stage 2 的实际工作集合由 2.1 决定；2.2 / 2.3 / 2.4 按对象展开，随后在 2.5 统一汇合。
+Stage 2 的实际工作集合由 2.1 在 Task Sheet 中确定；2.2 / 2.3 / 2.4 按对象展开，随后在 2.5 统一汇合。
 
-进入 2.5 前，Stage 2 main Skill必须对照**当前有效的 2.1 assignment**确认所有必要上游结果已经齐备：
+进入 2.5 前，Stage 2 main Skill必须对照当前 Task Sheet 中由 2.1 确定的处理对象和直接输入，确认所有必要上游结果已经齐备：
 
-- 若存在 `STANDARD_RESIDUE`，当前体系已有满足当前 assignment 的有效 2.2 结果；
-- 每个 topology-linked nonstandard unit 都已有满足当前 assignment 的有效 2.3 结果；
-- 每个需要独立参数化的 topology type 都已有满足当前 assignment 的有效 2.4 结果；
-- 每个 FF-direct solvent / ion 都仍能从当前 parameterization environment 定位到 2.1 已确认的完整 topology definition；
-- 不存在尚未解决、会导致当前体系 topology acquisition 不完整的 assignment 项。
+- 若存在 `STANDARD_RESIDUE`，当前体系已有满足当前对象与力场要求的有效 2.2 结果；
+- 每个 2.3 工作项都已有与其当前处理对象对应的有效 2.3 结果；
+- 每个 2.4 工作项都已有与其当前 residue name / component 对应的有效 2.4 结果；
+- 直接进入 2.5 的 `SOLVENT_COMPONENT` / `ION_COMPONENT` 仍能从 2.1 已记录的实际来源定位到完整 molecule topology definition；
+- 不存在尚未解决、会导致当前体系 topology acquisition 不完整的 2.2–2.5 工作项。
 
-这里的阶段级检查只判断**当前 assignment 要求的结果覆盖是否闭合**。它不重新执行 2.2 / 2.3 / 2.4 的科学 validation，也不替 2.5 检查实际 integration artifact 的内部一致性。
+这里的阶段级检查只判断当前 Task Sheet 要求的结果覆盖是否闭合。它不重新执行 2.2 / 2.3 / 2.4 的科学 validation，也不替 2.5 检查实际 integration artifact 的内部一致性。
 
 2.5 自己仍负责确认其实际输入文件 / definition 可以读取并用于 assembly，以及完成 integration / assembly 的具体 validation。Stage 2 main Skill不得通过重新推断整个体系组成来替代 2.1，也不得通过重复检查上游结果内部科学细节来替代各结果 owner。
 
@@ -159,86 +154,28 @@ Stage 2 的实际工作集合由 2.1 决定；2.2 / 2.3 / 2.4 按对象展开，
 
 当前已冻结的统一 `*.map` 语义属于 Stage 2 共享接口。正式 Skill generation 时，其详细接口定义可以放在 Stage 2 main Skill 自己的 local reference 中，由 2.2 / 2.3 / 2.4 / 2.5 按需引用；不得在多个 Step Skill 中各维护一份可独立漂移的重复规范。
 
-2.1 产生的 parameterization environment / assignment result仍由 2.1 拥有；Stage 2 main Skill只负责确保后续科研编排与 2.5 进入条件使用同一当前有效结果，不建立第二份阶段级 assignment record。
+2.1 的力场/参数定义来源、已有正式结果引用以及 2.2–2.5 处理对象直接保存在当前 Task Sheet 中。Stage 2 main Skill只消费这一当前计划状态，不建立第二份阶段级 assignment record。
 
 ---
 
-# 2. 2.1 Parameterization environment and assignment
+# 2. 2.1 Topology preparation setup
 
-## 2.1 目标
-
-2.1 只做两件事：
-
-1. 建立当前体系后续使用的 parameterization environment；
-2. 把实际对象分配给 2.2–2.5 的具体 topology acquisition / parameterization 路线。
-
-2.1 不重新执行 1.2 分类，也不承担 Manager 式计划判断。
-
-## 2.2 Parameterization environment
-
-一个体系允许混合使用多个 force-field / parameter definition source，因此环境应抽象为：
+2.1 的 current runtime owner 为：
 
 ```text
-set of force-field / parameter definition sources
+02_topology_preparation/2.1_topology_preparation_setup/SKILL.md
 ```
 
-而不是单一 force-field path。
+本 freeze 只保留 2.1 的稳定架构边界：
 
-多个来源并存不自动构成冲突。只有同名不同定义、同一参数对象存在不兼容定义或其它真实 coverage 冲突时，才需要处理。
+1. 2.1 是独立科研 Step；
+2. 2.1 确定当前体系实际使用的力场及其它参数定义来源；
+3. 多来源时检查同一 `STANDARD_RESIDUE` 是否重复定义，并明确实际采用的定义来源；
+4. 2.1 判断已有 2.2–2.5 正式结果对当前体系的适用性；
+5. 2.1 根据当前对象把实际工作落实到 2.2–2.5，并直接更新 Task Sheet；
+6. 2.1 本身不生成独立正式结果，不向 `project_result_index.md` 登记新的结果项。
 
-## 2.3 对象 assignment
-
-### STANDARD_RESIDUE
-
-全部标准残基整体分配给 2.2：
-
-```text
-all STANDARD_RESIDUE
-→ 2.2
-```
-
-这里的“整体”只表示 2.1 的 assignment 粒度，不代表 2.2 只能运行一次 `pdb2gmx`。2.2 内部可根据实际软件/科学要求拆分 processing group。
-
-### TOPOLOGY_LINKED_NONSTANDARD
-
-2.1 必须识别需要联合参数化的 **topology-linked nonstandard unit**。
-
-一个 unit 可以包含一个或多个 nonstandard residues；只要这些 residues 在参数化上必须作为同一 linked chemical unit 联合处理，就属于同一个 2.3 processing unit。
-
-```text
-one topology-linked nonstandard unit
-→ one 2.3 processing unit
-```
-
-不得把“一个 nonstandard residue = 一个 2.3 processing unit”作为固定规则。
-
-### INDEPENDENT_NONSTANDARD
-
-按 residue name/type 处理。同一 residue name 在 Stage 2 默认代表同一 topology type，只参数化一次。
-
-若同名实例需要不同参数化，应先赋予不同 residue names，保证：
-
-```text
-one residue name → one topology definition
-```
-
-### ION_COMPONENT / SOLVENT_COMPONENT
-
-若 parameterization environment 已提供完整 molecule topology definition，则不再经过 topology generation，2.5 直接使用。
-
-若缺少完整定义，则按 independent nonstandard type 进入 2.4。
-
-关键区分：
-
-```text
-STANDARD_RESIDUE
-→ force field 提供 residue/template definition
-→ 2.2 仍需为当前体系生成 molecule topology
-
-FF-defined solvent / ion
-→ force field 已有完整 topology include
-→ 2.5 可直接使用
-```
+具体处理对象划分、已有结果适用性判据和 Task Sheet 写入内容由 current `SKILL.md` 拥有，不在 freeze 中维护第二套可变规范。
 
 ---
 
@@ -246,7 +183,7 @@ FF-defined solvent / ion
 
 2.2 为当前体系全部 `STANDARD_RESIDUE` 生成实际的全原子 structure + topology。
 
-输入：Workflow 1 标准残基重原子结构 + 2.1 parameterization environment / assignment。
+输入：Workflow 1 标准残基重原子结构 + 当前 Task Sheet 中 2.1 已确定的力场/参数定义来源与 2.2 处理对象。
 
 2.2 内部可按实际需要拆分 `pdb2gmx processing groups`，但不把 `one chain = one pdb2gmx run` 作为默认规则。
 
@@ -436,7 +373,7 @@ Stage 2 不自行重新给 topo-linked nonstandard unit 分 chain；它消费 Wo
 
 ## 8.1 目标
 
-将 2.2 standard、2.3 topology-linked nonstandard units、2.4 independent nonstandard，以及 FF-direct solvent/ion definitions 整合为完整 final all-atom topology package。
+将 2.2 standard、2.3 topology-linked nonstandard units、2.4 independent nonstandard，以及 force-field/parameter-source direct solvent/ion definitions 整合为完整 final all-atom topology package。
 
 ## 8.2 final moleculetype 组织
 
@@ -459,7 +396,7 @@ chain identity / residue identity 保留；改变的是 GROMACS `moleculetype` �
 - 2.2：贡献全部 STANDARD_RESIDUE coordinates，并应用 2.3 confirmed deletions；
 - 2.3：只贡献 unit 自身最终存在的 SOURCE + ADDED_H atoms，不贡献 standard parameterization fragment / CAP；
 - 2.4：贡献 all-instance structure/map；
-- FF-direct solvent/ion：贡献当前体系实际实例坐标，topology definition 使用 2.1 指定来源。
+- 直接进入 2.5 的 solvent/ion：贡献当前体系实际实例坐标，topology definition 使用当前 Task Sheet 中 2.1 已记录的实际来源。
 
 ## 8.4 final all-atom order 必须先于 topology integration
 
@@ -577,13 +514,13 @@ topology_integration_report.yaml
 ## 已冻结
 
 - Stage 2 设置阶段级 main Skill，未来 runtime entry 为 `02_topology_preparation/SKILL.md`；
-- Stage 2 main Skill拥有 Stage 2 内部科研编排、由 2.1 正式结果驱动的下游计划维护、2.5 输入就绪条件、2.6 失败后的 Stage 2 计划调整，以及 Stage 2 共享接口定义；
+- Stage 2 main Skill拥有 Stage 2 内部科研编排、2.1 完成后的下游工作状态维护、2.5 输入就绪条件、2.6 失败后的 Stage 2 计划调整，以及 Stage 2 共享接口定义；
 - Stage 2 main Skill不是编号 Step，不建立额外规划 Step、`stage2_plan.yaml`、route 对象或第二套 runtime state；
-- 2.1 保持完整独立科研 Step，parameterization environment / object assignment 不部分或整体移入 Stage 2 main Skill；
+- `2.1 Topology preparation setup` 保持完整独立科研 Step，直接确定力场/参数定义来源、已有 2.2–2.5 正式结果适用性和当前 2.2–2.5 处理对象，并更新 Task Sheet；
+- 2.1 本身不生成独立正式结果，不向 `project_result_index.md` 登记新的结果项；
 - 2.1–2.6 六步架构；
-- 2.1 assignment 与 parameterization environment；
-- 2.1 结果驱动 2.2 / 2.3 / 2.4 实际 Task Sheet 工作集合展开：全部 standard residue 对应一个 2.2 工作项；每个 topology-linked unit 对应一个 2.3 工作项；每个需要独立参数化的 topology type 对应一个 2.4 工作项；FF-direct solvent / ion 不创建 2.4 参数化工作项；
-- 2.5 进入前必须对照当前有效 2.1 assignment 确认所有 topology acquisition / parameterization 所需结果已经齐备；
+- 2.1 更新后的 Task Sheet 形成 2.2 / 2.3 / 2.4 实际工作集合：全部 standard residue 对应一个 2.2 工作项；每个实际需要共同参数化的非标准残基组合对应一个 2.3 工作项；每个需要独立参数化的 residue name 对应一个 2.4 工作项；已有完整 topology definition 的 solvent / ion 不创建对应 2.4 工作项；
+- 2.5 进入前必须对照当前 Task Sheet 中由 2.1 确定的处理对象和直接输入，确认所有 topology acquisition / parameterization 所需结果已经齐备；
 - 2.3 processing unit = topology-linked nonstandard unit，可包含一个或多个 nonstandard residues；
 - 2.2 / 2.3 / 2.4 主要职责与输出层级；
 - map 基本职责与字段，并作为 Stage 2 共享接口由未来 Stage 2 main Skill统一拥有接口定义；
@@ -598,13 +535,18 @@ topology_integration_report.yaml
 - 2.6 validation boundary；
 - Stage 2 completion 由当前有效 2.5 final package + 正式 2.6 validation pass 闭合，Stage 2 main Skill不建立第二套 final validation 或重复结果包。
 
+## 当前实现状态
+
+- 2.1：active Skill 已生成，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；
+- Stage 2 main Skill：freeze-only；
+- 2.2–2.6：freeze-only。
+
 ## 仍可继续细化但不重新开放 Stage 2 架构
 
 - Stage 2 main Skill 正式生成时的 main/reference 文本组织与具体 reference basename；
-- 2.1 正式结果 basename / schema 与实现细节；
 - 核酸/DNA/RNA 的 2.3 截断/capping 规则；
 - 文件 basename、schema、deterministic tool implementation；
 - validator/testing fixture 与实现细节；
 - 新科学证据明确要求的局部规则修订。
 
-Stage 2 从此视为 **architecture frozen**。后续只有在用户明确批准对应 Stage main Skill / Step Skill / Tool generation 后，才把这些 freeze 转写为 active implementation；不因 freeze 足够详细而自动生成 runtime Skill。
+Stage 2 从此视为 **architecture frozen**。2.1 的 current runtime 细节由 active `SKILL.md` 拥有；其余 Stage main / Step 只有在用户明确批准对应 Skill / Tool generation 后，才把这些 freeze 转写为 active implementation。
