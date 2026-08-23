@@ -44,11 +44,12 @@ note: null
 
 1. `path` 使用本次实际读取文件的完整绝对路径；
 2. `sha256` 对应本次读取时的实际文件内容；
-3. 同一个实际文件只建立一个 `reference_id`；同一文件承担多个作用时在 `roles` 中全部列出，不重复建立多份记录；
-4. `classification_result.yaml` 中需要引用参考依据的位置使用 `reference_id`，需要定位文件内部条目时另记录 `reference_entry`；
-5. CCD 直接记录实际使用的 CCD 组分定义文件，不要求记录或构造自定义 library root；
-6. 目标力场使用实际残基定义文件，不用只有力场名称的字符串替代文件定位；
-7. 序列参考、项目残基定义和关系定义同样记录实际文件及 SHA-256。
+3. 每个 `reference_id` 在当前 manifest 中唯一；
+4. 同一个实际文件只建立一个 `reference_id`；同一文件承担多个作用时在 `roles` 中全部列出，不重复建立多份记录；
+5. `classification_result.yaml` 中需要引用参考依据的位置使用 `reference_id`，需要定位文件内部条目时另记录 `reference_entry`；
+6. CCD 直接记录实际使用的 CCD 组分定义文件，不要求记录或构造自定义 library root；
+7. 目标力场使用实际残基定义文件，不用只有力场名称的字符串替代文件定位；
+8. 序列参考、项目残基定义和关系定义同样记录实际文件及 SHA-256。
 
 ## 3. `classification_result.yaml` 顶层结构
 
@@ -83,13 +84,42 @@ summary: {}
 
 `source_structure.path` 与 `reference_manifest.path` 都使用完整绝对路径。
 
-`result_status: COMPLETE` 表示 1.2 规定的检查已经可靠执行，所有会改变正式分类、稳定身份或 `topology_effect_applied` 的事项已经闭合，并且当前结果通过 validation；不表示“结构没有发现任何问题”。
+`result_status: COMPLETE` 表示 1.2 规定的检查已经可靠执行，每个残基的最终分类已经闭合，所有会改变稳定身份或 `topology_effect_applied` 的事项已经解决，并且当前结果通过 validation；不表示“结构没有发现任何问题”。
 
 未满足 COMPLETE 条件时可以在当前任务目录保留草稿或工作记录，但不得把该草稿登记为正式 1.2 `classification_result.yaml`。
 
-## 4. `residue_records[]`
+## 4. `chain_groups[]`
 
-### 4.1 正式残基顺序
+`chain_groups[]` 保存 1.2 最终分组和 `component_id` 成员关系，是后续 selection、结构映射和拓扑准备定位组分身份的正式依据。
+
+每个 group 至少通过 schema 固定以下信息：
+
+```yaml
+component_id: <component_id>
+residue_ids: []
+missing_residue_ids: []
+chain_index: <integer>
+grouping_status: FINAL
+group_type: <schema-defined enum>
+source_chain_id: ... | null
+entity_id: ... | null
+instance_count: <integer>
+linked_polymer_chain_indices: []
+```
+
+记录规则：
+
+- 每个 `component_id` 在当前正式结果中唯一；
+- 每个 `residue_id` 只属于一个 `chain_group`；
+- group 的 `residue_ids` 包含该组全部残基成员，包括有坐标和无坐标成员；
+- `missing_residue_ids` 只列其中 `presence_status: MISSING_EXPECTED` 的成员，是 `residue_ids` 的子集；
+- `residue_records[]` 中每个 record 的 `component_id` 与对应 group 的 `component_id` 一致；
+- record 的 `chain_index` 与其 group 的 `chain_index` 一致；
+- `residue_ids` / `missing_residue_ids` 只表示成员关系，不承担残基顺序；正式残基顺序仍由 `residue_records[]` 数组顺序拥有。
+
+## 5. `residue_records[]`
+
+### 5.1 正式残基顺序
 
 `residue_records[]` 的数组顺序是 1.2 的正式残基顺序。
 
@@ -101,7 +131,7 @@ summary: {}
 
 后续 Skill 需要保持稳定残基顺序时应直接使用该数组顺序。
 
-### 4.2 每个残基记录
+### 5.2 每个残基记录
 
 每个残基记录至少包含：
 
@@ -123,26 +153,32 @@ heavy_atom_check: ...
 
 这些字段不能用未限定的“残基 ID”概括。`residue_id`、`source_resid`、当前结构中的 `resid` 与 `sequence_position` 分别保存不同语义。
 
-### 4.3 `classification`
+每个 `residue_id` 在当前正式结果中唯一；同一源残基身份不得物化成多个不同 `residue_id`。
 
-至少记录：
+### 5.3 `classification`
+
+正式 COMPLETE 结果中的每个残基都必须具有已经闭合的分类：
 
 ```yaml
 classification:
   component_id: <component_id>
   polymer_class: <enum>
   topology_class: <enum>
-  resolution_status: RESOLVED | CONFLICT | UNRESOLVED
-  primary_source: <enum or null>
+  resolution_status: RESOLVED
+  primary_source: <enum>
   evidence:
     - evidence_type: <enum>
       reference_id: <ref_...> | null
       detail: <简短具体事实>
 ```
 
+`classification.component_id` 必须与 residue record 顶层 `component_id` 一致。
+
 `detail` 记录实际判断事实，例如“当前 `residue_name` 在 ref_003 指向的 `aminoacids.rtp` 中存在精确同名 residue block”；不写“兼容”“合理”“看起来正确”等无法复核的抽象结论。
 
-### 4.4 `conformation`
+工作过程中可以出现分类冲突或尚未解决的分类候选，但这类状态必须在正式 COMPLETE 结果生成前闭合；不得把 `CONFLICT`、`UNRESOLVED` 或空分类写入正式 v2 `classification_result.yaml`。
+
+### 5.4 `conformation`
 
 单构象残基：
 
@@ -170,7 +206,9 @@ conformation:
 
 只列实际带 alternate-conformation 标记的原子；共享原子不需要逐个复制。
 
-### 4.5 `heavy_atom_check`
+`MISSING_EXPECTED` 残基使用 `status: NOT_APPLICABLE`，且 `altloc_ids` / `alternate_atoms` 为空。
+
+### 5.5 `heavy_atom_check`
 
 必须明确 `execution_status`：
 
@@ -192,7 +230,7 @@ heavy_atom_check:
   reference_entry: HEM
   findings:
     - MISSING_EXPECTED_HEAVY_ATOMS
-    - ATOM_NAME_MAPPING_REQUIRED
+    - ATOM_NAME_MISMATCH
   comparisons:
     - scope: SINGLE
       exact_comparison:
@@ -215,9 +253,19 @@ heavy_atom_check:
 
 多构象时 `scope` 使用实际 `altLoc` ID；对应原子集合按 `classification_rules.md` 中“共享原子 + 当前候选 `altLoc` 原子”的规则确定。
 
-`findings` 使用 schema 固定问题类型。不存在某类问题时保留空数组，不使用自然语言同义词替代正式问题类型。
+`findings` 使用 schema 固定问题类型：
 
-## 5. 关系记录
+```text
+MISSING_EXPECTED_HEAVY_ATOMS
+UNEXPECTED_HEAVY_ATOMS
+DUPLICATE_ATOM_NAME
+ATOM_NAME_MISMATCH
+ELEMENT_MISMATCH
+```
+
+不存在某类问题时不添加对应 finding，不使用自然语言同义词替代正式问题类型。
+
+## 6. 关系记录
 
 正式已确认关系只进入：
 
@@ -236,13 +284,15 @@ confirmed_relations:
 - `evidence`；
 - `topology_effect_applied`。
 
+每个 `relation_id` 在当前正式结果中唯一。端点中的 `residue_id` / `component_id` 必须能够定位到当前正式 `residue_records[]` / `chain_groups[]`；不能保存指向已不存在对象的悬空关系。
+
 端点中保留 `residue_id`、`component_id`、源/当前原子身份、atom name 与 `altLoc` 信息，保证后续结构发生编号、chain 或对象组织变化后仍可追溯到 1.2 原始关系。
 
 已经明确拒绝且有保留审计价值的候选进入 `rejected_candidates`。仍存在证据不足或参考冲突，但不影响正式分类、稳定身份和 `topology_effect_applied` 的事项，可以保留在 `unresolved_items` 中作为非阻断信息。
 
 任何尚未闭合、会改变正式分类、稳定身份或 `topology_effect_applied` 的事项都属于阻断问题；这类问题存在时不得形成正式 `result_status: COMPLETE` 结果，因此不会以 `blocking: true` 出现在正式 v2 `classification_result.yaml` 中。
 
-## 6. `unresolved_items[]`
+## 7. `unresolved_items[]`
 
 正式 COMPLETE 结果中的每项至少记录：
 
@@ -259,7 +309,7 @@ required_resolution: <后续若需要闭合该事项，应补充什么信息>
 
 普通已确认结构问题，例如已经明确的缺失残基或重原子缺失，不因为“存在问题”而成为未解决事项。
 
-## 7. `summary`
+## 8. `summary`
 
 `summary` 只保存从正式明细可以直接核对的计数，不承担科学判断：
 
@@ -279,9 +329,9 @@ confirmed_metal_coordination_count
 unresolved_item_count
 ```
 
-计数与 `residue_records[]` 或关系明细不一致时，以明细为检查对象并修正 `summary`；不得反向修改明细去迁就汇总计数。
+计数必须与 `chain_groups[]`、`residue_records[]` 和关系明细一致。发现不一致时，以明细为检查对象并修正 `summary`；不得反向修改明细去迁就汇总计数。
 
-## 8. `relation_decisions.yaml`
+## 9. `relation_decisions.yaml`
 
 只有实际发生用户关系确认时生成。
 
@@ -300,7 +350,7 @@ decisions:
 
 用户决定写入后，最终 `classification_result.yaml` 必须同步体现该决定；不能把 `relation_decisions.yaml` 作为与正式结果互相矛盾的第二状态来源。
 
-## 9. `classification_report.md`
+## 10. `classification_report.md`
 
 报告采用固定章节顺序：
 
@@ -325,17 +375,20 @@ decisions:
 - `classification_mode`；
 - `classification_result.yaml` 与 `reference_manifest.yaml` 的完整绝对路径。
 
-报告正文要求：
+正文按以下规则记录：
 
-- 按上述固定检查顺序记录；
 - 每项先写实际检查范围和简要结果；
-- 发现问题时定位到具体残基或关系；
-- 涉及原子差异时使用正式问题类型并列出实际 atom name；
+- 组分与残基分类给出各 `topology_class` 数量，并单独列出非标准组分及其实际分类依据；
+- 缺失残基按 chain 和真实连续区段列出；
+- 多构象按残基列出 `altLoc` ID 和主要 occupancy 信息；
+- 重原子问题按残基组织，同一残基的 missing / unexpected / duplicate / naming mismatch / element mismatch 放在同一残基条目下；
+- 共价连接和金属配位分别列出确认关系及必要候选/冲突说明；
+- 未解决事项逐条与 `unresolved_items[]` 对应；
 - 不逐条复制所有正常残基；
 - 不用 `PASS / FAIL` 替代实际检查事实；
 - 不引入 schema 未定义的同义问题类型。
 
-## 10. 项目结果索引
+## 11. 项目结果索引
 
 项目结果索引只登记：
 
