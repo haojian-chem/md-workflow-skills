@@ -45,6 +45,18 @@ Stage-specific 的科学规则、计划调整方式、execution object、validat
 
 Stage-specific 内部对象如有不同状态模型，以对应 current Stage Skill 为准。
 
+## Canonical terminology
+
+跨 Skill 需要保持一致的正式术语统一维护在：
+
+`references/canonical_terminology.md`
+
+Task Execution Agent 不需要每次执行都预读该文件；当用户表述、Task Sheet、上下游 Skill 或结果记录中的称呼可能导致 execution object、artifact、state 或科学判断对象混淆时，按需读取并以其中的 canonical terminology 解释当前对象。
+
+用户的简称、口语和临时称呼只作为当前上下文输入，由 Agent 结合实际任务理解；不要为这些表达建立固定 alias 映射。正式 Task Sheet、报告和结果记录在涉及已登记的跨 Skill 概念时，采用该 reference 的 `Preferred expression`。
+
+只属于单个 Stage / Step / capability 的局部术语仍由对应 Skill 定义；仓库级 terminology reference 不接管具体科学规则或局部命名。
+
 ## Task execution loop
 
 Task Execution Agent 持续持有一个 Task Sheet，并按当前实际对象推进。
