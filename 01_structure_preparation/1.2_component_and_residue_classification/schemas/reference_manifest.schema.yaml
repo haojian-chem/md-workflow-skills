@@ -1,97 +1,72 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: reference_manifest.schema.yaml
-title: Classification reference manifest
+title: Stage 1.2 reference manifest
 type: object
 additionalProperties: false
-required: [schema_version, classification_mode, project_files, skill_references, force_field, ccd_components, sequence_references, relation_definition_files]
+required: [schema_version, classification_mode, references]
 properties:
-  schema_version: {const: "1.0"}
-  classification_mode: {enum: [REGISTRY, FORCE_FIELD_ANALYSIS]}
-  project_files:
-    type: object
-    additionalProperties: false
-    required: [residue_definitions]
-    properties:
-      residue_definitions: {$ref: "#/$defs/optional_file_reference"}
-  skill_references:
+  schema_version:
+    const: "2.0"
+  classification_mode:
+    enum: [REGISTRY, FORCE_FIELD_ANALYSIS]
+  references:
     type: array
-    items: {$ref: "#/$defs/file_reference"}
-  force_field:
-    oneOf:
-      - {type: "null"}
-      - type: object
-        additionalProperties: false
-        required: [root_path, files, status]
-        properties:
-          root_path: {type: string, minLength: 1}
-          files:
-            type: array
-            items: {$ref: "#/$defs/force_field_file"}
-          status: {enum: [LOADED, PARTIALLY_LOADED, INVALID]}
-  ccd_components:
-    type: array
-    items: {$ref: "#/$defs/ccd_component"}
-  sequence_references:
-    type: array
-    items: {$ref: "#/$defs/sequence_reference"}
-  relation_definition_files:
-    type: object
-    additionalProperties: false
-    required: [possible_connections, possible_coordination]
-    properties:
-      possible_connections: {$ref: "#/$defs/optional_file_reference"}
-      possible_coordination: {$ref: "#/$defs/optional_file_reference"}
+    items:
+      $ref: "#/$defs/reference_record"
 $defs:
-  sha256: {type: string, pattern: "^[0-9a-f]{64}$"}
-  file_reference:
+  sha256:
+    type: string
+    pattern: "^[0-9a-f]{64}$"
+  reference_record:
     type: object
     additionalProperties: false
-    required: [path, sha256, status]
+    required:
+      - reference_id
+      - roles
+      - path
+      - sha256
+      - source
+      - residue_names
+      - component_ids
+      - note
     properties:
-      path: {type: string, minLength: 1}
-      sha256: {$ref: "#/$defs/sha256"}
-      status: {enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]}
-  optional_file_reference:
-    type: object
-    additionalProperties: false
-    required: [path, sha256, status]
-    properties:
-      path: {type: [string, "null"]}
-      sha256:
-        oneOf: [{type: "null"}, {$ref: "#/$defs/sha256"}]
-      status: {enum: [LOADED, NOT_PROVIDED, INVALID, UNAVAILABLE]}
-  force_field_file:
-    type: object
-    additionalProperties: false
-    required: [path, sha256, status, role]
-    properties:
-      path: {type: string, minLength: 1}
-      sha256: {$ref: "#/$defs/sha256"}
-      status: {enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]}
-      role: {enum: [RTP_RESIDUE_RECOGNITION, RTP_HEAVY_ATOM_TEMPLATE]}
-  sequence_reference:
-    type: object
-    additionalProperties: false
-    required: [path, sha256, status, reference_type]
-    properties:
-      path: {type: string, minLength: 1}
-      sha256: {$ref: "#/$defs/sha256"}
-      status: {enum: [LOADED, AVAILABLE, INVALID, UNAVAILABLE]}
-      reference_type: {enum: [AF3_INPUT_JSON, FASTA, SEQUENCE_FILE, OTHER]}
-  ccd_component:
-    type: object
-    additionalProperties: false
-    required: [component_id, mapped_residue_names, status, source_type, library_path, reference_path, sha256]
-    properties:
-      component_id: {type: string, minLength: 1, maxLength: 32}
-      mapped_residue_names:
+      reference_id:
+        type: string
+        pattern: "^ref_[0-9]{3,}$"
+      roles:
         type: array
         minItems: 1
         uniqueItems: true
-        items: {type: string, minLength: 1}
-      status: {enum: [LOADED, UNAVAILABLE, INVALID, CONFLICT]}
-      source_type: {enum: [BUILTIN_CCD_LIBRARY, ADDITIONAL_CCD_LIBRARY, NONE]}
-      library_path: {type: [string, "null"]}
-      reference_path: {type: [string, "null"]}
+        items:
+          enum:
+            - PROJECT_RESIDUE_DEFINITIONS
+            - SKILL_STANDARD_RESIDUE_REGISTRY
+            - SKILL_TOPOLOGY_LINKED_REGISTRY
+            - SKILL_INDEPENDENT_NONSTANDARD_REGISTRY
+            - FORCE_FIELD_RESIDUE_DEFINITION
+            - CCD_COMPONENT_DEFINITION
+            - SEQUENCE_REFERENCE
+            - COVALENT_RELATION_DEFINITION
+            - METAL_COORDINATION_DEFINITION
+            - OTHER
+      path:
+        type: string
+        minLength: 1
       sha256:
-        oneOf: [{type: "null"}, {$ref: "#/$defs/sha256"}]
+        $ref: "#/$defs/sha256"
+      source:
+        enum: [PROJECT, SKILL, FORCE_FIELD, USER]
+      residue_names:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+      component_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+      note:
+        type: [string, "null"]
