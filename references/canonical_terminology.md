@@ -83,3 +83,17 @@ Scope / distinction
 **Preferred expression:** 残基定义  
 **Definition:** 目标力场中针对某一残基规定其可识别原子名称及与当前 Skill 判定相关的残基级定义信息。具体来源文件和需要比较的字段由对应科学 Skill 指定。  
 **Scope / distinction:** 正式中文 Skill 在没有必要强调软件原生实体名称时使用“残基定义”，不要仅为了技术感写成中英文混排的 `residue definition`。如果需要指向某个软件中的具体原生文件、section 或字段，则保留该软件原文名称。
+
+### residue_id
+
+**Canonical term:** `residue_id`  
+**Preferred expression:** `residue_id`  
+**Definition:** 结构准备 1.2 在正式 `classification_result.yaml` 中为每个残基记录物化的稳定、不透明身份标识，用于后续处理环节在结构选择、构象处理、结构补全、重新编号和映射等变化后继续引用同一个上游残基身份。已观察残基和已确认的缺失残基都可以具有 `residue_id`。  
+**Scope / distinction:** `residue_id` 不是源结构残基编号 `source_resid`、当前结构残基编号 `current_resid`、当前 PDB 中的 `resid`，也不是序列位置 `sequence_position`。正式文本涉及这些对象时应直接写明实际字段或明确的编号语义，不使用未限定的“残基 ID”同时指代不同对象。下游 Skill 应消费正式结果或映射中已有的 `residue_id`，不得根据残基名称、编号或其它结构字段自行重建其值。
+
+### component_id
+
+**Canonical term:** `component_id`  
+**Preferred expression:** `component_id`  
+**Definition:** 结构准备 1.2 在正式 `classification_result.yaml` 中物化的稳定、不透明组分身份标识，用于标识 1.2 已确定成员关系的组分分组对象，并使该组分及其成员残基能够在后续选择、结构映射和拓扑准备中持续引用。  
+**Scope / distinction:** `component_id` 不是 CCD component ID、`residue_name`、PDB `chain_id` 或 1.2 的 `chain_index`。CCD component ID 表示外部化学组分定义的名称；`component_id` 表示当前 1.2 正式结果中的组分身份。下游 Skill 应直接消费正式结果或映射中已有的 `component_id`，不得根据残基名称、chain 组织或当前空间关系自行重建其值。
