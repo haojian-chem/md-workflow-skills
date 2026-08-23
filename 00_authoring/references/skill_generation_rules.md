@@ -66,13 +66,16 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 不要在 main Skill 和 reference 中各写一份完整规则。某条详细规则一旦下放给 reference，reference 是该细节的 owner，main Skill 只保留必要摘要和入口。
 
-仓库级 shared reference：
+仓库级 shared references：
 
 ```text
 references/task_execution_rules.md
+references/canonical_terminology.md
 ```
 
-保存各科研执行 Skill 共同遵守的跨 Stage Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+`task_execution_rules.md` 保存各科研执行 Skill 共同遵守的跨 Stage Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+
+`canonical_terminology.md` 维护跨 Skill 需要稳定一致的正式术语。它也不是独立 Skill 或执行环节，只拥有术语名称、优先表达、定义和边界；不接管具体科学规则。Authoring 在生成、重构或审查科研 Skill 时必须读取它。执行阶段可通过 `task_execution_rules.md` 按需读取它，因此不要求为现有 execution Skill 逐一建立平行 glossary。
 
 ### Negative scope / 禁止项
 
@@ -125,11 +128,19 @@ Skill 的正式文本必须先完成术语归一化，再进行措辞润色。�
 
 #### Canonical terminology
 
+跨 Skill 正式术语的 shared authority 为：
+
+`references/canonical_terminology.md`
+
+生成、重构或审查 Skill 时先读取该文件，再结合 current Skill、architecture freeze、正式上下游接口和当前科学语境确定局部术语。
+
 - 同一 execution object、artifact、state、scientific concept 或判断对象，在同一 Skill 及其 references 中使用一个稳定的正式术语；不要为了语言变化轮换同义词。
-- 如果 current Skill、architecture freeze、上游正式接口或 shared reference 已经为该对象建立明确术语，优先沿用该术语；用户本轮对话中的口语化说法不能覆盖已有 canonical term。
-- 如果确实需要引入新术语，首次出现时明确它指什么，之后保持同一称呼；不要让一个术语在同一 Skill 中指代多个不同对象。
+- `canonical_terminology.md` 已有条目时，正式 Skill 优先采用该条目的 `Preferred expression`；用户本轮对话中的口语化说法不能覆盖已有 canonical term。
+- 只有需要跨 Skill 稳定、会进入 Task Sheet / 项目结果索引 / Stage 间正式接口，或名称漂移会造成对象混淆的术语，才进入 `canonical_terminology.md`。只在一个 Skill 内使用的局部术语由该 Skill 自己定义和维护。
+- `canonical_terminology.md` 只维护 `Canonical term / Preferred expression / Definition / Scope / distinction`。**不维护 alias、口语映射或 deprecated / do-not-use 列表。** 用户的简称和临时表达由 Agent 根据当前上下文理解，不固化成静态映射。
+- 如果当前 authoring 工作确实建立了新的跨 Skill 稳定术语，并且当前窗口拥有 shared path 写权限，则同步更新 `canonical_terminology.md`；没有写权限时提交精确的术语条目给当前 owner，不在局部 Skill 中另建平行 glossary。
+- 如果确实需要引入新的局部术语，首次出现时明确它指什么，之后保持同一称呼；不要让一个术语在同一 Skill 中指代多个不同对象。
 - 文件名、字段名、命令、软件选项、section name、enum、identifier 等机器或接口级名称保持原文，不做自由翻译或改名。
-- 不要求为每个 Skill 另建 glossary；默认通过生成前术语归一化和交付前全文检查保证一致性。
 
 #### Semantic explicitness
 
@@ -172,6 +183,7 @@ heavy-atom name 是否兼容
 
 生成或重构完成后，必须额外检查：
 
+- `canonical_terminology.md` 已有术语是否使用其 `Preferred expression`；
 - 同一对象是否出现多套名称；
 - 用户口语/简称是否被误写成正式术语；
 - 是否存在没有展开 reference / criterion 的抽象判断句；
@@ -195,14 +207,16 @@ heavy-atom name 是否兼容
 新建或重构科研执行 Skill 时按以下顺序：
 
 ```text
-读取 00_authoring/SKILL.md + references/task_execution_rules.md
+读取 00_authoring/SKILL.md
++ references/task_execution_rules.md
++ references/canonical_terminology.md
 + 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
 ↓
 读取 MD_WORKFLOW_MASTER_PLAN.md 中目标 Stage / Step 的当前建设状态
 ↓
 确认当前 Skill 的唯一职责与 write ownership
 ↓
-对讨论记录、freeze、current interfaces 中的对象和术语做归一化，确定 canonical terminology
+以 canonical_terminology.md 为跨 Skill 术语 authority，对讨论记录、freeze、current interfaces 中的对象和术语做归一化
 ↓
 对拟新增内容先执行 rule-necessity gate
 ↓
@@ -219,6 +233,8 @@ heavy-atom name 是否兼容
 检查越界定义、重复定义、shadow specification，以及是否把 Agent/用户的任务级裁量误固化成流程
 ↓
 检查术语一致性、判断关系是否具体、以及是否存在无必要的中英文混排
+↓
+若本次确立新的跨 Skill 稳定术语，按 shared-path 写权限更新 canonical_terminology.md 或提交给当前 owner
 ↓
 完成本次要求的 validation / self-check
 ↓
@@ -302,7 +318,7 @@ current → superseded / retired / replaced
 - 若 Master Plan 已有显式 writer，则不并发写，向该 writer 提交精确的状态变更；交付时必须明确该同步仍待落地，不能宣称 repository integration 已全部完成；
 - 不建立新的 `SYNC_STATUS.md`、`status.yaml`、skill inventory 或其他 parallel 状态层。
 
-## 7. Project-design 与 shared Task Execution reference
+## 7. Project-design 与 repository shared references
 
 项目级 authoring 设计资料位于：
 
@@ -317,15 +333,16 @@ MD_WORKFLOW_MASTER_PLAN.md
 → Stage numbering / catalog / 建设状态 / current entry
 ```
 
-跨 Stage Task Execution 通用规则位于仓库级：
+仓库级 shared references 位于：
 
 ```text
 references/task_execution_rules.md
+references/canonical_terminology.md
 ```
 
-该文件是 shared reference，不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。Authoring 在构筑或审查科研执行 Skill 时读取它；各 execution Skill 通过自身 `SKILL.md` 显式引用它。
+前者定义跨 Stage Task Execution 通用规则；后者维护跨 Skill canonical terminology。两者都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。Authoring 在构筑或审查科研执行 Skill 时读取两者；各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并在需要术语解释时由该 shared reference 继续读取 `canonical_terminology.md`。
 
-不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design 或 shared Task Execution reference；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
+不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design、shared Task Execution reference 或 canonical terminology；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
 
 不再单独维护 current `SYNC_STATUS.md`。如果某项内容只是“当前 Stage 建设到哪里”，归入 Master Plan；如果是具体规则，则归入真正的规则 owner。
 
@@ -394,12 +411,14 @@ Skill 当前是什么状态
 
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 已读取 `references/canonical_terminology.md`；其中已有条目在正式 Skill 中使用其 `Preferred expression`；
 - [ ] 同一对象 / artifact / state / scientific concept 没有因用户口语、简称或措辞变化而出现多套正式术语；
+- [ ] 没有为用户口语、alias 或历史称呼建立 shared static mapping；`canonical_terminology.md` 只保存确有跨 Skill 稳定价值的正式术语；
 - [ ] 科学/技术判断已明确检查对象、属性、reference / criterion 和判断关系，没有用未定义的“兼容 / 合理 / 正确 / 有效 / 一致”等抽象词代替实际判据；
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
-- [ ] 没有把 shared Task Execution reference 误建成独立 Skill / dispatcher；
+- [ ] 没有把 shared Task Execution reference 或 canonical terminology 误建成独立 Skill / dispatcher；
 - [ ] 没有把可由 Agent / 用户基于当前任务可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
 - [ ] 被撤回的伪 Skill 已删除，但正确的 Stage / Step 目录仍保留；
 - [ ] archive 没有被加入默认 startup/read list；
@@ -418,7 +437,8 @@ Skill 当前是什么状态
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
 可由 Agent / 用户基于当前任务可靠判断、无需跨任务稳定的策略 → 不固化为 Skill 规则
-同一对象 → 一个 canonical term；用户口语/简称不自动进入 Skill 正式术语
+跨 Skill 正式术语 → references/canonical_terminology.md
+同一对象 → 一个 canonical term；正式文本优先采用 Preferred expression；用户口语/简称不进入 shared glossary
 科学/技术判断 → 写明对象、属性、reference / criterion 与实际判断关系
 中文 Skill → 中文为主体；只保留有信息价值的英文原文
 已确定 Stage / Step package 路径 → 可先保留目录；目录存在 ≠ Skill 已生成
