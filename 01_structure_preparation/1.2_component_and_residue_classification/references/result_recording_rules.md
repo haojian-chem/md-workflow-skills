@@ -15,46 +15,40 @@ relation_decisions.yaml   # 仅实际发生用户关系确认时存在
 
 其中：
 
-- `classification_result.yaml`：后续 Stage / Step 消费的结构分类、身份、顺序、检查结果和已确认关系基准；
+- `classification_result.yaml`：后续 Stage / Step 持续使用的结构分类、稳定身份、正式残基顺序、检查结果和已确认关系基准；
 - `reference_manifest.yaml`：本次实际用于形成判断的参考文件及其 SHA-256；
-- `classification_report.md`：面向人工审阅的固定顺序检查摘要；
+- `classification_report.md`：按固定检查顺序组织的人工审阅报告；
 - `relation_decisions.yaml`：实际发生的用户关系确认记录。
 
-`classification_result.yaml` 与 `reference_manifest.yaml` 是项目级长期检索入口；其字段应避免依赖临时工作文件或脚本中间状态。
+`classification_result.yaml` 与 `reference_manifest.yaml` 是项目级长期检索入口，其内容不得依赖已经退出正式结果体系的临时工作文件或脚本中间状态。
 
 ## 2. `reference_manifest.yaml`
 
-`reference_manifest.yaml` 只记录**实际用于形成本次正式判断**的参考文件，不记录“可能有用但没有使用”的候选文件，也不记录不存在文件的占位条目。
+`reference_manifest.yaml` 只记录**实际用于形成本次正式判断**的参考文件，不记录“可能有用但没有使用”的候选文件，也不建立不存在文件的占位记录。
 
-每个 reference record 至少包含：
+每个参考文件记录至少包含：
 
 ```yaml
 reference_id: ref_001
-role: <schema-defined role>
+roles:
+  - <schema-defined role>
 path: /absolute/path/to/reference
 sha256: <64-hex>
-```
-
-可按需要补充：
-
-```yaml
 source: PROJECT | SKILL | FORCE_FIELD | USER
-residue_names:
-  - HEM
-component_ids:
-  - HEM
-note: <必要说明>
+residue_names: []
+component_ids: []
+note: null
 ```
 
 规则：
 
 1. `path` 使用本次实际读取文件的完整绝对路径；
 2. `sha256` 对应本次读取时的实际文件内容；
-3. 同一个实际文件只建立一个 `reference_id`；同一文件承担多个角色时在 `roles` 中全部列出，不重复建立多份 reference record；
-4. `classification_result.yaml` 中需要引用参考依据的位置使用 `reference_id`，必要时另记录 `reference_entry`；
-5. CCD 直接记录实际 component definition 文件，不要求记录某个自定义 library root；
-6. 目标力场使用实际残基定义文件，不用仅有力场名称的字符串替代文件定位；
-7. 序列参考和关系定义同样记录实际文件及 SHA-256。
+3. 同一个实际文件只建立一个 `reference_id`；同一文件承担多个作用时在 `roles` 中全部列出，不重复建立多份记录；
+4. `classification_result.yaml` 中需要引用参考依据的位置使用 `reference_id`，需要定位文件内部条目时另记录 `reference_entry`；
+5. CCD 直接记录实际使用的 CCD 组分定义文件，不要求记录或构造自定义 library root；
+6. 目标力场使用实际残基定义文件，不用只有力场名称的字符串替代文件定位；
+7. 序列参考、项目残基定义和关系定义同样记录实际文件及 SHA-256。
 
 ## 3. `classification_result.yaml` 顶层结构
 
@@ -89,31 +83,31 @@ summary: {}
 
 `source_structure.path` 与 `reference_manifest.path` 都使用完整绝对路径。
 
-`result_status: COMPLETE` 表示 1.2 规定的检查已经可靠执行、所有会改变正式分类/身份/topology effect 的用户确认已经闭合，并且当前结果通过 validation；不表示“结构没有发现任何问题”。
+`result_status: COMPLETE` 表示 1.2 规定的检查已经可靠执行，所有会改变正式分类、稳定身份或 `topology_effect_applied` 的事项已经闭合，并且当前结果通过 validation；不表示“结构没有发现任何问题”。
 
-未满足 COMPLETE 条件时可以在当前任务目录保留草稿或工作记录，但不得把它登记为正式 1.2 `classification_result.yaml`。
+未满足 COMPLETE 条件时可以在当前任务目录保留草稿或工作记录，但不得把该草稿登记为正式 1.2 `classification_result.yaml`。
 
 ## 4. `residue_records[]`
 
-### 4.1 数组顺序
+### 4.1 正式残基顺序
 
-`residue_records[]` 数组顺序是 1.2 的正式 residue order。
+`residue_records[]` 的数组顺序是 1.2 的正式残基顺序。
 
 同一 polymer / chain 中：
 
-- 已观察 residue 按结构与可靠 sequence mapping 确定的顺序保存；
-- 已确认 `MISSING_EXPECTED` residue 插入其应有位置；
-- 不因 `residue_id`、残基名或源 residue number 的字典/数值顺序重新排序。
+- 已观察残基按结构顺序和可靠的序列—结构对应确定位置；
+- 已确认 `MISSING_EXPECTED` 残基插入其应有位置；
+- 不按 `residue_id`、残基名或源残基编号的字典顺序/数值顺序重新排序。
 
-后续 Skill 需要稳定 residue order 时应直接使用该数组顺序。
+后续 Skill 需要保持稳定残基顺序时应直接使用该数组顺序。
 
-### 4.2 每个 residue record
+### 4.2 每个残基记录
 
-每个 residue record 至少包含：
+每个残基记录至少包含：
 
 ```yaml
-residue_id: <stable residue_id>
-component_id: <final component_id>
+residue_id: <residue_id>
+component_id: <component_id>
 source_identity: ...
 current_identity: ... | null
 chain_index: <integer>
@@ -127,7 +121,7 @@ conformation: ...
 heavy_atom_check: ...
 ```
 
-这些字段不能用一项泛称“残基 ID”代替。`residue_id`、`source_resid`、当前结构 `resid` 与 `sequence_position` 分别保存各自语义。
+这些字段不能用未限定的“残基 ID”概括。`residue_id`、`source_resid`、当前结构中的 `resid` 与 `sequence_position` 分别保存不同语义。
 
 ### 4.3 `classification`
 
@@ -146,11 +140,11 @@ classification:
       detail: <简短具体事实>
 ```
 
-`detail` 记录具体事实，不写“合理”“兼容”“看起来正确”等无法追溯的抽象结论。
+`detail` 记录实际判断事实，例如“当前 `residue_name` 在 ref_003 指向的 `aminoacids.rtp` 中存在精确同名 residue block”；不写“兼容”“合理”“看起来正确”等无法复核的抽象结论。
 
 ### 4.4 `conformation`
 
-单构象 residue：
+单构象残基：
 
 ```yaml
 conformation:
@@ -159,7 +153,7 @@ conformation:
   alternate_atoms: []
 ```
 
-多构象 residue：
+多构象残基：
 
 ```yaml
 conformation:
@@ -174,7 +168,7 @@ conformation:
           occupancy: 0.40
 ```
 
-只列实际带 alternate-conformation 标记的 atoms；shared atoms 不需要逐个复制。
+只列实际带 alternate-conformation 标记的原子；共享原子不需要逐个复制。
 
 ### 4.5 `heavy_atom_check`
 
@@ -187,9 +181,9 @@ NOT_APPLICABLE
 REFERENCE_UNAVAILABLE
 ```
 
-存在坐标且已可靠完成比较时使用 `COMPLETED`。整个 residue 缺失时使用 `NOT_APPLICABLE`，原因明确为 `RESIDUE_MISSING`。
+存在坐标且已可靠完成比较时使用 `COMPLETED`。整个残基缺失时使用 `NOT_APPLICABLE`，`reason` 明确记录 `RESIDUE_MISSING`。
 
-单构象 residue 的比较记录在 `comparisons[]` 中一个 scope；多构象可可靠拆分时，每个候选构象分别建立一个 scope。例如：
+单构象残基的比较在 `comparisons[]` 中建立一个 `scope: SINGLE`；多构象能够可靠拆分时，每个候选构象分别建立一个比较范围。例如：
 
 ```yaml
 heavy_atom_check:
@@ -219,9 +213,9 @@ heavy_atom_check:
   reason: null
 ```
 
-多构象时 `scope` 使用实际 `altLoc` ID；对应 atom set 按 `classification_rules.md` 的 shared atoms + 当前候选 `altLoc` atoms 构造。
+多构象时 `scope` 使用实际 `altLoc` ID；对应原子集合按 `classification_rules.md` 中“共享原子 + 当前候选 `altLoc` 原子”的规则确定。
 
-`findings` 使用 schema 固定问题类型。不存在某类问题时保留空数组，不使用自然语言同义词替代问题类型。
+`findings` 使用 schema 固定问题类型。不存在某类问题时保留空数组，不使用自然语言同义词替代正式问题类型。
 
 ## 5. 关系记录
 
@@ -233,7 +227,7 @@ confirmed_relations:
   metal_coordination: []
 ```
 
-每个 relation 至少记录：
+每个关系至少记录：
 
 - `relation_id`；
 - `relation_type`；
@@ -242,32 +236,32 @@ confirmed_relations:
 - `evidence`；
 - `topology_effect_applied`。
 
-端点中保留 `residue_id`、`component_id`、source/current atom identity、atom name 与 `altLoc` 信息，保证后续结构发生编号或 chain 变化后仍可追溯到 1.2 原始关系。
+端点中保留 `residue_id`、`component_id`、源/当前原子身份、atom name 与 `altLoc` 信息，保证后续结构发生编号、chain 或对象组织变化后仍可追溯到 1.2 原始关系。
 
-已经明确拒绝且有保留审计价值的候选进入 `rejected_candidates`。仍为 `CANDIDATE` / `CONFLICT` 且会影响后续正式判断的事项写入 `unresolved_items`；这类 blocking item 未闭合时不能形成 `result_status: COMPLETE`。
+已经明确拒绝且有保留审计价值的候选进入 `rejected_candidates`。仍存在证据不足或参考冲突，但不影响正式分类、稳定身份和 `topology_effect_applied` 的事项，可以保留在 `unresolved_items` 中作为非阻断信息。
+
+任何尚未闭合、会改变正式分类、稳定身份或 `topology_effect_applied` 的事项都属于阻断问题；这类问题存在时不得形成正式 `result_status: COMPLETE` 结果，因此不会以 `blocking: true` 出现在正式 v2 `classification_result.yaml` 中。
 
 ## 6. `unresolved_items[]`
 
-每项至少记录：
+正式 COMPLETE 结果中的每项至少记录：
 
 ```yaml
 item_id: unresolved_001
 item_type: <schema-defined type>
-blocking: true | false
+blocking: false
 subject:
   residue_id: ...        # 适用时
   relation_id: ...       # 适用时
 reason: <当前缺少什么证据或存在什么冲突>
-required_resolution: <需要用户/参考解决的具体问题>
+required_resolution: <后续若需要闭合该事项，应补充什么信息>
 ```
 
-`blocking: true` 只用于该事项未解决会改变正式分类、稳定身份、关系或 topology effect 的情况。
-
-普通已发现结构问题，例如已经明确的缺失残基或重原子缺失，不因为“存在问题”而自动成为 unresolved item。
+普通已确认结构问题，例如已经明确的缺失残基或重原子缺失，不因为“存在问题”而成为未解决事项。
 
 ## 7. `summary`
 
-`summary` 只保存从正式结果可直接核对的计数，不承担科学判断：
+`summary` 只保存从正式明细可以直接核对的计数，不承担科学判断：
 
 ```text
 chain_group_count
@@ -285,7 +279,7 @@ confirmed_metal_coordination_count
 unresolved_item_count
 ```
 
-计数与 `residue_records[]` / relations 不一致时，以明细为检查对象并修正 summary；不得反向修改明细去迁就 summary。
+计数与 `residue_records[]` 或关系明细不一致时，以明细为检查对象并修正 `summary`；不得反向修改明细去迁就汇总计数。
 
 ## 8. `relation_decisions.yaml`
 
@@ -335,9 +329,9 @@ decisions:
 
 - 按上述固定检查顺序记录；
 - 每项先写实际检查范围和简要结果；
-- 发现问题时定位到具体 residue / relation；
+- 发现问题时定位到具体残基或关系；
 - 涉及原子差异时使用正式问题类型并列出实际 atom name；
-- 不逐条复制所有正常 residue；
+- 不逐条复制所有正常残基；
 - 不用 `PASS / FAIL` 替代实际检查事实；
 - 不引入 schema 未定义的同义问题类型。
 
@@ -352,4 +346,4 @@ reference_manifest.yaml
 
 登记各自完整绝对路径及简明说明。
 
-`classification_report.md` 与 `relation_decisions.yaml` 保持为当前任务正式结果，但不单独登记到项目结果索引。
+`classification_report.md` 与实际存在的 `relation_decisions.yaml` 保持为当前任务正式结果，但不单独登记到项目结果索引。
