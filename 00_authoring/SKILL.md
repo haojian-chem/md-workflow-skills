@@ -17,6 +17,7 @@ Manager
 → Task Execution Agent
 → 当前科研 main Skill
    ├─ repository shared task-execution reference
+   ├─ repository shared canonical terminology
    ├─ 按需 local references
    ├─ 必要时 supporting Skill
    └─ 必要时 deterministic Tool
@@ -26,7 +27,11 @@ Manager
 
 `../references/task_execution_rules.md`
 
-该文件是 shared reference，不是独立 Skill 或额外执行环节。Authoring 不在本文件复制其中的通用 Task Sheet / reuse / validation / result-registration 规则。
+跨 Skill 的正式术语统一维护：
+
+`../references/canonical_terminology.md`
+
+两者都是仓库级 shared reference，不是独立 Skill 或额外执行环节。Authoring 不在本文件复制其中的通用 Task Execution 规则或另建平行术语表。
 
 # New-window startup
 
@@ -38,7 +43,7 @@ AGENTS.md
 
 之后只按任务需要读取：
 
-- 构筑、审查或重构科研执行 Skill 时必须读取 `../references/task_execution_rules.md`；
+- 构筑、审查或重构科研执行 Skill 时必须读取 `../references/task_execution_rules.md` 和 `../references/canonical_terminology.md`；
 - 对应 Stage / Step 的 `architecture_freezes/`；
 - 与当前输入/输出/边界直接相关的相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
@@ -104,21 +109,23 @@ Scientific roots 按 MD Workflow Stage 固定为：
 
 `references/task_execution_rules.md`
 
-引用只建立通用 Task Execution 规则的可达性；Stage/Step/capability 自己的科学规则仍由其自身拥有。
+引用只建立通用 Task Execution 规则的可达性；Stage/Step/capability 自己的科学规则仍由其自身拥有。`task_execution_rules.md` 同时提供执行阶段按需读取 `canonical_terminology.md` 的入口，因此现有科研执行 Skill 不需要为了建立术语可达性而逐一新增平行 glossary。
 
 **Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
 
 # Terminology and writing quality
 
-生成、重构或审查 Skill 时，正式文本不能直接继承讨论阶段的口语、简称或临时称呼。详细规则见 `references/skill_generation_rules.md` 的 `Terminology and writing precision`。
+生成、重构或审查 Skill 时，正式文本不能直接继承讨论阶段的口语、简称或临时称呼。详细规则见 `references/skill_generation_rules.md` 的 `Terminology and writing precision`；跨 Skill canonical terminology 读取 `../references/canonical_terminology.md`。
 
 至少执行以下约束：
 
-- 同一 execution object、artifact、state、scientific concept 或判断对象使用一个稳定的 canonical term；已有 current Skill、freeze、正式接口或 shared reference 已确定术语时优先沿用，不因用户本轮口语表达而改名。
+- 同一 execution object、artifact、state、scientific concept 或判断对象使用一个稳定的 canonical term；`canonical_terminology.md` 已有条目时使用其 `Preferred expression`。已有 current Skill、freeze、正式接口或 shared reference 已确定但尚未进入 shared terminology 的局部术语，也不得因用户本轮口语表达而随意改名。
+- 用户简称、口语、临时称呼和不完整表达只用于当前上下文理解，不登记为 alias，也不自动进入正式 Skill。
+- 只有需要跨 Skill 稳定、会进入 Task Sheet / 项目结果索引 / Stage 间接口，或名称漂移会造成对象混淆的术语才进入 `canonical_terminology.md`；单个 Skill 的局部术语继续由该 Skill 自己维护。
 - 科学/技术判断必须写出实际判断关系。若“兼容、合理、正确、有效、一致、匹配”等词在未展开时可能有多种解释，则明确检查对象、属性、reference / criterion 和判断关系，不用抽象标签替代可执行判据。
 - 中文 Skill 以中文叙述为主体；软件/方法/力场专名、文件名、字段名、命令、软件原生语法及确有必要保留的固定英文术语可以使用英文。普通技术概念能准确自然地用中文表达时，不做无信息增益的中英文混排。
 
-Skill 完成后必须检查全文术语一致性、抽象判断句和无必要中英文混排；这属于 authoring self-check，而不是后续执行 Skill 的运行时 validation。
+`canonical_terminology.md` 不维护 alias、口语映射或 deprecated / do-not-use 列表。Skill 完成后必须检查全文术语一致性、抽象判断句和无必要中英文混排；这属于 authoring self-check，而不是后续执行 Skill 的运行时 validation。
 
 # Authoring status maintenance
 
@@ -148,7 +155,9 @@ current Skill / freeze
 ```text
 读取 current main + 对应 freeze + authoring rules
 ↓
-读取 references/task_execution_rules.md 并确认执行 Skill 的共享规则引用
+读取 references/task_execution_rules.md + references/canonical_terminology.md
+↓
+确认执行 Skill 的共享 Task Execution 规则引用，并按 canonical terminology 归一化正式术语
 ↓
 生成 / 修改目标 Skill package
 ↓
@@ -248,7 +257,7 @@ write ownership 必须窄
 
 Supporting Skill 只有在内容复杂、可独立加载、边界稳定且独立维护有价值时才拆；不要为了 validation 配对、目录对称或角色分类增加 Skill hop。
 
-仓库级 `../references/task_execution_rules.md` 是跨 Skill shared reference，不因被多个执行 Skill 使用而变成 supporting Skill。
+仓库级 `../references/task_execution_rules.md` 与 `../references/canonical_terminology.md` 都是跨 Skill shared reference，不因被多个执行 Skill 使用而变成 supporting Skill。
 
 # Tool boundary
 
@@ -286,7 +295,9 @@ Legacy executable/runtime material：`../legacy/`。
 
 - [ ] main Skill 能直接指导 Agent 完成当前职责；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 已读取 `references/canonical_terminology.md`；其中已有跨 Skill 术语均采用其 `Preferred expression`，未在局部 Skill 建立平行 glossary；
 - [ ] 同一对象没有因用户口语、简称或措辞变化而出现多套正式术语；已有 canonical term 未被随意改写；
+- [ ] 没有把用户口语、alias 或历史称呼写入 shared terminology 作为长期映射；只有确有跨 Skill 稳定价值的新术语才进入该文件；
 - [ ] 科学/技术判断没有用未定义的抽象词代替实际判据；需要时已写明检查对象、属性、reference / criterion 和判断关系；
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] 未把 shared Task Execution reference 误建成独立 runtime Skill / dispatcher；
