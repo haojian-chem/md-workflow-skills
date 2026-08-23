@@ -19,7 +19,7 @@
 
 稳定身份的机械物化可以使用 `../scripts/selection_identity.py`。该辅助工具只根据已经确定的身份和成员关系生成 `residue_id`、`component_id`、`endpoint_id` 与 `relation_id`，不拥有任何分类或关系判断。
 
-## 2. 分类语义
+## 2. 分类语义与内置 registry
 
 `polymer_class` 固定为：
 
@@ -40,13 +40,35 @@ SOLVENT_COMPONENT
 ION_COMPONENT
 ```
 
-`topology_class` 描述当前组分在后续拓扑处理中的归属，不表示证据充分程度。证据是否足以形成正式分类由 `resolution_status` 表达：
+Skill 内置的精确名称分类依据分别保存在：
+
+```text
+references/standard_residue_registry.yaml
+references/topology_linked_nonstandard_residue_registry.yaml
+references/independent_nonstandard_residue_registry.yaml
+```
+
+只有当前分类确实需要相应 registry 时才读取对应文件；不得把 registry 中没有列出的名称自动判为某一类别。
+
+如果项目提供结构化残基定义、共价连接定义或金属配位定义，可分别按以下 schema 理解其字段：
+
+```text
+schemas/project_residue_definitions.schema.yaml
+schemas/possible_connections.schema.yaml
+schemas/possible_coordination.schema.yaml
+```
+
+这些 schema 只约束项目定义文件的字段，不替项目文件本身提供科学事实。
+
+`topology_class` 描述当前组分在后续拓扑处理中的归属，不表示证据充分程度。检查过程中可以使用以下 `resolution_status` 区分判断状态：
 
 ```text
 RESOLVED
 CONFLICT
 UNRESOLVED
 ```
+
+但是正式 v2 `classification_result.yaml` 只接受 `resolution_status: RESOLVED`。如果 `CONFLICT` 或 `UNRESOLVED` 会影响最终分类，必须在正式 COMPLETE 结果生成前闭合。
 
 ### `REGISTRY`
 
@@ -159,7 +181,9 @@ MULTIPLE_CONFORMATIONS
 - 非标准残基：当前实际选定的 CCD 组分定义；
 - 用户明确指定其它项目残基定义时，记录该实际文件和具体条目。
 
-没有足够参考时，不构造预期重原子集合，`execution_status` 记录 `REFERENCE_UNAVAILABLE`。
+普通 `SOLVENT_COMPONENT` 和 `ION_COMPONENT` 默认不执行本项的目标力场/CCD 重原子比较，`execution_status` 使用 `NOT_APPLICABLE`。如果当前项目明确为某个特殊溶剂或离子组分指定了需要检查的残基定义，则按该实际定义执行，不套用这一默认豁免。
+
+其它应检查残基如果没有足够参考，不构造预期重原子集合，`execution_status` 记录 `REFERENCE_UNAVAILABLE`。
 
 ### 7.1 重复 atom name
 
@@ -188,13 +212,13 @@ MULTIPLE_CONFORMATIONS
 
 ### 7.3 原子名称对应
 
-如果 CCD alternate atom name、项目已确认 mapping 或其它明确参考能够说明某个 observed atom name 与某个 reference atom name 对应，则单独记录原子名称对应候选。
+如果 CCD alternate atom name、项目已确认 mapping 或其它明确参考能够说明某个当前 atom name 与某个参考 atom name 对应，则单独记录原子名称对应候选，并在 `findings` 中使用 `ATOM_NAME_MISMATCH`。
 
 未经确认的对应关系不改变原始精确比较。对应关系已经有充分依据或经用户确认后，可以另外生成 `effective_comparison`；`exact_comparison` 始终保留。
 
 ### 7.4 元素不一致
 
-当当前结构和参考定义都能可靠提供元素信息时，对同名或已确认对应的原子检查元素是否相同。元素不同则记录 `ELEMENT_MISMATCH`，并记录 observed element 与 reference element。
+当当前结构和参考定义都能可靠提供元素信息时，对同名或已确认对应的原子检查元素是否相同。元素不同则记录 `ELEMENT_MISMATCH`，并记录当前结构元素与参考定义元素。
 
 元素字段缺失或不可靠时，不根据 atom name 首字母强行构造元素结论。
 
