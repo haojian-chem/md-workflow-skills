@@ -1,20 +1,11 @@
-# Built-in CCD-compatible reference library
+# 1.2 内置 CCD 组分参考库
 
-This is the fixed built-in component-reference root for Skill 1.2.
-`index.yaml` is authoritative; runtime callers must not scan this directory or
-download missing entries. Each component maps to one `<component_id>.cif` and
-one verified SHA-256 value.
+本目录保存结构准备 1.2 可按需使用的一组已批准本地 CCD 组分定义。它是参考资料集合，不是 1.2 的强制运行时数据库，也不限制项目或用户提供其它 CCD 组分定义文件。
 
-Seed files retain only the component and atom-table fields required by the
-heavy-atom comparison. The approved cofactor/ligand set is defined once in
-`../approved_ccd_seed_manifest.yaml`. Use `scripts/add_ccd_reference.py` for one
-explicit component, or `scripts/sync_approved_ccd_seeds.py` for that approved
-set. Both validate IDs, CIF parsing, conflicts and hashes without editing
-residue registries.
+`index.yaml` 记录本目录中各组分文件及其 SHA-256；本目录内的参考文件采用 `<component_id>.cif` 命名。执行 1.2 时如果实际使用其中某个文件，应直接读取该 CIF，并把该文件的实际路径和 SHA-256 记录到当前任务的 `reference_manifest.yaml`。
 
-The webpage entry point is the manually dispatched
-`component-classification-v1-2-ccd-seeds` workflow. It is blocked on `main` and
-commits generated seeds only to the selected feature branch.
+项目或用户提供的 CCD 文件不需要复制、转换或导入本目录。只要该文件能够可靠提供当前检查需要的 CCD component ID、重原子名称及其它必要字段，即可直接作为本次参考。
 
-Additional libraries use the same indexed flat layout and are declared in
-`classification_config.yaml` under `ccd.additional_library_paths`.
+`../approved_ccd_seed_manifest.yaml` 只记录本目录历史上批准纳入的部分种子组分；它不是每次 1.2 执行必须读取的清单，也不表示未列出的 CCD 组分不能使用。
+
+本目录不再依赖固定 CCD 导入、同步或解析脚本。需要维护本地参考数据时，应把参考文件维护与真实项目中的 1.2 科学检查区分开处理。
