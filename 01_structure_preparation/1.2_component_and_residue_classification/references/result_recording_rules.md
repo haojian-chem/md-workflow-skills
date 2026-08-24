@@ -18,7 +18,7 @@
 
 正式结果职责：
 
-- `classification_result.yaml`：保存当前 model 的 component / residue 层级、两类分类、三级 residue 检查、reference 变量和已闭合关系；
+- `classification_result.yaml`：保存当前 model 的 component / residue 层级、component `chain_index`、两类分类、三级 residue 检查、reference 变量和已闭合关系；
 - `classification_report.md`：按检查顺序生成的人类可读审阅报告；
 - `relation_decisions.yaml`：只在共价连接或金属配位关系实际发生人工确认或否决时生成，保存这些关系人工决策。
 
@@ -40,6 +40,7 @@ references:
   CCD_PATH_1: /absolute/path/to/ccd
 components:
   - component_id: component_001
+    chain_index: 1
     residues:
       - residue_id: residue_001
         source_chain_id: A
@@ -153,13 +154,13 @@ references:
 
 具体 CCD 文件由检查项直接写成 `{CCD_PATH_1}/HEM.cif` 这类表达。
 
-## 5. `components` 与身份层级
+## 5. `components`、`chain_index` 与身份层级
 
-正式身份层级：
+正式层级：
 
 ```text
 model
-└── component_id
+└── component_id + chain_index
     └── residue_id
 ```
 
@@ -167,9 +168,19 @@ model
 
 - 标识当前 model 中一个最终 component；
 - 在当前 model 的 `classification_result.yaml` 中唯一；
-- 不表示 CCD component ID、PDB chain ID 或 residue name；
+- 是稳定、不透明的 component identity；
+- 不表示 CCD component ID、PDB chain ID、`chain_index` 或 residue name；
 - component membership 在所有确认且产生 topology effect 的关系应用后确定；
 - 下游直接消费正式值，不自行重构。
+
+### `chain_index`
+
+- 位于 component 一级；
+- 在当前 model 中唯一；
+- 是 1.2 对该 component 赋予的逻辑 chain/group 编号，用于后续结构 materialization 与 mapping；
+- 不属于稳定 identity，不能替代 `component_id`；
+- 不等同于 `source_chain_id`、`current_chain_id` 或 PDB chain ID；
+- 下游需要该编号时直接读取正式值，不根据 residue 的 chain 字段重新计算。
 
 ### `residue_id`
 
