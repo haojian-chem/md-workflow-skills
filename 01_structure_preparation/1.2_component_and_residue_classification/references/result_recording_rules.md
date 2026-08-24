@@ -44,10 +44,10 @@ note: null
 
 1. `path` 使用本次实际读取文件的完整绝对路径；
 2. `sha256` 对应本次读取时的实际文件内容；
-3. 每个 `reference_id` 在当前 manifest 中唯一；
+3. 每个 `reference_id` 在当前 `reference_manifest.yaml` 中唯一；
 4. 同一个实际文件只建立一个 `reference_id`；同一文件承担多个作用时在 `roles` 中全部列出，不重复建立多份记录；
 5. `classification_result.yaml` 中需要引用参考依据的位置使用 `reference_id`，需要定位文件内部条目时另记录 `reference_entry`；
-6. CCD 直接记录实际使用的 CCD 组分定义文件，不要求记录或构造自定义 library root；
+6. CCD 直接记录实际使用的 CCD 组分定义文件，不要求记录或构造自定义参考库根目录；
 7. 目标力场使用实际残基定义文件，不用只有力场名称的字符串替代文件定位；
 8. 序列参考、项目残基定义和关系定义同样记录实际文件及 SHA-256。
 
@@ -84,15 +84,15 @@ summary: {}
 
 `source_structure.path` 与 `reference_manifest.path` 都使用完整绝对路径。
 
-`result_status: COMPLETE` 表示 1.2 规定的检查已经可靠执行，每个残基的最终分类已经闭合，所有会改变稳定身份或 `topology_effect_applied` 的事项已经解决，并且当前结果通过 validation；不表示“结构没有发现任何问题”。
+`result_status: COMPLETE` 表示 1.2 规定的检查已经可靠执行，每个残基的最终分类已经闭合，所有会改变稳定身份或 `topology_effect_applied` 的事项已经解决，并且当前结果通过验证；不表示“结构没有发现任何问题”。
 
 未满足 COMPLETE 条件时可以在当前任务目录保留草稿或工作记录，但不得把该草稿登记为正式 1.2 `classification_result.yaml`。
 
 ## 4. `chain_groups[]`
 
-`chain_groups[]` 保存 1.2 最终分组和 `component_id` 成员关系，是后续 selection、结构映射和拓扑准备定位组分身份的正式依据。
+`chain_groups[]` 保存 1.2 最终分组和 `component_id` 成员关系，是后续选择、结构映射和拓扑准备定位组分身份的正式依据。
 
-每个 group 至少通过 schema 固定以下信息：
+每个分组至少通过 schema 固定以下信息：
 
 ```yaml
 component_id: <component_id>
@@ -111,11 +111,14 @@ linked_polymer_chain_indices: []
 
 - 每个 `component_id` 在当前正式结果中唯一；
 - 每个 `residue_id` 只属于一个 `chain_group`；
-- group 的 `residue_ids` 包含该组全部残基成员，包括有坐标和无坐标成员；
-- `missing_residue_ids` 只列其中 `presence_status: MISSING_EXPECTED` 的成员，是 `residue_ids` 的子集；
-- `residue_records[]` 中每个 record 的 `component_id` 与对应 group 的 `component_id` 一致；
-- record 的 `chain_index` 与其 group 的 `chain_index` 一致；
+- `residue_ids` 只列该分组中 `presence_status: OBSERVED` 的残基；
+- `missing_residue_ids` 只列该分组中 `presence_status: MISSING_EXPECTED` 的残基；
+- `residue_ids` 与 `missing_residue_ids` 不得重叠，两者合起来构成该分组的全部残基成员；
+- `residue_records[]` 中每个记录的 `component_id` 与对应分组的 `component_id` 一致；
+- 每个记录的 `chain_index` 与其分组的 `chain_index` 一致；
 - `residue_ids` / `missing_residue_ids` 只表示成员关系，不承担残基顺序；正式残基顺序仍由 `residue_records[]` 数组顺序拥有。
+
+这一成员语义与 `scripts/selection_identity.py` 的 `component_id` 物化输入一致：已观察残基和缺失残基作为两个不同成员集合参与同一个组分身份的确定，不得把缺失残基同时作为已观察成员重复计入。
 
 ## 5. `residue_records[]`
 
@@ -123,7 +126,7 @@ linked_polymer_chain_indices: []
 
 `residue_records[]` 的数组顺序是 1.2 的正式残基顺序。
 
-同一 polymer / chain 中：
+同一聚合物链中：
 
 - 已观察残基按结构顺序和可靠的序列—结构对应确定位置；
 - 已确认 `MISSING_EXPECTED` 残基插入其应有位置；
@@ -172,9 +175,9 @@ classification:
       detail: <简短具体事实>
 ```
 
-`classification.component_id` 必须与 residue record 顶层 `component_id` 一致。
+`classification.component_id` 必须与残基记录顶层 `component_id` 一致。
 
-`detail` 记录实际判断事实，例如“当前 `residue_name` 在 ref_003 指向的 `aminoacids.rtp` 中存在精确同名 residue block”；不写“兼容”“合理”“看起来正确”等无法复核的抽象结论。
+`detail` 记录实际判断事实，例如“当前 `residue_name` 在 ref_003 指向的 `aminoacids.rtp` 中存在精确同名残基条目”；不写“兼容”“合理”“看起来正确”等无法复核的抽象结论。
 
 工作过程中可以出现分类冲突或尚未解决的分类候选，但这类状态必须在正式 COMPLETE 结果生成前闭合；不得把 `CONFLICT`、`UNRESOLVED` 或空分类写入正式 v2 `classification_result.yaml`。
 
@@ -204,7 +207,7 @@ conformation:
           occupancy: 0.40
 ```
 
-只列实际带 alternate-conformation 标记的原子；共享原子不需要逐个复制。
+只列实际带多构象标记的原子；共享原子不需要逐个复制。
 
 `MISSING_EXPECTED` 残基使用 `status: NOT_APPLICABLE`，且 `altloc_ids` / `alternate_atoms` 为空。
 
@@ -263,7 +266,7 @@ ATOM_NAME_MISMATCH
 ELEMENT_MISMATCH
 ```
 
-不存在某类问题时不添加对应 finding，不使用自然语言同义词替代正式问题类型。
+不存在某类问题时不添加对应 `finding`，不使用自然语言同义词替代正式问题类型。
 
 ## 6. 关系记录
 
@@ -286,7 +289,7 @@ confirmed_relations:
 
 每个 `relation_id` 在当前正式结果中唯一。端点中的 `residue_id` / `component_id` 必须能够定位到当前正式 `residue_records[]` / `chain_groups[]`；不能保存指向已不存在对象的悬空关系。
 
-端点中保留 `residue_id`、`component_id`、源/当前原子身份、atom name 与 `altLoc` 信息，保证后续结构发生编号、chain 或对象组织变化后仍可追溯到 1.2 原始关系。
+端点中保留 `residue_id`、`component_id`、源/当前原子身份、原子名称与 `altLoc` 信息，保证后续结构发生编号、chain 或对象组织变化后仍可追溯到 1.2 原始关系。
 
 已经明确拒绝且有保留审计价值的候选进入 `rejected_candidates`。仍存在证据不足或参考冲突，但不影响正式分类、稳定身份和 `topology_effect_applied` 的事项，可以保留在 `unresolved_items` 中作为非阻断信息。
 
@@ -370,7 +373,7 @@ decisions:
 
 报告顶部记录：
 
-- source structure 完整绝对路径和 SHA-256；
+- 源结构完整绝对路径和 SHA-256；
 - `selected_model_id`；
 - `classification_mode`；
 - `classification_result.yaml` 与 `reference_manifest.yaml` 的完整绝对路径。
@@ -380,8 +383,8 @@ decisions:
 - 每项先写实际检查范围和简要结果；
 - 组分与残基分类给出各 `topology_class` 数量，并单独列出非标准组分及其实际分类依据；
 - 缺失残基按 chain 和真实连续区段列出；
-- 多构象按残基列出 `altLoc` ID 和主要 occupancy 信息；
-- 重原子问题按残基组织，同一残基的 missing / unexpected / duplicate / naming mismatch / element mismatch 放在同一残基条目下；
+- 多构象按残基列出 `altLoc` ID 和主要占有率信息；
+- 重原子问题按残基组织，同一残基的缺失、额外、重复、原子名称不匹配和元素不一致放在同一残基条目下；
 - 共价连接和金属配位分别列出确认关系及必要候选/冲突说明；
 - 未解决事项逐条与 `unresolved_items[]` 对应；
 - 不逐条复制所有正常残基；
