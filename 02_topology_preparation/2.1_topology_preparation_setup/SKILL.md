@@ -22,7 +22,7 @@ description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数
 2.1 至少读取：
 
 - 当前 Task Sheet；
-- 当前 target 的 Stage 1 正式 `stage1_final.pdb`；
+- 当前体系所对应 Stage 1 target 的正式 `stage1_final.pdb`；
 - 与该结构对应的 `stage1_final_map.yaml`，用于保持当前残基/组件身份；
 - 与当前体系对应的 1.2 正式 `classification_result.yaml`，用于读取 `STANDARD_RESIDUE`、`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 分类及已确认拓扑关系；
 - 当前任务或用户已经指定的力场及其它参数定义来源；
@@ -51,7 +51,7 @@ description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数
 - **2.4**：正式结果使用的 `.mol2` 与当前残基名对应处理使用的 `.mol2` 相同，且参数生成方法相同；
 - **2.5**：该正式结果进行整合时使用的输入文件集合与当前 2.5 需要使用的输入文件集合一致。
 
-满足对应条件时，在当前 Task Sheet 的相应工作项中直接引用原正式结果；跨任务使用已有结果时不复制无意义副本。判断所需信息不足时，按仓库级 Task Execution 规则向用户确认。
+满足对应条件时，在当前 Task Sheet 的相应工作项中直接引用原正式结果。判断所需信息不足时，按仓库级 Task Execution 规则向用户确认。
 
 ## 确定 2.2–2.5 处理对象
 
