@@ -13,17 +13,17 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 完成结构准备阶段 `1.3 Chain and Residue Selection`。
 
-本步骤先确定后续研究实际保留的研究对象，再为每个 target 生成对应 PDB，并记录新结构编号与 1.2 内部身份的映射。
+本步骤先确定后续研究实际保留的研究对象，再为每个 target 生成对应 PDB，并记录新结构编号与 1.2 稳定身份的映射。
 
 # Object requirements
 
 当前任务需要明确提供：
 
-- 1.2 正式 `classification_result.yaml`；
+- 当前 model 的 1.2 正式 `classification_result.yaml`；
 - 与该结果对应的当前结构；
 - 用户对保留研究对象的要求。
 
-1.2 结果应已完成当前结构的分类、分组和内部身份物化。1.3 直接使用其中的 `component_id`、`residue_id` 和 `chain_index`。
+1.2 结果应已完成当前 model 的分类、component / residue 层级和稳定身份物化。1.3 直接使用其中已经存在的 `component_id` 与 `residue_id`；`residue_id` 只在所属 `component_id` 内定位，因此任何正式 selection / mapping 都使用 `component_id + residue_id`。
 
 # Reuse conditions
 
@@ -42,7 +42,7 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 ## 1. 确定 research-object selection
 
-用户使用 source chain / source residue identity 描述研究对象；完成 grounding 后，内部 selection 使用 1.2 已生成的 `component_id` 和 `residue_id`。
+用户可以使用 source / current chain、resid、residue name 或科学描述说明研究对象；完成 grounding 后，内部 selection 统一使用 1.2 已生成的 `component_id + residue_id`。
 
 不得重新构造这些 opaque IDs。
 
@@ -60,7 +60,7 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 存在多个合理候选时不得静默替用户选择。
 
-如果 selected research-object 范围包含 1.2 中记录的 missing residue，该 residue 仍属于 selection，并记录对应 `residue_id`。
+如果 selected research-object 范围包含 1.2 中 `missing_residue_check.status: ISSUE` 的 residue，该 residue 仍属于 selection，并保留对应 `component_id + residue_id`。
 
 默认建立一个 target。一句话中出现多个 chain / residue 不自动拆分 target；只有用户明确要求分别生成多个结构时，才建立多个 target。
 
@@ -126,7 +126,8 @@ selections:
 其中：
 
 - `selections` 是该 target 的 research-object selection；
-- `component_id` 和 `residue_id` 直接使用 1.2 内部 identity；
+- `component_id` 和 `residue_id` 直接使用当前 model 的 1.2 正式 identity；
+- `residue_ids` 只在其所属 `component_id` 下解释；
 - `residue_ids` 表示 membership，不表示 residue 输出顺序；
 - selected missing residue 同样记录在 `residue_ids` 中。
 
@@ -149,11 +150,13 @@ residue_mapping:
     residue_id: <residue_id>
 ```
 
-`chain_mapping` 记录 `chain_index` 与输出 PDB chain ID 的关系；`residue_mapping` 记录输出结构 `chain_index + resid` 与 1.2 `component_id + residue_id` 的关系。
+这里的 `chain_index` 是 1.3 为当前 target 输出结构建立的 mapping 编号，不是从 1.2 继承的 identity。
+
+`chain_mapping` 记录当前 target 输出 PDB 的 `chain_index` 与 PDB chain ID；`residue_mapping` 记录输出结构 `chain_index + resid` 与 1.2 `component_id + residue_id` 的关系。
 
 selected missing residue 即使没有坐标，也保留对应 `residue_mapping`。
 
-需要对象的 missing、classification、heavy-atom、conformation 等信息时，通过 `component_id` / `residue_id` 查询 1.2 正式结果，不在 target 文件重复记录。
+需要对象的 missing、classification、heavy-atom、conformation 等信息时，通过 `component_id + residue_id` 查询 1.2 `components[].residues[]` 中的正式结果，不在 target 文件重复记录。
 
 ## 3. 生成 PDB
 
@@ -212,7 +215,7 @@ structures/target_xxx.pdb
 
 执行前确认：
 
-- 当前对象能够定位到 1.2 正式分类结果和对应结构；
+- 当前对象能够定位到一个确定 model 的 1.2 正式分类结果和对应结构；
 - 当前用户 selection 已能唯一 grounding，或需要的用户确认已经完成；
-- 所有 selected `component_id` / `residue_id` 均来自当前 1.2 结果；
+- 所有 selected `component_id + residue_id` 组合均来自当前 1.2 结果；
 - 输出位于当前任务目录且不会覆盖其他任务正式结果。
