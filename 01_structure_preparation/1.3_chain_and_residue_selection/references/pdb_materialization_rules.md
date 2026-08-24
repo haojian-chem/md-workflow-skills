@@ -20,9 +20,7 @@ structures/target_xxx.pdb
 
 # 2. Chain label
 
-1.3 为当前 1.2 model 的每个 `component_id` 建立自己的 `chain_index`。`chain_index` 按 1.2 `components[]` 的正式数组顺序从 1 编号，因此同一个 `component_id` 在不同 target 中保持同一个 1.3 `chain_index`。
-
-PDB chain ID 再由该 1.3 `chain_index` 固定映射：
+PDB chain ID 由当前 model 的 1.2 component 一级 `chain_index` 固定映射：
 
 ```text
 A-Z → a-z → 0-9
@@ -36,9 +34,7 @@ chain_index 2  → B
 chain_index 27 → a
 ```
 
-不同 target 使用同一映射。不得因为某个 target 没有选择部分 component 而重新压缩 chain ID。
-
-这里的 `chain_index` 是 1.3 输出 mapping 的局部编号，不属于 1.2 identity，也不得写回 1.2 `classification_result.yaml`。
+不同 target 使用同一映射。不得因为某个 target 没有选择部分 `chain_index` 而重新压缩 chain ID。
 
 如果当前所需字段无法按本步骤固定 PDB 表示可靠写出，停止生成并向用户说明具体问题后确认处理方式。
 
@@ -53,7 +49,7 @@ components[] 顺序
 
 不按 `residue_id`、`component_id` 或 source resid 数值重新排序。
 
-每个 1.3 `chain_index` 独立分配 resid，并从 1 开始。
+每个 `chain_index` 独立分配 resid，并从 1 开始。
 
 所有 selected residues 都占一个 resid，包括 1.2 中 `missing_residue_check.status: ISSUE` 的 residue：
 
@@ -122,7 +118,7 @@ PDB 生成后，在对应 `targets/target_xxx.yaml` 中补充：
 `chain_mapping` 记录：
 
 ```text
-1.3 chain_index ↔ component_id ↔ pdb_chain_id
+1.2 chain_index ↔ pdb_chain_id
 ```
 
 `residue_mapping` 使用：
