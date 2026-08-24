@@ -87,7 +87,7 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.2 → 1.3
 
-1.3 消费 1.2 正式分类结果及其稳定 identity。1.3 不重新构造 1.2 已建立的 opaque IDs 或分类关系。
+1.3 消费 1.2 正式分类结果及其稳定身份。1.3 不重新构造 1.2 已建立的 `component_id` / `residue_id` 或重新判断分类关系。
 
 ### 1.3 → 1.4
 
@@ -95,7 +95,7 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.4 → 1.5
 
-1.5 消费当前 target 的当前结构，并结合 1.2 正式 completeness evidence、1.3 target mapping 和实际存在的 1.4 resolution report，生成该 target 独立的 `structure_completeness_report.yaml`。具体规则由 `1.5_completeness_check/SKILL.md` 拥有。
+1.5 消费当前 target 的当前结构，并结合 1.2 正式缺失残基与重原子组成/命名检查结果、1.3 target mapping 和实际存在的 1.4 `altloc_resolution_report.yaml`，生成该 target 独立的 `structure_completeness_report.yaml`。具体规则由 `1.5_completeness_check/SKILL.md` 拥有。
 
 ### 1.5 → 1.6
 
@@ -113,7 +113,7 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.7 → 1.8
 
-1.8 消费已经落实蛋白质 protonation-state residue naming 的当前重原子结构，并结合 1.3 target mapping 与 1.2 正式 classification / relation information，形成 Stage 1 final structure / map。具体规则由 `1.8_reorder_and_mapping/SKILL.md` 拥有。
+1.8 消费已经落实蛋白质 protonation-state residue naming 的当前重原子结构，并结合 1.3 target mapping 与 1.2 正式分类和关系信息，形成 Stage 1 final structure / map。具体规则由 `1.8_reorder_and_mapping/SKILL.md` 拥有。
 
 ### 1.8 → 1.9
 
