@@ -19,11 +19,13 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 
 - 当前 model 中的 component / residue 层级及稳定 `component_id`、`residue_id`；
 - component 一级的 `chain_index`；
-- 每个 residue 的 `polymer_class` 与 `topology_class`；
+- 每个 residue 的 `polymer_class` 与最终 `topology_class`；
 - 残基缺失检查结果；
 - 多构象问题检查结果；
 - 重原子组成与命名检查结果；
-- 需要记录的共价连接与金属配位关系；
+- 共价连接检查结果；
+- 金属配位检查结果；
+- 根据已确认且产生 topology effect 的关系更新后的 residue `topology_class` 与最终 component membership；
 - 本次检查实际使用的 RTP / CCD reference 变量；
 - `classification_result.yaml` 与人工审阅报告。
 
@@ -73,7 +75,7 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 - model 相同；
 - `classification_mode` 相同；
 - 本次实际采用的 RTP / CCD reference 选择相同；
-- 会影响分类、残基缺失、重原子检查或关系判断的项目定义和用户决定相同；
+- 会影响分类、残基缺失、重原子检查、共价连接、金属配位或 topology effect 的项目定义和用户决定相同；
 - 当前用户没有要求重新检查或生成对照结果。
 
 明确不等价则正常执行；信息不足时按仓库级 Task Execution 规则向用户确认。复用已有正式结果时直接引用原结果，不复制副本。
@@ -98,7 +100,7 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 
 完整读取当前 model 的实际结构与可追溯序列 / 注释信息，建立当前 model 需要记录的 residue 顺序和 provisional component membership。
 
-对每个 residue 确定：
+对每个 residue 先形成初始：
 
 ```text
 polymer_class
@@ -110,6 +112,8 @@ INDEPENDENT_NONSTANDARD
 SOLVENT_COMPONENT
 ION_COMPONENT
 ```
+
+这里的 `topology_class` 在关系检查完成前可以是 provisional 判断；`classification_result.yaml` 中只写完成共价连接、金属配位和 topology-effect 更新后的最终值。
 
 分类不能仅依据 `ATOM / HETATM`、名称外观或空间位置猜测。具体依据见 `references/classification_rules.md`。
 
@@ -172,23 +176,58 @@ RTP_n
 人工决策
 ```
 
-不再使用 `reference_manifest.yaml`、`ref_001` 或 `reference_entry` 间接定位检查依据。
+不使用 `reference_manifest.yaml`、`ref_001` 或 `reference_entry` 间接定位检查依据。
 
-### 5. 检查共价连接
+### 5. 共价连接检查
 
-结合结构中的显式连接、项目关系定义和实际局部化学环境，检查需要关注的共价连接。
+对当前 model 中需要关注的 residue / atom 关系执行共价连接检查。
 
-仅有几何接近时不能自动等同于已建立共价键。存在多个合理解释且不同解释会改变正式关系、component membership 或 `topology_class` 时，向用户确认。
+可使用结构中的显式连接、项目关系定义、端点身份以及局部键长和化学环境。仅有几何接近不能自动等同于已建立共价键。
 
-### 6. 检查金属配位
+本项必须形成正式检查结果：
 
-独立检查需要关注的金属—配位原子关系。
+```text
+confirmed_relations.covalent_connections
+rejected_candidates.covalent_connections
+```
 
-“存在金属配位”与“该关系是否产生后续 topology effect”是两个不同判断。只有项目定义或用户确认明确要求该关系产生 topology effect 时，才据此改变相关非标准 residue 的 `topology_class` 或 component membership。
+没有确认关系或没有需保留的拒绝候选时，对应数组仍存在并为空，表示本项已经完成而不是未执行。
 
-### 7. 形成最终 component / residue 层级
+存在多个合理解释且不同解释会改变正式关系、component membership、`topology_class` 或 `topology_effect_applied` 时，必须闭合；Agent 不能可靠唯一判断时向用户确认。
 
-应用已经确认且 `topology_effect_applied: true` 的关系后，形成最终 component membership，再物化正式 `component_id`、component 一级 `chain_index` 与 component 内的 `residue_id`。
+### 6. 金属配位检查
+
+独立检查当前 model 中需要关注的金属—配位原子关系。
+
+“存在金属配位”与“该关系是否产生后续 topology effect”是两个不同判断。距离接近本身只作为证据，不自动等同于已确认配位。
+
+本项必须形成正式检查结果：
+
+```text
+confirmed_relations.metal_coordination
+rejected_candidates.metal_coordination
+```
+
+没有确认关系或没有需保留的拒绝候选时，对应数组仍存在并为空。
+
+只有项目定义或用户确认明确要求该配位关系进入 topology connection 时，才设置 `topology_effect_applied: true`。
+
+### 7. 根据关系检查结果更新最终 `topology_class`
+
+共价连接和金属配位检查完成后，逐项读取 `confirmed_relations` 中 `topology_effect_applied: true` 的关系，并据此形成 residue 最终 `topology_class`。
+
+规则见 `references/classification_rules.md`。至少满足：
+
+- `STANDARD_RESIDUE` 保持 `STANDARD_RESIDUE`；
+- 原本属于非标准、solvent 或 ion 类别的 residue，只要参与已确认且产生 topology effect 的关系，最终写为 `TOPOLOGY_LINKED_NONSTANDARD`；
+- 已确认但 `topology_effect_applied: false` 的关系不改变 residue `topology_class`；
+- 如果最终 `topology_class` 因关系检查改变，其 `evidence` 记录形成该最终判断的直接来源：由 Agent 闭合则为 `智能体判断`，由用户决定则为 `人工决策`。
+
+`classification_result.yaml` 不同时保存一套 provisional `topology_class`；正式 residue 记录只保存关系检查完成后的最终值。
+
+### 8. 形成最终 component / residue 层级
+
+在最终 `topology_class` 确定后，应用全部已确认且 `topology_effect_applied: true` 的关系形成最终 component membership，再物化正式 `component_id`、component 一级 `chain_index` 与 component 内的 `residue_id`。
 
 正式层级为：
 
@@ -204,11 +243,11 @@ model
 - `chain_index` 在当前 model 中唯一，是该 component 的逻辑 chain/group 编号，不属于稳定 identity；
 - `residue_id` 在所属 `component_id` 内唯一；
 - 下游定位 residue 使用 `component_id + residue_id`；
-- 下游需要生成或映射 chain 表示时可以直接消费 component 一级 `chain_index`，不得根据 residue 的 `chain_id` 自行重建新的 1.2 `chain_index`。
+- 下游需要生成或映射 chain 表示时直接消费 component 一级 `chain_index`。
 
 每个 component 内 `residues` 的数组顺序是该 component 的正式 residue 顺序。
 
-### 8. 写正式结果
+### 9. 写正式结果
 
 按 `references/result_recording_rules.md` 生成：
 
@@ -233,11 +272,14 @@ relation_decisions.yaml
 - component / residue 按 `component_id → residue_id` 层级组织，没有平行的 `chain_groups[] + residue_records[]` 双重成员结构；
 - 每个 component 同一级保存一个 `chain_index`；`component_id` 和 `chain_index` 在当前 model 中分别唯一；
 - 每个 `residue_id` 在所属 component 内唯一；所有关系端点都能由 `component_id + residue_id` 定位；
-- 每个 residue 均保存 `source_chain_id`、`current_chain_id`、`source_resid`、`current_resid`、`source_residue_name`、`current_residue_name`；缺失 residue 没有当前坐标实例时，当前 resid / residue name 按结果规则记录为 `null`；
-- 每个 residue 都有 `polymer_class` 与 `topology_class` 及其实际 `evidence`；
+- 每个 residue 均保存 `source_chain_id`、`current_chain_id`、`source_resid`、`current_resid`、`source_residue_name`、`current_residue_name`；
+- 每个 residue 都有 `polymer_class` 与关系检查完成后的最终 `topology_class` 及其实际 `evidence`；
 - 三项 residue 检查严格按“残基缺失 → 多构象 → 重原子组成与命名”顺序执行；前一项为 `ISSUE` 时，后续项按规则为 `SKIPPED`；
 - 1.2 对多构象只记录问题存在与否，没有执行 1.4 的构象选择或整合；
 - 重原子检查的 `PASS / ISSUE` 与实际问题明细一致；适用但缺少可靠 reference 时不形成伪 `PASS`；
+- 共价连接检查已经完成，并在 `confirmed_relations.covalent_connections` / `rejected_candidates.covalent_connections` 中完整记录结果；即使无发现也保留空数组；
+- 金属配位检查已经完成，并在 `confirmed_relations.metal_coordination` / `rejected_candidates.metal_coordination` 中完整记录结果；即使无发现也保留空数组；
+- 每个 `topology_effect_applied: true` 的确认关系已经反映到相关非标准 residue 的最终 `topology_class` 和最终 component membership；`topology_effect_applied: false` 的关系没有错误改变分类；
 - `evidence` 为 `RTP_n` 时，该变量在文件级 `references` 中存在；`{CCD_PATH_n}/XXX.cif` 中的 `CCD_PATH_n` 也能在同一文件级 `references` 中解析；
 - 没有生成或引用 `reference_manifest.yaml`；
 - 所有影响最终分类、component membership 或 `topology_effect_applied` 的事项均已闭合；
