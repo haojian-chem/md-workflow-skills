@@ -75,7 +75,7 @@ references/canonical_terminology.md
 
 `task_execution_rules.md` 保存各科研执行 Skill 共同遵守的跨 Stage Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
 
-`canonical_terminology.md` 维护跨 Skill 需要稳定一致的正式术语。它也不是独立 Skill 或执行环节，只拥有术语名称、优先表达、定义和边界；不接管具体科学规则。Authoring 在生成、重构或审查科研 Skill 时必须读取它。执行阶段可通过 `task_execution_rules.md` 按需读取它，因此不要求为现有 execution Skill 逐一建立平行 glossary。
+`canonical_terminology.md` 维护跨 Skill 需要稳定一致的正式术语。它也不是独立 Skill 或执行环节，只拥有术语名称、优先表达、定义和边界；不接管具体科学规则。Authoring 在 Skill 构筑、设计讨论、architecture freeze 编写、生成、审查和重构全过程中必须读取并使用它。执行阶段可通过 `task_execution_rules.md` 按需读取它，因此不要求为现有 execution Skill 逐一建立平行 glossary。
 
 ### Negative scope / 禁止项
 
@@ -124,7 +124,9 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 
 ### Terminology and writing precision
 
-Skill 的正式文本必须先完成术语归一化，再进行措辞润色。讨论阶段的用户口语、简称、临时称呼和不完整表述只用于理解语义，**不得自动继承为 Skill 的正式术语**。
+术语归一化贯穿整个 Skill authoring lifecycle，**不是最终 Markdown 写作阶段才执行的清理步骤**。在 Skill 构筑、设计讨论、architecture freeze 编写、生成、审查和重构过程中，Agent 与用户讨论方案时也必须优先使用项目当前正式术语。
+
+用户的口语、简称、临时称呼和不完整表述只作为语义输入；不要求用户先把表达规范化。Agent 应结合当前上下文理解其实际指代，并在自己的后续讨论、设计记录、freeze 和正式 Skill 文本中恢复为项目正式术语，而不是继续传播临时称呼。
 
 #### Canonical terminology
 
@@ -132,12 +134,13 @@ Skill 的正式文本必须先完成术语归一化，再进行措辞润色。�
 
 `references/canonical_terminology.md`
 
-生成、重构或审查 Skill 时先读取该文件，再结合 current Skill、architecture freeze、正式上下游接口和当前科学语境确定局部术语。
+进入 Skill 构筑、设计讨论、architecture freeze 编写、生成、审查或重构时先读取该文件，再结合 current Skill、architecture freeze、正式上下游接口和当前科学语境确定局部术语。
 
-- 同一 execution object、artifact、state、scientific concept 或判断对象，在同一 Skill 及其 references 中使用一个稳定的正式术语；不要为了语言变化轮换同义词。
-- `canonical_terminology.md` 已有条目时，正式 Skill 优先采用该条目的 `Preferred expression`；用户本轮对话中的口语化说法不能覆盖已有 canonical term。
+- 同一 execution object、artifact、state、scientific concept 或判断对象，在 authoring discussion、freeze、Skill 及其 references 中使用一个稳定的正式术语；不要为了语言变化轮换同义词。
+- `canonical_terminology.md` 已有条目时，Agent 在 authoring discussion 和正式文本中都优先采用该条目的 `Preferred expression`；用户本轮对话中的口语化说法不能覆盖已有 canonical term。
 - 只有需要跨 Skill 稳定、会进入 Task Sheet / 项目结果索引 / Stage 间正式接口，或名称漂移会造成对象混淆的术语，才进入 `canonical_terminology.md`。只在一个 Skill 内使用的局部术语由该 Skill 自己定义和维护。
 - `canonical_terminology.md` 只维护 `Canonical term / Preferred expression / Definition / Scope / distinction`。**不维护 alias、口语映射或 deprecated / do-not-use 列表。** 用户的简称和临时表达由 Agent 根据当前上下文理解，不固化成静态映射。
+- `canonical_terminology.md` 负责“对象或概念正式叫什么、具体指什么、与什么不同”；本文件的 semantic-explicitness 规则负责“如何把对象、属性、reference / criterion 和判断关系写清楚”。术语 reference 不承担科学规则，写作规则也不另行定义第二套对象名称。
 - 如果当前 authoring 工作确实建立了新的跨 Skill 稳定术语，并且当前窗口拥有 shared path 写权限，则同步更新 `canonical_terminology.md`；没有写权限时提交精确的术语条目给当前 owner，不在局部 Skill 中另建平行 glossary。
 - 如果确实需要引入新的局部术语，首次出现时明确它指什么，之后保持同一称呼；不要让一个术语在同一 Skill 中指代多个不同对象。
 - 文件名、字段名、命令、软件选项、section name、enum、identifier 等机器或接口级名称保持原文，不做自由翻译或改名。
@@ -181,14 +184,14 @@ heavy-atom name 是否兼容
 
 例如，若语义只是“目标力场中对应残基的定义”，不应无必要写成“目标力场对应 `residue definition`”；只有在需要明确指向软件中的具体原生实体或字段时才保留相应英文。
 
-生成或重构完成后，必须额外检查：
+在 authoring 讨论推进过程中持续检查；生成或重构完成后再做一次全文检查：
 
-- `canonical_terminology.md` 已有术语是否使用其 `Preferred expression`；
+- `canonical_terminology.md` 已有术语是否在讨论和正式文本中使用其 `Preferred expression`；
 - 同一对象是否出现多套名称；
-- 用户口语/简称是否被误写成正式术语；
+- 用户口语/简称是否被 Agent 继续传播为正式术语；
 - 是否存在没有展开 reference / criterion 的抽象判断句；
 - 是否存在无信息增益的中英文混排；
-- main Skill 与 local references 对同一对象的术语是否一致。
+- discussion / freeze / main Skill / local references 对同一对象的术语是否一致。
 
 ## 3. Supporting Skill 的拆分门槛
 
@@ -212,6 +215,8 @@ heavy-atom name 是否兼容
 + references/canonical_terminology.md
 + 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
 ↓
+从 authoring discussion 开始即使用 canonical terminology；用户口语仅作为语义输入
+↓
 读取 MD_WORKFLOW_MASTER_PLAN.md 中目标 Stage / Step 的当前建设状态
 ↓
 确认当前 Skill 的唯一职责与 write ownership
@@ -232,7 +237,7 @@ heavy-atom name 是否兼容
 ↓
 检查越界定义、重复定义、shadow specification，以及是否把 Agent/用户的任务级裁量误固化成流程
 ↓
-检查术语一致性、判断关系是否具体、以及是否存在无必要的中英文混排
+检查 discussion / freeze / Skill 的术语一致性、判断关系是否具体、以及是否存在无必要的中英文混排
 ↓
 若本次确立新的跨 Skill 稳定术语，按 shared-path 写权限更新 canonical_terminology.md 或提交给当前 owner
 ↓
@@ -340,7 +345,7 @@ references/task_execution_rules.md
 references/canonical_terminology.md
 ```
 
-前者定义跨 Stage Task Execution 通用规则；后者维护跨 Skill canonical terminology。两者都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。Authoring 在构筑或审查科研执行 Skill 时读取两者；各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并在需要术语解释时由该 shared reference 继续读取 `canonical_terminology.md`。
+前者定义跨 Stage Task Execution 通用规则；后者维护跨 Skill canonical terminology。两者都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。Authoring 在 Skill 构筑、设计讨论、freeze 编写、生成、审查和重构过程中读取两者；各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并在需要术语解释时由该 shared reference 继续读取 `canonical_terminology.md`。
 
 不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design、shared Task Execution reference 或 canonical terminology；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
 
@@ -411,9 +416,11 @@ Skill 当前是什么状态
 
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
-- [ ] 已读取 `references/canonical_terminology.md`；其中已有条目在正式 Skill 中使用其 `Preferred expression`；
-- [ ] 同一对象 / artifact / state / scientific concept 没有因用户口语、简称或措辞变化而出现多套正式术语；
+- [ ] 已读取 `references/canonical_terminology.md`；其中已有条目在 authoring discussion、freeze 和正式 Skill 中使用其 `Preferred expression`；
+- [ ] Agent 在设计讨论中没有继续沿用用户口语、简称或临时称呼作为新的项目正式术语；
+- [ ] 同一对象 / artifact / state / scientific concept 在 discussion / freeze / Skill / references 中没有出现多套正式术语；
 - [ ] 没有为用户口语、alias 或历史称呼建立 shared static mapping；`canonical_terminology.md` 只保存确有跨 Skill 稳定价值的正式术语；
+- [ ] `canonical_terminology.md` 没有承担科学判据或 semantic-explicitness 规则；本 authoring rule 没有另行建立第二套 canonical terminology；
 - [ ] 科学/技术判断已明确检查对象、属性、reference / criterion 和判断关系，没有用未定义的“兼容 / 合理 / 正确 / 有效 / 一致”等抽象词代替实际判据；
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] current 文件不再引用错误旧路径；
@@ -438,7 +445,10 @@ Skill 当前是什么状态
 确定性机械能力 → script / Tool
 可由 Agent / 用户基于当前任务可靠判断、无需跨任务稳定的策略 → 不固化为 Skill 规则
 跨 Skill 正式术语 → references/canonical_terminology.md
-同一对象 → 一个 canonical term；正式文本优先采用 Preferred expression；用户口语/简称不进入 shared glossary
+术语规范从 authoring discussion 开始生效；用户口语只作为输入，Agent 输出回到 canonical terminology
+同一对象 → 一个 canonical term；discussion / freeze / Skill / references 保持一致
+canonical_terminology.md → 对象叫什么、是什么、与什么不同
+semantic explicitness → 对象、属性、reference / criterion 与实际判断关系如何写清楚
 科学/技术判断 → 写明对象、属性、reference / criterion 与实际判断关系
 中文 Skill → 中文为主体；只保留有信息价值的英文原文
 已确定 Stage / Step package 路径 → 可先保留目录；目录存在 ≠ Skill 已生成
