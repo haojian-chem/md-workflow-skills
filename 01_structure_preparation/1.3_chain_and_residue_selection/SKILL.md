@@ -23,7 +23,7 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 - 与该结果对应的当前结构；
 - 用户对保留研究对象的要求。
 
-1.2 结果应已完成当前 model 的分类、component / residue 层级和稳定身份物化。1.3 直接使用其中已经存在的 `component_id` 与 `residue_id`；`residue_id` 只在所属 `component_id` 内定位，因此任何正式 selection / mapping 都使用 `component_id + residue_id`。
+1.2 结果应已完成当前 model 的分类、component / residue 层级和稳定身份物化。1.3 直接使用其中已经存在的 `component_id`、component 一级 `chain_index` 与 `residue_id`；`residue_id` 只在所属 `component_id` 内定位，因此任何正式 selection / mapping 都使用 `component_id + residue_id`。
 
 # Reuse conditions
 
@@ -136,7 +136,6 @@ selections:
 ```yaml
 chain_mapping:
   - chain_index: 1
-    component_id: <component_id>
     pdb_chain_id: A
 
 residue_mapping:
@@ -151,9 +150,9 @@ residue_mapping:
     residue_id: <residue_id>
 ```
 
-这里的 `chain_index` 是 1.3 为当前 model 的 component 顺序建立的 mapping 编号，不是从 1.2 继承的 identity。
+这里的 `chain_index` 直接使用当前 model 的 1.2 component 一级 `chain_index`，不在 1.3 重新计算。
 
-`chain_mapping` 记录 `chain_index + component_id + PDB chain ID` 的对应关系；同一个 `component_id` 在不同 target 中保持同一个 `chain_index`。`residue_mapping` 记录输出结构 `chain_index + resid` 与 1.2 `component_id + residue_id` 的关系。
+`chain_mapping` 记录当前 target 输出 PDB 的 `chain_index` 与 PDB chain ID；`residue_mapping` 记录输出结构 `chain_index + resid` 与 1.2 `component_id + residue_id` 的关系。
 
 selected missing residue 即使没有坐标，也保留对应 `residue_mapping`。
 
