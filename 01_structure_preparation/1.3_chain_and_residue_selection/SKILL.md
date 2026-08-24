@@ -136,6 +136,7 @@ selections:
 ```yaml
 chain_mapping:
   - chain_index: 1
+    component_id: <component_id>
     pdb_chain_id: A
 
 residue_mapping:
@@ -150,9 +151,9 @@ residue_mapping:
     residue_id: <residue_id>
 ```
 
-这里的 `chain_index` 是 1.3 为当前 target 输出结构建立的 mapping 编号，不是从 1.2 继承的 identity。
+这里的 `chain_index` 是 1.3 为当前 model 的 component 顺序建立的 mapping 编号，不是从 1.2 继承的 identity。
 
-`chain_mapping` 记录当前 target 输出 PDB 的 `chain_index` 与 PDB chain ID；`residue_mapping` 记录输出结构 `chain_index + resid` 与 1.2 `component_id + residue_id` 的关系。
+`chain_mapping` 记录 `chain_index + component_id + PDB chain ID` 的对应关系；同一个 `component_id` 在不同 target 中保持同一个 `chain_index`。`residue_mapping` 记录输出结构 `chain_index + resid` 与 1.2 `component_id + residue_id` 的关系。
 
 selected missing residue 即使没有坐标，也保留对应 `residue_mapping`。
 
