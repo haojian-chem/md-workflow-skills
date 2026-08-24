@@ -1,31 +1,27 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: relation_decisions.schema.yaml
-title: Confirmed user decisions for covalent and coordination relations
+title: User decisions for Stage 1.2 relations
 type: object
 additionalProperties: false
-required: [schema_version, structure, decisions]
+required: [schema_version, model_id, decisions]
 properties:
-  schema_version: {const: "1.0"}
-  structure:
-    type: object
-    additionalProperties: false
-    required: [structure_sha256, selected_model_id]
-    properties:
-      structure_sha256: {$ref: "#/$defs/sha256"}
-      selected_model_id: {type: string, minLength: 1}
+  schema_version:
+    const: "2.0"
+  model_id:
+    type: string
+    minLength: 1
   decisions:
     type: array
+    minItems: 1
     items:
       type: object
       additionalProperties: false
-      required: [relation_id, relation_kind, decision]
+      required: [relation_id, relation_type, decision]
       properties:
         relation_id:
           type: string
-          pattern: "^relation:v1/type/(COVALENT_CONNECTION|METAL_COORDINATION)/endpoints/[0-9a-f]{64}$"
-        relation_kind: {enum: [COVALENT_CONNECTION, METAL_COORDINATION]}
-        decision: {enum: [CONFIRMED, REJECTED]}
-$defs:
-  sha256:
-    type: string
-    pattern: "^[0-9a-f]{64}$"
+          pattern: "^relation_[0-9]{3,}$"
+        relation_type:
+          enum: [COVALENT_CONNECTION, METAL_COORDINATION]
+        decision:
+          enum: [CONFIRMED, REJECTED]
