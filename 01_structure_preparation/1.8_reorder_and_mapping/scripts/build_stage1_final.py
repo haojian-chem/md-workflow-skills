@@ -9,7 +9,7 @@ import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Hashable
 
 try:
     import yaml
@@ -19,6 +19,7 @@ except ImportError as exc:  # pragma: no cover
 
 CHAIN_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 ATOM_RECORDS = {"ATOM  ", "HETATM"}
+ResidueKey = tuple[str, str]
 
 
 class Stage1FinalError(RuntimeError):
@@ -90,11 +91,17 @@ class ResidueBlock:
     def insertion_code(self) -> str:
         return self.atoms[0].insertion_code
 
+    @property
+    def key(self) -> ResidueKey:
+        if self.component_id is None or self.residue_id is None:
+            raise Stage1FinalError("residue block does not yet have stable identity")
+        return self.component_id, self.residue_id
+
 
 @dataclass
 class LinkedUnit:
     unit_id: int
-    residue_ids: list[str]
+    residue_keys: list[ResidueKey]
     stable_order: int
     standard_chain_indices: set[int] = field(default_factory=set)
     assigned_standard_chain_index: int | None = None
@@ -102,25 +109,28 @@ class LinkedUnit:
 
 
 class UnionFind:
-    def __init__(self, values: list[str]) -> None:
+    def __init__(self, values: list[Hashable]) -> None:
         self.parent = {value: value for value in values}
 
-    def find(self, value: str) -> str:
+    def find(self, value: Hashable) -> Hashable:
         root = self.parent[value]
         if root != value:
             self.parent[value] = self.find(root)
         return self.parent[value]
 
-    def union(self, first: str, second: str) -> None:
+    def union(self, first: Hashable, second: Hashable) -> None:
         if first not in self.parent or second not in self.parent:
             return
         first_root = self.find(first)
         second_root = self.find(second)
         if first_root != second_root:
-            self.parent[max(first_root, second_root)] = min(first_root, second_root)
+            if repr(first_root) <= repr(second_root):
+                self.parent[second_root] = first_root
+            else:
+                self.parent[first_root] = second_root
 
-    def groups(self) -> list[set[str]]:
-        groups: dict[str, set[str]] = {}
+    def groups(self) -> list[set[Hashable]]:
+        groups: dict[Hashable, set[Hashable]] = {}
         for value in self.parent:
             groups.setdefault(self.find(value), set()).add(value)
         return list(groups.values())
@@ -215,49 +225,81 @@ def parse_pdb(path: Path) -> tuple[list[str], list[ResidueBlock]]:
 
 def classification_maps(
     document: dict[str, Any],
-) -> tuple[dict[str, dict[str, Any]], dict[str, int]]:
+) -> tuple[dict[ResidueKey, dict[str, Any]], dict[ResidueKey, int], set[str]]:
     if document.get("result_status") != "COMPLETE":
         raise Stage1FinalError("classification_result.yaml must have result_status: COMPLETE")
-    records = document.get("residue_records")
-    if not isinstance(records, list):
-        raise Stage1FinalError("classification_result.yaml lacks residue_records[]")
+    if document.get("schema_version") != "3.0":
+        raise Stage1FinalError("classification_result.yaml must use Stage 1.2 schema_version: 3.0")
 
-    by_id: dict[str, dict[str, Any]] = {}
-    order: dict[str, int] = {}
-    for index, record in enumerate(records):
-        if not isinstance(record, dict):
-            raise Stage1FinalError("classification residue record must be a mapping")
-        residue_id = record.get("residue_id")
-        if not isinstance(residue_id, str) or not residue_id:
-            raise Stage1FinalError("classification residue record lacks residue_id")
-        if residue_id in by_id:
-            raise Stage1FinalError(f"duplicate residue_id in classification result: {residue_id}")
-        classification = record.get("classification")
-        if not isinstance(classification, dict):
-            raise Stage1FinalError(f"classification mapping is missing for residue {residue_id}")
-        if classification.get("polymer_class") not in {
-            "POLYMER",
-            "BRANCHED",
-            "NONPOLYMER",
-            "WATER",
-        }:
-            raise Stage1FinalError(f"invalid polymer_class for residue {residue_id}")
-        if classification.get("topology_class") not in {
-            "STANDARD_RESIDUE",
-            "TOPOLOGY_LINKED_NONSTANDARD",
-            "INDEPENDENT_NONSTANDARD",
-            "SOLVENT_COMPONENT",
-            "ION_COMPONENT",
-        }:
-            raise Stage1FinalError(f"invalid topology_class for residue {residue_id}")
-        by_id[residue_id] = record
-        order[residue_id] = index
-    return by_id, order
+    components = document.get("components")
+    if not isinstance(components, list):
+        raise Stage1FinalError("classification_result.yaml lacks components[]")
+
+    by_key: dict[ResidueKey, dict[str, Any]] = {}
+    order: dict[ResidueKey, int] = {}
+    standard_components: set[str] = set()
+    sequence_index = 0
+
+    for component in components:
+        if not isinstance(component, dict):
+            raise Stage1FinalError("classification component must be a mapping")
+        component_id = component.get("component_id")
+        residues = component.get("residues")
+        if not isinstance(component_id, str) or not component_id:
+            raise Stage1FinalError("classification component lacks component_id")
+        if not isinstance(residues, list):
+            raise Stage1FinalError(f"classification component {component_id} lacks residues[]")
+
+        for residue in residues:
+            if not isinstance(residue, dict):
+                raise Stage1FinalError(f"residue in component {component_id} must be a mapping")
+            residue_id = residue.get("residue_id")
+            if not isinstance(residue_id, str) or not residue_id:
+                raise Stage1FinalError(f"residue in component {component_id} lacks residue_id")
+            key = (component_id, residue_id)
+            if key in by_key:
+                raise Stage1FinalError(f"duplicate component_id + residue_id in classification result: {key}")
+
+            polymer = residue.get("polymer_class")
+            topology = residue.get("topology_class")
+            if not isinstance(polymer, dict) or polymer.get("value") not in {
+                "POLYMER",
+                "BRANCHED",
+                "NONPOLYMER",
+                "WATER",
+            }:
+                raise Stage1FinalError(f"invalid polymer_class for residue {key}")
+            if not isinstance(topology, dict) or topology.get("value") not in {
+                "STANDARD_RESIDUE",
+                "TOPOLOGY_LINKED_NONSTANDARD",
+                "INDEPENDENT_NONSTANDARD",
+                "SOLVENT_COMPONENT",
+                "ION_COMPONENT",
+            }:
+                raise Stage1FinalError(f"invalid topology_class for residue {key}")
+
+            normalized = dict(residue)
+            normalized["_component_id"] = component_id
+            normalized["_polymer_class"] = polymer["value"]
+            normalized["_topology_class"] = topology["value"]
+            by_key[key] = normalized
+            order[key] = sequence_index
+            sequence_index += 1
+            if topology["value"] == "STANDARD_RESIDUE":
+                standard_components.add(component_id)
+
+    return by_key, order, standard_components
 
 
 def target_maps(
     document: dict[str, Any],
-) -> tuple[str, dict[int, str], dict[tuple[int, int], dict[str, Any]]]:
+) -> tuple[
+    str,
+    dict[int, str],
+    dict[int, str],
+    dict[str, int],
+    dict[tuple[int, int], dict[str, Any]],
+]:
     target_id = document.get("target_id")
     if not isinstance(target_id, str) or not target_id:
         raise Stage1FinalError("target record lacks target_id")
@@ -268,25 +310,34 @@ def target_maps(
         raise Stage1FinalError("target record must contain chain_mapping[] and residue_mapping[]")
 
     chains: dict[int, str] = {}
+    chain_components: dict[int, str] = {}
+    component_chains: dict[str, int] = {}
     for item in chain_mapping:
         if not isinstance(item, dict):
             raise Stage1FinalError("chain_mapping entries must be mappings")
         chain_index = int(item["chain_index"])
         chain_id = str(item["pdb_chain_id"])
+        component_id = item.get("component_id")
+        if not isinstance(component_id, str) or not component_id:
+            raise Stage1FinalError(f"chain_mapping entry {chain_index} lacks component_id")
         if len(chain_id) != 1:
             raise Stage1FinalError(f"PDB chain ID must be one character: {chain_id!r}")
         expected = chain_label_for_index(chain_index)
         if chain_id != expected:
             raise Stage1FinalError(
-                f"target chain_mapping disagrees with the fixed 1.3 mapping for chain_index "
+                f"target chain_mapping disagrees with fixed 1.3 mapping for chain_index "
                 f"{chain_index}: {chain_id!r} != {expected!r}"
             )
         if chain_index in chains:
             raise Stage1FinalError(f"duplicate chain_index in target chain_mapping: {chain_index}")
+        if component_id in component_chains:
+            raise Stage1FinalError(f"component_id occurs more than once in chain_mapping: {component_id}")
         chains[chain_index] = chain_id
+        chain_components[chain_index] = component_id
+        component_chains[component_id] = chain_index
 
     residues: dict[tuple[int, int], dict[str, Any]] = {}
-    seen_residue_ids: set[str] = set()
+    seen_keys: set[ResidueKey] = set()
     for item in residue_mapping:
         if not isinstance(item, dict):
             raise Stage1FinalError("residue_mapping entries must be mappings")
@@ -299,22 +350,28 @@ def target_maps(
         component_id = item.get("component_id")
         if not isinstance(residue_id, str) or not isinstance(component_id, str):
             raise Stage1FinalError(f"target residue mapping lacks stable IDs: {key}")
-        if residue_id in seen_residue_ids:
-            raise Stage1FinalError(f"target residue_id occurs more than once: {residue_id}")
-        seen_residue_ids.add(residue_id)
+        stable_key = (component_id, residue_id)
+        if stable_key in seen_keys:
+            raise Stage1FinalError(f"target component_id + residue_id occurs more than once: {stable_key}")
+        if chain_components.get(chain_index) != component_id:
+            raise Stage1FinalError(
+                f"residue mapping component_id disagrees with chain_mapping for chain_index {chain_index}"
+            )
+        seen_keys.add(stable_key)
         residues[key] = item
-    return target_id, chains, residues
+
+    return target_id, chains, chain_components, component_chains, residues
 
 
 def bind_blocks(
     blocks: list[ResidueBlock],
     chain_map: dict[int, str],
     residue_map: dict[tuple[int, int], dict[str, Any]],
-    class_by_id: dict[str, dict[str, Any]],
-    stable_order: dict[str, int],
-) -> dict[str, ResidueBlock]:
+    class_by_key: dict[ResidueKey, dict[str, Any]],
+    stable_order: dict[ResidueKey, int],
+) -> dict[ResidueKey, ResidueBlock]:
     chain_index_by_id = {chain_id: index for index, chain_id in chain_map.items()}
-    by_residue_id: dict[str, ResidueBlock] = {}
+    by_key: dict[ResidueKey, ResidueBlock] = {}
 
     for block in blocks:
         if block.chain_id not in chain_index_by_id:
@@ -328,28 +385,27 @@ def bind_blocks(
                 f"current residue {block.chain_id}:{block.resid} cannot be bound through target residue_mapping"
             )
 
-        residue_id = mapping["residue_id"]
-        record = class_by_id.get(residue_id)
+        stable_key = (mapping["component_id"], mapping["residue_id"])
+        record = class_by_key.get(stable_key)
         if record is None:
-            raise Stage1FinalError(f"target residue_id is absent from classification result: {residue_id}")
-        if record.get("component_id") != mapping["component_id"]:
-            raise Stage1FinalError(f"component_id mismatch for residue_id {residue_id}")
+            raise Stage1FinalError(
+                "target component_id + residue_id is absent from classification result: "
+                f"{stable_key}"
+            )
 
-        classification = record["classification"]
         block.chain_index = chain_index
-        block.component_id = mapping["component_id"]
-        block.residue_id = residue_id
-        block.topology_class = classification["topology_class"]
-        block.polymer_class = classification["polymer_class"]
-        block.stable_order = stable_order[residue_id]
+        block.component_id, block.residue_id = stable_key
+        block.topology_class = record["_topology_class"]
+        block.polymer_class = record["_polymer_class"]
+        block.stable_order = stable_order[stable_key]
         block.final_chain_id = block.chain_id
         block.final_resid = block.resid
 
-        if residue_id in by_residue_id:
-            raise Stage1FinalError(f"current structure contains duplicate residue_id: {residue_id}")
-        by_residue_id[residue_id] = block
+        if stable_key in by_key:
+            raise Stage1FinalError(f"current structure contains duplicate stable residue identity: {stable_key}")
+        by_key[stable_key] = block
 
-    return by_residue_id
+    return by_key
 
 
 def topology_relations(document: dict[str, Any]) -> list[dict[str, Any]]:
@@ -358,10 +414,10 @@ def topology_relations(document: dict[str, Any]) -> list[dict[str, Any]]:
         raise Stage1FinalError("classification_result confirmed_relations must be a mapping")
 
     result: list[dict[str, Any]] = []
-    for key in ("covalent_connections", "metal_coordination"):
-        values = confirmed.get(key, [])
+    for name in ("covalent_connections", "metal_coordination"):
+        values = confirmed.get(name, [])
         if not isinstance(values, list):
-            raise Stage1FinalError(f"confirmed_relations.{key} must be a list")
+            raise Stage1FinalError(f"confirmed_relations.{name} must be a list")
         for relation in values:
             if not isinstance(relation, dict):
                 raise Stage1FinalError("confirmed relation entry must be a mapping")
@@ -370,67 +426,68 @@ def topology_relations(document: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
-def endpoint_residue_ids(relation: dict[str, Any]) -> tuple[str, str]:
-    first = relation.get("endpoint_1")
-    second = relation.get("endpoint_2")
-    if not isinstance(first, dict) or not isinstance(second, dict):
-        raise Stage1FinalError("confirmed topology relation lacks endpoint_1/endpoint_2")
-    first_id = first.get("residue_id")
-    second_id = second.get("residue_id")
-    if not isinstance(first_id, str) or not isinstance(second_id, str):
-        raise Stage1FinalError("confirmed topology relation endpoint lacks residue_id")
-    return first_id, second_id
+def endpoint_residue_keys(relation: dict[str, Any]) -> tuple[ResidueKey, ResidueKey]:
+    endpoints: list[ResidueKey] = []
+    for name in ("endpoint_1", "endpoint_2"):
+        endpoint = relation.get(name)
+        if not isinstance(endpoint, dict):
+            raise Stage1FinalError(f"confirmed topology relation lacks {name}")
+        component_id = endpoint.get("component_id")
+        residue_id = endpoint.get("residue_id")
+        if not isinstance(component_id, str) or not isinstance(residue_id, str):
+            raise Stage1FinalError(f"confirmed topology relation {name} lacks stable residue identity")
+        endpoints.append((component_id, residue_id))
+    return endpoints[0], endpoints[1]
 
 
 def build_linked_units(
-    class_by_id: dict[str, dict[str, Any]],
-    stable_order: dict[str, int],
+    class_by_key: dict[ResidueKey, dict[str, Any]],
+    stable_order: dict[ResidueKey, int],
+    standard_components: set[str],
+    component_chains: dict[str, int],
     relations: list[dict[str, Any]],
-) -> tuple[list[LinkedUnit], dict[str, int]]:
-    all_ids = list(class_by_id)
-    uf = UnionFind(all_ids)
+) -> tuple[list[LinkedUnit], dict[ResidueKey, int]]:
+    all_keys = list(class_by_key)
+    uf = UnionFind(all_keys)
     for relation in relations:
-        first_id, second_id = endpoint_residue_ids(relation)
-        if first_id in class_by_id and second_id in class_by_id:
-            uf.union(first_id, second_id)
+        first_key, second_key = endpoint_residue_keys(relation)
+        if first_key in class_by_key and second_key in class_by_key:
+            uf.union(first_key, second_key)
 
-    standard_chain_indices = {
-        int(record["chain_index"])
-        for record in class_by_id.values()
-        if record["classification"]["topology_class"] == "STANDARD_RESIDUE"
-    }
-
-    raw_units: list[tuple[list[str], set[int]]] = []
-    for component in uf.groups():
-        linked_ids = [
-            residue_id
-            for residue_id in component
-            if class_by_id[residue_id]["classification"]["topology_class"]
-            == "TOPOLOGY_LINKED_NONSTANDARD"
+    raw_units: list[tuple[list[ResidueKey], set[int]]] = []
+    for relation_group in uf.groups():
+        group = {value for value in relation_group if isinstance(value, tuple) and len(value) == 2}
+        linked_keys = [
+            key
+            for key in group
+            if class_by_key[key]["_topology_class"] == "TOPOLOGY_LINKED_NONSTANDARD"
         ]
-        if not linked_ids:
+        if not linked_keys:
             continue
-        linked_ids.sort(key=lambda residue_id: stable_order[residue_id])
+        linked_keys.sort(key=lambda key: stable_order[key])
+
         standard_sides = {
-            int(class_by_id[residue_id]["chain_index"])
-            for residue_id in component
-            if class_by_id[residue_id]["classification"]["topology_class"] == "STANDARD_RESIDUE"
+            component_chains[key[0]]
+            for key in group
+            if class_by_key[key]["_topology_class"] == "STANDARD_RESIDUE"
+            and key[0] in component_chains
         }
         if not standard_sides:
-            # Baseline linked residues can already belong to a polymer chain in the
-            # final 1.2 grouping even when no explicit topology relation is present.
-            linked_chain_indices = {int(class_by_id[residue_id]["chain_index"]) for residue_id in linked_ids}
-            standard_sides.update(linked_chain_indices & standard_chain_indices)
-        raw_units.append((linked_ids, standard_sides))
+            standard_sides.update(
+                component_chains[key[0]]
+                for key in linked_keys
+                if key[0] in standard_components and key[0] in component_chains
+            )
+        raw_units.append((linked_keys, standard_sides))
 
     raw_units.sort(key=lambda item: stable_order[item[0][0]])
     units: list[LinkedUnit] = []
-    residue_to_unit: dict[str, int] = {}
-    for unit_id, (residue_ids, standard_sides) in enumerate(raw_units, start=1):
+    residue_to_unit: dict[ResidueKey, int] = {}
+    for unit_id, (residue_keys, standard_sides) in enumerate(raw_units, start=1):
         unit = LinkedUnit(
             unit_id=unit_id,
-            residue_ids=residue_ids,
-            stable_order=stable_order[residue_ids[0]],
+            residue_keys=residue_keys,
+            stable_order=stable_order[residue_keys[0]],
             standard_chain_indices=standard_sides,
         )
         if len(standard_sides) == 1:
@@ -438,26 +495,26 @@ def build_linked_units(
         else:
             unit.independent = True
         units.append(unit)
-        for residue_id in residue_ids:
-            residue_to_unit[residue_id] = unit_id
+        for key in residue_keys:
+            residue_to_unit[key] = unit_id
 
     return units, residue_to_unit
 
 
 def keep_present_units(
     units: list[LinkedUnit],
-    residue_to_unit: dict[str, int],
-    blocks_by_residue_id: dict[str, ResidueBlock],
-) -> tuple[list[LinkedUnit], dict[str, int]]:
+    residue_to_unit: dict[ResidueKey, int],
+    blocks_by_key: dict[ResidueKey, ResidueBlock],
+) -> tuple[list[LinkedUnit], dict[ResidueKey, int]]:
     present_unit_ids = {
-        residue_to_unit[residue_id]
-        for residue_id in blocks_by_residue_id
-        if residue_id in residue_to_unit
+        residue_to_unit[key]
+        for key in blocks_by_key
+        if key in residue_to_unit
     }
     filtered_units = [unit for unit in units if unit.unit_id in present_unit_ids]
     filtered_mapping = {
-        residue_id: unit_id
-        for residue_id, unit_id in residue_to_unit.items()
+        key: unit_id
+        for key, unit_id in residue_to_unit.items()
         if unit_id in present_unit_ids
     }
     return filtered_units, filtered_mapping
@@ -465,12 +522,12 @@ def keep_present_units(
 
 def choose_independent_chain_id(
     unit: LinkedUnit,
-    blocks_by_residue_id: dict[str, ResidueBlock],
-    class_by_id: dict[str, dict[str, Any]],
+    blocks_by_key: dict[ResidueKey, ResidueBlock],
+    component_chains: dict[str, int],
     used_chain_ids: set[str],
     forbidden_chain_ids: set[str],
 ) -> str:
-    present = [blocks_by_residue_id[rid] for rid in unit.residue_ids if rid in blocks_by_residue_id]
+    present = [blocks_by_key[key] for key in unit.residue_keys if key in blocks_by_key]
     existing = {block.chain_id for block in present}
     if len(existing) == 1:
         candidate = next(iter(existing))
@@ -478,9 +535,13 @@ def choose_independent_chain_id(
             used_chain_ids.add(candidate)
             return candidate
 
-    class_indices = {int(class_by_id[rid]["chain_index"]) for rid in unit.residue_ids}
-    if len(class_indices) == 1:
-        candidate = chain_label_for_index(next(iter(class_indices)))
+    indices = {
+        component_chains[key[0]]
+        for key in unit.residue_keys
+        if key[0] in component_chains
+    }
+    if len(indices) == 1:
+        candidate = chain_label_for_index(next(iter(indices)))
         if candidate not in forbidden_chain_ids and candidate not in used_chain_ids:
             used_chain_ids.add(candidate)
             return candidate
@@ -494,27 +555,27 @@ def choose_independent_chain_id(
 
 def assign_chain_and_resid(
     units: list[LinkedUnit],
-    residue_to_unit: dict[str, int],
-    blocks_by_residue_id: dict[str, ResidueBlock],
-    class_by_id: dict[str, dict[str, Any]],
+    residue_to_unit: dict[ResidueKey, int],
+    blocks_by_key: dict[ResidueKey, ResidueBlock],
+    component_chains: dict[str, int],
     chain_map: dict[int, str],
     residue_map: dict[tuple[int, int], dict[str, Any]],
 ) -> dict[int, LinkedUnit]:
     unit_by_id = {unit.unit_id: unit for unit in units}
-    for residue_id, unit_id in residue_to_unit.items():
-        block = blocks_by_residue_id.get(residue_id)
+    for key, unit_id in residue_to_unit.items():
+        block = blocks_by_key.get(key)
         if block is not None:
             block.linked_unit_id = unit_id
 
-    used_chain_ids = {block.chain_id for block in blocks_by_residue_id.values()}
+    used_chain_ids = {block.chain_id for block in blocks_by_key.values()}
 
     for unit in units:
         if unit.assigned_standard_chain_index is None:
             continue
         chain_index = unit.assigned_standard_chain_index
         chain_id = chain_map.get(chain_index, chain_label_for_index(chain_index))
-        for residue_id in unit.residue_ids:
-            block = blocks_by_residue_id.get(residue_id)
+        for key in unit.residue_keys:
+            block = blocks_by_key.get(key)
             if block is not None:
                 block.final_chain_id = chain_id
         used_chain_ids.add(chain_id)
@@ -528,13 +589,13 @@ def assign_chain_and_resid(
         }
         chain_id = choose_independent_chain_id(
             unit,
-            blocks_by_residue_id,
-            class_by_id,
+            blocks_by_key,
+            component_chains,
             used_chain_ids,
             forbidden,
         )
-        for residue_id in unit.residue_ids:
-            block = blocks_by_residue_id.get(residue_id)
+        for key in unit.residue_keys:
+            block = blocks_by_key.get(key)
             if block is not None:
                 block.final_chain_id = chain_id
 
@@ -545,20 +606,21 @@ def assign_chain_and_resid(
 
     for chain_index, chain_units in units_by_standard_chain.items():
         chain_id = chain_map.get(chain_index, chain_label_for_index(chain_index))
-        assigned_ids = {
-            residue_id
+        assigned_keys = {
+            key
             for unit in chain_units
-            for residue_id in unit.residue_ids
+            for key in unit.residue_keys
         }
         reserved_resids = {
             resid
             for (mapped_chain_index, resid), mapping in residue_map.items()
-            if mapped_chain_index == chain_index and mapping["residue_id"] not in assigned_ids
+            if mapped_chain_index == chain_index
+            and (mapping["component_id"], mapping["residue_id"]) not in assigned_keys
         }
         next_resid = max(reserved_resids, default=0) + 1
         for unit in sorted(chain_units, key=lambda item: item.stable_order):
-            for residue_id in unit.residue_ids:
-                block = blocks_by_residue_id.get(residue_id)
+            for key in unit.residue_keys:
+                block = blocks_by_key.get(key)
                 if block is None:
                     continue
                 if next_resid > 9999:
@@ -588,31 +650,26 @@ def normalize_polymer_ter_boundaries(
             chain_label_for_index(unit.assigned_standard_chain_index),
         )
         if block.final_chain_id == assigned_chain_id:
-            # The old TER separated polymer from a linked object at its pre-1.8
-            # position. After moving the linked unit, final writing will create the
-            # correct boundary at the new end of the polymer block.
             block.input_ter_after = False
 
 
 def reorder_blocks(
     blocks: list[ResidueBlock],
     units: list[LinkedUnit],
-    blocks_by_residue_id: dict[str, ResidueBlock],
+    blocks_by_key: dict[ResidueKey, ResidueBlock],
     chain_map: dict[int, str],
 ) -> list[ResidueBlock]:
-    assigned_residue_ids = {
-        residue_id
+    assigned_keys = {
+        key
         for unit in units
         if unit.assigned_standard_chain_index is not None
-        for residue_id in unit.residue_ids
-        if residue_id in blocks_by_residue_id
+        for key in unit.residue_keys
+        if key in blocks_by_key
     }
-    remaining = [block for block in blocks if block.residue_id not in assigned_residue_ids]
+    remaining = [block for block in blocks if block.key not in assigned_keys]
 
-    # Independent linked units stay at their established object position, but multi-residue
-    # units are kept contiguous in stable residue order.
     for unit in sorted((u for u in units if u.independent), key=lambda item: item.stable_order):
-        present = [blocks_by_residue_id[rid] for rid in unit.residue_ids if rid in blocks_by_residue_id]
+        present = [blocks_by_key[key] for key in unit.residue_keys if key in blocks_by_key]
         if len(present) <= 1:
             continue
         positions = [remaining.index(block) for block in present if block in remaining]
@@ -654,8 +711,8 @@ def reorder_blocks(
             if block is not anchor:
                 continue
             for unit in units_by_chain[chain_index]:
-                for residue_id in unit.residue_ids:
-                    linked_block = blocks_by_residue_id.get(residue_id)
+                for key in unit.residue_keys:
+                    linked_block = blocks_by_key.get(key)
                     if linked_block is not None:
                         output.append(linked_block)
 
@@ -705,12 +762,12 @@ def should_write_ter(
     if block.linked_unit_id is not None:
         unit = unit_by_id[block.linked_unit_id]
         present = {
-            candidate.residue_id
+            candidate.key
             for candidate in blocks
             if candidate.linked_unit_id == unit.unit_id
         }
-        present_order = [residue_id for residue_id in unit.residue_ids if residue_id in present]
-        return bool(present_order) and block.residue_id == present_order[-1]
+        present_order = [key for key in unit.residue_keys if key in present]
+        return bool(present_order) and block.key == present_order[-1]
 
     if block.polymer_class == "POLYMER":
         if block.input_ter_after:
@@ -822,34 +879,42 @@ def main() -> int:
     try:
         target = read_yaml(args.target_record.resolve())
         classification = read_yaml(args.classification_result.resolve())
-        target_id, chain_map, residue_map = target_maps(target)
-        class_by_id, stable_order = classification_maps(classification)
+        (
+            target_id,
+            chain_map,
+            _chain_components,
+            component_chains,
+            residue_map,
+        ) = target_maps(target)
+        class_by_key, stable_order, standard_components = classification_maps(classification)
 
         cryst1, blocks = parse_pdb(args.input_structure.resolve())
         input_atom_count = sum(len(block.atoms) for block in blocks)
-        blocks_by_residue_id = bind_blocks(
+        blocks_by_key = bind_blocks(
             blocks,
             chain_map,
             residue_map,
-            class_by_id,
+            class_by_key,
             stable_order,
         )
 
         units, residue_to_unit = build_linked_units(
-            class_by_id,
+            class_by_key,
             stable_order,
+            standard_components,
+            component_chains,
             topology_relations(classification),
         )
         units, residue_to_unit = keep_present_units(
             units,
             residue_to_unit,
-            blocks_by_residue_id,
+            blocks_by_key,
         )
         unit_by_id = assign_chain_and_resid(
             units,
             residue_to_unit,
-            blocks_by_residue_id,
-            class_by_id,
+            blocks_by_key,
+            component_chains,
             chain_map,
             residue_map,
         )
@@ -857,7 +922,7 @@ def main() -> int:
         ordered_blocks = reorder_blocks(
             blocks,
             units,
-            blocks_by_residue_id,
+            blocks_by_key,
             chain_map,
         )
         pdb_text, mapping = materialize_outputs(
@@ -881,7 +946,7 @@ def main() -> int:
     except Stage1FinalError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    except Exception as exc:  # pragma: no cover - CLI defensive boundary
+    except Exception as exc:  # pragma: no cover
         print(f"UNEXPECTED ERROR: {exc}", file=sys.stderr)
         return 3
 
