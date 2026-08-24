@@ -110,12 +110,12 @@ Scope / distinction
 
 **Canonical term:** `residue_id`  
 **Preferred expression:** `residue_id`  
-**Definition:** 结构准备 1.2 在正式 `classification_result.yaml` 中为每个残基记录物化的稳定、不透明身份标识，用于后续处理环节在结构选择、构象处理、结构补全、重新编号和映射等变化后继续引用同一个上游残基身份。已观察残基和已确认的缺失残基都可以具有 `residue_id`。  
-**Scope / distinction:** `residue_id` 不是源结构残基编号 `source_resid`、当前结构残基编号 `current_resid`、当前 PDB 中的 `resid`，也不是序列位置 `sequence_position`。正式文本涉及这些对象时应直接写明实际字段或明确的编号语义，不使用未限定的“残基 ID”同时指代不同对象。下游 Skill 应消费正式结果或映射中已有的 `residue_id`，不得根据残基名称、编号或其它结构字段自行重建其值。
+**Definition:** 结构准备 1.2 在一个 model 的正式 `classification_result.yaml` 中，为所属 `component_id` 内每个 residue 物化的稳定、不透明身份标识。下游使用 `component_id + residue_id` 持续引用同一个 1.2 residue 身份。已存在 residue 和已确认缺失 residue 都可以具有 `residue_id`。  
+**Scope / distinction:** `residue_id` 的唯一性作用域是所属 `component_id`，不要求跨不同 component 单独唯一。它不是 `source_resid`、`current_resid`、当前 PDB 中的 `resid` 或 residue name。下游 Skill 必须与 `component_id` 共同消费正式结果或 mapping 中已有的 `residue_id`，不得根据 residue name、编号、chain 或其它结构字段自行重建其值。
 
 ### component_id
 
 **Canonical term:** `component_id`  
 **Preferred expression:** `component_id`  
-**Definition:** 结构准备 1.2 在正式 `classification_result.yaml` 中物化的稳定、不透明组分身份标识，用于标识 1.2 已确定成员关系的组分分组对象，并使该组分及其成员残基能够在后续选择、结构映射和拓扑准备中持续引用。  
-**Scope / distinction:** `component_id` 不是 CCD component ID、`residue_name`、PDB `chain_id` 或 1.2 的 `chain_index`。CCD component ID 表示外部化学组分定义的名称；`component_id` 表示当前 1.2 正式结果中的组分身份。下游 Skill 应直接消费正式结果或映射中已有的 `component_id`，不得根据残基名称、chain 组织或当前空间关系自行重建其值。
+**Definition:** 结构准备 1.2 在一个 model 的正式 `classification_result.yaml` 中为最终 component 物化的稳定、不透明身份标识。该 component 作为直接父级拥有其 `residues`，并使 component 与成员 residue 能在后续选择、结构映射和 topology preparation 中持续引用。  
+**Scope / distinction:** `component_id` 在当前 model 的正式结果中唯一；它不是 CCD component ID、residue name、PDB `chain_id` 或其它运行时 chain 编号。下游 Skill 应直接消费正式结果或 mapping 中已有的 `component_id`，不得根据 residue name、chain 组织或当前空间关系自行重建其值。
