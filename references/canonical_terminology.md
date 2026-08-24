@@ -119,3 +119,10 @@ Scope / distinction
 **Preferred expression:** `component_id`  
 **Definition:** 结构准备 1.2 在一个 model 的正式 `classification_result.yaml` 中为最终 component 物化的稳定、不透明身份标识。该 component 作为直接父级拥有其 `residues`，并使 component 与成员 residue 能在后续选择、结构映射和 topology preparation 中持续引用。  
 **Scope / distinction:** `component_id` 在当前 model 的正式结果中唯一；它不是 CCD component ID、residue name、PDB `chain_id` 或其它运行时 chain 编号。下游 Skill 应直接消费正式结果或 mapping 中已有的 `component_id`，不得根据 residue name、chain 组织或当前空间关系自行重建其值。
+
+### topology-linked
+
+**Canonical term:** `topology-linked`  
+**Preferred expression:** `topology-linked`  
+**Definition:** 用于概括结构准备与拓扑准备中会影响相关 residue 的 `topology_class` 或后续拓扑处理归属的连接、配位等情况。当前典型包括共价连接，以及被明确要求产生拓扑作用的金属配位。  
+**Scope / distinction:** `topology-linked` 是上位概念，不替代具体关系类型；也不等同于 residue 的 `topology_class` 枚举值 `TOPOLOGY_LINKED_NONSTANDARD`。已确认但不产生拓扑作用的金属配位不属于 `topology-linked`。
