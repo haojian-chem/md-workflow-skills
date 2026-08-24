@@ -115,6 +115,12 @@ Stage-level architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
 
+2.3 has detailed frozen parameterization-model material, but is still freeze-only:
+
+```text
+00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md
+```
+
 2.5 has detailed frozen generation material, but is still freeze-only:
 
 ```text
@@ -123,7 +129,7 @@ Stage-level architecture authority:
 00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
 ```
 
-These files preserve the detailed pre-authorization 2.5 material for later formal Skill generation; they are not runtime Skills.
+These files preserve the detailed pre-authorization 2.3 / 2.5 material for later formal Skill generation; they are not runtime Skills.
 
 ## 5. Stage 3 — System construction / solvation
 
@@ -249,7 +255,7 @@ Historical design Markdown: `00_authoring/archive/`.
 ## 9. Current work status
 
 - Stage 1：1.1–1.9 active Skills 已生成；1.2 已按 current authoring 规则重新生成，固定科学脚本流水线已退出 active path，v2 正式结果契约及 1.3 / 1.5 / 1.8 / 1.9 / 2.1 接口已复核；1.5 已同步新版 1.2 的缺失残基与重原子组成/命名检查语义；1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成并完成 post-generation authoring/interface consistency check；
-- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill并完成 post-generation authoring/interface consistency check，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.5 详细方案仍只属于 freeze；
+- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill并完成 post-generation authoring/interface consistency check，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.3 参数化模型规则与 2.5 详细方案已有专项 freeze；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
