@@ -1,6 +1,6 @@
 ---
 name: structure_completeness_check
-description: 结构准备 1.5。对每个当前 target 独立执行结构完整性检查：在 1.2 已有诊断基础上限定到 1.3 selection，并对 1.4 实际处理过的残基在当前结构上重新诊断，生成可追溯的 structure_completeness_report.yaml；本步骤不修改结构。
+description: 结构准备 1.5。对每个当前 target 独立执行结构完整性检查：在 1.2 已有诊断基础上限定到 1.3 selection，并对 1.4 实际处理过的残基在当前结构上重新检查重原子组成与命名，生成可追溯的 structure_completeness_report.yaml；本步骤不修改结构。
 ---
 
 # Purpose
@@ -15,7 +15,7 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 
 本 Skill 对当前 target 的当前结构执行完整性检查，并形成该 target 独立的正式 `structure_completeness_report.yaml`。
 
-1.5 本身就是检查环节。它不再建立一套新的 completeness taxonomy，也不修改结构。
+1.5 本身就是检查环节。它不重新建立 1.2 已定义的问题类型，也不修改结构。
 
 每个 target 独立检查、独立生成报告。
 
@@ -23,11 +23,11 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 
 本 Skill 负责：
 
-- 将 1.2 已有 completeness / heavy-atom diagnosis 限定到 1.3 当前 target 的 selection；
+- 将 1.2 已有缺失残基与重原子组成/命名检查结果限定到 1.3 当前 target 的 selection；
 - 从 1.2 已确认的 missing-residue 信息中提取当前 target 的缺失范围；
 - 根据 1.4 正式报告定位实际经过 alternate-conformation 处理的 residue；
-- 对这些 residue 在当前结构上重新执行与 1.2 相同语义的 atom-level completeness diagnosis；
-- 记录当前 target 的完整性问题及其判据来源；
+- 对这些 residue 在当前结构上重新执行与 1.2 相同语义的重原子组成与命名检查；
+- 记录当前 target 的结构完整性问题及其判据来源；
 - 生成并登记当前 target 的正式 completeness report。
 
 本 Skill 不负责：
@@ -57,9 +57,9 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 
 # Reference basis
 
-1.5 的 atom-level completeness diagnosis 沿用 1.2 已定义的诊断语义，不在本 Skill 中重新建立问题类型或比较规则。
+1.5 的重原子组成与命名检查沿用 1.2 已定义的诊断语义，不在本 Skill 中重新建立问题类型或比较规则。
 
-如果用户在 1.2 已经明确指定过 atom-level completeness 的检查依据，1.5 沿用该依据，并通过 1.2 `classification_result.yaml` 与对应 `reference_manifest.yaml` 定位实际 reference。
+如果用户在 1.2 已经明确指定过重原子组成与命名检查依据，1.5 沿用该依据，并通过 1.2 `classification_result.yaml` 与对应 `reference_manifest.yaml` 定位实际 reference。
 
 如果用户在 1.2 没有明确指定检查依据，则在需要执行 1.5 新诊断前向用户确认。推荐：
 
@@ -100,25 +100,25 @@ chain_id + resid
 
 1.5 不根据 PDB residue-number gap、chain break 或坐标缺口重新猜测 missing residue。
 
-## 3. Residue-level atom completeness
+## 3. Residue-level heavy-atom composition and naming
 
-先将 1.2 已有 atom-level diagnosis 限定到当前 1.3 target selection。
+先将 1.2 已有重原子组成与命名检查结果限定到当前 1.3 target selection。
 
-如果当前 target 没有执行 1.4，则当前 selected residues 的 atom-level diagnosis 直接来自 1.2 已有结果。
+如果当前 target 没有执行 1.4，则当前 selected residues 的重原子组成与命名检查结果直接来自 1.2 已有结果。
 
 如果当前 target 执行过 1.4：
 
 1. 读取当前 target 对应的 `altloc_resolution_report.yaml`；
 2. 识别 1.4 实际处理过的 residue；
-3. 对这些 residue 基于当前 PDB 重新执行与 1.2 相同语义的 atom-level completeness diagnosis；
-4. 这些 residue 使用 1.5 当前诊断结果，不再沿用其 1.2 atom-level diagnosis；
-5. 未被 1.4 实际处理的 selected residues 不重复诊断，使用 1.2 已有结果。
+3. 对这些 residue 基于当前 PDB 重新执行与 1.2 相同语义的重原子组成与命名检查；
+4. 这些 residue 使用 1.5 当前检查结果，不再沿用其 1.2 重原子检查结果；
+5. 未被 1.4 实际处理的 selected residues 不重复检查，使用 1.2 已有结果。
 
-如果 1.4 的一个 resolved group 实际涉及多个 residues，则对该 group 中实际受 1.4 处理影响的 residues 分别完成当前诊断。
+如果 1.4 的一个 resolved group 实际涉及多个 residues，则对该 group 中实际受 1.4 处理影响的 residues 分别完成当前检查。
 
-只有存在 completeness issue 的 residue 写入 `residue_issues`；没有问题的 residue 不需要逐项复制进正式报告。
+只有存在重原子组成或命名问题的 residue 写入 `residue_issues`；没有问题的 residue 不需要逐项复制进正式报告。
 
-具体 issue type 沿用 1.2 已定义的诊断语义。1.5 不新增、重命名或重新分类这些问题类型。
+具体 issue type 沿用 1.2 已定义的问题类型。1.5 不新增、重命名或重新分类这些问题类型。
 
 ## 4. 判据不足
 
@@ -228,21 +228,21 @@ source_report: classification_result
 
 # Completion requirements
 
-1.5 不再对 completeness science 做第二轮重复检查。正式报告生成前只确认本次检查结果已经完整、可定位、可追溯：
+1.5 不再对既有 1.2 检查结果做第二轮重复检查。正式报告生成前只确认本次检查结果已经完整、可定位、可追溯：
 
 - 当前 target 与实际检查 PDB 已唯一确定；
 - 报告中的 `chain_id + resid` 与 1.3 target mapping 一致；
 - 1.2 `classification_result.yaml` 与对应 `reference_manifest.yaml` 能够定位本次需要沿用的 reference basis；
 - 当前 selection 中的 missing residues 已按真实连续区间记录，没有因 1.3 resid 重新编号而跨未 selected residue 错误合并；
-- 1.4 实际处理过的 selected residues 已基于当前 PDB 完成 atom-level diagnosis；
-- 未被 1.4 处理的 selected residues 使用 1.2 已有 diagnosis，没有因 1.5 再次重复检查；
+- 1.4 实际处理过的 selected residues 已基于当前 PDB完成重原子组成与命名检查；
+- 未被 1.4 处理的 selected residues 使用 1.2 已有检查结果，没有因 1.5 再次重复检查；
 - 每个 residue issue 都能定位到明确 residue，涉及 atom 时能够定位到明确 atom name；
 - 来自上游的判断能够通过 `source_report` 定位到 target 一级登记的完整报告路径；
 - 1.5 新判断记录了实际使用的 force-field / CCD reference file 完整绝对路径；
 - 没有尚未解决的关键检查依据；
 - 1.5 没有修改当前结构。
 
-这些要求只确认 1.5 的结果是否完整可用，不重新重复执行一次 completeness diagnosis。
+这些要求只确认 1.5 的结果是否完整可用，不重新重复执行一次重原子组成与命名检查。
 
 # Project result registration
 
@@ -257,6 +257,6 @@ source_report: classification_result
 登记时至少提供：
 
 - `structure_completeness_report.yaml` 的完整绝对路径；
-- 简短说明：该文件是 Stage 1.5 当前 target 的正式结构完整性检查结果，记录 missing-residue ranges、residue-level completeness issues 及对应判据来源。
+- 简短说明：该文件是 Stage 1.5 当前 target 的正式结构完整性检查结果，记录 missing-residue ranges、residue-level heavy-atom composition/naming issues 及对应判据来源。
 
 `project_result_index.md` 只负责正式结果检索；本 Skill 不复制或重新定义其内部组织格式。
