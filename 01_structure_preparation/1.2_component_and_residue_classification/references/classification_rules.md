@@ -1,29 +1,53 @@
 # 1.2 组分与残基分类规则
 
-本文件拥有结构准备 1.2 的详细科学判断规则。执行主线见 `../SKILL.md`；正式结果组织见 `result_recording_rules.md`；机器字段约束见 `../schemas/`。
+本文件拥有结构准备 1.2 的详细科学判断规则。执行主线见 `../SKILL.md`；正式结果数据结构与字段语义见 `result_recording_rules.md`；机器字段约束见 `../schemas/`。
 
-## 1. 身份、名称与正式顺序
+## 1. Model、component 与 residue 身份
 
-源结构中的残基名、原子名、链、残基编号、插入码和 `altLoc` 必须按实际记录解释。除非当前参考文件本身给出明确对应关系，不通过大小写归一化、模糊匹配、正则近似或字符串增删推断残基或原子身份。
+1.2 按 model 独立处理。一份正式 `classification_result.yaml` 只描述一个 model；model 信息只在文件级记录一次，不复制到每个 component 或 residue。
 
-每个已观察残基保留：
+正式结果的对象层级固定为：
 
-- `source_identity`：当前 1.2 输入结构中的源身份；
-- `current_identity`：当前 1.2 实际检查对象中的身份。
+```text
+model
+└── component_id
+    └── residue_id
+```
 
-1.2 不修改结构，因此普通已观察残基的 `source_identity` 与 `current_identity` 应指向同一结构实例。已确认缺失残基没有当前坐标实例，`current_identity` 为 `null`。
+规则：
 
-`residue_id` 与 `component_id` 的正式含义按仓库级 `canonical_terminology.md`。`source_resid`、`current_resid`、PDB `resid`、`sequence_position` 与 `residue_id` 是不同字段，正式记录不得互相替代。
+- `component_id` 在当前 model 的正式结果中唯一；
+- `residue_id` 在所属 `component_id` 内唯一；
+- 下游定位 residue 使用 `component_id + residue_id`；
+- `component_id` / `residue_id` 是稳定、不透明的正式 identity，不从 chain、resid、残基名或空间关系重新推导；
+- 当前 active 1.2 不使用 source-derived ID 公式，也不需要 `selection_identity.py`。
 
-`residue_records[]` 的数组顺序是 1.2 建立的正式残基顺序。已观察残基和 `MISSING_EXPECTED` 残基都放在其实际序列/结构语义位置。
+每个 residue 同时记录：
 
-`chain_groups[].residue_ids` 只保存已观察残基成员，`missing_residue_ids` 只保存已确认缺失残基成员；两者均只表达成员关系，不承担排序语义。
+```text
+source_chain_id
+current_chain_id
+source_resid
+current_resid
+source_residue_name
+current_residue_name
+```
 
-稳定身份的机械物化可以使用 `../scripts/selection_identity.py`。该辅助工具只根据已经确定的身份和成员关系生成 `residue_id`、`component_id`、`endpoint_id` 与 `relation_id`，不拥有任何分类或关系判断。
+其中：
 
-## 2. 分类语义与内置残基登记表
+- `source_*` 表示当前 1.2 输入结构中的原始定位或名称；1.2 不改写这些值；
+- `current_*` 表示生成本次 1.2 正式结果时当前结构中的定位或名称；
+- 1.2 本身不修改结构，因此普通已存在 residue 的 source / current 值通常相同；
+- 已确认缺失 residue 没有当前坐标实例，`current_resid` 与 `current_residue_name` 为 `null`；`current_chain_id` 是否能够可靠确定按当前结构与序列映射实际记录；
+- `source_resid` / `current_resid` 保存当前结构格式中用于定位该 residue 的实际 resid 表达，不再拆出独立 `insertion_code` 字段。
 
-`polymer_class` 固定为：
+每个 component 内 `residues` 的数组顺序是 1.2 对该 component 建立的正式 residue 顺序。缺失 residue 仍位于其应有顺序位置，不建立单独的 missing-residue 成员表。
+
+## 2. 分类语义与依据
+
+每个 residue 必须分别形成两类分类结果。
+
+`polymer_class`：
 
 ```text
 POLYMER
@@ -32,7 +56,7 @@ NONPOLYMER
 WATER
 ```
 
-`topology_class` 固定为：
+`topology_class`：
 
 ```text
 STANDARD_RESIDUE
@@ -42,7 +66,12 @@ SOLVENT_COMPONENT
 ION_COMPONENT
 ```
 
-Skill 内置的精确名称分类依据分别保存在：
+二者语义不同：
+
+- `polymer_class` 描述 residue / component 的聚合物或化学组分类别；
+- `topology_class` 描述该 residue 在后续 topology preparation 中的处理归属。
+
+Skill 内置精确名称登记表：
 
 ```text
 references/standard_residue_registry.yaml
@@ -50,9 +79,7 @@ references/topology_linked_nonstandard_residue_registry.yaml
 references/independent_nonstandard_residue_registry.yaml
 ```
 
-只有当前分类确实需要相应登记表时才读取对应文件；不得把登记表中没有列出的名称自动判为某一类别。
-
-如果项目提供结构化残基定义、共价连接定义或金属配位定义，可分别按以下 schema 理解其字段：
+项目提供的结构化定义文件可以按以下 schema 理解：
 
 ```text
 schemas/project_residue_definitions.schema.yaml
@@ -60,17 +87,7 @@ schemas/possible_connections.schema.yaml
 schemas/possible_coordination.schema.yaml
 ```
 
-这些 schema 只约束项目定义文件的字段，不替项目文件本身提供科学事实。
-
-`topology_class` 描述当前组分在后续拓扑处理中的归属，不表示证据充分程度。检查过程中可以使用以下 `resolution_status` 区分判断状态：
-
-```text
-RESOLVED
-CONFLICT
-UNRESOLVED
-```
-
-但是正式 v2 `classification_result.yaml` 只接受 `resolution_status: RESOLVED`。如果 `CONFLICT` 或 `UNRESOLVED` 会影响最终分类，必须在正式 COMPLETE 结果生成前闭合。
+这些 schema 只约束输入字段，不替项目文件本身提供科学事实。
 
 ### `REGISTRY`
 
@@ -93,218 +110,237 @@ UNRESOLVED
 → 当前结构中的实体、聚合物或化学组分语义
 ```
 
-这里的“精确”表示当前 `residue_name` 能直接对应到实际参考条目；不得仅因为名称相近就视为同一残基。
+当前 residue name 与参考定义必须精确对应；不得用大小写归一化、模糊匹配、正则近似或字符串增删推断为同一 residue。
 
-不同有效依据给出互相冲突的分类，且冲突会改变正式 `topology_class` 时，记录冲突并向用户确认；不得静默选择一个来源覆盖另一个。
+不同有效依据给出互相冲突的分类，且冲突会改变正式 `polymer_class`、`topology_class` 或 component membership 时，不静默选择一个来源覆盖另一个；根据当前证据由 Agent 判断，仍不能唯一闭合时向用户确认。
 
-CCD 中存在某个组分定义，只说明存在该化学组分参考，不自动把对应残基归为 `STANDARD_RESIDUE`。
+CCD 中存在某个组分定义不等于该 residue 自动属于 `STANDARD_RESIDUE`。
 
-内置残基登记表中的名称对应只用于其明确拥有的分类语义。结构中的原始 `residue_name` 仍按源身份保存，不因登记表中的对应关系而改写输入结构。
+## 3. RTP 与 CCD reference
 
-## 3. 目标力场残基定义
+### 3.1 RTP
 
-当分类模式或重原子检查需要目标力场时，实际判断依据必须指向当前指定力场中真正使用的残基定义文件和具体条目。
+当分类或重原子检查需要目标力场时，实际依据必须是当前目标力场中真正使用的 `*.rtp` 文件。
 
-对 GROMACS 力场，标准残基识别只依据实际 `*.rtp` 中精确同名的 residue block。不得根据力场目录名、`residuetypes.dat`、文件名提示或字符串增删规则推断某残基一定存在定义。
+对 GROMACS 力场：
 
-端基角色如果会改变应使用的残基定义，先依据当前结构或项目语义确定角色，再使用目标力场实际提供的明确条目或对应关系。1.2 不通过应用 `.n.tdb`、`.c.tdb` 等 patch 来生成虚构的比较模板。
+- 标准 residue 识别只依据实际 `*.rtp` 中相应 residue block；
+- 不根据力场目录名、`residuetypes.dat` 或文件名提示推断 residue 一定存在定义；
+- 端基角色如果会改变适用定义，先依据当前结构 / 项目语义确定角色，再使用实际存在的明确 residue definition；
+- 1.2 不通过 `.n.tdb`、`.c.tdb` 等 patch 构造虚构的比较模板。
 
-## 4. CCD 参考
+每个本次实际使用的 RTP 文件在 `classification_result.yaml` 文件级 `references` 中赋值为：
 
-需要 CCD 作为比较依据时，使用当前任务实际选定的 CCD 组分定义文件。
+```text
+RTP_1
+RTP_2
+...
+```
 
-可用来源包括：
+变量值直接写实际文件路径。
 
-- `references/ccd_library/` 中现有的已批准本地参考；
-- 项目中已有的 CCD 组分定义文件；
-- 用户明确提供的 CCD 组分定义文件。
+### 3.2 CCD
 
-项目或用户提供的 CCD 文件**不要求**转换、复制或导入为 `references/ccd_library/` 的目录结构后才能使用。只要当前 Agent 能够从该文件可靠确定 CCD component ID、重原子名称及当前判断需要的其它字段，就可以直接作为本次参考，并在 `reference_manifest.yaml` 中记录实际文件路径和 SHA-256。
+需要 CCD 作为 reference 时，使用当前任务实际确定的 CCD component file。可用来源包括：
 
-同一 CCD component ID 存在多个内容不同的候选定义，且差异会改变本次分类或重原子判断时，记录参考文件冲突，并向用户确认本次实际使用哪个文件。
+- `references/ccd_library/` 中现有已批准本地参考；
+- 项目已有 CCD component file；
+- 用户明确提供的 CCD component file。
 
-CCD component ID 与结构 `residue_name` 的对应必须有明确依据。若二者不同，只能在项目定义、CCD 中明确记录的替代名称信息或用户确认建立对应后使用；不得依据名称相似度自动映射。
+项目或用户提供的 CCD 文件不需要复制或导入到 Skill 内置 CCD library 后才能使用。
 
-## 5. 缺失残基检查
+CCD reference 的目录在 `classification_result.yaml` 文件级 `references` 中赋值为：
 
-缺失残基检查先于重原子组成与命名检查。
+```text
+CCD_PATH_1
+CCD_PATH_2
+...
+```
 
-只在存在可追溯依据时物化 `MISSING_EXPECTED` 残基，例如：
+具体检查项引用实际文件时写成：
 
-- PDB/mmCIF 中明确的聚合物序列或缺失残基注释；
-- 与当前结构链能够可靠对应的序列文件；
+```text
+{CCD_PATH_1}/HEM.cif
+```
+
+同一 CCD component ID 存在多个内容不同的候选定义，且差异会改变本次分类或重原子判断时，必须明确当前实际采用哪个文件；不能静默混用。
+
+CCD component ID 与结构 residue name 不同时，只有存在明确项目定义、CCD 自身明确名称对应信息或人工确认时才建立对应；不得根据名称相似度自动映射。
+
+## 4. Residue 三级检查与短路规则
+
+每个 residue 的三个结构检查固定依次为：
+
+```text
+1. 残基缺失检查
+↓ PASS
+2. 多构象检查
+↓ PASS
+3. 重原子组成与命名检查
+```
+
+短路规则是正式结果语义的一部分：
+
+- 残基缺失检查为 `ISSUE` → 多构象检查和重原子检查均为 `SKIPPED`；
+- 残基缺失检查为 `PASS`、多构象检查为 `ISSUE` → 重原子检查为 `SKIPPED`；
+- 只有前两项均为 `PASS` 时才执行重原子检查；
+- 普通 solvent / ion 等当前科学规则明确无需重原子比较的对象，可以在前两项 `PASS` 后把重原子检查记为 `NOT_APPLICABLE`。
+
+正式 COMPLETE 结果中，适用但缺少可靠 reference 的重原子检查不能伪装成 `PASS` 或 `NOT_APPLICABLE`；应先解决 reference 定位 / 选择问题。
+
+### 4.1 残基缺失检查
+
+只在有可追溯依据时确认 residue 应存在但当前 model 中没有坐标，例如：
+
+- PDB/mmCIF 中明确的聚合物序列或缺失 residue 注释；
+- 与当前结构 chain 能可靠对应的序列文件；
 - 当前项目已经确认的序列—结构对应关系。
 
-不得仅依据以下现象物化缺失残基：
+不得仅依据以下现象判定 residue 缺失：
 
-- 残基编号不连续；
-- `TER` 或链断点；
+- resid 数值不连续；
+- `TER` 或 chain break；
 - 两段坐标之间存在空间空缺；
-- 视觉判断“这里应该还有残基”。
+- 视觉判断“这里应该还有 residue”。
 
-每个已确认缺失残基必须能够定位到当前正式残基顺序；若残基身份或链/序列对应不能唯一确定，记录为未解决事项，不自行猜测。
+缺失 residue 必须能被放入所属 component 的正式 residue 顺序，并具有可确定的 `source_chain_id`、`source_resid` 和 `source_residue_name`。如果这些信息不足以唯一确定 residue 身份，当前事项尚未闭合，不自行猜测。
 
-整个残基缺失时，不再为该位置记录“缺失全部重原子”。其 `heavy_atom_check.execution_status` 使用 `NOT_APPLICABLE`，并记录原因 `RESIDUE_MISSING`。
+整个 residue 缺失时，不再把它重复记录成“缺失全部重原子”。
 
-## 6. 多构象检查
+### 4.2 多构象检查
 
-多构象检查与重原子组成与命名检查是两个独立检查项目。
+仅检查当前 residue 是否存在多构象问题。
 
-对每个已观察残基检查当前 model 中实际存在的多构象表示。普通 PDB 以非空 `altLoc` 为主要依据；其它格式按能够可靠映射的等价语义处理。
+普通 PDB 主要依据非空 `altLoc`；其它格式按可可靠映射的等价表示判断。
 
-结果至少区分：
-
-```text
-SINGLE_CONFORMATION
-MULTIPLE_CONFORMATIONS
-```
-
-存在多构象时记录实际 `altLoc` ID，并对具有非空 `altLoc` 的原子名称记录其候选状态和可读取的占有率。
-
-`altLoc` 为空的原子属于共享原子。相同原子名称在互斥的不同 `altLoc` 中各出现一次，本身不属于重复原子名称。
-
-如果可以可靠拆分候选构象，则某个候选构象用于重原子比较的原子集合为：
+1.2 在这一项只回答：
 
 ```text
-共享原子
-+
-该候选 altLoc 的原子
+当前 residue 是否存在多构象问题？
 ```
 
-不同候选构象不得合并成一个虚构原子集合。
+1.2 不负责：
 
-如果多构象标记本身无法可靠解释为独立候选构象，保留多构象事实，同时把对应重原子比较标记为 `NOT_PERFORMED` 并记录实际原因；不得通过任意选择一个 `altLoc` 来完成 1.2 比较。
+- 选择保留哪个构象；
+- 比较候选构象优先级；
+- 以 occupancy 或局部环境完成构象取舍；
+- 将共享原子与某个 `altLoc` 组合成候选结构；
+- 删除其它构象。
 
-## 7. 重原子组成与命名检查
+这些处理由 1.4 拥有。
 
-本项只处理当前存在的残基。开始比较前必须先确定本次实际使用的残基定义。
+因此一旦本项发现多构象问题，直接记录 `ISSUE`，本 residue 的重原子检查为 `SKIPPED`。
 
-### 7.1 参考依据
+### 4.3 重原子组成与命名检查
 
-参考依据按当前分类模式和最终 `topology_class` 确定：
+本项只在前两项均 `PASS` 时执行。
 
-- `FORCE_FIELD_ANALYSIS` 模式下的 `STANDARD_RESIDUE`：使用当前指定目标力场中已经用于该残基识别的实际残基定义；
-- `REGISTRY` 模式下的 `STANDARD_RESIDUE`：使用当前 `residue_name` 对应的实际 CCD 组分定义；
-- `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`：使用当前实际确认的 CCD 组分定义；
-- 普通 `SOLVENT_COMPONENT` 和 `ION_COMPONENT`：默认不执行本项的重原子比较，`execution_status` 使用 `NOT_APPLICABLE`。
+#### Reference 选择
 
-如果当前项目明确为某个特殊溶剂或离子组分指定了需要检查的残基定义，则按该实际定义执行，不套用普通溶剂/离子的默认豁免。
+- `FORCE_FIELD_ANALYSIS` 下的 `STANDARD_RESIDUE`：使用当前目标力场中实际适用的 RTP residue definition；
+- `REGISTRY` 下的 `STANDARD_RESIDUE`：使用当前实际确认的 CCD component definition；
+- `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD`：使用当前实际确认的 CCD component definition；
+- 普通 `SOLVENT_COMPONENT` / `ION_COMPONENT`：默认 `NOT_APPLICABLE`，除非当前项目明确要求基于特定残基定义检查。
 
-应执行重原子检查的已观察残基如果没有可用参考，不得构造预期重原子集合，也不得把该残基伪装为检查完成。先解决参考文件定位或选择问题，再形成正式 COMPLETE 结果。
+#### 检查内容
 
-### 7.2 重复原子名称
+以当前 residue 的重原子名称及可靠元素信息与实际 reference 定义比较，检查：
 
-在每个实际比较原子集合内检查原子名称出现次数。
+1. reference 中存在、当前 residue 中没有的重原子；
+2. 当前 residue 中存在、reference 中没有的额外重原子；
+3. 同一 residue 中重复出现的原子名称；
+4. 当前原子名称与 reference 名称不一致；
+5. 当前结构与 reference 都能可靠提供元素信息时的元素不一致。
 
-同一原子名称在同一原子集合中出现多次，记录 `DUPLICATE_ATOM_NAME`，并记录原子名称、出现次数及适用的 `altLoc` 范围。
+原子名称对应必须有明确依据。若当前名称与 reference 名称不同，仅在 CCD 明确替代名称、项目已确认对应或人工确认时记录对应；不能用名称相似度猜测。
 
-不同互斥 `altLoc` 中的同名原子不因为名称相同而互相构成重复。
+元素信息缺失或不可靠时，不根据 atom name 首字母强行推断元素。
 
-### 7.3 精确重原子比较
+## 5. Evidence 记录语义
 
-以原子名称为键，比较：
+正式结果中的 `evidence` 表示该项最终判断采用的直接依据，不保存完整推理过程。
+
+允许的表达：
 
 ```text
-当前残基或候选构象中的重原子名称及出现次数
-↔
-实际参考条目定义的重原子名称及出现次数
+RTP_n
+{CCD_PATH_n}/XXX.cif
+智能体判断
+人工决策
 ```
 
-原始精确比较必须分别记录：
+使用规则：
 
-- `missing_expected_atom_names`：参考定义存在、当前原子集合中没有的重原子名称；
-- `unexpected_observed_atom_names`：当前原子集合中存在、参考定义中没有的重原子名称。
+- Agent 直接依据目标力场 RTP 定义完成判断 → 记录相应 `RTP_n`；
+- Agent 直接依据 CCD component file 完成判断 → 记录 `{CCD_PATH_n}/XXX.cif`；
+- 判断由 Agent 综合当前结构、结构注释、项目语义等信息完成，而不是直接以 RTP / CCD 文件作为判据 → `智能体判断`；
+- 最终结论由用户确认 → `人工决策`。
 
-不得先应用原子名称对应关系，再生成所谓“原始比较”。
+`RTP_n` / `CCD_PATH_n` 必须能在同一 `classification_result.yaml` 文件级 `references` 中解析。1.2 不生成 `reference_manifest.yaml`，也不使用 `ref_001`、`reference_entry` 或对所有 reference 文件强制计算 SHA-256 的机制。
 
-### 7.4 原子名称不匹配与对应关系
+## 6. 共价连接
 
-如果 CCD 中明确记录的替代原子名称、项目已确认对应关系或用户确认能够说明某个当前原子名称与某个参考原子名称对应，则单独记录原子名称对应候选，并在 `findings` 中使用 `ATOM_NAME_MISMATCH`。
-
-未经确认的对应关系不改变原始精确比较。对应关系已经有充分依据或经用户确认后，可以另外生成 `effective_comparison`；`exact_comparison` 始终保留。
-
-### 7.5 元素不一致
-
-当当前结构和参考定义都能可靠提供元素信息时，对同名或已确认对应的原子检查元素是否相同。元素不同则记录 `ELEMENT_MISMATCH`，并记录当前结构元素与参考定义元素。
-
-元素字段缺失或不可靠时，不根据原子名称首字母强行构造元素结论。
-
-## 8. 共价连接
-
-共价连接判断使用当前可获得的实际证据，包括：
+共价连接判断可以使用：
 
 - PDB `LINK`、mmCIF `_struct_conn` 等显式结构关系；
-- 项目明确提供的共价连接定义；
-- 端点的残基和原子身份；
+- 项目共价连接定义；
+- 端点 residue / atom 身份；
 - 局部键长和化学环境。
 
-显式结构关系只有在端点身份能够可靠对应，并且没有明显元素或几何冲突时，才作为已确认结构证据。
+只有几何接近时不能自动等同于化学共价连接。显式结构关系只有在端点能够可靠定位且不存在明显化学冲突时，才作为确认依据。
 
-仅有几何距离落在合理范围内时，关系状态只能是 `CANDIDATE`，不能自动等同于已建立共价键。
-
-显式关系、项目定义和实际几何彼此冲突时记录 `CONFLICT`。若不同解释会改变 `topology_class` 或后续处理对象，向用户确认。
-
-确认的共价连接属于会产生拓扑作用的关系，因此写入正式结果时设置 `topology_effect_applied: true`。
-
-## 9. 金属配位
-
-金属配位判断独立于共价连接。
-
-确认金属配位需要能够可靠定位：
-
-- 金属端点；
-- 配位原子端点；
-- 对应残基和原子身份；
-- 支持该判断的显式结构信息、项目定义或局部几何证据。
-
-仅有合理的金属—配位原子距离可以形成 `CANDIDATE`，但不能自动产生拓扑作用。
-
-确认的金属配位只有在当前项目定义明确 `promote_nonstandard_to_linked: true`，或用户明确确认该关系应作为后续拓扑连接处理时，才设置 `topology_effect_applied: true`。
-
-## 10. 关系状态与人工确认
-
-关系判断使用以下状态语义：
+工作判断可以形成：
 
 ```text
 CONFIRMED
 CANDIDATE
 CONFLICT
 REJECTED
-NOT_EVALUATED
 ```
 
-用户确认只在现有证据不足以唯一决定，且不同选择会改变正式关系、分类或 `topology_effect_applied` 时触发。
+最终写入 `confirmed_relations` 的关系必须已经闭合；已经明确拒绝且有审计价值的候选写入 `rejected_candidates`。会改变 component membership、`topology_class` 或 `topology_effect_applied` 的候选 / 冲突若尚未闭合，则不能形成正式 COMPLETE 结果。
 
-实际发生的用户关系决定记录到 `relation_decisions.yaml`，并绑定当前结构 SHA-256、`selected_model_id` 和 `relation_id`。只有用户已经明确回答的关系才写入该文件。
+如果需要用户确认关系，人工决定记录到当前 model 目录的 `relation_decisions.yaml`。
 
-人工决定必须反映到最终 `classification_result.yaml`；不能只留下单独决定文件而让正式结果继续保存旧状态。
+## 7. 金属配位
 
-## 11. 拓扑作用与最终分组
+金属配位独立于共价连接判断。
 
-所有 `topology_effect_applied: true` 的已确认关系应用后，再形成最终 `topology_class`、`chain_groups` 和 `component_id`。
+确认存在配位关系至少要求：
+
+- 金属端点能够唯一定位；
+- donor atom 能够唯一定位；
+- 当前结构证据与化学身份足以支持该配位判断。
+
+距离接近本身只作为证据，不自动等同于已确认配位。
+
+确认“存在配位关系”不自动产生 topology effect。只有当前项目定义明确要求，或用户明确确认该关系应进入 topology connection 时，才设置 `topology_effect_applied: true`。
+
+## 8. Topology effect 与最终 component membership
+
+确认且 `topology_effect_applied: true` 的关系会影响最终 topology grouping。
 
 基本规则：
 
-- 标准残基保持 `STANDARD_RESIDUE`；
-- `INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 或 `ION_COMPONENT` 如果参与产生拓扑作用的已确认关系，转为 `TOPOLOGY_LINKED_NONSTANDARD`；
-- 原 `SOLVENT_COMPONENT` 如果 `polymer_class: WATER`，转为 topology-linked 后将 `polymer_class` 改为 `NONPOLYMER`；
-- 非标准实例连接一条标准聚合物链时，最终分组保留该连接归属；
-- 非标准实例同时连接多条标准聚合物链时，使用能够表达多链连接的独立组分分组；
-- 只由非标准残基构成的已连接单元形成独立的 `LINKED_NONSTANDARD_GROUP`；
-- 聚合物—聚合物直接关系本身不要求把原聚合物链合并成一个 `chain_group`。
+- standard residue 保持 `STANDARD_RESIDUE`；
+- 原本为 `INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 或 `ION_COMPONENT` 的 residue 如果参与需要形成 topology connection 的关系，转为 `TOPOLOGY_LINKED_NONSTANDARD`；
+- 原本为 water 的对象在成为 topology-linked residue 后不再按普通 `WATER` / solvent 语义处理；
+- 非标准 residue 与一个 standard polymer component 建立 topology connection 时，归入该 component；
+- 只由 topology-linked nonstandard residues 构成的连接单元形成一个独立 component；
+- 一个非标准单元同时连接多个 standard polymer chain 时，形成共同的 multichain component；
+- polymer–polymer 直接关系本身不要求把两个 polymer component 无条件合并。
 
-候选、冲突、拒绝或未评估关系不得改变最终分组。
+最终 component membership 必须基于全部已确认且产生 topology effect 的关系形成，再物化 `component_id` / `residue_id`。候选、冲突、拒绝或未产生 topology effect 的关系不改变最终 component membership。
 
-`component_id` 必须基于最终 `group_type`、该分组的已观察 `residue_ids` 和缺失 `missing_residue_ids` 物化。缺失残基不能同时出现在两个成员集合中。
+## 9. 正式结果闭合条件
 
-## 12. 检查完成与发现问题
+结构中存在缺失 residue、多构象问题或重原子问题本身不阻止 1.2 完成；这些是本 Skill 需要正式记录的检查结果。
 
-“检查已经完成”和“未发现问题”不是同一个状态。
+以下情况会阻止形成正式 `result_status: COMPLETE`：
 
-一次检查已经按当前对象和参考完整执行，即使发现缺失残基、多构象、重原子差异或候选关系，也可以记录为已完成检查。
-
-对普通已观察残基，应执行的重原子组成与命名检查缺少实际参考时，当前 1.2 不形成正式 COMPLETE 结果；先解决参考依据。
-
-只有多构象本身使当前残基无法形成可靠单一/候选原子集合时，才允许在正式结果中明确记录该重原子比较 `NOT_PERFORMED`，并由后续多构象处理及重新检查环节继续处理。
-
-如果当前需要形成的分类、稳定身份、关系或拓扑作用判断无法可靠完成，当前 1.2 保持未完成，不得把未检查或未解决状态伪装成正式完成结果。
+- 应存在的 residue 身份无法唯一确定；
+- 应执行的重原子检查没有可靠 reference；
+- 分类冲突仍会改变最终 `polymer_class` / `topology_class`；
+- 关系冲突仍会改变 component membership 或 `topology_effect_applied`；
+- result 中的 evidence 无法解析到实际采用的 reference；
+- 规定的三级 residue 检查没有按短路顺序完整记录。
