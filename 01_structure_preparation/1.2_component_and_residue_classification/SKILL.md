@@ -18,6 +18,7 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 1.2 负责形成：
 
 - 当前 model 中的 component / residue 层级及稳定 `component_id`、`residue_id`；
+- component 一级的 `chain_index`；
 - 每个 residue 的 `polymer_class` 与 `topology_class`；
 - 残基缺失检查结果；
 - 多构象问题检查结果；
@@ -187,17 +188,23 @@ RTP_n
 
 ### 7. 形成最终 component / residue 层级
 
-应用已经确认且 `topology_effect_applied: true` 的关系后，形成最终 component membership，再物化正式 `component_id` 与 `residue_id`。
+应用已经确认且 `topology_effect_applied: true` 的关系后，形成最终 component membership，再物化正式 `component_id`、component 一级 `chain_index` 与 component 内的 `residue_id`。
 
 正式层级为：
 
 ```text
 model
-└── component_id
+└── component_id + chain_index
     └── residue_id
 ```
 
-`component_id` 在当前 model 的正式结果中唯一；`residue_id` 在所属 `component_id` 内唯一。下游定位 residue 使用 `component_id + residue_id`，不得根据 chain、resid、残基名或其它结构字段重新构造这两个 identity。
+其中：
+
+- `component_id` 在当前 model 的正式结果中唯一，是稳定 component identity；
+- `chain_index` 在当前 model 中唯一，是该 component 的逻辑 chain/group 编号，不属于稳定 identity；
+- `residue_id` 在所属 `component_id` 内唯一；
+- 下游定位 residue 使用 `component_id + residue_id`；
+- 下游需要生成或映射 chain 表示时可以直接消费 component 一级 `chain_index`，不得根据 residue 的 `chain_id` 自行重建新的 1.2 `chain_index`。
 
 每个 component 内 `residues` 的数组顺序是该 component 的正式 residue 顺序。
 
@@ -224,7 +231,8 @@ relation_decisions.yaml
 
 - 一份 `classification_result.yaml` 只描述一个 model，model 信息未在 residue 内重复；
 - component / residue 按 `component_id → residue_id` 层级组织，没有平行的 `chain_groups[] + residue_records[]` 双重成员结构；
-- 每个 `component_id` 在当前 model 中唯一；每个 `residue_id` 在所属 component 内唯一；所有关系端点都能由 `component_id + residue_id` 定位；
+- 每个 component 同一级保存一个 `chain_index`；`component_id` 和 `chain_index` 在当前 model 中分别唯一；
+- 每个 `residue_id` 在所属 component 内唯一；所有关系端点都能由 `component_id + residue_id` 定位；
 - 每个 residue 均保存 `source_chain_id`、`current_chain_id`、`source_resid`、`current_resid`、`source_residue_name`、`current_residue_name`；缺失 residue 没有当前坐标实例时，当前 resid / residue name 按结果规则记录为 `null`；
 - 每个 residue 都有 `polymer_class` 与 `topology_class` 及其实际 `evidence`；
 - 三项 residue 检查严格按“残基缺失 → 多构象 → 重原子组成与命名”顺序执行；前一项为 `ISSUE` 时，后续项按规则为 `SKIPPED`；
