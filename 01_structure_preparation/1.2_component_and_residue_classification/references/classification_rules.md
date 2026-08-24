@@ -10,16 +10,18 @@
 
 ```text
 model
-└── component_id
+└── component_id + chain_index
     └── residue_id
 ```
 
 规则：
 
-- `component_id` 在当前 model 的正式结果中唯一；
+- `component_id` 在当前 model 的正式结果中唯一，是稳定、不透明的 component identity；
+- `chain_index` 在当前 model 中唯一，位于 component 一级，是该 component 的逻辑 chain/group 编号，不属于稳定 identity；
 - `residue_id` 在所属 `component_id` 内唯一；
 - 下游定位 residue 使用 `component_id + residue_id`；
-- `component_id` / `residue_id` 是稳定、不透明的正式 identity，不从 chain、resid、残基名或空间关系重新推导；
+- `component_id` / `residue_id` 不从 chain、resid、残基名或空间关系重新推导；
+- 下游需要映射 chain 时直接消费 1.2 已记录的 component 一级 `chain_index`，不得从 source/current chain ID 重新构造 1.2 `chain_index`；
 - 当前 active 1.2 不使用 source-derived ID 公式，也不需要 `selection_identity.py`。
 
 每个 residue 同时记录：
@@ -330,7 +332,7 @@ REJECTED
 - 一个非标准单元同时连接多个 standard polymer chain 时，形成共同的 multichain component；
 - polymer–polymer 直接关系本身不要求把两个 polymer component 无条件合并。
 
-最终 component membership 必须基于全部已确认且产生 topology effect 的关系形成，再物化 `component_id` / `residue_id`。候选、冲突、拒绝或未产生 topology effect 的关系不改变最终 component membership。
+最终 component membership 必须基于全部已确认且产生 topology effect 的关系形成，再物化 `component_id`、component 一级 `chain_index` 与 component 内 `residue_id`。候选、冲突、拒绝或未产生 topology effect 的关系不改变最终 component membership。
 
 ## 9. 正式结果闭合条件
 
