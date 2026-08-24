@@ -373,11 +373,14 @@ $defs:
   component:
     type: object
     additionalProperties: false
-    required: [component_id, residues]
+    required: [component_id, chain_index, residues]
     properties:
       component_id:
         type: string
         pattern: "^component_[0-9]{3,}$"
+      chain_index:
+        type: integer
+        minimum: 1
       residues:
         type: array
         minItems: 1
