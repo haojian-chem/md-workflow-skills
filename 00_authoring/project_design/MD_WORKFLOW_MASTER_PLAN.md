@@ -49,8 +49,10 @@ Status: ACTIVE SKILL GENERATION COMPLETED.
 Current implementation status:
 
 ```text
-1.1–1.4  active Skills completed
-1.5      active Skill generated; authoring/interface review completed
+1.1      active Skill completed
+1.2      active Skill regenerated; fixed scientific-script pipeline retired; v2 formal result contract and downstream-interface review completed; current entry: 01_structure_preparation/1.2_component_and_residue_classification/SKILL.md
+1.3–1.4 active Skills completed
+1.5      active Skill generated; authoring/interface review completed; 1.2 handoff terminology synchronized
 1.6      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.6_structure_completion/SKILL.md
 1.7      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.7_protein_protonation_assignment/SKILL.md
 1.8      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
@@ -246,7 +248,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.9 active Skills 已生成；其中 1.5 已完成正式生成与 authoring/interface review，1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成并完成 post-generation authoring/interface consistency check；1.9 current entry 为 `01_structure_preparation/1.9_validation/SKILL.md`；
+- Stage 1：1.1–1.9 active Skills 已生成；1.2 已按 current authoring 规则重新生成，固定科学脚本流水线已退出 active path，v2 正式结果契约及 1.3 / 1.5 / 1.8 / 1.9 / 2.1 接口已复核；1.5 已同步新版 1.2 的缺失残基与重原子组成/命名检查语义；1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成并完成 post-generation authoring/interface consistency check；
 - Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.5 详细方案仍只属于 freeze；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
