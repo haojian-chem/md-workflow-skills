@@ -6,7 +6,29 @@ Status: CURRENT SHARED REFERENCE
 
 它是仓库级 shared reference，**不是独立 Skill、不是执行环节，也不定义科学处理规则**。它只回答：一个跨 Skill 概念正式叫什么、正式文本优先怎样表达、它具体指什么，以及它与容易混淆的其他正式对象边界在哪里。
 
-`00_authoring/SKILL.md` 在生成、重构或审查科研 Skill 时读取本文件；科研执行 Agent 在需要解释跨 Skill 术语、Task Sheet 或用户表述时也可以读取本文件。
+## Scope of application
+
+本术语规范适用于项目中由 Agent 产生的正式表达，包括：
+
+- Skill authoring discussion；
+- Skill design / architecture-freeze discussion；
+- architecture freeze、`SKILL.md` 及其 references；
+- Task execution communication；
+- Task Sheet 与其他项目记录；
+- reports / results。
+
+因此，术语规范不是 Markdown 写作阶段才使用的辅助规则。Authoring Agent 在与用户讨论 Skill 构筑、设计和 freeze 时，Task Execution Agent 在与用户讨论当前科研任务时，以及 Agent 写入正式项目记录或结果时，都应在能够确定实际指代后回到当前 canonical terminology。
+
+本规范**约束 Agent 的项目表达，不要求用户输入采用规范术语**。用户可以使用简称、口语、临时称呼或不完整表达；Agent 负责结合当前上下文理解其实际指代，并在自己的后续正式表达中使用当前项目正式术语：
+
+```text
+用户表达
+→ Agent 结合上下文理解实际对象
+→ canonical terminology
+→ Agent 的正式讨论 / 文档 / 记录 / 结果表达
+```
+
+本文件只拥有术语名称、优先表达、定义和对象边界，不规定科学/技术判断关系应该如何展开，也不定义任何 Stage / Step / capability 的科学判据。Authoring 中如何把判断对象、属性、reference / criterion 和判断关系写清楚，由 `00_authoring/references/skill_generation_rules.md` 的 semantic-explicitness 规则负责；具体科学判据继续由对应 scientific Skill 拥有。
 
 ## Maintenance rules
 
@@ -27,9 +49,9 @@ Definition
 Scope / distinction
 ```
 
-本文件**不维护 alias、口语映射或 deprecated / do-not-use 列表**。用户的简称、口语、临时称呼和不完整表达由 Agent 结合当前上下文理解；正式 Skill、Task Sheet、报告和结果记录应回到当前 canonical terminology，而不是把临时表达固化为新的术语。
+本文件**不维护 alias、口语映射或 deprecated / do-not-use 列表**。用户的简称、口语、临时称呼和不完整表达由 Agent 结合当前上下文理解；Agent 在上述适用范围内的正式表达应回到当前 canonical terminology，而不是把临时表达固化为新的术语。
 
-如果本文件已有某个概念的条目，生成或重构 Skill 时优先采用其 `Preferred expression`。如果当前工作确实建立了新的跨 Skill 稳定术语，可以在具备该 shared path 的写入权限时更新本文件；没有写入权限时，只报告需要新增或修订的精确条目，不在局部 Skill 中另建平行 glossary。
+如果本文件已有某个概念的条目，Agent 在上述适用范围内优先采用其 `Preferred expression`。如果当前工作确实建立了新的跨 Skill 稳定术语，可以在具备该 shared path 的写入权限时更新本文件；没有写入权限时，只报告需要新增或修订的精确条目，不在局部 Skill 中另建平行 glossary。
 
 机器或接口级名称仍按原文使用，例如文件名、字段名、命令、命令行选项、配置键、section name、enum 和 identifier；它们不因本文件的中文优先表达而被自由翻译或改名。
 
