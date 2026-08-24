@@ -27,16 +27,16 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 - 1.8 正式 `stage1_final.pdb`；
 - 1.8 正式 `stage1_final_map.yaml`；
-- 与当前 target 对应的 1.2 正式 `classification_result.yaml`；
-- 当前 target 的 1.5 正式 `structure_completeness_report.yaml`，以及其中能够定位的实际参考文件；
+- 与当前 target 对应 model 的 1.2 正式 `classification_result.yaml`；
+- 当前 target 的 1.5 正式 `structure_completeness_report.yaml`；
 - 当前指定目标力场中用于标准残基检查的实际 `*.rtp` 文件；
-- 1.5 已确认并实际用于 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 的 CCD 文件。
+- 当前非标准残基检查实际采用的 CCD 文件。
 
-`classification_result.yaml` 用于读取对应残基的正式 `topology_class` 和 `confirmed_relations`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
+`classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `confirmed_relations`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
-`stage1_final_map.yaml` 用于把 final PDB 中的残基与 1.2 已物化的 `residue_id` / `component_id` 对应起来；1.9 不重新构建 1.3 / 1.8 的映射规则。
+`stage1_final_map.yaml` 用于把 final PDB 中的残基与 1.2 已物化的 `component_id + residue_id` 对应起来；1.9 不重新构建 1.3 / 1.8 的映射规则。
 
-如果目标力场尚未唯一确定，或 1.5 已确认的 CCD 无法从当前正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
+如果目标力场尚未唯一确定，或当前非标准 residue 的 CCD reference 无法从 1.2 / 1.5 正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
 
 ## No reuse
 
@@ -71,7 +71,10 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 ### TOPOLOGY_LINKED_NONSTANDARD / INDEPENDENT_NONSTANDARD
 
-对 `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`，沿用 1.5 已确认的 CCD。通过当前 1.5 `structure_completeness_report.yaml` 及其引用的 `reference_manifest.yaml` 或实际 CCD 文件路径，定位本次使用的 CCD 文件。
+对 `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`，沿用 1.2 / 1.5 已确定的 CCD reference。
+
+- 对未被 1.4 改动、直接沿用 1.2 重原子检查依据的 residue：从 1.2 对应 residue 的 `heavy_atom_check.evidence` 读取 `{CCD_PATH_n}/XXX.cif`，并通过同一 `classification_result.yaml.references` 解析实际路径；
+- 对 1.4 处理后由 1.5 重新执行重原子检查的 residue：使用 1.5 `structure_completeness_report.yaml` 中记录的实际 evidence，并按需要通过 1.2 `classification_result.yaml.references` 解析变量。
 
 1.9 不为非标准残基重新选择 CCD，也不使用 alternate atom name 自动替代 final PDB 中实际原子名。
 
@@ -108,9 +111,10 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 对 final PDB 中所有 `STANDARD_RESIDUE`：
 
-1. 读取 final PDB 的 `residue_name`；
-2. 在当前指定目标力场的 `*.rtp` 中查找精确同名的 residue block；
-3. 记录找不到对应定义的残基。
+1. 通过 `stage1_final_map.yaml` 的 `component_id + residue_id` 定位 1.2 正式分类；
+2. 读取 final PDB 的 `residue_name`；
+3. 在当前指定目标力场的 `*.rtp` 中查找精确同名的 residue block；
+4. 记录找不到对应定义的残基。
 
 本项只检查残基名是否存在对应力场定义，不在此处比较重原子。
 
@@ -136,7 +140,7 @@ final PDB 中该残基的重原子名称及出现次数
 
 ### 6. TOPOLOGY_LINKED_NONSTANDARD
 
-对每个 `TOPOLOGY_LINKED_NONSTANDARD`，使用 1.5 已确认的 CCD 文件独立检查：
+对每个 `TOPOLOGY_LINKED_NONSTANDARD`，使用当前正式结果能够定位到的 CCD 文件独立检查：
 
 - final PDB 的 `residue_name` 与 CCD component ID 精确一致；
 - final PDB 中该残基的重原子名称及出现次数与 CCD 定义的重原子名称及出现次数严格一致。
@@ -145,7 +149,7 @@ final PDB 中该残基的重原子名称及出现次数
 
 ### 7. INDEPENDENT_NONSTANDARD
 
-对每个 `INDEPENDENT_NONSTANDARD`，使用 1.5 已确认的 CCD 文件，按与上一项相同的规则检查：
+对每个 `INDEPENDENT_NONSTANDARD`，使用当前正式结果能够定位到的 CCD 文件，按与上一项相同的规则检查：
 
 - final PDB 的 `residue_name` 与 CCD component ID 精确一致；
 - final PDB 中该残基的重原子名称及出现次数与 CCD 定义严格一致；
@@ -161,7 +165,7 @@ final PDB 中该残基的重原子名称及出现次数
 chain_id + resid + residue_name
 ```
 
-在 map 的 atom records 中确认存在同一残基的记录即可。
+在 map 的 atom records 中确认存在同一残基的记录，并确认其 `component_id + residue_id` 能定位到当前 model 的 1.2 正式结果。
 
 1.9 不重新执行 1.8 的逐原子映射检查，不重新比较每个原子的 serial / `atom_name`，也不重新推导 `component_id` / `residue_id`。
 
@@ -204,7 +208,7 @@ structure_completeness_report.yaml
 chain_id + resid + residue_name
 ```
 
-涉及重原子差异时，在同一残基下分别列出实际缺失、额外或重复的原子名，并记录对应力场条目或 CCD 文件。
+涉及重原子差异时，在同一残基下分别列出实际缺失、额外或重复的原子名，并记录对应力场文件或 CCD 文件。
 
 第 5 项中，与 `TOPOLOGY_LINKED_NONSTANDARD` 存在已确认连接关系的 `STANDARD_RESIDUE` 应单独标明关系背景及其实际重原子比较结果；不把这一信息拆成新的检查项目。
 
@@ -218,7 +222,7 @@ chain_id + resid + residue_name
 
 - 当前 `stage1_final.pdb`、`stage1_final_map.yaml` 和 `classification_result.yaml` 已唯一确定；
 - `STANDARD_RESIDUE` 检查所需的目标力场参考文件已明确；
-- 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能定位到 1.5 已确认的 CCD；
+- 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能通过当前 1.2 / 1.5 正式结果定位到实际 CCD；
 - 八项检查均已按当前对象实际执行并写入报告；
 - 发现的问题能够定位到具体残基，涉及重原子时能够定位到具体原子名；
 - 报告记录了本次实际使用的参考文件；
