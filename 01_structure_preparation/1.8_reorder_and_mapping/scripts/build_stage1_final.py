@@ -225,7 +225,12 @@ def parse_pdb(path: Path) -> tuple[list[str], list[ResidueBlock]]:
 
 def classification_maps(
     document: dict[str, Any],
-) -> tuple[dict[ResidueKey, dict[str, Any]], dict[ResidueKey, int], set[str]]:
+) -> tuple[
+    dict[ResidueKey, dict[str, Any]],
+    dict[ResidueKey, int],
+    set[str],
+    dict[str, int],
+]:
     if document.get("result_status") != "COMPLETE":
         raise Stage1FinalError("classification_result.yaml must have result_status: COMPLETE")
     if document.get("schema_version") != "3.0":
@@ -238,17 +243,28 @@ def classification_maps(
     by_key: dict[ResidueKey, dict[str, Any]] = {}
     order: dict[ResidueKey, int] = {}
     standard_components: set[str] = set()
+    component_chains: dict[str, int] = {}
+    seen_chain_indices: set[int] = set()
     sequence_index = 0
 
     for component in components:
         if not isinstance(component, dict):
             raise Stage1FinalError("classification component must be a mapping")
         component_id = component.get("component_id")
+        chain_index = component.get("chain_index")
         residues = component.get("residues")
         if not isinstance(component_id, str) or not component_id:
             raise Stage1FinalError("classification component lacks component_id")
+        if not isinstance(chain_index, int) or chain_index < 1:
+            raise Stage1FinalError(f"classification component {component_id} lacks valid chain_index")
+        if component_id in component_chains:
+            raise Stage1FinalError(f"duplicate component_id in classification result: {component_id}")
+        if chain_index in seen_chain_indices:
+            raise Stage1FinalError(f"duplicate chain_index in classification result: {chain_index}")
         if not isinstance(residues, list):
             raise Stage1FinalError(f"classification component {component_id} lacks residues[]")
+        component_chains[component_id] = chain_index
+        seen_chain_indices.add(chain_index)
 
         for residue in residues:
             if not isinstance(residue, dict):
@@ -280,6 +296,7 @@ def classification_maps(
 
             normalized = dict(residue)
             normalized["_component_id"] = component_id
+            normalized["_chain_index"] = chain_index
             normalized["_polymer_class"] = polymer["value"]
             normalized["_topology_class"] = topology["value"]
             by_key[key] = normalized
@@ -288,18 +305,12 @@ def classification_maps(
             if topology["value"] == "STANDARD_RESIDUE":
                 standard_components.add(component_id)
 
-    return by_key, order, standard_components
+    return by_key, order, standard_components, component_chains
 
 
 def target_maps(
     document: dict[str, Any],
-) -> tuple[
-    str,
-    dict[int, str],
-    dict[int, str],
-    dict[str, int],
-    dict[tuple[int, int], dict[str, Any]],
-]:
+) -> tuple[str, dict[int, str], dict[tuple[int, int], dict[str, Any]]]:
     target_id = document.get("target_id")
     if not isinstance(target_id, str) or not target_id:
         raise Stage1FinalError("target record lacks target_id")
@@ -310,16 +321,11 @@ def target_maps(
         raise Stage1FinalError("target record must contain chain_mapping[] and residue_mapping[]")
 
     chains: dict[int, str] = {}
-    chain_components: dict[int, str] = {}
-    component_chains: dict[str, int] = {}
     for item in chain_mapping:
         if not isinstance(item, dict):
             raise Stage1FinalError("chain_mapping entries must be mappings")
         chain_index = int(item["chain_index"])
         chain_id = str(item["pdb_chain_id"])
-        component_id = item.get("component_id")
-        if not isinstance(component_id, str) or not component_id:
-            raise Stage1FinalError(f"chain_mapping entry {chain_index} lacks component_id")
         if len(chain_id) != 1:
             raise Stage1FinalError(f"PDB chain ID must be one character: {chain_id!r}")
         expected = chain_label_for_index(chain_index)
@@ -330,11 +336,7 @@ def target_maps(
             )
         if chain_index in chains:
             raise Stage1FinalError(f"duplicate chain_index in target chain_mapping: {chain_index}")
-        if component_id in component_chains:
-            raise Stage1FinalError(f"component_id occurs more than once in chain_mapping: {component_id}")
         chains[chain_index] = chain_id
-        chain_components[chain_index] = component_id
-        component_chains[component_id] = chain_index
 
     residues: dict[tuple[int, int], dict[str, Any]] = {}
     seen_keys: set[ResidueKey] = set()
@@ -353,14 +355,10 @@ def target_maps(
         stable_key = (component_id, residue_id)
         if stable_key in seen_keys:
             raise Stage1FinalError(f"target component_id + residue_id occurs more than once: {stable_key}")
-        if chain_components.get(chain_index) != component_id:
-            raise Stage1FinalError(
-                f"residue mapping component_id disagrees with chain_mapping for chain_index {chain_index}"
-            )
         seen_keys.add(stable_key)
         residues[key] = item
 
-    return target_id, chains, chain_components, component_chains, residues
+    return target_id, chains, residues
 
 
 def bind_blocks(
@@ -369,6 +367,7 @@ def bind_blocks(
     residue_map: dict[tuple[int, int], dict[str, Any]],
     class_by_key: dict[ResidueKey, dict[str, Any]],
     stable_order: dict[ResidueKey, int],
+    component_chains: dict[str, int],
 ) -> dict[ResidueKey, ResidueBlock]:
     chain_index_by_id = {chain_id: index for index, chain_id in chain_map.items()}
     by_key: dict[ResidueKey, ResidueBlock] = {}
@@ -391,6 +390,10 @@ def bind_blocks(
             raise Stage1FinalError(
                 "target component_id + residue_id is absent from classification result: "
                 f"{stable_key}"
+            )
+        if component_chains.get(stable_key[0]) != chain_index:
+            raise Stage1FinalError(
+                f"target chain_index disagrees with 1.2 component chain_index for {stable_key[0]}"
             )
 
         block.chain_index = chain_index
@@ -470,13 +473,12 @@ def build_linked_units(
             component_chains[key[0]]
             for key in group
             if class_by_key[key]["_topology_class"] == "STANDARD_RESIDUE"
-            and key[0] in component_chains
         }
         if not standard_sides:
             standard_sides.update(
                 component_chains[key[0]]
                 for key in linked_keys
-                if key[0] in standard_components and key[0] in component_chains
+                if key[0] in standard_components
             )
         raw_units.append((linked_keys, standard_sides))
 
@@ -535,11 +537,7 @@ def choose_independent_chain_id(
             used_chain_ids.add(candidate)
             return candidate
 
-    indices = {
-        component_chains[key[0]]
-        for key in unit.residue_keys
-        if key[0] in component_chains
-    }
+    indices = {component_chains[key[0]] for key in unit.residue_keys}
     if len(indices) == 1:
         candidate = chain_label_for_index(next(iter(indices)))
         if candidate not in forbidden_chain_ids and candidate not in used_chain_ids:
@@ -606,11 +604,7 @@ def assign_chain_and_resid(
 
     for chain_index, chain_units in units_by_standard_chain.items():
         chain_id = chain_map.get(chain_index, chain_label_for_index(chain_index))
-        assigned_keys = {
-            key
-            for unit in chain_units
-            for key in unit.residue_keys
-        }
+        assigned_keys = {key for unit in chain_units for key in unit.residue_keys}
         reserved_resids = {
             resid
             for (mapped_chain_index, resid), mapping in residue_map.items()
@@ -761,11 +755,7 @@ def should_write_ter(
 ) -> bool:
     if block.linked_unit_id is not None:
         unit = unit_by_id[block.linked_unit_id]
-        present = {
-            candidate.key
-            for candidate in blocks
-            if candidate.linked_unit_id == unit.unit_id
-        }
+        present = {candidate.key for candidate in blocks if candidate.linked_unit_id == unit.unit_id}
         present_order = [key for key in unit.residue_keys if key in present]
         return bool(present_order) and block.key == present_order[-1]
 
@@ -879,14 +869,13 @@ def main() -> int:
     try:
         target = read_yaml(args.target_record.resolve())
         classification = read_yaml(args.classification_result.resolve())
+        target_id, chain_map, residue_map = target_maps(target)
         (
-            target_id,
-            chain_map,
-            _chain_components,
+            class_by_key,
+            stable_order,
+            standard_components,
             component_chains,
-            residue_map,
-        ) = target_maps(target)
-        class_by_key, stable_order, standard_components = classification_maps(classification)
+        ) = classification_maps(classification)
 
         cryst1, blocks = parse_pdb(args.input_structure.resolve())
         input_atom_count = sum(len(block.atoms) for block in blocks)
@@ -896,6 +885,7 @@ def main() -> int:
             residue_map,
             class_by_key,
             stable_order,
+            component_chains,
         )
 
         units, residue_to_unit = build_linked_units(
