@@ -9,11 +9,11 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 `../../references/task_execution_rules.md`
 
-跨 Stage 原子映射共享规则读取：
+Stage 1 原子映射维护规则读取：
 
 `../../references/atom_mapping_rules.md`
 
-1.9 的 final PDB / final map 逐原子验证必须按该共享规则解释，不建立额外 atom identity 或历史 atom lineage。
+1.9 的 final PDB / final map 逐原子验证必须按该共享规则解释。
 
 本 Skill 只定义 1.9 的最终检查对象、判据、报告和结果边界。
 
@@ -40,7 +40,7 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 `classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `topology_linked_checks[]`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
-`stage1_final_map.yaml` 用于把 final PDB 中每个实际重原子对应到 1.2 已物化的 `component_id + residue_id`，并作为 Stage 2 source-provenance handoff 的正式 atom map。1.9 只验证该 final PDB / map 对应本身，不重新建立贯穿 1.2–1.7 的历史 atom identity，也不判断 final atom 是否来自初始结构或后续 completion。
+`stage1_final_map.yaml` 用于把 final PDB 中每个实际重原子对应到 1.2 已物化的 `component_id + residue_id`。1.9 只验证该 final PDB / map 对应本身，不新增 atom identity。
 
 如果目标力场尚未唯一确定，或当前非标准 residue 的 CCD reference 无法从 1.2 / 1.5 正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
 
@@ -182,7 +182,7 @@ atom_name
 - 同一 final PDB atom 不对应多条 map record；
 - 同一 map record 不被用于对应多个 final PDB atoms。
 
-本项验证的是 Stage 1 final handoff 的逐原子对应关系。1.9 不为这些 atom 生成新的 `atom_id`，也不回溯建立初始结构到 final structure 的永久 atom lineage。
+本项验证的是 Stage 1 final 的逐原子对应关系。1.9 不为这些 atom 生成新的 `atom_id`。
 
 ## Report organization
 
