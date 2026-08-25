@@ -17,7 +17,7 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 完成结构准备 `1.6 Structure completion`。
 
-本 Skill 将 `structure_completeness_report.yaml` 中已明确的 structure repair items 落实到当前 retained target structure，得到完成这些修复后的重原子结构。
+本 Skill 将 `structure_completeness_report.yaml` 中已明确的 structure repair items 落实到当前 retained target structure，得到完成这些修复后的重原子结构，并同步维护该结构对应的 atom map。
 
 每个 target 独立处理、独立验证、独立形成正式结果。
 
@@ -27,10 +27,11 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 - 1.5 正式 `structure_completeness_report.yaml`；
 - `structure_completeness_report.yaml` 中 `structure` 字段记录的当前 target PDB；
+- 与该当前 target PDB 对应的最近正式 atom map；
 - 对 confirmed atom-name mismatch，1.5 报告所引用的上游正式证据中已经确认的 atom-name correspondence；
 - 对实际存在的 missing-heavy-atom / missing-residue repair item，可用于提供补全坐标的 reference structure / coordinate template。
 
-需要追溯上游 identity / mapping evidence 时，优先使用 `structure_completeness_report.yaml` 中 `source_reports` 字段记录的正式结果路径，不为 1.6 重新建立上游结果接口。
+需要追溯上游 identity / mapping evidence 时，优先使用 `structure_completeness_report.yaml` 中 `source_reports` 字段记录的正式结果路径，并据当前 `structure` 定位实际拥有该结构的上游 Step 及其正式 atom map；不为 1.6 重新建立另一套上游 mapping 接口。
 
 当前 repair items 只有 deletion / rename 时，不要求额外提供 AF3 / CCD coordinate reference。
 
@@ -48,11 +49,13 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 - 不创建 1.6 task-specific execution directory；
 - 不生成空的 completion results；
+- 不复制或生成新的 atom map；当前结构继续沿用其已有正式 map；
 - 向当前任务执行上下文返回 `已终止`，并说明原因是 1.5 未发现需要 1.6 处理的 repair item。
 
 已有 1.6 正式结果只有在以下内容均明确等价时才自动复用：
 
 - 输入 PDB 内容相同；
+- 输入 atom map 相同；
 - 1.5 `structure_completeness_report.yaml` 内容相同；
 - 实际影响结果的 completion reference / coordinate template 相同；
 - 影响结果的用户决定相同；
@@ -133,7 +136,24 @@ confirmed extra atom deletion
 
 完成所有修复后，按最终写入顺序将 atom serial 连续、唯一地重新编号，并生成 `completed_structure.pdb`。
 
-执行期间保留足以支持结构写入、`completion_report.yaml` 和 validation 的 correspondence、实际使用的 reference、alignment / anchor、transplanted identity、geometry evidence 以及必要 warning。普通中间过程不要求生成固定命名文件。
+执行期间保留足以支持结构写入、`completion_report.yaml`、atom-map maintenance 和 validation 的 correspondence、实际使用的 reference、alignment / anchor、transplanted identity、geometry evidence 以及必要 warning。普通中间过程不要求生成固定命名文件。
+
+## 7. 维护 atom map
+
+以输入结构对应的正式 atom map 为基础，完整复制后按 `../../references/atom_mapping_rules.md` 更新并生成：
+
+```text
+atom_mapping.yaml
+```
+
+具体维护：
+
+- confirmed extra atom 删除：删除对应 map record；
+- atom-name correction：保留 record 的 `original_atom_serial`、`component_id + residue_id` 和既有 history，按输出结构更新 `current_atom_serial`，并追加 `1.6RENAME`；
+- missing heavy atom：新建 record，`original_atom_serial: null`，写 `1.6ADD`；
+- missing residue：其全部新增 atoms 新建 record，`original_atom_serial: null`，写 `1.6ADD`；
+- whole-residue replacement：删除旧 partial-residue atom records；replacement atoms 全部按新增 atom 建立 `1.6ADD` records；
+- 未被本步骤修改的 surviving atoms 只更新 `current_atom_serial`，不新增 operation。
 
 # Deterministic helpers
 
@@ -166,8 +186,10 @@ Helper 只执行确定性操作，不替代科学判断。Reference 选择、res
 ```yaml
 target_id: target_001
 input_structure: /absolute/path/to/input.pdb
+input_atom_mapping: /absolute/path/to/input_atom_mapping.yaml
 source_completeness_report: /absolute/path/to/structure_completeness_report.yaml
 output_structure: /absolute/path/to/completed_structure.pdb
+output_atom_mapping: /absolute/path/to/atom_mapping.yaml
 
 removed_atoms:
   - chain_id: A
@@ -206,7 +228,7 @@ unresolved_items: []
 
 规则：
 
-- `input_structure`、`source_completeness_report`、`output_structure` 和实际使用的 `coordinate_reference` 均记录完整绝对路径；
+- `input_structure`、`input_atom_mapping`、`source_completeness_report`、`output_structure`、`output_atom_mapping` 和实际使用的 `coordinate_reference` 均记录完整绝对路径；
 - 连续 missing residues 可以在一个 `added_residues` record 中成组记录，但每个实际新增 residue 的 `resid + residue_name` 必须明确；
 - deletion / rename 不重复复制 1.5 的 reference provenance；
 - completion operation 记录实际提供最终坐标的 reference / template；比较过但未用于最终坐标的候选 reference 不写入正式 completion report；
@@ -225,6 +247,9 @@ Validation 属于 1.6 结果 owner。对当前 target 完成以下核验，并�
 
 - 1.5 中每个 required repair item 都已闭合：missing heavy atom 已通过 atom-level completion 补入，或已按完整 residue completion 正确处理；missing residue 已位于正确的 target chain / residue identity；confirmed extra atom 已删除；confirmed atom-name mismatch 已按确认关系修改；
 - `completion_report.yaml` 与 `completed_structure.pdb` 中的实际修改一致；
+- 输出 `atom_mapping.yaml` 与 `completed_structure.pdb` 的 `ATOM / HETATM` 一一对应；
+- surviving atoms 保留输入 map 的 `original_atom_serial`、`component_id + residue_id` 和既有 operation history；
+- deleted atoms 已从输出 map 删除；新增 atoms 的 `original_atom_serial: null` 且含 `1.6ADD`；atom-name correction 对应 record 含 `1.6RENAME`；
 - 除 repair scope 以及 method reference 明确要求的整 residue replacement 外，没有未记录的额外删除、rename 或 coordinate replacement；
 - 新增 heavy atom / residue 满足对应 method reference 的 correspondence、alignment 和局部 geometry requirements；
 - 不存在重复 residue / atom identity；
@@ -242,7 +267,7 @@ FAIL
 
 Warning 独立记录；warning 本身不建立第三种 conclusion。
 
-以下情况属于 blocking failure：required repair 未解决、target identity 错误、必要 reference correspondence 不可靠、missing-residue completion 不能满足 required alignment / junction conditions、出现明显不合理的局部连接或 severe steric clash、存在 duplicate identity、PDB 无法解析、atom serial 不连续/不唯一、错误加入 final H，或 `unresolved_items` 非空。
+以下情况属于 blocking failure：required repair 未解决、target identity 错误、必要 reference correspondence 不可靠、missing-residue completion 不能满足 required alignment / junction conditions、出现明显不合理的局部连接或 severe steric clash、存在 duplicate identity、PDB 无法解析、atom serial 不连续/不唯一、atom map 与输出结构不一致、错误加入 final H，或 `unresolved_items` 非空。
 
 Validation 不重新执行 1.5 completeness diagnosis。
 
@@ -255,11 +280,12 @@ Validation 不重新执行 1.5 completeness diagnosis。
 ```text
 <project_root>/01_structure_preparation/06_structure_completion/<task_id>/<target_id>/
 ├── completed_structure.pdb
+├── atom_mapping.yaml
 ├── completion_report.yaml
 └── completion_validation.md
 ```
 
-执行失败时可以保留必要工作材料用于排查，但不得把未通过 validation 的结构登记成 1.6 正式结果。
+执行失败时可以保留必要工作材料用于排查，但不得把未通过 validation 的结构或 map 登记成 1.6 正式结果。
 
 # Project result registration
 
@@ -276,7 +302,9 @@ completed_structure.pdb
 completion_report.yaml
 ```
 
-登记时提供简短说明，使后续执行能够明确这两个文件分别是 Stage 1.6 对当前 target 完成既定 structure repair items 后的正式结构和修改报告。
+`atom_mapping.yaml` 不单独登记，由 `completion_report.yaml.output_atom_mapping` 定位。
+
+登记时提供简短说明，使后续执行能够明确这两个文件分别是 Stage 1.6 对当前 target 完成既定 structure repair items 后的正式结构和修改报告；报告同时定位与该结构对应的正式 atom map。
 
 `project_result_index.md` 的内部组织格式由项目级 record owner 管理，本 Skill 不重新定义。
 
