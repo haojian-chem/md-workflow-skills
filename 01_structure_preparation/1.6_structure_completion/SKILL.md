@@ -152,8 +152,13 @@ atom_mapping.yaml
 - atom-name correction：保留 record 的 `original_atom_serial`、`component_id + residue_id` 和既有 history，按输出结构更新 `current_atom_serial`，并追加 `1.6RENAME`；
 - missing heavy atom：新建 record，`original_atom_serial: null`，写 `1.6ADD`；
 - missing residue：其全部新增 atoms 新建 record，`original_atom_serial: null`，写 `1.6ADD`；
-- whole-residue replacement：删除旧 partial-residue atom records；replacement atoms 全部按新增 atom 建立 `1.6ADD` records；
+- whole-residue replacement / coordinate replacement：按当前 completion 已建立的 atom correspondence 逐 atom 维护：
+  - 输入与输出能够明确判定为同一个 atom：保留原 record、`original_atom_serial`、`component_id + residue_id` 和既有 history，更新 `current_atom_serial`，并追加 `1.6REPLACE`；
+  - 输出 atom 在输入结构中确实不存在对应 atom：按新增 atom建立 record，`original_atom_serial: null`，追加 `1.6ADD`；
+  - 输入 atom 在 replacement 后不再存在对应输出 atom：从输出 map 删除；
 - 未被本步骤修改的 surviving atoms 只更新 `current_atom_serial`，不新增 operation。
+
+不得仅因为 whole-residue replacement 使用 reference coordinates，就把仍能明确对应到输入 atom 的原子全部改写成新 atom。若同一个 atom 在 1.6 内先发生已确认 atom-name correction、随后又发生 coordinate replacement，`operations` 按实际顺序保留相应的 `1.6RENAME` 与 `1.6REPLACE`。
 
 # Deterministic helpers
 
@@ -238,7 +243,8 @@ unresolved_items: []
 repair_adjustment: insufficient shared-heavy-atom anchors; treated as missing residue
 ```
 
-- 如果 whole-residue completion 实际删除了原 partial residue 中已有的 atoms，这些实际删除也要逐项记录在 `removed_atoms` 中；
+- whole-residue replacement 中的逐原子 input → output correspondence 由本次 completion 执行过程中已经建立的 correspondence 与输出 `atom_mapping.yaml` 共同物化；不要求在 `completion_report.yaml` 再复制一份逐原子 mapping；
+- 如果 whole-residue completion 实际删除了原 partial residue 中已有且没有对应输出 atom 的 atoms，这些实际删除也要逐项记录在 `removed_atoms` 中；
 - `unresolved_items` 只记录当前 repair scope 内未能完成的 item 及原因；用户明确改变当前 repair scope 时，不把已排除的 repair 伪装成 unresolved item。
 
 # Validation
@@ -249,7 +255,8 @@ Validation 属于 1.6 结果 owner。对当前 target 完成以下核验，并�
 - `completion_report.yaml` 与 `completed_structure.pdb` 中的实际修改一致；
 - 输出 `atom_mapping.yaml` 与 `completed_structure.pdb` 的 `ATOM / HETATM` 一一对应；
 - surviving atoms 保留输入 map 的 `original_atom_serial`、`component_id + residue_id` 和既有 operation history；
-- deleted atoms 已从输出 map 删除；新增 atoms 的 `original_atom_serial: null` 且含 `1.6ADD`；atom-name correction 对应 record 含 `1.6RENAME`；
+- deleted atoms 已从输出 map 删除；真正新增 atoms 的 `original_atom_serial: null` 且含 `1.6ADD`；atom-name correction 对应 record 含 `1.6RENAME`；
+- replacement 中能够明确对应输入 atom 的输出 atom 保留原 `original_atom_serial` 与既有 history，并含 `1.6REPLACE`；只有输入中不存在对应 atom 的 replacement output 才使用 `original_atom_serial: null` + `1.6ADD`；
 - 除 repair scope 以及 method reference 明确要求的整 residue replacement 外，没有未记录的额外删除、rename 或 coordinate replacement；
 - 新增 heavy atom / residue 满足对应 method reference 的 correspondence、alignment 和局部 geometry requirements；
 - 不存在重复 residue / atom identity；
@@ -267,7 +274,7 @@ FAIL
 
 Warning 独立记录；warning 本身不建立第三种 conclusion。
 
-以下情况属于 blocking failure：required repair 未解决、target identity 错误、必要 reference correspondence 不可靠、missing-residue completion 不能满足 required alignment / junction conditions、出现明显不合理的局部连接或 severe steric clash、存在 duplicate identity、PDB 无法解析、atom serial 不连续/不唯一、atom map 与输出结构不一致、错误加入 final H，或 `unresolved_items` 非空。
+以下情况属于 blocking failure：required repair 未解决、target identity 错误、必要 reference correspondence 不可靠、missing-residue completion 不能满足 required alignment / junction conditions、出现明显不合理的局部连接或 severe steric clash、存在 duplicate identity、PDB 无法解析、atom serial 不连续/不唯一、atom map 与输出结构或实际 replacement correspondence 不一致、错误加入 final H，或 `unresolved_items` 非空。
 
 Validation 不重新执行 1.5 completeness diagnosis。
 
