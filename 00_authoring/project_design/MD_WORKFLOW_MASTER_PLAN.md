@@ -56,7 +56,7 @@ Current implementation status:
 1.6      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.6_structure_completion/SKILL.md
 1.7      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.7_protein_protonation_assignment/SKILL.md
 1.8      active Skill generated; interface synchronized to current 1.2 schema v4 and post-update authoring/interface consistency check completed; current entry: 01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
-1.9      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.9_validation/SKILL.md
+1.9      active Skill generated; synchronized to current 1.2 topology_linked_checks and Stage 1 final-map atom-level validation; current entry: 01_structure_preparation/1.9_validation/SKILL.md
 ```
 
 Stage 1.2 topology-linked check / formal-record architecture freeze:
@@ -243,6 +243,12 @@ Cross-Stage Task Execution shared rules:
 
 该文件是 shared reference，不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 通过各自 main `SKILL.md` 显式引用它。
 
+Cross-Stage atom mapping / source-provenance handoff architecture:
+
+`00_authoring/architecture_freezes/MD_WORKFLOW_ATOM_MAPPING_HANDOFF_FREEZE.md`
+
+该接口固定：1.2 不建立 atom-level stable identity；1.8 首次物化 Stage 1 final heavy-atom map；1.9 对 final PDB / map 做逐原子一致性检查；Stage 2 的 `SOURCE` provenance 从 `stage1_final.pdb` serial 开始。
+
 Unnumbered active package:
 
 ```text
@@ -262,12 +268,12 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 保持 current；topology-linked 检查与正式记录已同步为 schema v4 的统一 `topology_linked_checks[]`，三类判据完整记录，人工关系决策仅通过 `relation_id` 对应；1.8 Skill / deterministic helper 已迁移为直接消费当前 v4 `components[].residues[] + topology_linked_checks[]` 接口，并以 `component_id + residue_id` 作为 residue stable identity；1.3 / 1.5 当前身份层级接口仍可继续消费；1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成；
-- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill并完成 post-generation authoring/interface consistency check，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.3 参数化模型规则与 2.5 详细方案已有专项 freeze；
+- Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 保持 current；topology-linked 检查与正式记录已同步为 schema v4 的统一 `topology_linked_checks[]`，三类判据完整记录，人工关系决策仅通过 `relation_id` 对应；1.2 不建立 atom-level stable identity；1.8 Skill / deterministic helper 直接消费当前 v4 `components[].residues[] + topology_linked_checks[]` 接口并生成 Stage 1 final heavy-atom map；1.9 已同步到 v4 relation interface，并逐原子验证 `stage1_final.pdb` / `stage1_final_map.yaml` 对应；1.3 / 1.5 当前身份层级接口仍可继续消费；1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成；
+- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill并完成 post-generation authoring/interface consistency check，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.3 参数化模型规则与 2.5 详细方案已有专项 freeze；Stage 2 future `*.map` 的 `SOURCE` provenance 统一以 `stage1_final.pdb` heavy-atom serial 为 source identity；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
-- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；跨 Skill Task Execution 共用规则集中于 `references/task_execution_rules.md`；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
+- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；跨 Skill Task Execution 共用规则集中于 `references/task_execution_rules.md`；cross-Stage atom mapping/source-provenance handoff 由 `00_authoring/architecture_freezes/MD_WORKFLOW_ATOM_MAPPING_HANDOFF_FREEZE.md` 统一冻结；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
 
@@ -292,6 +298,7 @@ Skill authoring 窗口不得因为本文件是共享文件而静默跳过状态�
 具体业务规则 → current Skill / reference
 尚未生成 Skill 的已冻结 Step / Stage 规则 → matching architecture freeze
 跨 Stage Task Execution 通用规则 → references/task_execution_rules.md
+跨 Stage atom mapping / source provenance handoff → 00_authoring/architecture_freezes/MD_WORKFLOW_ATOM_MAPPING_HANDOFF_FREEZE.md
 Stage catalog / 建设状态 / current entry → 本 Master Plan
 current deterministic tool → tools/
 current evaluation → evals/
