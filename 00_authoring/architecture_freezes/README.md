@@ -20,6 +20,7 @@ Status: CURRENT AUTHORING REFERENCE DIRECTORY
 当前冻结记录：
 
 ```text
+WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md
 WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
 WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
 WORKFLOW1_STAGE1_1.8_REORDER_MAPPING_FREEZE.md
@@ -43,6 +44,8 @@ WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md
 ```
 
 当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
+
+Stage 1.2 的 `topology-linked` 检查与正式记录规则已专项冻结于 `WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md`；该文件保存当前已确定、待同步到 active 1.2 implementation 的规则，不取代 current runtime `SKILL.md`。
 
 Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为阶段级 main Skill，负责 Stage 2 内部科研编排与共享接口；`2.1 Topology preparation setup` 保持完整独立 Step，current active entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage 2 main Skill 与 2.2–2.6 当前仍为 freeze-only。
 
