@@ -24,19 +24,20 @@ description: Structure preparation 1.7。针对当前蛋白重原子结构，在
 - 独立完成 local chemical environment assessment；
 - 综合两类平级证据，对 Asp / Glu / His 完成 protonation assignment；
 - 将最终 assignment 映射为目标 protein force field / protonation naming convention 对应的 residue name；
-- 生成 protonation-assigned heavy-atom structure、assignment report 和 validation result。
+- 生成 protonation-assigned heavy-atom structure、assignment report、与输出结构对应的 atom map 和 validation result。
 
 # Inputs / evidence
 
 对每个 target，执行 1.7 时至少需要：
 
 - 当前任务认可的有效 heavy-atom structure；
+- 与该输入结构对应的最近正式 atom map；
 - 明确的 `target_pH`；
 - 当前使用的 protein force field，或明确的 protonation-state residue naming convention；
 - 可执行 PROPKA；
 - 当前任务中与 protonation 判断有关的已确认 chemical relation / structural evidence。
 
-当前结构只需要是当前任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step。
+当前结构只需要是当前任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step，但 atom map 必须与该输入结构实际对应。
 
 如果 `target_pH` 或 protein force field / protonation naming convention 在当前任务上下文中尚未明确：
 
@@ -124,6 +125,20 @@ assignment 未闭合时不发布该 target 的完成结果。
 - residue / atom order 不变；
 - 不加入 final H。
 
+## 6. 维护 atom map
+
+完整复制与输入 heavy-atom structure 对应的正式 atom map，并按 `../../references/atom_mapping_rules.md` 更新，生成：
+
+`atom_mapping.yaml`
+
+规则：
+
+- 所有 atom records 保留；
+- `original_atom_serial`、`component_id + residue_id` 和既有 `operations` 不改写；
+- `current_atom_serial` 与输出 PDB 实际 serial 保持一致；
+- 对 residue name 实际发生变化的 residue，其全部 atom records 追加 `1.7RENAME`；
+- residue name 未发生变化的 residue 不追加 operation。
+
 # Protonation assignment report
 
 每个 target 生成固定格式的：
@@ -135,7 +150,9 @@ assignment 未闭合时不发布该 target 的完成结果。
 ```yaml
 target_id: target_001
 input_structure: /absolute/path/to/input.pdb
+input_atom_mapping: /absolute/path/to/input_atom_mapping.yaml
 output_structure: /absolute/path/to/protonation_assigned_structure.pdb
+output_atom_mapping: /absolute/path/to/atom_mapping.yaml
 
 target_pH: 7.0
 protein_force_field: <force-field-name>
@@ -202,6 +219,7 @@ residues:
 
 固定字段语义：
 
+- `input_structure`、`input_atom_mapping`、`output_structure`、`output_atom_mapping` 均记录完整绝对路径；
 - `protein_force_field` 记录当前实际使用的 protein force field；如果任务只明确提供独立 protonation naming convention、并未确定具体 protein force field，则写 `null`；
 - `protonation_naming_convention` 记录最终 residue-name mapping 的实际依据；如果直接使用已命名 protein force field 的默认命名规则，则写 `force_field_default`，否则记录实际 convention / reference；
 - `residue_type` 使用 `ASP | GLU | HIS` 表示当前 scientific object class；
@@ -238,9 +256,9 @@ POSITIVELY_CHARGED
 
 # Validation
 
-Validation 属于 1.7 result owner，并在 assignment 已经闭合、结构与 report 已写出后执行。
+Validation 属于 1.7 result owner，并在 assignment 已经闭合、结构、map 与 report 已写出后执行。
 
-只检查以下三类结果属性：
+只检查以下四类结果属性：
 
 1. **结果完整性**
    - 当前处理范围内的全部 Asp / Glu / His 都有 assignment record；
@@ -255,6 +273,12 @@ Validation 属于 1.7 result owner，并在 assignment 已经闭合、结构与 
    - 除 residue-name modification 外，输入与输出的 heavy-atom set、atom names、coordinates、residue / atom order 均一致；
    - 未加入 final H。
 
+4. **atom map 正确维护**
+   - 输出 PDB 每个 `ATOM / HETATM` 恰有一条 map record，map 无额外 atom record；
+   - `original_atom_serial`、`component_id + residue_id` 和既有 operation history 与 input map 一致；
+   - 只有 residue name 实际变化的 residue atoms 新增 `1.7RENAME`；
+   - 输出 map 的 `current_atom_serial` 与输出 PDB 一致。
+
 Validation conclusion 使用：
 
 ```text
@@ -266,7 +290,7 @@ FAIL
 
 `protonation_validation.md`
 
-Validation 不修改结构或 assignment report。
+Validation 不修改结构、atom map 或 assignment report。
 
 # Official results
 
@@ -275,6 +299,7 @@ Validation 不修改结构或 assignment report。
 ```text
 <project_root>/01_structure_preparation/07_protein_protonation_assignment/<task_id>/<target_id>/
 ├── protonation_assigned_structure.pdb
+├── atom_mapping.yaml
 ├── protonation_assignment_report.yaml
 └── protonation_validation.md
 ```
@@ -294,7 +319,7 @@ protonation_assigned_structure.pdb
 protonation_assignment_report.yaml
 ```
 
-`protonation_validation.md` 保留为当前 target 的正式结果，但不单独登记为 project-level result entry。
+`atom_mapping.yaml` 不单独登记，由 `protonation_assignment_report.yaml.output_atom_mapping` 定位；`protonation_validation.md` 保留为当前 target 的正式结果，但不单独登记为 project-level result entry。
 
 `project_result_index.md` 的内部组织格式由项目级 record owner 管理，本 Skill 不重新定义。
 
