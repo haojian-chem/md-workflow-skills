@@ -9,11 +9,11 @@ description: Stage 1.8 Reorder and mapping。把当前 target 的有效重原子
 
 `../../references/task_execution_rules.md`
 
-跨 Stage 原子映射共享规则读取：
+Stage 1 原子映射维护规则读取：
 
 `../../references/atom_mapping_rules.md`
 
-1.8 的 final heavy-atom map 与 Stage 2 handoff 必须遵循该共享规则；本 Skill 只拥有 1.8 自身的 map materialization。
+1.8 的 reorder、serial materialization 与 final heavy-atom map 必须遵循该共享规则。
 
 本 Skill 仅补充 1.8-specific 的对象、执行、completion gate 与 results 规则；本步骤明确不设置 reuse。
 
