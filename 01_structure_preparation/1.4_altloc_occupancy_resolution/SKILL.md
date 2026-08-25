@@ -17,7 +17,7 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 
 完成结构准备 `1.4 Alternate conformation / altLoc resolution`。
 
-本 Skill 的职责是：识别当前结构中需要处理的 alternate conformations，结合结构记录与当前化学环境选择后续保留的构象，将该选择落实到结构文件，并留下可追溯的决策记录。
+本 Skill 的职责是：识别当前结构中需要处理的 alternate conformations，结合结构记录与当前化学环境选择后续保留的构象，将该选择落实到结构文件，并留下可追溯的决策记录，同时维护与输出结构对应的 atom map。
 
 本步骤不负责缺失残基/缺失重原子补全、atom/residue naming 修正、质子化处理或几何优化。
 
@@ -26,6 +26,8 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 # Object requirements
 
 当前对象是前序流程交给 1.4 的待处理结构。正常预期为 PDB，并以 PDB `altLoc` 作为主要 alternate-conformation 表示。
+
+同时必须提供与该输入结构对应的正式 atom map。正常主路径为 1.3 当前 target 的 `maps/target_xxx.atom_mapping.yaml`；若前序结构来源不同，则使用与当前输入结构实际对应的最近正式 map。
 
 如果实际输入格式与预期不同：
 
@@ -130,6 +132,22 @@ occupancy 是重要证据，但不是唯一自动判据。不得仅按“字母 
 
 1.4 不执行能量最小化、side-chain rotation、clash repair、metal geometry optimization 或其他坐标优化。化学环境用于选择已有构象，不用于在本步骤生成新的优化构象。
 
+## 6. 维护 atom map
+
+对每个 target，把输入结构对应的正式 atom map 完整复制为当前输出 map，再按 `../../references/atom_mapping_rules.md` 更新：
+
+- 删除 unselected-conformer atom 对应的 map record；
+- shared atoms 保留原 operation history；
+- surviving selected-conformer atoms 保留 `original_atom_serial`、`component_id + residue_id`，按输出 PDB 更新 `current_atom_serial`；
+- 对实际清除 surviving altLoc 的 atom 追加 `1.4ALTLOC`；
+- serial 重编号本身不追加 operation。
+
+输出 map 固定写入：
+
+```text
+maps/target_xxx.atom_mapping.yaml
+```
+
 # Validation requirements
 
 Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独立 Validator。
@@ -154,13 +172,16 @@ Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独
 
 除这些允许变化外，检查 surviving structure 未发生非预期的 identity、coordinate 或 relative-order 变化，也没有误删 shared / unrelated atoms。
 
-## 3. 输出结构有效
+## 3. 输出结构与 map 有效
 
 确认：
 
 - `ATOM` / `HETATM` / `TER` serial 唯一且连续；
 - 输出结构能够被可靠读取并继续作为结构对象使用；
-- 本次 altLoc 处理没有造成明显的重复 atom identity 或结构记录异常。
+- 本次 altLoc 处理没有造成明显的重复 atom identity 或结构记录异常；
+- 输出 PDB 每个 `ATOM / HETATM` 恰有一条 map record，map 无额外 atom record；
+- surviving atom 的 `original_atom_serial`、`component_id + residue_id` 和既有 operation history 未被改写；
+- `1.4ALTLOC` 只追加到本步骤实际清除 surviving altLoc 的 atoms。
 
 Validation 不重新检查 missing residue、missing heavy atom、force-field atom-set compatibility、protonation 或后续 repair 问题。
 
@@ -173,13 +194,17 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 ```text
 01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/
 ├── altloc_resolution_report.yaml
-└── structures/
-    ├── target_001.pdb
-    ├── target_002.pdb
+├── structures/
+│   ├── target_001.pdb
+│   ├── target_002.pdb
+│   └── ...
+└── maps/
+    ├── target_001.atom_mapping.yaml
+    ├── target_002.atom_mapping.yaml
     └── ...
 ```
 
-每个输入 target 对应一个处理后的单一构象结构；输出文件继续使用对应 `target_id` 作为文件名，避免多个 target 之间发生文件名冲突。
+每个输入 target 对应一个处理后的单一构象结构和一份与该结构一一对应的 atom map；输出文件继续使用对应 `target_id` 作为文件名，避免多个 target 之间发生文件名冲突。
 
 ## `altloc_resolution_report.yaml`
 
@@ -187,7 +212,9 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 
 - 当前 target identity；
 - source PDB；
+- source atom map；
 - generated PDB；
+- generated atom map；
 - 实际处理的构象对象；
 - candidate conformers；
 - selected conformer / altLoc；
@@ -197,13 +224,15 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 
 对普通 residue-local altLoc，不要求复制完整 atom list。只有 partial-residue、跨 residue / ligand / metal-center 或 candidate atom set 明显不一致等复杂情况，才按实际需要补充 affected residues / atoms。
 
-`source_pdb` 与 `generated_pdb` 必须记录**完整绝对路径**，不能只记录文件名或相对于当前 task directory 的相对路径。例如：
+`source_pdb`、`source_atom_mapping`、`generated_pdb` 与 `generated_atom_mapping` 必须记录**完整绝对路径**。例如：
 
 ```yaml
 targets:
   - target_id: target_001
     source_pdb: /absolute/path/to/project/01_structure_preparation/03_chain_and_residue_selection/<source_task_id>/structures/target_001.pdb
+    source_atom_mapping: /absolute/path/to/project/01_structure_preparation/03_chain_and_residue_selection/<source_task_id>/maps/target_001.atom_mapping.yaml
     generated_pdb: /absolute/path/to/project/01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/structures/target_001.pdb
+    generated_atom_mapping: /absolute/path/to/project/01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/maps/target_001.atom_mapping.yaml
     resolved_groups:
       - scope:
           chain_id: A
@@ -234,7 +263,7 @@ targets:
 登记本次 `altloc_resolution_report.yaml`，至少写入：
 
 - 该报告的完整绝对路径；
-- 简明说明：该文件是 Stage 1.4 的正式 altLoc / alternate-conformation 决策记录，包含各 target 的源/生成结构定位、候选构象、最终选择及主要证据。
+- 简明说明：该文件是 Stage 1.4 的正式 altLoc / alternate-conformation 决策记录，包含各 target 的源/生成结构、源/生成 atom map、候选构象、最终选择及主要证据。
 
 只登记路径与说明；`project_result_index.md` 的具体组织格式由项目级数据管理规则拥有，本 Skill 不复制或重定义其内部格式。
 
