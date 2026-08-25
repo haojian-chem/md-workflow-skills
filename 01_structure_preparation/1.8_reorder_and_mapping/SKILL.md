@@ -259,7 +259,7 @@ atoms:
 - 按 final PDB 更新 `current_atom_serial`；
 - 对因 1.8 block / residue organization 而实际改变相对写出位置的 atoms 追加 `1.8REORDER`；
 - 不因 serial 重编号单独追加 operation；
-- 不重新解释此前 `1.3ADD / 1.4ALTLOC / 1.6ADD / 1.6RENAME / 1.7RENAME` history。
+- 不重新解释此前 `1.3ADD / 1.4ALTLOC / 1.6ADD / 1.6RENAME / 1.6REPLACE / 1.7RENAME` history。
 
 ## Deterministic helper
 
