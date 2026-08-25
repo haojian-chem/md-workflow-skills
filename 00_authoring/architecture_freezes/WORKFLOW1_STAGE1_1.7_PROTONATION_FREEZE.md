@@ -10,6 +10,13 @@ Current scientific-rule authority:
 
 `01_structure_preparation/1.7_protein_protonation_assignment/references/protonation_assignment_rules.md`
 
+Stage 1 atom-mapping authority:
+
+```text
+references/atom_mapping_rules.md
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md
+```
+
 ## 0. 文档定位
 
 本文件保留 `1.7 Protein protonation assignment` 的架构事实、责任边界和 generation history。
@@ -41,12 +48,14 @@ His
 
 1.7 将 protonation assignment 落实为 residue-name modification。其结构写入边界保持为：只允许修改 residue name，不加入 final H，不改变 heavy-atom set、atom names、coordinates 或 residue / atom order。
 
-是否在某个 Stage 1 task route 中执行 1.7，以及当前结构由哪个上游 Step 提供，不属于 1.7 自身的 applicability / route-planning ownership。1.7 只要求接收到当前任务认可、足以支持 protonation assignment 的有效 heavy-atom structure。
+是否在某个 Stage 1 task route 中执行 1.7，以及当前结构由哪个上游 Step 提供，不属于 1.7 自身的 applicability / route-planning ownership。1.7 只要求接收到当前任务认可、足以支持 protonation assignment 的有效 heavy-atom structure，以及与该输入结构对应的最近正式 Stage 1 atom map。
 
 ## 2. Frozen required conditions
 
 执行 1.7 时必须明确：
 
+- 当前有效 heavy-atom structure；
+- 与该输入结构对应的正式 atom map；
 - `target_pH`；
 - 当前 protein force field 或明确的 protonation-state residue naming convention；
 - 可执行 PROPKA；
@@ -80,12 +89,25 @@ His 分别判断 `ND1` 与 `NE2` 两个位点，再由两个 site assignments �
 
 原因是当前任务中 PROPKA 与 assignment 重跑成本低，而证明既有结果与当前 structure / pH / force field / chemical evidence 完全等价的核验成本更高。每次实际进入 1.7 都重新运行 PROPKA 并重新完成 assignment。
 
-## 5. Frozen result direction
+## 5. Frozen atom-mapping behavior
+
+1.7 是 Stage 1 chained atom-map producer。它复制与输入 heavy-atom structure 对应的正式 map，并按共享规则更新：
+
+- atom set、atom name、coordinates、atom order 均保持不变；
+- `original_atom_serial`、`component_id + residue_id` 和既有 `operations` history 保持不变；
+- `current_atom_serial` 与输出结构保持一致；
+- 只有 residue name 实际发生变化的 residue，其全部 atom records 追加 `1.7RENAME`；
+- residue name 未变化时不追加 1.7 operation。
+
+详细 map 字段、copy-and-update 规则与 operation code 由 `references/atom_mapping_rules.md` 拥有，并冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`。
+
+## 6. Frozen result direction
 
 当前正式结果方向保持为：
 
 ```text
 protonation_assigned_structure.pdb
+atom_mapping.yaml
 protonation_assignment_report.yaml
 protonation_validation.md
 ```
@@ -103,9 +125,11 @@ protonation_assigned_structure.pdb
 protonation_assignment_report.yaml
 ```
 
+`atom_mapping.yaml` 是正式结果，但不要求单独登记 project result index；由 `protonation_assignment_report.yaml.output_atom_mapping` 定位。
+
 固定 report format、validation checks 与正式结果完成条件由 current `SKILL.md` 拥有。
 
-## 6. Generation outcome
+## 7. Generation outcome
 
 正式 package：
 
