@@ -9,12 +9,6 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 
 `../../references/task_execution_rules.md`
 
-跨 Stage 原子映射共享规则读取：
-
-`../../references/atom_mapping_rules.md`
-
-1.2 只承担该共享规则规定的 residue-level identity 与 topology-linked atom-name endpoint，不建立 atom-level stable identity 或 atom mapping。
-
 本 Skill 只定义 1.2 自身的科学检查、reuse、validation 与正式结果接口。
 
 ## 目标
