@@ -71,6 +71,8 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 → 继续下一实际需要的子环节
 ```
 
+从 1.3 初始化 target atom map 后，凡后续当前结构已有对应正式 map，Stage main 在结构 handoff 时始终把 **current structure + matching current atom map** 作为同一对接口继续传递。1.5 不修改 map，但也不使当前 map 失效。
+
 普通已实现子环节之间不需要返回 Manager 调度，也不需要额外 Workflow dispatcher。
 
 Manager 初始规划使用：
@@ -87,37 +89,37 @@ Manager 不需要读取本 Skill 来做初始 step catalog 展开。
 
 ### 1.2 → 1.3
 
-1.3 消费 1.2 正式分类结果及其稳定身份。1.3 不重新构造 1.2 已建立的 `component_id` / `residue_id` 或重新判断分类关系。
+1.3 消费 1.2 正式分类结果及其稳定身份。1.3 不重新构造 1.2 已建立的 `component_id` / `residue_id` 或重新判断分类关系；1.3 同时以 1.2 实际检查的结构为原始结构，为每个 target 初始化 atom map。
 
 ### 1.3 → 1.4
 
-1.4 消费 1.3 最终选中的 target PDB。只有用户明确要求分别建立多个结构时，1.3 才形成多个 target；后续按 target 分别推进。
+1.4 消费 1.3 最终选中的 target PDB **及与该 PDB 对应的正式 atom map**。只有用户明确要求分别建立多个结构时，1.3 才形成多个 target；后续按 target 分别推进。
 
 ### 1.4 → 1.5
 
-1.5 消费当前 target 的当前结构，并结合 1.2 正式缺失残基与重原子组成/命名检查结果、1.3 target mapping 和实际存在的 1.4 `altloc_resolution_report.yaml`，生成该 target 独立的 `structure_completeness_report.yaml`。具体规则由 `1.5_completeness_check/SKILL.md` 拥有。
+1.5 消费当前 target 的当前结构，并结合 1.2 正式缺失残基与重原子组成/命名检查结果、1.3 target mapping 和实际存在的 1.4 `altloc_resolution_report.yaml`，生成该 target 独立的 `structure_completeness_report.yaml`。1.5 不修改结构，也不维护 atom map；进入 1.5 前与当前结构对应的 map 继续作为该结构的 current atom map。具体规则由 `1.5_completeness_check/SKILL.md` 拥有。
 
 ### 1.5 → 1.6
 
-1.6 消费当前 target 的 1.5 正式 `structure_completeness_report.yaml`，以及其中 `structure` 字段记录的当前 PDB，并落实报告中已明确的 repair items。具体规则由 `1.6_structure_completion/SKILL.md` 拥有。
+1.6 消费当前 target 的 1.5 正式 `structure_completeness_report.yaml`、其中 `structure` 字段记录的当前 PDB，以及**与该 PDB 对应的最近正式 atom map**，并落实报告中已明确的 repair items。具体规则由 `1.6_structure_completion/SKILL.md` 拥有。
 
 ### 1.6 → 1.7
 
-1.7 消费当前 target 在 1.6 处理后的当前结构：
+1.7 消费当前 target 在 1.6 处理后的 **current structure + matching atom map**：
 
-- 如果 1.6 本地执行并形成通过 validation 的正式结果，使用该次 `completed_structure.pdb`；
-- 如果 1.6 复用了等价的既有正式结果，使用被复用的 `completed_structure.pdb`；
-- 如果 1.6 因没有 repair item 而未执行，则沿用进入 1.6 前的当前结构。
+- 如果 1.6 本地执行并形成通过 validation 的正式结果，使用该次 `completed_structure.pdb` + `atom_mapping.yaml`；
+- 如果 1.6 复用了等价的既有正式结果，使用被复用结果中的 `completed_structure.pdb` + matching `atom_mapping.yaml`；
+- 如果 1.6 因没有 repair item 而未执行，则沿用进入 1.6 前的 current structure + current atom map。
 
-1.7 的内部执行规则由 `1.7_protein_protonation_assignment/SKILL.md` 拥有，Stage main 只维护这里的结构 handoff。
+1.7 的内部执行规则由 `1.7_protein_protonation_assignment/SKILL.md` 拥有，Stage main 只维护这里的结构/map handoff。
 
 ### 1.7 → 1.8
 
-1.8 消费已经落实蛋白质 protonation-state residue naming 的当前重原子结构，并结合 1.3 target mapping 与 1.2 正式分类和关系信息，形成 Stage 1 final structure / map。具体规则由 `1.8_reorder_and_mapping/SKILL.md` 拥有。
+1.8 消费已经落实蛋白质 protonation-state residue naming 的 **current heavy-atom structure + matching atom map**，并结合 1.3 target mapping 与 1.2 正式分类和关系信息，形成 `stage1_final.pdb` 与 `stage1_final_map.yaml`。具体规则由 `1.8_reorder_and_mapping/SKILL.md` 拥有。
 
 ### 1.8 → 1.9
 
-1.9 对 1.8 的 `stage1_final.pdb` + `stage1_final_map.yaml` 做阶段级只读终检，并生成逐项 `structure_preparation_validation.md`。1.9 不修改结构，也不生成整体 `PASS / FAIL`；发现的问题按报告中的实际对象返回真正拥有该问题的上游子环节处理。
+1.9 对 1.8 的 `stage1_final.pdb` + `stage1_final_map.yaml` 做阶段级只读终检，并生成逐项 `structure_preparation_validation.md`。1.9 不修改结构或 map，也不生成整体 `PASS / FAIL`；发现的问题按报告中的实际对象返回真正拥有该问题的上游子环节处理。
 
 ## Dynamic task plan
 
