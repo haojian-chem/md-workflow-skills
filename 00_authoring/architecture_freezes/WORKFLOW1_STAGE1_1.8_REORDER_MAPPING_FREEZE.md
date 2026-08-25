@@ -8,11 +8,18 @@ Current runtime authority:
 01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
 ```
 
+Stage 1 atom-mapping authority:
+
+```text
+references/atom_mapping_rules.md
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md
+```
+
 本文件保存 1.8 的稳定架构事实。active Skill 生成后，可变执行细节由 current `SKILL.md` / helper 拥有；本文件不维护第二套平行 mutable specification。
 
 ## 1. Purpose
 
-1.8 将当前 target 的 current valid heavy-atom structure 整理为 Stage 1 final structure，并建立后续可稳定消费的 heavy-atom identity map。
+1.8 将当前 target 的 current valid heavy-atom structure 整理为 Stage 1 final structure，并把前序持续维护的 chained atom map 更新为最终 `stage1_final_map.yaml`。
 
 当前职责收敛为：
 
@@ -20,7 +27,7 @@ Current runtime authority:
 final residue / object block organization
 + heavy-atom block preservation
 + TER / atom serial materialization
-+ final heavy-atom mapping
++ chained atom-map finalization
 ```
 
 当前 1.2 已在 topology effect 应用后物化最终 component membership 与 component-level `chain_index`，1.3 直接用该 `chain_index` materialize PDB chain。因此 **1.8 不再重新决定 chain assignment 或 component membership**。
@@ -30,8 +37,11 @@ final residue / object block organization
 每个 target 的正式输入：
 
 - current valid heavy-atom PDB；
+- 与该 PDB 一一对应的最近正式 Stage 1 atom map；
 - 1.3 对应 `targets/target_xxx.yaml`；
 - 1.2 正式 `classification_result.yaml`，当前接口为 `schema_version: "4.0"` 且 `result_status: COMPLETE`。
+
+1.8 不允许绕过当前 input map、再从 current PDB 重新构造原始 atom provenance 或 operation history。
 
 1.8 直接消费：
 
@@ -48,7 +58,7 @@ topology_linked_checks[]
 
 `residue_id` 只在所属 `component_id` 内唯一；下游 stable residue identity 必须使用 `component_id + residue_id`。
 
-1.6 `completion_report.yaml`、1.7 `protonation_assignment_report.yaml` 与 `relation_decisions.yaml` 不作为强制输入。
+1.6 `completion_report.yaml`、1.7 `protonation_assignment_report.yaml` 与 `relation_decisions.yaml` 不作为强制输入；已落实的前序结构变化及 atom provenance/history 由 current structure 与对应 current atom map 表达。
 
 ## 3. Reuse
 
@@ -64,7 +74,7 @@ topology_linked_checks[]
 
 ## 5. Linked nonstandard block
 
-1.8 为 Stage 1 PDB object organization 建立 linked nonstandard block；这不是 Stage 2 的 2.3 processing unit。
+1.8 为 Stage 1 PDB object organization 建立 linked nonstandard block。
 
 对当前 target 中 `TOPOLOGY_LINKED_NONSTANDARD` residues：
 
@@ -127,27 +137,38 @@ final PDB：
 stage1_final_map.yaml
 ```
 
-只记录 `stage1_final.pdb` 中实际存在的 heavy atoms。
+它是 current input map 的最终 copy-and-update 结果，只记录 `stage1_final.pdb` 中实际存在的 heavy atoms，使用 Stage 1 shared atom-map contract，不建立第二套 final-map schema。
 
-atom record 固定保存：
+文件级至少保存：
 
 ```text
-serial
-chain_id
-resid
-residue_name
-atom_name
-component_id
-residue_id
+target_id
+original_structure
+input_structure
+current_structure
+input_map
+atoms
 ```
 
-`component_id + residue_id` 共同构成 residue stable identity。
+每个 atom record 固定保存：
 
-不记录 `origin`、`source_atom_serial`、missing placeholder 或 completion provenance。
+```text
+current_atom_serial
+original_atom_serial
+component_id
+residue_id
+operations
+```
+
+1.8 保持 input map 中所有 `original_atom_serial`、`component_id + residue_id` 和既有 `operations` history；按 final PDB 更新 `current_atom_serial`。因 1.8 block / residue organization 而实际改变 atom-record 写出位置的 atoms 追加 `1.8REORDER`；单纯 serial 重编号不追加独立 operation。
+
+1.8 不重新构造 `original_atom_serial`，也不解释或改写此前 `1.3ADD / 1.4ALTLOC / 1.6ADD / 1.6RENAME / 1.6REPLACE / 1.7RENAME` history。
+
+详细字段语义和 validation 规则由 `references/atom_mapping_rules.md` 拥有，并冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`。
 
 ## 9. Completion boundary
 
-1.8 只做最小 completion gate，确认 reorder / mapping 已完整执行、atom set 未增删、final PDB 与 map 已成功形成且逐 atom 唯一对应。
+1.8 只做最小 completion gate，确认 reorder / mapping 已完整执行、atom set 未增删、input map provenance/history 未丢失、final PDB 与 final map 已成功形成且逐 atom 唯一对应。
 
 Stage 1 总体验证属于 1.9；1.8 不生成独立 validation report。
 
@@ -180,10 +201,10 @@ execution path：
 01_structure_preparation/1.8_reorder_and_mapping/scripts/build_stage1_final.py
 ```
 
-它读取 1.2 v4 + 1.3 target mapping，执行 stable identity binding、linked-block construction、block reorder、TER / serial materialization 与 final map 写出；不承担 classification、relation judgment、component membership 或 chain assignment。
+它读取 1.2 v4、1.3 target mapping、current heavy-atom PDB 与 current input atom map，执行 stable identity binding、linked-block construction、block reorder、TER / serial materialization 与 chained map copy/update；不承担 classification、relation judgment、component membership 或 chain assignment，也不得从 current PDB 重新构造原始 atom provenance。
 
 ## 12. Handoff
 
 1.9 只读消费 1.8 final PDB / map 做 Stage 1 final validation。
 
-Stage 2 可以基于此 heavy-atom identity / order 骨架建立 force-field-specific all-atom order 与最终 topology organization，但不反向改写 Stage 1 structure identity。
+本 freeze 的职责止于 Stage 1 final result；不定义 Stage 2 如何建立或消费 atom mapping / provenance。
