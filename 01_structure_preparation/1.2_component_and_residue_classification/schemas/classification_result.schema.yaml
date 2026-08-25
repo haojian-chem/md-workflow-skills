@@ -10,12 +10,11 @@ required:
   - classification_mode
   - references
   - components
-  - confirmed_relations
-  - rejected_candidates
+  - topology_linked_checks
   - unresolved_items
 properties:
   schema_version:
-    const: "3.0"
+    const: "4.0"
   result_status:
     const: COMPLETE
   model:
@@ -40,10 +39,10 @@ properties:
     minItems: 1
     items:
       $ref: "#/$defs/component"
-  confirmed_relations:
-    $ref: "#/$defs/relation_collections"
-  rejected_candidates:
-    $ref: "#/$defs/relation_collections"
+  topology_linked_checks:
+    type: array
+    items:
+      $ref: "#/$defs/topology_linked_check"
   unresolved_items:
     type: array
     items:
@@ -75,6 +74,18 @@ $defs:
         type: string
         minLength: 1
       "^CCD_PATH_[1-9][0-9]*$":
+        type: string
+        minLength: 1
+      "^STRUCTURE_[1-9][0-9]*$":
+        type: string
+        minLength: 1
+      "^POSSIBLE_CONNECTIONS_[1-9][0-9]*$":
+        type: string
+        minLength: 1
+      "^POSSIBLE_COORDINATION_[1-9][0-9]*$":
+        type: string
+        minLength: 1
+      "^PROJECT_INFO_[1-9][0-9]*$":
         type: string
         minLength: 1
 
@@ -402,41 +413,201 @@ $defs:
         type: string
         minLength: 1
 
-  relation:
+  criterion_status:
+    enum: [NOT_PRESENT, NOT_SATISFIED, SATISFIED]
+
+  explicit_connection_evidence:
+    type: object
+    additionalProperties: false
+    required: [source, lines]
+    properties:
+      source:
+        type: string
+        pattern: "^STRUCTURE_[1-9][0-9]*$"
+      lines:
+        type: string
+        minLength: 1
+
+  explicit_connection_check:
+    type: object
+    additionalProperties: false
+    required: [status, evidence]
+    properties:
+      status:
+        $ref: "#/$defs/criterion_status"
+      evidence:
+        type: array
+        items:
+          $ref: "#/$defs/explicit_connection_evidence"
+    allOf:
+      - if:
+          properties:
+            status:
+              const: NOT_PRESENT
+        then:
+          properties:
+            evidence:
+              maxItems: 0
+        else:
+          properties:
+            evidence:
+              minItems: 1
+
+  geometry_evidence:
+    type: object
+    additionalProperties: false
+    required: [definition, item]
+    properties:
+      definition:
+        type: string
+        pattern: "^(POSSIBLE_CONNECTIONS|POSSIBLE_COORDINATION)_[1-9][0-9]*$"
+      item:
+        type: string
+        minLength: 1
+
+  geometry_check:
+    type: object
+    additionalProperties: false
+    required: [status, evidence]
+    properties:
+      status:
+        $ref: "#/$defs/criterion_status"
+      evidence:
+        type: array
+        items:
+          $ref: "#/$defs/geometry_evidence"
+    allOf:
+      - if:
+          properties:
+            status:
+              const: NOT_PRESENT
+        then:
+          properties:
+            evidence:
+              maxItems: 0
+        else:
+          properties:
+            evidence:
+              minItems: 1
+
+  provided_project_evidence:
+    type: object
+    additionalProperties: false
+    required: [reference, item]
+    properties:
+      reference:
+        type: string
+        pattern: "^PROJECT_INFO_[1-9][0-9]*$"
+      item:
+        type: string
+        minLength: 1
+
+  provided_user_evidence:
+    type: object
+    additionalProperties: false
+    required: [description]
+    properties:
+      description:
+        type: string
+        minLength: 1
+
+  provided_connection_info:
+    type: object
+    additionalProperties: false
+    required: [status, evidence]
+    properties:
+      status:
+        $ref: "#/$defs/criterion_status"
+      evidence:
+        type: array
+        items:
+          oneOf:
+            - $ref: "#/$defs/provided_project_evidence"
+            - $ref: "#/$defs/provided_user_evidence"
+    allOf:
+      - if:
+          properties:
+            status:
+              const: NOT_PRESENT
+        then:
+          properties:
+            evidence:
+              maxItems: 0
+        else:
+          properties:
+            evidence:
+              minItems: 1
+
+  topology_linked_check:
     type: object
     additionalProperties: false
     required:
       - relation_id
-      - endpoint_1
-      - endpoint_2
-      - evidence
+      - relation_type
+      - explicit_connection
+      - geometry_check
+      - provided_connection_info
+      - judgment
       - topology_effect_applied
     properties:
       relation_id:
         type: string
         pattern: "^relation_[0-9]{3,}$"
-      endpoint_1:
+      relation_type:
+        enum: [COVALENT_CONNECTION, METAL_COORDINATION]
+      atom_1:
         $ref: "#/$defs/relation_endpoint"
-      endpoint_2:
+      atom_2:
         $ref: "#/$defs/relation_endpoint"
-      evidence:
-        $ref: "#/$defs/evidence"
+      metal:
+        $ref: "#/$defs/relation_endpoint"
+      donor:
+        $ref: "#/$defs/relation_endpoint"
+      explicit_connection:
+        $ref: "#/$defs/explicit_connection_check"
+      geometry_check:
+        $ref: "#/$defs/geometry_check"
+      provided_connection_info:
+        $ref: "#/$defs/provided_connection_info"
+      judgment:
+        enum: [CONFIRMED, REJECTED]
       topology_effect_applied:
         type: boolean
-
-  relation_collections:
-    type: object
-    additionalProperties: false
-    required: [covalent_connections, metal_coordination]
-    properties:
-      covalent_connections:
-        type: array
-        items:
-          $ref: "#/$defs/relation"
-      metal_coordination:
-        type: array
-        items:
-          $ref: "#/$defs/relation"
+    allOf:
+      - if:
+          properties:
+            relation_type:
+              const: COVALENT_CONNECTION
+        then:
+          required: [atom_1, atom_2]
+          properties:
+            metal: false
+            donor: false
+        else:
+          required: [metal, donor]
+          properties:
+            atom_1: false
+            atom_2: false
+      - if:
+          properties:
+            judgment:
+              const: REJECTED
+        then:
+          properties:
+            topology_effect_applied:
+              const: false
+      - if:
+          allOf:
+            - properties:
+                relation_type:
+                  const: COVALENT_CONNECTION
+            - properties:
+                judgment:
+                  const: CONFIRMED
+        then:
+          properties:
+            topology_effect_applied:
+              const: true
 
   unresolved_item:
     type: object
