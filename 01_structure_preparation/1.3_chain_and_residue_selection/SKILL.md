@@ -9,6 +9,10 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 `../../references/task_execution_rules.md`
 
+涉及 target PDB atom set / materialization 时同时读取：
+
+`../../references/atom_mapping_rules.md`
+
 本 Skill 仅补充 1.3-specific 的对象、reuse、执行、validation 与 results 规则。
 
 完成结构准备阶段 `1.3 Chain and Residue Selection`。
