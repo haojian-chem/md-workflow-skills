@@ -9,12 +9,6 @@ description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数
 
 `../../references/task_execution_rules.md`
 
-Stage 1 → Stage 2 原子映射共享规则读取：
-
-`../../references/atom_mapping_rules.md`
-
-2.1 读取 `stage1_final_map.yaml` 时按该共享规则解释 Stage 1 final atom identity；后续 Stage 2 `*.map` 的 source provenance 也必须沿用同一规则。
-
 本 Skill 只定义 2.1 的力场/参数来源确定、已有 Stage 2 结果适用性判断、处理对象划分以及 Task Sheet 更新规则。
 
 ## 目标
