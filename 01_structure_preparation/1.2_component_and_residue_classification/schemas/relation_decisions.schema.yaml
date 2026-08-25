@@ -6,7 +6,7 @@ additionalProperties: false
 required: [schema_version, model_id, decisions]
 properties:
   schema_version:
-    const: "2.0"
+    const: "3.0"
   model_id:
     type: string
     minLength: 1
@@ -16,12 +16,10 @@ properties:
     items:
       type: object
       additionalProperties: false
-      required: [relation_id, relation_type, decision]
+      required: [relation_id, decision]
       properties:
         relation_id:
           type: string
           pattern: "^relation_[0-9]{3,}$"
-        relation_type:
-          enum: [COVALENT_CONNECTION, METAL_COORDINATION]
         decision:
           enum: [CONFIRMED, REJECTED]
