@@ -20,8 +20,7 @@ Status: CURRENT AUTHORING REFERENCE DIRECTORY
 当前冻结记录：
 
 ```text
-MD_WORKFLOW_ATOM_MAPPING_HANDOFF_FREEZE.md
-
+WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md
 WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md
 WORKFLOW1_STAGE1_1.6_STRUCTURE_COMPLETION_FREEZE.md
 WORKFLOW1_STAGE1_1.7_PROTONATION_FREEZE.md
@@ -47,7 +46,7 @@ WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md
 
 当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
 
-跨 Stage 的 atom mapping / source provenance handoff 统一冻结于 `MD_WORKFLOW_ATOM_MAPPING_HANDOFF_FREEZE.md`：1.2 不建立 atom-level stable identity；1.8 首次物化 `stage1_final_map.yaml`；1.9 对 final PDB / map 做逐原子一致性检查；Stage 2 的 `SOURCE` provenance 从 `stage1_final.pdb` serial 开始。
+Stage 1 原子映射维护统一冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`，runtime authority 为 `references/atom_mapping_rules.md`。当前 1.3、1.4、1.6、1.7、1.8 在实际结构改写时读取该共享规则，1.9 用其验证 Stage 1 final atom map；1.5 不修改结构，不引用该规则。该 freeze 不定义 Stage 2 atom mapping / provenance。
 
 Stage 1.2 的 `topology-linked` 检查与正式记录规则已专项冻结于 `WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md`，并已同步到 current 1.2 `SKILL.md` / references / schema；该 freeze 保留为 authoring/architecture record，不取代 current runtime `SKILL.md`。
 
