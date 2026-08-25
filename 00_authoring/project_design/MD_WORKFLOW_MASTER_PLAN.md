@@ -50,7 +50,7 @@ Current implementation status:
 
 ```text
 1.1      active Skill completed
-1.2      active Skill regenerated; model-scoped hierarchical v3 result active; residue check short-circuit, covalent-connection / metal-coordination result recording, and relation-driven final topology_class/component update restored; reference_manifest and selection_identity helper retired; current entry: 01_structure_preparation/1.2_component_and_residue_classification/SKILL.md
+1.2      active Skill exists; revised topology-linked check / formal-record rules frozen and pending synchronization to the current implementation; current entry: 01_structure_preparation/1.2_component_and_residue_classification/SKILL.md; freeze: 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md
 1.3–1.4 active Skills completed
 1.5      active Skill generated; interface synchronized to current 1.2 hierarchical result and direct reference evidence
 1.6      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.6_structure_completion/SKILL.md
@@ -58,6 +58,14 @@ Current implementation status:
 1.8      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
 1.9      active Skill generated; post-generation authoring/interface consistency check completed; current entry: 01_structure_preparation/1.9_validation/SKILL.md
 ```
+
+Stage 1.2 topology-linked check / formal-record architecture freeze:
+
+```text
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md
+```
+
+该 freeze 保存当前已确定、待同步到 active 1.2 implementation 的 topology-linked 检查与记录规则；同步完成并 validation 前，current 1.2 runtime 文件仍可能保留此前的 relation 结果结构。
 
 Stage 1.6 architecture freeze remains the authoring/architecture record:
 
@@ -254,7 +262,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.9 active Skills 已生成；1.2 当前正式结果采用 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence；共价连接与金属配位检查重新作为正式检查项目记录，确认且产生 topology effect 的关系必须同步反映到最终 residue `topology_class` 与 component membership；`reference_manifest.yaml` 与 `selection_identity.py` 已退出 active 1.2；1.3 / 1.5 直接接口已同步；1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成并完成 post-generation authoring/interface consistency check；
+- Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 仍为 current 基线；本轮重新确定的 topology-linked 检查与正式记录规则已经专项冻结，但尚未同步到 active 1.2 `SKILL.md` / references / schema，因此 current runtime relation 结构不能作为这部分后续 authoring 的设计 authority；1.3 / 1.5 当前接口已同步到此前 1.2 hierarchical result；1.6、1.7、1.8 与 1.9 均已按 current architecture / discussion 正式生成并完成 post-generation authoring/interface consistency check；
 - Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill并完成 post-generation authoring/interface consistency check，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.3 参数化模型规则与 2.5 详细方案已有专项 freeze；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
