@@ -1,6 +1,6 @@
 ---
 name: reorder_and_mapping
-description: Stage 1.8 Reorder and mapping。把当前 target 的有效重原子结构整理为 Stage 1 最终 PDB，并建立供 1.9 / Stage 2 消费的 final heavy-atom identity mapping。
+description: Stage 1.8 Reorder and mapping。把当前 target 的有效重原子结构按 1.2/1.3 已确定的 component / chain identity 完成最终 object organization，并生成 Stage 1 final PDB 与逐重原子 identity map。
 ---
 
 # 1.8 Reorder and mapping
@@ -15,21 +15,21 @@ description: Stage 1.8 Reorder and mapping。把当前 target 的有效重原子
 
 将当前 target 已完成前序结构准备的 **current valid heavy-atom structure** 整理为 Stage 1 最终结构，并建立逐原子的稳定 identity mapping。
 
-核心职责：
-
 ```text
 current heavy-atom structure
-+ 1.3 target identity / mapping
-+ 1.2 classification / relation
++ 1.3 target mapping
++ 1.2 final component / residue / topology-linked records
 ↓
-final Stage 1 chain / object organization
+final residue / object block organization
 ↓
-final PDB materialization
+TER + PDB serial materialization
 ↓
 stage1_final.pdb + stage1_final_map.yaml
 ```
 
-1.8 只处理结构表示与 mapping。它不重新做 structure repair、protonation assignment 或 force-field-specific all-atom ordering，也不根据未来 GROMACS `moleculetype` 反向改变 Stage 1 chain identity。
+当前 1.2 已在全部 topology effect 应用后物化最终 `component_id`、component 一级 `chain_index` 与 component membership；1.3 又直接把该 `chain_index` materialize 为 PDB chain ID。因此 1.8 **不重新决定 chain assignment，也不重新计算 component membership**。
+
+1.8 不重新做 structure repair、protonation assignment、classification、topology-linked judgment 或 force-field-specific all-atom ordering。
 
 ## Object requirements
 
@@ -37,23 +37,36 @@ stage1_final.pdb + stage1_final_map.yaml
 
 - 当前 target 的 current valid heavy-atom PDB；
 - 1.3 对应 `targets/target_xxx.yaml`；
-- 与该 target 对应的 1.2 正式 `classification_result.yaml`，且 `result_status: COMPLETE`。
+- 与该 target 对应的 1.2 正式 `classification_result.yaml`，当前要求 `schema_version: "4.0"` 且 `result_status: COMPLETE`。
 
-1.8 直接使用：
+1.8 直接消费当前 1.2：
 
-- current structure 中实际存在的 atom / residue name / coordinates；
-- 1.3 的 `chain_mapping`、`residue_mapping` 与 target membership；
-- 1.2 已物化的 `component_id`、`residue_id`、正式 residue order、classification 与 confirmed topology-effect relations。
+```text
+components[] 顺序
+component_id
+component-level chain_index
+components[].residues[] 顺序
+component_id + residue_id
+polymer_class.value
+topology_class.value
+topology_linked_checks[]
+```
 
-不得根据 final residue name、atom name 或位置重新猜 `component_id` / `residue_id`。
+`residue_id` 只在所属 `component_id` 内唯一，因此 1.8 中 residue stable identity 始终使用：
 
-1.6 `completion_report.yaml`、1.7 `protonation_assignment_report.yaml` 和 `relation_decisions.yaml` 不是 1.8 的强制输入：其已经落实的结构变化由 current structure 体现，relation decision 已进入正式 `classification_result.yaml`。
+```text
+component_id + residue_id
+```
+
+不得仅用 `residue_id` 建立跨 component 映射，也不得根据 residue name、atom name、chain 或 resid 重新构造这些 opaque IDs。
+
+1.6 `completion_report.yaml`、1.7 `protonation_assignment_report.yaml` 和 `relation_decisions.yaml` 不是 1.8 的强制输入；已经落实的结构变化由 current structure 体现，人工 relation decision 已反映到 1.2 正式结果。
 
 ## No reuse
 
 1.8 **不设置 reuse**。
 
-每次实际进入 1.8，都基于当前 target 的 current heavy-atom structure 和当前正式 1.2 / 1.3 identity information 重新生成本次结果；不通过 `project_result_index.md` 查找或复用旧 1.8 输出。
+每次实际进入 1.8，都基于当前 target 的 current structure、当前 1.3 target mapping 与当前正式 1.2 result 重新生成结果。
 
 ## Work directory and multiple targets
 
@@ -63,7 +76,7 @@ stage1_final.pdb + stage1_final_map.yaml
 <project_root>/01_structure_preparation/08_reorder_and_mapping/
 ```
 
-当前 Task 的每个 target 独立执行：
+每个 target 独立执行：
 
 ```text
 <project_root>/01_structure_preparation/08_reorder_and_mapping/<task_id>/<target_id>/
@@ -71,26 +84,25 @@ stage1_final.pdb + stage1_final_map.yaml
 └── stage1_final_map.yaml
 ```
 
-多个 target 不共享 final chain assignment、residue numbering、object order 或 map。1.8 不决定是否建立多个 target；target 数量由 1.3 已完成的 selection 结果决定。
+1.8 不决定 target 数量；multiple targets 由 1.3 已完成的 selection 结果确定。
 
 ## Preflight
 
 正式写出前确认：
 
 - current structure、target record、classification result 均可读；
-- current structure 是本步骤预期的 heavy-atom PDB；1.8 不通过删除 H 来修正错误输入；
+- current structure 是本步骤预期的 heavy-atom PDB；1.8 不通过删除 H 修正错误输入；
 - 1.3 `chain_mapping + residue_mapping` 能把当前 PDB residue 唯一绑定到 `component_id + residue_id`；
-- target 使用的 `component_id / residue_id` 均存在于当前 `classification_result.yaml`；
-- 影响 chain assignment 的 topology relation 已在 1.2 正式结果中闭合；
+- target 中所有 `component_id + residue_id` 均存在于当前 1.2 `components[].residues[]`；
+- target `chain_index` 与对应 1.2 component 一级 `chain_index` 一致；
+- 1.2 `topology_linked_checks[]` 已闭合，1.8 只消费 `judgment: CONFIRMED` 且 `topology_effect_applied: true` 的正式关系；
 - 输出目录属于当前 Task / target，且不会覆盖其它 target 的正式结果。
-
-如果 identity 或 topology relation 仍有科学歧义，当前 Agent 先解决该上游问题；deterministic helper 不替用户或 Agent 发明新的 relation。
 
 ## Execution rules
 
 ### 1. Stable identity binding
 
-先用 1.3 的映射建立：
+先建立：
 
 ```text
 current PDB chain + resid
@@ -98,75 +110,62 @@ current PDB chain + resid
 ↔ component_id + residue_id
 ```
 
-后续 reorder / renumber 过程中始终以 `component_id + residue_id` 跟踪 residue identity。
+其中 `chain_index` 直接来自 1.2 component 一级正式字段。
 
-### 2. Topology-linked nonstandard unit
+后续所有 reorder / map 操作都以 `component_id + residue_id` 跟踪 residue identity。
 
-根据 1.2 已确认且 `topology_effect_applied: true` 的 relations，将相互 topology-linked 的 nonstandard residues 组织为 linked nonstandard unit。
+### 2. Chain 与 resid 保持
 
-1.8 不重新判断 relation 是否应成立，只消费 1.2 的正式事实。
+1.8 不重新分 chain。
 
-对每个 linked unit：
+final PDB chain ID 继续使用 1.3 已按 1.2 component `chain_index` materialize 的 PDB chain ID。
+
+1.8 也不重新编号 residue `resid`。即使 object block 在本步骤发生位置移动，仍保留 1.3 已写入当前 target 的 `resid`；final object order 不要求 resid 数值重新单调排列。
+
+因此 1.8 只重新生成 atom / TER serial，不重新生成 chain ID 或 resid。
+
+### 3. 1.8 linked nonstandard block
+
+1.8 需要区分 linked nonstandard object boundary，以便组织 block 和写 `TER`。这里的 block 只属于 **Stage 1 PDB organization**，不定义或替代 Stage 2 的 2.3 processing unit。
+
+对当前 target 中 `topology_class.value: TOPOLOGY_LINKED_NONSTANDARD` 的 residue：
+
+- `topology_linked_checks[]` 中 `judgment: CONFIRMED` 且 `topology_effect_applied: true` 的记录才参与 block relation；
+- 只有当关系两端都属于 `TOPOLOGY_LINKED_NONSTANDARD` residue 时，才把两端合并为同一个 1.8 linked block；
+- 通过同一个 standard residue 分别连接的两个 nonstandard residues，不因为共享 standard-side endpoint 自动合并成一个 block；
+- 没有与其它 nonstandard residue形成上述直接 topology-effect relation 的 linked nonstandard residue，自身形成一个 block；
+- 一个 block 内 residue 按 1.2 `components[].residues[]` 的正式顺序排列。
+
+由于 1.2 已经应用 topology effect 并形成最终 component membership，同一个 1.8 linked block 应属于同一个 final `component_id`；若正式结果违反这一点，视为上游 interface inconsistency，不在 1.8 猜测修复。
+
+### 4. Residue / object organization
+
+正式稳定顺序基准为：
 
 ```text
-所有 standard-side linked residues 属于同一 standard chain
-→ unit 使用该 standard chain 的 final PDB chain ID
-
-standard-side linked residues 跨多个 standard chains
-→ unit 保持独立 chain identity
+1.2 components[] 顺序
+→ component 内 residues[] 顺序
 ```
 
-如果 1.2 / 1.3 已经给出与该规则一致的 chain organization，直接沿用，不重新建立第二套 chain model。
-
-跨多条 standard chain 的 linked unit 优先沿用已有独立 PDB chain ID；只有现有表示不能可靠作为独立 chain 时，才按 1.3 固定 chain-label 序列：
-
-```text
-A-Z → a-z → 0-9
-```
-
-选择当前 final structure 中未使用且不与所链接 standard chains 冲突的 chain ID。
-
-不属于上述 linked-unit reassignment 的对象保持既有 chain identity。
-
-### 3. Residue / object organization
-
-对每条 standard polymer chain：
+对于包含 standard polymer residue 的 component：
 
 ```text
 standard polymer residue block
-TER
-assigned linked nonstandard unit 1
-TER
-assigned linked nonstandard unit 2
-TER
-...
+→ linked nonstandard block 1
+→ linked nonstandard block 2
+→ ...
 ```
 
 规则：
 
-- standard polymer residues 保持既有 polymer order；
-- 归入该 chain 的多个 linked units 保持 1.2 正式 residue/object order 所确定的稳定 unit order；
-- multi-residue linked unit 内部保持正式 residue order；
-- 不按 attachment residue number 重新排序 linked units；
-- 不把 linked unit 插到 attachment residue 紧邻位置；
-- 跨多个 standard chain 而保持独立 chain 的 linked unit 不进入任何 standard-chain residue 排序域；
-- independent nonstandard、solvent、ion 和其它未被本步骤 reassignment 的对象保持既有相对 organization。
+- standard polymer residues 保持 1.2 正式 residue 顺序；
+- linked blocks 按其中最早 residue 在 1.2 正式顺序中的位置确定稳定 block order；
+- multi-residue linked block 内保持 1.2 正式 residue 顺序；
+- 不按 attachment residue number 重新排序 linked blocks；
+- 不把 linked block 插到 attachment residue 紧邻位置；
+- 除被移动的 linked nonstandard blocks 外，其余 residues 保持 1.2 / 1.3 已建立的正式相对顺序。
 
-### 4. Final resid
-
-默认保留 1.3 已有 `resid`。
-
-例外：**归入某条 standard chain 的 topology-linked nonstandard unit** 使用该 final chain 后续可用、不会与保留 residue identity 冲突的新 `resid`。
-
-分配顺序为：
-
-```text
-该 chain 已保留的 residue numbering
-→ assigned linked units 的稳定 unit order
-→ unit 内稳定 residue order
-```
-
-standard polymer residue 的 `resid` 不因 1.8 reorder 改写。跨多条 standard chain 而保持独立 chain 的 linked unit，以及其它未 reassignment 对象，保持原 `resid`。
+对于不含 standard polymer residue 的 component，不为了形成“standard block”额外重排；只在需要时保持同一个 multi-residue linked block 连续，并保持正式 residue / block order。
 
 ### 5. Heavy-atom order and immutable fields
 
@@ -174,9 +173,9 @@ standard polymer residue 的 `resid` 不因 1.8 reorder 改写。跨多条 stand
 
 同一 residue 内：
 
-- heavy atoms 必须保持连续；
+- heavy atoms 保持连续；
 - 保持进入 1.8 时的 atom order；
-- 不按 CCD、force-field template、字母顺序或其它未来 topology 需求重排。
+- 不按 CCD、force-field template、字母顺序或未来 topology 需求重排。
 
 1.8 不新增或删除 atoms，也不修改：
 
@@ -190,7 +189,7 @@ standard polymer residue 的 `resid` 不因 1.8 reorder 改写。跨多条 stand
 
 ### 6. PDB writing
 
-final PDB 只保留当前 Stage 1 PDB materialization 所需 records：
+final PDB 只保留当前 Stage 1 materialization 所需 records：
 
 ```text
 CRYST1   # 当前结构存在时保留
@@ -200,7 +199,7 @@ TER
 END
 ```
 
-`ATOM / HETATM` 继续使用 1.2 `polymer_class` 语义：
+`ATOM / HETATM` 直接使用 1.2 `polymer_class.value`：
 
 ```text
 POLYMER    → ATOM
@@ -209,14 +208,14 @@ NONPOLYMER → HETATM
 WATER      → HETATM
 ```
 
-`TER` 是 PDB object/block boundary，不改变 Stage 1 chain identity：
+`TER` 表示 PDB object / block boundary，不改变 chain identity：
 
-- standard polymer block 结束后写 `TER`；
-- 每个 linked nonstandard unit 结束后写 `TER`；
-- 前序结构中仍有意义的 polymer-segment boundary 保持；
-- 其它 nonpolymer object 保持既有 Stage 1 materialization boundary。
+- selected standard polymer block 结束后写 `TER`；
+- 每个 1.8 linked nonstandard block 结束后写 `TER`；
+- 1.3 selection 造成的 polymer segment boundary 继续保留；
+- 其它 `BRANCHED / NONPOLYMER / WATER` object 按 Stage 1 materialization 语义保持 boundary。
 
-完成 final organization 后，`ATOM / HETATM / TER` 按实际写出顺序从 1 连续重编号 PDB serial。
+完成 final organization 后，`ATOM / HETATM / TER` 按实际写出顺序从 1 连续重编号 serial。
 
 ### 7. Final heavy-atom map
 
@@ -234,11 +233,11 @@ atoms:
     resid: 1
     residue_name: ALA
     atom_name: N
-    component_id: <component_id>
-    residue_id: <residue_id>
+    component_id: component_001
+    residue_id: residue_001
 ```
 
-atom record 只保存：
+每个 atom record 保存：
 
 ```text
 final PDB identity
@@ -253,17 +252,17 @@ stable upstream identity
 - residue_id
 ```
 
+`component_id + residue_id` 共同构成 residue stable identity。
+
 不加入 `origin`、`source_atom_serial`、Stage 2 atom index 或其它上游历史副本。
 
 ## Deterministic helper
 
-当前 1.8 的机械写出由：
+当前机械 materialization 使用：
 
 ```text
 scripts/build_stage1_final.py
 ```
-
-完成。
 
 典型调用：
 
@@ -276,18 +275,28 @@ python scripts/build_stage1_final.py \
   --output-map <target_work_directory>/stage1_final_map.yaml
 ```
 
-helper 只执行已经确定的 identity binding、linked-unit organization、PDB rewrite 和 map materialization；它不是 relation/classification decision layer。
+helper 只执行确定性的：
+
+```text
+读取 1.2 v4 component/residue interface
+→ 绑定 1.3 target mapping
+→ 形成 1.8 linked blocks
+→ block reorder
+→ TER / serial materialization
+→ stage1_final_map.yaml 写出
+```
+
+它不承担 classification、relation judgment、component membership 或 chain assignment 的科学判断。
 
 ## Completion gate
 
 1.8 不做 Stage 1 总体 validation；该职责属于 1.9。
 
-本步骤结束前只确认本次 1.8 已完整执行：
+结束前只确认本次 1.8 已完整执行：
 
-- 所有当前 PDB residues 均已通过 1.3 mapping 绑定到稳定 identity；
-- 需要执行的 linked-unit chain / resid / object organization 已落实；
-- `stage1_final.pdb` 成功生成；
-- `stage1_final_map.yaml` 成功生成；
+- 所有当前 PDB residues 均已通过 1.3 mapping 绑定到 `component_id + residue_id`；
+- 需要执行的 linked-block organization 已落实；
+- `stage1_final.pdb` 与 `stage1_final_map.yaml` 已成功生成；
 - 输入 atom set 未因本步骤增加或删除；
 - final PDB 中每个实际 atom 在 map 中恰有一个对应 record；
 - 没有未处理的 1.8 processing item。
@@ -313,6 +322,6 @@ stage1_final_map.yaml
 
 ## Handoff
 
-1.9 只读消费本步骤形成的 Stage 1 final PDB / map，完成 Stage 1 阶段级 validation。
+1.9 只读消费本步骤形成的 `stage1_final.pdb` 与 `stage1_final_map.yaml`，完成 Stage 1 final validation。
 
-Stage 2 使用 `stage1_final.pdb` 的 heavy-atom serial 作为后续 generated/output atom → source provenance 的直接 source identity；Stage 2 可以建立 force-field-specific all-atom order 和 `moleculetype` 组织，但不得反向重定义本步骤已经确定的 Stage 1 chain identity。
+Stage 2 可以在该 heavy-atom identity / order 骨架上建立 force-field-specific all-atom order 和最终 topology organization，但不得把 Stage 2 topology organization 反向写回 Stage 1 structure identity。
