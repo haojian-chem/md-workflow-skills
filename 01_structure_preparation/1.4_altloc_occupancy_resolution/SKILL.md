@@ -9,6 +9,10 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 
 `../../references/task_execution_rules.md`
 
+涉及 alternate-conformation atom 删除、altLoc 表示变化和 serial 重编号时同时读取：
+
+`../../references/atom_mapping_rules.md`
+
 本 Skill 仅补充 1.4-specific 的对象、执行、validation 与 results 规则；本步骤明确不设置内部 reuse。
 
 完成结构准备 `1.4 Alternate conformation / altLoc resolution`。
