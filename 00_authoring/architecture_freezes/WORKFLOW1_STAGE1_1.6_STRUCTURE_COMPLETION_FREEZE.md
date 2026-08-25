@@ -12,6 +12,13 @@ Status: **FROZEN ARCHITECTURE RECORD — ACTIVE SKILL GENERATED**
 01_structure_preparation/1.6_structure_completion/SKILL.md
 ```
 
+Stage 1 atom mapping 的共享 runtime authority / architecture freeze 为：
+
+```text
+references/atom_mapping_rules.md
+00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md
+```
+
 具体可变执行细节、reference 方法和 helper interface 由 current `SKILL.md` / `references/` / `scripts/README.md` 拥有；本 freeze 不再维护第二套平行 mutable specification。
 
 Source preservation:
@@ -31,6 +38,7 @@ Source preservation:
 架构要求至少消费：
 
 - 当前 target 的现行 PDB；
+- 与该现行 PDB 对应的最近正式 Stage 1 atom map；
 - 1.5 正式 `structure_completeness_report.yaml`；
 - 实际需要补全 missing heavy atom / missing residue 时的 coordinate reference / template；
 - 已经确认的 residue / atom identity 与 rename correspondence。
@@ -107,6 +115,7 @@ Residue-level completion set 包括：
 已有 1.6 结果只有在以下影响结果的内容均明确等价时才可自动复用：
 
 - 输入结构；
+- 输入 atom map；
 - 1.5 repair report；
 - 实际使用并影响结果的 coordinate references / templates；
 - 影响结果的用户决定；
@@ -114,7 +123,21 @@ Residue-level completion set 包括：
 
 用户明确要求重做或重新比较 reference 时不自动复用。
 
-## 7. Validation architecture
+## 7. Atom-mapping architecture
+
+1.6 是 Stage 1 chained atom-map producer，必须复制与当前输入结构对应的正式 map，再按实际 repair 更新；详细字段、operation code 和 copy-and-update 规则由 `references/atom_mapping_rules.md` 拥有，并冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`。
+
+当前 1.6 mapping architecture 特别冻结：
+
+- 真正新增 atom 使用 `1.6ADD`，且 `original_atom_serial: null`；
+- atom-name correction 使用 `1.6RENAME`；
+- whole-residue / coordinate replacement 中，输入与输出能够明确判定为同一个 atom 时，保留原 provenance并使用 `1.6REPLACE`；
+- 只有输入结构中不存在对应 atom 的 replacement output 才按 `1.6ADD` 处理；
+- replacement 后不再存在对应输出 atom 的 input record 从新 map 删除。
+
+不得因为 reference coordinates 替换了坐标，就丢弃仍可明确对应的原始 atom provenance。
+
+## 8. Validation architecture
 
 Validation 属于 1.6 结果 owner，不恢复独立 Validator layer。
 
@@ -123,6 +146,7 @@ Validation 属于 1.6 结果 owner，不恢复独立 Validator layer。
 - 1.5 required repair items 全部闭合；
 - missing-heavy-atom item 已通过 atom-level completion 补入，或已经按完整 residue completion 正确处理；
 - `completion_report.yaml` 与最终 PDB 的实际修改一致；
+- 输出 atom map 与最终 PDB 一一对应，且 copy-and-update provenance / operation history 与实际 repair 一致；
 - 新增 heavy atom / residue 满足对应 correspondence、alignment 和局部 geometry requirements；
 - 没有未记录的额外 structure edits；
 - duplicate identity、PDB parse、atom serial、final-H boundary 均满足要求；
@@ -130,20 +154,21 @@ Validation 属于 1.6 结果 owner，不恢复独立 Validator layer。
 
 任一 required repair 未解决时，1.6 不能完成。Validation 不重新执行 1.5 completeness diagnosis。
 
-## 8. Frozen formal-result direction
+## 9. Frozen formal-result direction
 
 当前正式 Skill 已实现每个 target 的结果：
 
 ```text
 <project_root>/01_structure_preparation/06_structure_completion/<task_id>/<target_id>/
 ├── completed_structure.pdb
+├── atom_mapping.yaml
 ├── completion_report.yaml
 └── completion_validation.md
 ```
 
-项目级 result registration 白名单由 current 1.6 Skill 定义。
+项目级 result registration 白名单由 current 1.6 Skill 定义；`atom_mapping.yaml` 作为 current 1.6 正式结果由 `completion_report.yaml.output_atom_mapping` 定位，不要求单独登记 project result index。
 
-## 9. Generation outcome
+## 10. Generation outcome
 
 正式生成后采用：
 
