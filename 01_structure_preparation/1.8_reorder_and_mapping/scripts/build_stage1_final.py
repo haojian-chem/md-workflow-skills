@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Stage 1 final heavy-atom PDB and stable identity map for Skill 1.8."""
+"""Build Stage 1 final heavy-atom PDB and update the chained atom map for Skill 1.8."""
 
 from __future__ import annotations
 
@@ -45,6 +45,16 @@ class ResidueMeta:
 @dataclass
 class AtomLine:
     raw: str
+
+    @property
+    def serial(self) -> int:
+        text = self.raw[6:11].strip()
+        if not text:
+            raise Stage1FinalError("PDB atom record has blank serial")
+        try:
+            return int(text)
+        except ValueError as exc:
+            raise Stage1FinalError(f"unsupported non-integer PDB atom serial: {text!r}") from exc
 
     @property
     def atom_name(self) -> str:
@@ -452,6 +462,97 @@ def bind_blocks(
     return by_key
 
 
+def validate_input_atom_map(
+    document: dict[str, Any],
+    target_id: str,
+    input_structure: Path,
+    blocks: list[ResidueBlock],
+) -> tuple[dict[int, dict[str, Any]], dict[int, int], str]:
+    if document.get("target_id") != target_id:
+        raise Stage1FinalError("input atom map target_id does not match target record")
+
+    recorded_current = document.get("current_structure")
+    if not isinstance(recorded_current, str) or not recorded_current:
+        raise Stage1FinalError("input atom map lacks current_structure")
+    if Path(recorded_current).resolve() != input_structure.resolve():
+        raise Stage1FinalError(
+            "input atom map current_structure does not match --input-structure"
+        )
+
+    original_structure = document.get("original_structure")
+    if not isinstance(original_structure, str) or not original_structure:
+        raise Stage1FinalError("input atom map lacks original_structure")
+
+    atoms = document.get("atoms")
+    if not isinstance(atoms, list):
+        raise Stage1FinalError("input atom map lacks atoms[]")
+
+    by_serial: dict[int, dict[str, Any]] = {}
+    for item in atoms:
+        if not isinstance(item, dict):
+            raise Stage1FinalError("input atom-map atom entry must be a mapping")
+        try:
+            current_serial = int(item["current_atom_serial"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise Stage1FinalError("invalid current_atom_serial in input atom map") from exc
+        if current_serial in by_serial:
+            raise Stage1FinalError(
+                f"duplicate current_atom_serial in input atom map: {current_serial}"
+            )
+
+        original_serial = item.get("original_atom_serial")
+        if original_serial is not None:
+            try:
+                int(original_serial)
+            except (TypeError, ValueError) as exc:
+                raise Stage1FinalError(
+                    f"invalid original_atom_serial for current atom {current_serial}"
+                ) from exc
+
+        component_id = item.get("component_id")
+        residue_id = item.get("residue_id")
+        operations = item.get("operations")
+        if not isinstance(component_id, str) or not isinstance(residue_id, str):
+            raise Stage1FinalError(
+                f"input atom-map record lacks component_id/residue_id: {current_serial}"
+            )
+        if not isinstance(operations, list) or not all(
+            isinstance(value, str) and value for value in operations
+        ):
+            raise Stage1FinalError(
+                f"input atom-map operations must be a string list: {current_serial}"
+            )
+        by_serial[current_serial] = item
+
+    actual_serials: list[int] = []
+    for block in blocks:
+        if block.key is None:
+            raise Stage1FinalError("input residue block lacks bound stable identity")
+        for atom in block.atoms:
+            serial = atom.serial
+            if serial in actual_serials:
+                raise Stage1FinalError(f"duplicate atom serial in input PDB: {serial}")
+            actual_serials.append(serial)
+            item = by_serial.get(serial)
+            if item is None:
+                raise Stage1FinalError(
+                    f"input PDB atom serial {serial} has no atom-map record"
+                )
+            if (item.get("component_id"), item.get("residue_id")) != block.key:
+                raise Stage1FinalError(
+                    f"input atom-map residue identity disagrees with PDB/target mapping at serial {serial}"
+                )
+
+    if set(actual_serials) != set(by_serial):
+        extra = sorted(set(by_serial) - set(actual_serials))
+        raise Stage1FinalError(
+            f"input atom map contains records absent from input PDB: {extra[:10]}"
+        )
+
+    positions = {serial: index for index, serial in enumerate(actual_serials)}
+    return by_serial, positions, str(Path(original_structure).resolve())
+
+
 def endpoint_key(endpoint: Any) -> ResidueKey:
     if not isinstance(endpoint, dict):
         raise Stage1FinalError("topology-linked check endpoint must be a mapping")
@@ -714,11 +815,17 @@ def materialize_outputs(
     component_residues: dict[str, list[ResidueKey]],
     selected_keys: set[ResidueKey],
     target_id: str,
+    input_structure: Path,
+    input_map_path: Path,
+    input_map_by_serial: dict[int, dict[str, Any]],
+    input_positions: dict[int, int],
+    original_structure: str,
     output_structure: Path,
 ) -> tuple[str, dict[str, Any]]:
     lines = list(cryst1)
     map_atoms: list[dict[str, Any]] = []
     serial = 1
+    output_atom_position = 0
     present_keys = {block.key for block in blocks if block.key is not None}
 
     for index, block in enumerate(blocks):
@@ -736,17 +843,34 @@ def materialize_outputs(
                     block.resid,
                 )
             )
+
+            input_record = input_map_by_serial.get(atom.serial)
+            if input_record is None:
+                raise Stage1FinalError(
+                    f"input atom serial {atom.serial} is missing from input atom map"
+                )
+            if (
+                input_record.get("component_id"),
+                input_record.get("residue_id"),
+            ) != block.key:
+                raise Stage1FinalError(
+                    f"input map residue identity disagrees at atom serial {atom.serial}"
+                )
+
+            operations = list(input_record.get("operations", []))
+            if input_positions[atom.serial] != output_atom_position:
+                operations.append("1.8REORDER")
+
             map_atoms.append(
                 {
-                    "serial": serial,
-                    "chain_id": block.chain_id,
-                    "resid": block.resid,
-                    "residue_name": atom.residue_name,
-                    "atom_name": atom.atom_name,
+                    "current_atom_serial": serial,
+                    "original_atom_serial": input_record.get("original_atom_serial"),
                     "component_id": block.meta.component_id,
                     "residue_id": block.meta.residue_id,
+                    "operations": operations,
                 }
             )
+            output_atom_position += 1
             serial += 1
 
         if should_write_ter(
@@ -764,12 +888,15 @@ def materialize_outputs(
     lines.append("END")
     mapping = {
         "target_id": target_id,
-        "structure": str(output_structure.resolve()),
+        "original_structure": original_structure,
+        "input_structure": str(input_structure.resolve()),
+        "current_structure": str(output_structure.resolve()),
+        "input_map": str(input_map_path.resolve()),
         "atoms": map_atoms,
     }
-    serials = [item["serial"] for item in map_atoms]
-    if len(serials) != len(set(serials)):
-        raise Stage1FinalError("duplicate atom serial in final map")
+    current_serials = [item["current_atom_serial"] for item in map_atoms]
+    if len(current_serials) != len(set(current_serials)):
+        raise Stage1FinalError("duplicate current_atom_serial in final map")
     return "\n".join(lines) + "\n", mapping
 
 
@@ -812,9 +939,10 @@ def atomic_write_pair(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build stage1_final.pdb and stage1_final_map.yaml for Skill 1.8."
+        description="Build stage1_final.pdb and chained stage1_final_map.yaml for Skill 1.8."
     )
     parser.add_argument("--input-structure", required=True, type=Path)
+    parser.add_argument("--input-map", required=True, type=Path)
     parser.add_argument("--target-record", required=True, type=Path)
     parser.add_argument("--classification-result", required=True, type=Path)
     parser.add_argument("--output-structure", required=True, type=Path)
@@ -847,6 +975,14 @@ def main() -> int:
             meta_by_key,
         )
 
+        input_map_document = read_yaml(args.input_map.resolve())
+        input_map_by_serial, input_positions, original_structure = validate_input_atom_map(
+            input_map_document,
+            target_id,
+            args.input_structure.resolve(),
+            blocks,
+        )
+
         linked_blocks = build_linked_blocks(
             meta_by_key,
             topology_checks,
@@ -868,6 +1004,11 @@ def main() -> int:
             component_residues,
             selected_keys,
             target_id,
+            args.input_structure.resolve(),
+            args.input_map.resolve(),
+            input_map_by_serial,
+            input_positions,
+            original_structure,
             args.output_structure.resolve(),
         )
 
