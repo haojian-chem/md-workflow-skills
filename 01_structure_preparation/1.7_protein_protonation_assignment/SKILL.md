@@ -9,6 +9,10 @@ description: Structure preparation 1.7。针对当前蛋白重原子结构，在
 
 `../../references/task_execution_rules.md`
 
+涉及 residue-name modification 对原子定位信息的更新时同时读取：
+
+`../../references/atom_mapping_rules.md`
+
 本 Skill 仅补充 1.7-specific 的对象、执行、validation 与 results 规则；本步骤明确每次重新执行，不做既有 1.7 结果的 reuse assessment。
 
 完成 Structure preparation `1.7 Protein protonation assignment`。
