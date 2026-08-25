@@ -9,6 +9,10 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 `../../references/task_execution_rules.md`
 
+涉及 atom 删除、atom-name correction、重原子/残基新增和 serial 重编号时同时读取：
+
+`../../references/atom_mapping_rules.md`
+
 本 Skill 仅补充 1.6-specific 的对象、reuse / execution assessment、执行、validation 与 results 规则。
 
 完成结构准备 `1.6 Structure completion`。
