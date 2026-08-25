@@ -1,6 +1,6 @@
 ---
 name: structure_preparation_validation
-description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的残基对应关系，并生成独立验证报告。
+description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的逐原子对应关系，并生成独立验证报告。
 ---
 
 # 1.9 Structure preparation validation
@@ -32,9 +32,9 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 - 当前指定目标力场中用于标准残基检查的实际 `*.rtp` 文件；
 - 当前非标准残基检查实际采用的 CCD 文件。
 
-`classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `confirmed_relations`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
+`classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `topology_linked_checks[]`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
-`stage1_final_map.yaml` 用于把 final PDB 中的残基与 1.2 已物化的 `component_id + residue_id` 对应起来；1.9 不重新构建 1.3 / 1.8 的映射规则。
+`stage1_final_map.yaml` 用于把 final PDB 中每个实际重原子对应到 1.2 已物化的 `component_id + residue_id`，并作为 Stage 2 source-provenance handoff 的正式 atom map。1.9 只验证该 final PDB / map 对应本身，不重新建立贯穿 1.2–1.7 的历史 atom identity，也不判断 final atom 是否来自初始结构或后续 completion。
 
 如果目标力场尚未唯一确定，或当前非标准 residue 的 CCD reference 无法从 1.2 / 1.5 正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
 
@@ -80,7 +80,7 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 ### SOLVENT_COMPONENT / ION_COMPONENT
 
-`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 在当前阶段没有确定对应力场，因此不执行本 Skill 中的力场 / CCD 重原子比较。它们仍属于 final PDB 的 PDB 表示检查范围。
+`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 在当前阶段没有确定对应力场，因此不执行本 Skill 中的力场 / CCD 重原子比较。它们仍属于 final PDB 的 PDB 表示检查和 final map 逐原子检查范围。
 
 ## Checks
 
@@ -136,7 +136,7 @@ final PDB 中该残基的重原子名称及出现次数
 - final PDB 中存在、目标力场定义中没有的额外重原子；
 - 同一重原子名称出现次数不符合定义的情况。
 
-如果某个 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 存在于 1.2 `confirmed_relations` 中，且对应 relation 的 `topology_effect_applied: true`，在该标准残基的本项检查记录中标明这一已确认连接关系。该关系不自动改变或豁免标准残基的比较结果；相对于目标力场定义多出的或缺少的重原子均按实际结果记录。
+如果某个 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 存在于 1.2 `topology_linked_checks[]` 中，且对应记录为 `judgment: CONFIRMED`、`topology_effect_applied: true`，在该标准残基的本项检查记录中标明这一已确认 topology-linked 关系。该关系不自动改变或豁免标准残基的比较结果；相对于目标力场定义多出的或缺少的重原子均按实际结果记录。
 
 ### 6. TOPOLOGY_LINKED_NONSTANDARD
 
@@ -145,7 +145,7 @@ final PDB 中该残基的重原子名称及出现次数
 - final PDB 的 `residue_name` 与 CCD component ID 精确一致；
 - final PDB 中该残基的重原子名称及出现次数与 CCD 定义的重原子名称及出现次数严格一致。
 
-逐残基记录缺失、额外或重复的重原子名称。已确认连接关系不作为修改 CCD 比较结果的自动例外。
+逐残基记录缺失、额外或重复的重原子名称。已确认 topology-linked 关系不作为修改 CCD 比较结果的自动例外。
 
 ### 7. INDEPENDENT_NONSTANDARD
 
@@ -155,19 +155,28 @@ final PDB 中该残基的重原子名称及出现次数
 - final PDB 中该残基的重原子名称及出现次数与 CCD 定义严格一致；
 - 缺失、额外或重复的重原子名称均如实记录。
 
-### 8. stage1_final_map.yaml 残基对应
+### 8. `stage1_final_map.yaml` 逐原子对应
 
-独立确认 `stage1_final.pdb` 中每个残基在 `stage1_final_map.yaml` 中存在对应记录。
+独立确认 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的 atom records 一一对应。
 
-对 final PDB 中的残基使用当前实际：
+对 final PDB 中每个 `ATOM / HETATM` 原子确认 map 中恰有一条记录，并逐字段核对：
 
 ```text
-chain_id + resid + residue_name
+serial
+chain_id
+resid
+residue_name
+atom_name
 ```
 
-在 map 的 atom records 中确认存在同一残基的记录，并确认其 `component_id + residue_id` 能定位到当前 model 的 1.2 正式结果。
+同时确认：
 
-1.9 不重新执行 1.8 的逐原子映射检查，不重新比较每个原子的 serial / `atom_name`，也不重新推导 `component_id` / `residue_id`。
+- map 不存在 final PDB 中没有的额外 atom record；
+- 每条 map record 的 `component_id + residue_id` 能定位到当前 model 的 1.2 `components[].residues[]`；
+- 同一 final PDB atom 不对应多条 map record；
+- 同一 map record 不被用于对应多个 final PDB atoms。
+
+本项验证的是 Stage 1 final handoff 的逐原子对应关系。1.9 不为这些 atom 生成新的 `atom_id`，也不回溯建立初始结构到 final structure 的永久 atom lineage。
 
 ## Report organization
 
@@ -197,7 +206,7 @@ structure_completeness_report.yaml
 ## 5. STANDARD_RESIDUE 重原子
 ## 6. TOPOLOGY_LINKED_NONSTANDARD
 ## 7. INDEPENDENT_NONSTANDARD
-## 8. stage1_final_map.yaml 残基对应
+## 8. stage1_final_map.yaml 逐原子对应
 ```
 
 每个检查项先给出简短的实际结果摘要；发现问题时再列具体对象。没有问题的普通残基不逐个展开。
@@ -210,7 +219,9 @@ chain_id + resid + residue_name
 
 涉及重原子差异时，在同一残基下分别列出实际缺失、额外或重复的原子名，并记录对应力场文件或 CCD 文件。
 
-第 5 项中，与 `TOPOLOGY_LINKED_NONSTANDARD` 存在已确认连接关系的 `STANDARD_RESIDUE` 应单独标明关系背景及其实际重原子比较结果；不把这一信息拆成新的检查项目。
+第 5 项中，与 `TOPOLOGY_LINKED_NONSTANDARD` 存在已确认 topology-linked 关系的 `STANDARD_RESIDUE` 应单独标明关系背景及其实际重原子比较结果；不把这一信息拆成新的检查项目。
+
+第 8 项发现 atom-map 不一致时，优先使用 final PDB `serial + chain_id + resid + residue_name + atom_name` 定位具体原子，并同时记录 map 中实际值。
 
 报告只写检查事实，例如“未发现……”或“发现 N 个残基存在……”。不设置 section-level 或 overall `PASS / FAIL`，不建立新的状态枚举，也不生成自动 Stage 2 交接结论。
 
@@ -224,7 +235,8 @@ chain_id + resid + residue_name
 - `STANDARD_RESIDUE` 检查所需的目标力场参考文件已明确；
 - 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能通过当前 1.2 / 1.5 正式结果定位到实际 CCD；
 - 八项检查均已按当前对象实际执行并写入报告；
-- 发现的问题能够定位到具体残基，涉及重原子时能够定位到具体原子名；
+- final PDB 与 final map 的每个实际重原子已经完成一一对应核对；
+- 发现的问题能够定位到具体残基，涉及重原子或 mapping 时能够定位到具体原子；
 - 报告记录了本次实际使用的参考文件；
 - 1.9 没有修改 `stage1_final.pdb`、`stage1_final_map.yaml` 或任何上游正式结果；
 - 报告没有生成整体 `PASS / FAIL` 或自动后续决策。
