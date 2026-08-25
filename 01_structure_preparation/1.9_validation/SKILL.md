@@ -9,6 +9,12 @@ description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只
 
 `../../references/task_execution_rules.md`
 
+跨 Stage 原子映射共享规则读取：
+
+`../../references/atom_mapping_rules.md`
+
+1.9 的 final PDB / final map 逐原子验证必须按该共享规则解释，不建立额外 atom identity 或历史 atom lineage。
+
 本 Skill 只定义 1.9 的最终检查对象、判据、报告和结果边界。
 
 ## Purpose
