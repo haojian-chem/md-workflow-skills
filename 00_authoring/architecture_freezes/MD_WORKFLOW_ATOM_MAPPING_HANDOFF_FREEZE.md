@@ -1,8 +1,14 @@
 # MD Workflow atom mapping handoff architecture freeze
 
-Status: **FROZEN AUTHORING RECORD**
+Status: **FROZEN AUTHORING RECORD — RUNTIME RULE MATERIALIZED**
 
-本文件拥有 MD Workflow 中从 Stage 1 到 Stage 2 的原子映射边界。它只规定跨 Step / 跨 Stage 必须保持一致的 atom identity / provenance 语义，不替代各 Step 自己的结构处理、mapping materialization 或 validation 规则。
+Current shared runtime authority:
+
+```text
+references/atom_mapping_rules.md
+```
+
+本文件保存 MD Workflow 中从 Stage 1 到 Stage 2 的原子映射架构边界。执行 Agent 不以本 freeze 作为日常 runtime 规则来源；相关 active Skill 必须显式引用 `references/atom_mapping_rules.md`。未来生成 Stage 2 main Skill、2.2、2.3、2.4、2.5 时，只要涉及 atom mapping 或 source provenance，也必须引用该共享 runtime reference，而不是从本 freeze 复制一套独立规则。
 
 ## 1. 1.2 不建立 atom-level stable identity
 
@@ -156,9 +162,10 @@ Stage 2 可以建立自己的 generated/output atom index，但不得反向写�
 
 ## 7. Ownership
 
+- 共享 runtime authority：`references/atom_mapping_rules.md`。
 - 1.2：拥有 residue-level identity 与 topology-linked atom-name endpoint 记录；不拥有 atom map。
 - 1.8：拥有 Stage 1 final heavy-atom map materialization。
 - 1.9：拥有 Stage 1 final PDB / map 的逐原子一致性检查。
-- Stage 2 main shared interface：拥有 Stage 2 `*.map` 的统一 generated/output → source provenance 语义。
-- 2.2 / 2.3 / 2.4：按 Stage 2 shared interface 生成各自产物 map。
+- Stage 2 main shared interface：拥有 Stage 2 `*.map` 的统一 generated/output → source provenance 语义，并必须引用共享 runtime authority。
+- 2.2 / 2.3 / 2.4：按共享 runtime authority 与 Stage 2 shared interface 生成各自产物 map。
 - 2.5：按同一接口消费并汇总 mapping。
