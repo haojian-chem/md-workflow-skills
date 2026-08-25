@@ -1,6 +1,6 @@
 ---
 name: structure_preparation_validation
-description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的逐原子对应关系，并生成独立验证报告。
+description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的逐原子对应与 provenance 连续性，并生成独立验证报告。
 ---
 
 # 1.9 Structure preparation validation
@@ -19,11 +19,11 @@ Stage 1 原子映射维护规则读取：
 
 ## Purpose
 
-对当前 target 的 Stage 1 最终结构独立执行一次只读检查，形成供后续处理和 Stage 2 使用前审阅的 `structure_preparation_validation.md`。
+对当前 target 的 Stage 1 最终结构独立执行一次只读检查，形成供后续处理审阅的 `structure_preparation_validation.md`。
 
 1.9 检查当前最终结果本身，不重新执行 1.4–1.8 的内部处理逻辑，也不在检查过程中修改、补全、删除或改名任何原子或残基。
 
-报告逐项记录实际检查结果和发现的问题。1.9 不为整个 target 生成 `PASS / FAIL`，也不根据问题数量自行决定是否进入 Stage 2；是否返回上游处理或继续后续任务，由当前 Task Execution Agent 与用户根据报告中的实际结果决定。
+报告逐项记录实际检查结果和发现的问题。1.9 不为整个 target 生成 `PASS / FAIL`，也不根据问题数量自行决定是否进入后续阶段；是否返回上游处理或继续后续任务，由当前 Task Execution Agent 与用户根据报告中的实际结果决定。
 
 每个 target 独立检查、独立生成报告。
 
@@ -33,6 +33,7 @@ Stage 1 原子映射维护规则读取：
 
 - 1.8 正式 `stage1_final.pdb`；
 - 1.8 正式 `stage1_final_map.yaml`；
+- `stage1_final_map.yaml.original_structure` 指向的原始结构；
 - 与当前 target 对应 model 的 1.2 正式 `classification_result.yaml`；
 - 当前 target 的 1.5 正式 `structure_completeness_report.yaml`；
 - 当前指定目标力场中用于标准残基检查的实际 `*.rtp` 文件；
@@ -40,7 +41,7 @@ Stage 1 原子映射维护规则读取：
 
 `classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `topology_linked_checks[]`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
-`stage1_final_map.yaml` 用于把 final PDB 中每个实际重原子对应到 1.2 已物化的 `component_id + residue_id`。1.9 只验证该 final PDB / map 对应本身，不新增 atom identity。
+`stage1_final_map.yaml` 用于把 final PDB 中每个实际重原子对应到原始结构中的 atom serial（若存在），并保持 1.2 已物化的 `component_id + residue_id` 与 Stage 1 operation history。1.9 只验证该 final PDB / map 结果，不修改 map。
 
 如果目标力场尚未唯一确定，或当前非标准 residue 的 CCD reference 无法从 1.2 / 1.5 正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
 
@@ -117,7 +118,7 @@ Stage 1 原子映射维护规则读取：
 
 对 final PDB 中所有 `STANDARD_RESIDUE`：
 
-1. 通过 `stage1_final_map.yaml` 的 `component_id + residue_id` 定位 1.2 正式分类；
+1. 通过 `stage1_final_map.yaml` 的 `current_atom_serial` 找到当前 atom record，再读取其 `component_id + residue_id` 定位 1.2 正式分类；
 2. 读取 final PDB 的 `residue_name`；
 3. 在当前指定目标力场的 `*.rtp` 中查找精确同名的 residue block；
 4. 记录找不到对应定义的残基。
@@ -161,28 +162,38 @@ final PDB 中该残基的重原子名称及出现次数
 - final PDB 中该残基的重原子名称及出现次数与 CCD 定义严格一致；
 - 缺失、额外或重复的重原子名称均如实记录。
 
-### 8. `stage1_final_map.yaml` 逐原子对应
+### 8. `stage1_final_map.yaml` 逐原子与 provenance 检查
 
-独立确认 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的 atom records 一一对应。
+按 `../../references/atom_mapping_rules.md` 独立验证 final map。
 
-对 final PDB 中每个 `ATOM / HETATM` 原子确认 map 中恰有一条记录，并逐字段核对：
+首先确认 final PDB 与 final map 一一对应：
+
+- final PDB 中每个 `ATOM / HETATM` serial 恰好对应一条 `current_atom_serial` 相同的 map record；
+- map 不存在 final PDB 中没有的额外 atom record；
+- `current_atom_serial` 在 map 内唯一；
+- map 的 `current_structure` 指向当前 `stage1_final.pdb`。
+
+然后逐条检查：
 
 ```text
-serial
-chain_id
-resid
-residue_name
-atom_name
+current_atom_serial
+original_atom_serial
+component_id
+residue_id
+operations
 ```
 
-同时确认：
+要求：
 
-- map 不存在 final PDB 中没有的额外 atom record；
-- 每条 map record 的 `component_id + residue_id` 能定位到当前 model 的 1.2 `components[].residues[]`；
-- 同一 final PDB atom 不对应多条 map record；
-- 同一 map record 不被用于对应多个 final PDB atoms。
+- `component_id + residue_id` 能定位到当前 model 的 1.2 `components[].residues[]`；
+- `original_atom_serial != null` 时，该 serial 能定位到 `original_structure` 中唯一 atom；
+- `original_atom_serial` 对应原始 atom 与当前 record 的 `component_id + residue_id` 不得冲突；
+- `original_atom_serial == null` 时，`operations` 中必须存在使该 atom 在后续 Stage 1 中进入当前结构的 `ADD` operation；
+- 由 1.3 直接纳入 target 的原始 atoms 应保留 `1.3ADD`，且其 `original_atom_serial` 非空；
+- `operations` 只能使用共享规则已定义的 Step-specific operation code，并保持实际发生顺序；
+- operation history 与能够定位到的 1.3 / 1.4 / 1.6 / 1.7 / 1.8 正式结构处理结果不得矛盾。
 
-本项验证的是 Stage 1 final 的逐原子对应关系。1.9 不为这些 atom 生成新的 `atom_id`。
+本项不要求 final map 保留已经从当前结构删除的 atom record；删除历史通过相邻正式 map 与对应 Step 报告追溯。
 
 ## Report organization
 
@@ -194,6 +205,7 @@ atom_name
 target_id
 stage1_final.pdb
 stage1_final_map.yaml
+original_structure
 classification_result.yaml
 structure_completeness_report.yaml
 目标力场参考文件
@@ -212,7 +224,7 @@ structure_completeness_report.yaml
 ## 5. STANDARD_RESIDUE 重原子
 ## 6. TOPOLOGY_LINKED_NONSTANDARD
 ## 7. INDEPENDENT_NONSTANDARD
-## 8. stage1_final_map.yaml 逐原子对应
+## 8. stage1_final_map.yaml 逐原子与 provenance 检查
 ```
 
 每个检查项先给出简短的实际结果摘要；发现问题时再列具体对象。没有问题的普通残基不逐个展开。
@@ -227,9 +239,9 @@ chain_id + resid + residue_name
 
 第 5 项中，与 `TOPOLOGY_LINKED_NONSTANDARD` 存在已确认 topology-linked 关系的 `STANDARD_RESIDUE` 应单独标明关系背景及其实际重原子比较结果；不把这一信息拆成新的检查项目。
 
-第 8 项发现 atom-map 不一致时，优先使用 final PDB `serial + chain_id + resid + residue_name + atom_name` 定位具体原子，并同时记录 map 中实际值。
+第 8 项发现 atom-map 不一致时，优先使用 `current_atom_serial` 定位 final PDB atom，同时记录 map 中的 `original_atom_serial`、`component_id + residue_id` 与 `operations` 实际值。
 
-报告只写检查事实，例如“未发现……”或“发现 N 个残基存在……”。不设置 section-level 或 overall `PASS / FAIL`，不建立新的状态枚举，也不生成自动 Stage 2 交接结论。
+报告只写检查事实，例如“未发现……”或“发现 N 个残基存在……”。不设置 section-level 或 overall `PASS / FAIL`，不建立新的状态枚举，也不生成自动后续决策。
 
 ## Completion requirements
 
@@ -237,11 +249,11 @@ chain_id + resid + residue_name
 
 正式结束当前 target 的 1.9 前确认：
 
-- 当前 `stage1_final.pdb`、`stage1_final_map.yaml` 和 `classification_result.yaml` 已唯一确定；
+- 当前 `stage1_final.pdb`、`stage1_final_map.yaml`、`original_structure` 和 `classification_result.yaml` 已唯一确定；
 - `STANDARD_RESIDUE` 检查所需的目标力场参考文件已明确；
 - 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能通过当前 1.2 / 1.5 正式结果定位到实际 CCD；
 - 八项检查均已按当前对象实际执行并写入报告；
-- final PDB 与 final map 的每个实际重原子已经完成一一对应核对；
+- final PDB 与 final map 的每个实际重原子已经完成一一对应及 provenance 核对；
 - 发现的问题能够定位到具体残基，涉及重原子或 mapping 时能够定位到具体原子；
 - 报告记录了本次实际使用的参考文件；
 - 1.9 没有修改 `stage1_final.pdb`、`stage1_final_map.yaml` 或任何上游正式结果；
