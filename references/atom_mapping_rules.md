@@ -21,7 +21,7 @@
 Stage 1 后续原子映射以以下信息共同作为基准：
 
 ```text
-1.1 / 1.2 对应的初始结构
+1.2 所检查的初始结构
 + 1.2 classification_result.yaml 中的 component_id + residue_id
 + 当前步骤的输入结构
 + 前序实际结构改写步骤的正式结果
@@ -33,8 +33,6 @@ Stage 1 后续原子映射以以下信息共同作为基准：
 - 具体 atom 由当前结构中的实际 atom record 与 `atom_name` 定位；
 - 在 1.4 处理前，如同名 atom 存在多个 alternate conformer，必要时还需结合实际 altLoc / 当前 atom record 区分；
 - PDB atom serial 可以被后续步骤重新编号，因此不得把跨步骤不变的 serial 当作稳定 atom identity。
-
-不要求 1.2 建立 atom-level identity，也不要求为 Stage 1 新增一套贯穿所有步骤的永久 `atom_id`。
 
 ## 2. 所有结构改写步骤的共同要求
 
