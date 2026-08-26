@@ -207,7 +207,7 @@ results:
     unconstrained: ${CHARGE_FITTING_PATH}/resp2_unconstrained.chg
     constrained: ${CHARGE_FITTING_PATH}/resp2_constrained.chg
 
-  selected_charge_file: ${CHARGE_FITTING_PATH}/<actual-selected-charge-file>.chg
+selected_charge_file: ${CHARGE_FITTING_PATH}/<actual-selected-charge-file>.chg
 
 checks:
   sp:
@@ -265,7 +265,7 @@ checks:
 
 ## 6. `parameterization.chg`
 
-执行 Agent 根据当前检查结果与参数化要求选择实际采用的电荷结果；`charge_fitting_result.yaml.results.selected_charge_file` 记录该实际 `.chg` 文件。
+执行 Agent 根据当前检查结果与参数化要求选择实际采用的电荷结果；`charge_fitting_result.yaml.selected_charge_file` 记录该实际 `.chg` 文件。
 
 `parameterization.chg` 保存最终供 Sobtop 参数化使用的原子电荷，并与参数化模型已经确定的 atom order 保持可确定的一一对应。
 
