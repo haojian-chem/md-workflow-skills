@@ -2,7 +2,7 @@
 
 Status: CURRENT AUTHORING REFERENCE
 
-本文件记录 `2.3 Topology-linked nonstandard parameterization` 中已经敲定的参数化模型输入、截取规则和相关处理规则，作为后续继续设计和正式 Skill generation 的 authoring input。
+本文件记录 `2.3 Topology-linked nonstandard parameterization` 中已经敲定的参数化模型输入、截取规则、atom map 维护和向 2.5 交付的修改信息，作为后续继续设计和正式 Skill generation 的 authoring input。
 
 Stage 2 总体架构继续读取：
 
@@ -11,8 +11,8 @@ Stage 2 总体架构继续读取：
 ## 1. 输入文件与用途
 
 - **Task Sheet**：读取本次需要共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基集合。
-- **`classification_result.yaml`**：读取与这些残基相关且 `topology_effect_applied: true` 的 `confirmed_relations` 及其端点残基和原子身份。
-- **`stage1_final_map.yaml`**：读取上述残基和连接端点在 Stage 1 最终结构中的映射。
+- **`classification_result.yaml`**：读取与这些残基相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]` 及其 `relation_id`、端点 residue identity 和 atom name。
+- **`stage1_final_map.yaml`**：读取上述 residue 和连接端点在 Stage 1 最终结构中的稳定身份、atom mapping 与既有 operation history。
 - **`stage1_final.pdb`**：读取 `TOPOLOGY_LINKED_NONSTANDARD` 残基的当前重原子坐标。
 - **2.2 全原子结构及对应 `*.map`**：读取参数化模型所需标准残基的全原子坐标、身份及原子对应关系。
 
@@ -34,7 +34,7 @@ Stage 2 总体架构继续读取：
 
 ## 5. 标准残基一侧的原子变化
 
-根据已确认的拓扑连接，确定标准残基一侧因该连接形成而不应继续保留的原子，并在参数化模型中去除这些原子。记录被去除原子的身份，供后续最终结构和拓扑整合使用。
+根据已确认的拓扑连接，确定标准残基一侧因该连接形成而不应继续保留的原子，并在参数化模型中去除这些原子。记录对应 2.2 标准残基全原子结构中的原子及导致该删除的 `relation_id`，供 2.5 在最终结构和拓扑整合时使用。
 
 ## 6. 非标准残基补氢
 
@@ -53,7 +53,7 @@ Stage 2 总体架构继续读取：
 2. standard fragment 中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 读取对应 record，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 operation history，再更新为参数化模型中的 `output_atom_index`。
 3. 2.3 为 `TOPOLOGY_LINKED_NONSTANDARD` residue 新增的 H：建立新 record，`original_atom_serial: null`，保存所属 residue 的 `component_id + residue_id`，`operations = [2.3ADD]`。
 4. 参数化模型截断/封端产生的临时 CAP atom：建立 `2.3CAP` record，`original_atom_serial: null`，`component_id: null`，`residue_id: null`。
-5. 因参数化模型截取而未纳入的 atoms，以及标准残基一侧因拓扑连接而在参数化模型中去除的 atoms，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子身份继续由 linked-site modification information 记录。
+5. 因参数化模型截取而未纳入的 atoms，以及标准残基一侧因拓扑连接而在参数化模型中去除的 atoms，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子身份由第 8 节的修改信息记录。
 
 2.3 map 的逐原子核心字段与 Stage 2 共享接口一致：
 
@@ -67,6 +67,96 @@ operations:
 
 参数化模型 atom order 冻结后，`.mol2 / .map / OPT / FREQ / SP / .chg / Sobtop / .gro / .itp` 使用同一套可确定 atom-index 对应；`output_atom_index` 即该冻结顺序中的索引。
 
-## 8. 后续专项规则
+## 8. 向 2.5 交付的修改信息
+
+2.3 必须以结构化 YAML 记录本次参数化结果在 2.5 中需要应用的标准残基原子删除和残基级电荷修改范围。具体 basename 留到正式 Skill generation 时统一确定；本节冻结其内容语义。
+
+### 8.1 `references`
+
+文件级 `references` 集中记录本次修改信息实际引用的上游依据和相关 2.3 结果文件。正文记录优先使用短引用键，不重复写长绝对路径。
+
+至少记录实际使用的：
+
+```yaml
+references:
+  CLASSIFICATION_RESULT_1: /absolute/path/to/classification_result.yaml
+  STAGE1_STRUCTURE_1: /absolute/path/to/stage1_final.pdb
+  STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
+  STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
+  STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
+  PARAMETERIZATION_MAP_1: /absolute/path/to/2.3_unit.map
+  CHARGE_FILE_1: /absolute/path/to/2.3_unit.chg
+```
+
+只为当前正式记录实际引用的文件建立条目；路径使用完整绝对路径。引用键用于当前文件内部定位，不改变被引用结果自身的字段或身份语义。
+
+### 8.2 标准残基一侧需要删除的原子
+
+每条记录明确：**哪个 2.2 标准残基全原子结构中的哪个原子，因为哪一条已确认的拓扑连接而需要删除。**
+
+记录形式：
+
+```yaml
+standard_atom_deletions:
+  - structure: STANDARD_STRUCTURE_1
+    atom_index: 123
+    atom_name: HG
+    relation_id: relation_001
+```
+
+字段语义：
+
+- `structure`：引用 `references` 中对应的 2.2 标准残基全原子结构；
+- `atom_index`：该原子在对应 2.2 map / 结构 atom order 中的索引，与 `STANDARD_MAP_1` 中的 `output_atom_index` 对齐；
+- `atom_name`：保留用于人工检查，不作为跨步骤唯一身份依据；
+- `relation_id`：指向 `CLASSIFICATION_RESULT_1` 的 `topology_linked_checks[]` 中导致该删除的已确认拓扑连接记录。
+
+拓扑连接端点不在本文件中再建立平行列表；需要检查完整端点时通过 `relation_id` 回到 `CLASSIFICATION_RESULT_1`。
+
+### 8.3 残基级电荷修改范围
+
+记录本次 2.3 参数化结果中需要在最终拓扑中采用新电荷的全部真实 residue，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` residue。每个 residue 使用 1.2 正式 `component_id + residue_id` 定位，并保留 `topology_class` 作为便于使用者检查的冗余信息。
+
+```yaml
+charge_modification_scope:
+  - component_id: component_001
+    residue_id: residue_001
+    topology_class: STANDARD_RESIDUE
+
+  - component_id: component_001
+    residue_id: residue_002
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
+```
+
+这里只记录实际电荷修改范围；仅作为参数化模型外围环境或封端环境而保留、最终不采用 2.3 新电荷的标准残基不列入该集合。
+
+### 8.4 最小结构示例
+
+```yaml
+references:
+  CLASSIFICATION_RESULT_1: /absolute/path/to/classification_result.yaml
+  STAGE1_STRUCTURE_1: /absolute/path/to/stage1_final.pdb
+  STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
+  STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
+  STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
+  PARAMETERIZATION_MAP_1: /absolute/path/to/2.3_unit.map
+  CHARGE_FILE_1: /absolute/path/to/2.3_unit.chg
+
+standard_atom_deletions:
+  - structure: STANDARD_STRUCTURE_1
+    atom_index: 123
+    atom_name: HG
+    relation_id: relation_001
+
+charge_modification_scope:
+  - component_id: component_001
+    residue_id: residue_001
+    topology_class: STANDARD_RESIDUE
+  - component_id: component_001
+    residue_id: residue_002
+    topology_class: TOPOLOGY_LINKED_NONSTANDARD
+```
+
+## 9. 后续专项规则
 
 其它适用体系的具体截取与封端规则继续在上述一般规则下分别讨论和冻结。
