@@ -6,7 +6,7 @@
 
 # 1. Identity 与 mapping
 
-跨 2.2 / 2.3 / 2.4 的 atom identity 只能使用已经确认的 map/provenance 与上游正式 modification information 对齐。
+跨 2.2 / 2.3 / 2.4 的 atom identity 只能使用已经确认的 map/provenance，并结合 2.3 `topology_linked_parameterization_result.yaml` 中的正式 handoff 信息对齐。
 
 禁止仅凭：
 
@@ -79,8 +79,8 @@ final all-atom order 与 canonical final atom index **必须在任何 molecule-l
 
 先按 coordinate ownership 确定 final atom set：
 
-- standard：来自 2.2 all-atom structure，并应用 confirmed standard-side deletions；
-- topo-linked unit：只保留 unit 自身最终存在的 SOURCE + ADDED_H atoms；
+- standard：来自 2.2 all-atom structure，并应用 `topology_linked_parameterization_result.yaml.standard_atom_deletions`；
+- topo-linked unit：只保留 unit 自身最终存在的真实原子，包括原有原子与 2.3 为 unit 内非标准残基新增的 H；
 - 2.3 parameterization standard fragment / CAP：不进入 final atom set；
 - independent：来自 2.4 all-instance structure；
 - FF-direct solvent/ions：使用当前体系实际保留实例。
@@ -124,7 +124,7 @@ standard atom properties 以 2.2 为 baseline：
 - `residue`：迁移对应 residue name；
 - `atom`：迁移对应 atom name；
 - `type`：默认迁移 2.2 type，仅 attachment-site atom 进入 applicability review；
-- `charge`：先迁移 2.2 charge，随后对 `S_mod + U` 做 charge modification；
+- `charge`：先迁移 2.2 charge，随后对 `topology_linked_parameterization_result.yaml.charge_modification_scope` 中列出的 residue 应用 2.3 电荷结果；
 - `mass`：迁移对应 mass/definition。
 
 standard atom name 包括 attachment-site atom name 不因 linkage 自动更名。
@@ -138,13 +138,7 @@ standard `[ atoms ]` comment：
 
 一个 unit 内可能包含多个 nonstandard residues。
 
-只写入 unit 自身最终存在的 atoms：
-
-```text
-SOURCE atoms
-+
-U 自身 ADDED_H
-```
+只写入 unit 自身最终存在的真实原子，包括原有原子和 2.3 为 unit 内非标准残基新增的 H。
 
 排除：
 
@@ -241,32 +235,15 @@ keep old type
 
 ## 8.1 Scope
 
-统一记为：
+当前 2.3 工作项在最终 topology 中需要采用新电荷的 residue 集合，直接读取：
 
 ```text
-S_mod + U
+topology_linked_parameterization_result.yaml.charge_modification_scope
 ```
 
-其中：
+该集合由 2.3 正式结果记录给出，包含本次参数化结果中需要采用新电荷的相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` residue。仅作为外围 parameterization context / CAP context、但不属于最终电荷修改范围的 standard residue 不在该集合中。
 
-- `U`：当前 topo-linked nonstandard unit 中全部最终保留 nonstandard atoms；
-- `S_mod`：当前 unit 对应的全部需要实际修改 charge 的 standard residues。
-
-attachment residue 必须进入 `S_mod`。
-
-若一个 unit 有多个 attachment sites，应联合处理其 standard-side modification scope。
-
-例如：
-
-```text
-site 1 uses A-1 / A / A+1
-site 2 uses B-1 / B / B+1
-B+1 = A-1
-```
-
-则共享并位于联合连接区域的 residue `B+1(A-1)` 与 attachment residues `B`、`A` 一起进入 charge modification scope。
-
-仅作为外围 parameterization context / CAP context、但不属于最终 modification scope 的 standard residue 不修改 final charge。
+2.5 按该正式范围执行电荷替换，不自行重新扩展、缩小或重建一套平行的 charge modification scope。
 
 ## 8.2 Mapping
 
@@ -276,11 +253,11 @@ B+1 = A-1
 
 ## 8.3 RESP
 
-对 `S_mod + U`：
+对 `charge_modification_scope` 对应的最终原子：
 
 1. 使用体系信息给出的 `Q_expected`；
 2. 运行 unconstrained RESP；
-3. 运行 total-charge constrained RESP，约束 `S_mod + U = Q_expected`；
+3. 运行 total-charge constrained RESP，约束该电荷修改范围的总电荷为 `Q_expected`；
 4. final topology 使用 constrained result；
 5. unconstrained result 只用于 QC/control；
 6. 不做 posthoc CAP redistribution / normalization。
@@ -424,10 +401,10 @@ mechanical cleanup of deleted/CAP/non-final references
 
 若 2.5 发现不同 units 在以下任一方面出现实质 overlap：
 
-- same standard-side charge modification target；
+- 相同或重叠的 `charge_modification_scope`；
 - same attachment chemistry；
-- conflicting/overlapping deletion；
-- overlapping linked-site modification ownership；
+- 相同、冲突或重叠的 `standard_atom_deletions`；
+- 其它无法机械分离的 linked topology ownership；
 
 则：
 
@@ -466,8 +443,8 @@ deleted atom 不写入 final map。
 
 最终 `.gro` 只是在 topology integration 之后，按已经冻结的 final all-atom order 写出 coordinates：
 
-- Standard：坐标来自 2.2 all-atom structure，应用 confirmed standard-side deletions；
-- Topo-linked unit：只贡献 unit 自身最终 SOURCE + ADDED_H atoms；不贡献 2.3 standard parameterization fragment / CAP；
+- Standard：坐标来自 2.2 all-atom structure，应用 `topology_linked_parameterization_result.yaml.standard_atom_deletions`；
+- Topo-linked unit：只贡献 unit 自身最终存在的真实原子，包括原有原子和 2.3 为 unit 内非标准残基新增的 H；不贡献 2.3 standard parameterization fragment / CAP；
 - Independent：使用 2.4 all-instance structure/map；
 - FF-direct solvent/ions：当前结构中实际存在实例贡献 coordinates。
 
