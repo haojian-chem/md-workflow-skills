@@ -49,7 +49,7 @@ parameterization_model.map
 
 对参数化模型进行几何优化。几何优化中需要固定的原子按 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md` 确定。
 
-在几何优化得到的结构上进行 FREQ 计算，获得后续参数化所需的振动 / Hessian 信息，并提供对优化结构振动性质的判断依据。FREQ 中如何处理几何优化阶段的固定坐标尚未敲定。
+在几何优化得到的结构上进行 FREQ 计算，获得后续参数化所需的振动 / Hessian 信息，并提供对优化结构振动性质的判断依据。
 
 电荷拟合所需 SP 计算与对应检查读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 中相应规则，并按当前 RESP / RESP2 方案完成 SP 计算及结果记录。
 
