@@ -231,7 +231,13 @@ keep old type
 
 用户确认 replacement type 后再继续。
 
-# 8. Charge modification
+# 8. Charge application
+
+2.3 电荷拟合的科学规则统一由：
+
+`WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md`
+
+拥有。2.5 不重新执行 RESP / RESP2，也不维护一套平行的电荷拟合规则。
 
 ## 8.1 Scope
 
@@ -245,46 +251,19 @@ topology_linked_parameterization_result.yaml.charge_modification_scope
 
 2.5 按该正式范围执行电荷替换，不自行重新扩展、缩小或重建一套平行的 charge modification scope。
 
-## 8.2 Mapping
+## 8.2 Charge source 与 mapping
 
-- 使用 2.3 map 定位 2.3 charge source；
+电荷来源读取 `topology_linked_parameterization_result.yaml.results.charge_file` 所定位的 `parameterization.chg`。
+
+- 使用 2.3 `parameterization_model.map` 将 `parameterization.chg` 中的原子电荷对应到 2.3 参数化模型原子；
 - 使用已经冻结的 final map 定位 final topology replacement target；
 - 不建立新的 charge-specific mapping scheme。
 
-## 8.3 RESP
+## 8.3 应用规则
 
-对 `charge_modification_scope` 对应的最终原子：
+2.5 对 `charge_modification_scope` 中的最终原子应用 2.3 已完成拟合并写入 `parameterization.chg` 的电荷结果。
 
-1. 使用体系信息给出的 `Q_expected`；
-2. 运行 unconstrained RESP；
-3. 运行 total-charge constrained RESP，约束该电荷修改范围的总电荷为 `Q_expected`；
-4. final topology 使用 constrained result；
-5. unconstrained result 只用于 QC/control；
-6. 不做 posthoc CAP redistribution / normalization。
-
-记录：
-
-```text
-Q_expected
-Q_unconstrained
-DeltaQ_unconstrained
-Q_constrained
-DeltaQ_constrained
-MAE
-RMSE
-L_inf
-```
-
-## 8.4 RESP2
-
-若使用 RESP2：
-
-- constraint 在 RESP2 所依赖的每一次 RESP fitting 中直接施加；
-- 不增加 separate post-mixing RESP2 charge constraint；
-- 不做 post-mixing normalization；
-- QC 仍比较 constrained / unconstrained output。
-
-`Q_expected` 来自体系信息，2.5 不重新推断 chemical charge state。
+2.5 不重新拟合电荷，不重新施加总电荷约束，也不对 2.3 电荷结果进行额外 redistribution / normalization。
 
 # 9. `[ bonds ] / [ angles ] / [ dihedrals ]`
 
