@@ -29,6 +29,7 @@ WORKFLOW1_STAGE1_1.9_VALIDATION_FREEZE.md
 
 WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md
 WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md
+WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md
 WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_FREEZE.md
 WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md
 WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
@@ -52,7 +53,7 @@ Stage 1.2 的 `topology-linked` 检查与正式记录规则已专项冻结于 `W
 
 Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为阶段级 main Skill，负责 Stage 2 内部科研编排与共享接口；`2.1 Topology preparation setup` 保持完整独立 Step，current active entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage 2 main Skill 与 2.2–2.6 当前仍为 freeze-only。
 
-Stage 2 的 2.3 参数化模型输入、一般截取规则，以及蛋白质和核酸体系的具体截取与封端规则记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md`；其它适用体系的专项规则后续按需继续冻结。
+Stage 2 的 2.3 环节结构、正式结果记录和向 2.5 交付的信息记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md`；建立参数化模型时使用的既有冻结科学规则记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md`。
 
 Stage 2 的 2.5 详细 generation input 已统一迁至上述三个 `WORKFLOW2_STAGE2_2.5_*_FREEZE.md`；后续正式生成 2.5 时不再追随旧 role-based `02_operations/...` 路径。
 
