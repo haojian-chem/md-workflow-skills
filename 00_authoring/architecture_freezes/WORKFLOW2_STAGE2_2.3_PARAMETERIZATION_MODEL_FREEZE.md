@@ -8,6 +8,14 @@ Status: CURRENT AUTHORING REFERENCE
 
 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md`
 
+量化计算的详细科学规则已经专项保存于：
+
+`WORKFLOW2_STAGE2_2.3_QUANTUM_CALCULATION_RULES_FREEZE.md`
+
+电荷拟合的详细科学规则已经专项保存于：
+
+`WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md`
+
 Stage 2 总体架构继续读取：
 
 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
@@ -35,11 +43,11 @@ parameterization_model.map
 
 ### 1.2 量化计算
 
-量化计算的详细科学规则继续在 2.3 设计中确定；未敲定的具体方法、参数和分支不在当前 freeze 中提前固化。
+量化计算按 `WORKFLOW2_STAGE2_2.3_QUANTUM_CALCULATION_RULES_FREEZE.md` 执行。该专项 freeze 保存当前已经敲定的电子状态、几何优化、固定原子、FREQ 以及电荷拟合所需 SP 计算规则；尚未敲定的核酸固定原子范围和 FREQ 固定坐标处理继续在该专项规则下讨论。
 
 ### 1.3 电荷拟合并生成 `parameterization.chg`
 
-电荷拟合与 `parameterization.chg` 的生成属于同一科研处理环节。详细电荷拟合规则继续在 2.3 设计中确定。
+电荷拟合按 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 执行。RESP / RESP2 的电荷约束、unconstrained / constrained 结果用途、`Q_expected`、禁止后处理归一化以及 `parameterization.chg` 的结果语义由该专项 freeze 统一拥有。
 
 ### 1.4 Sobtop 参数化并生成 `parameterized_topology.itp`
 
