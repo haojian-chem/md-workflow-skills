@@ -1,6 +1,6 @@
 ---
 name: topology_integration_and_assembly
-description: Lightweight Runtime v2 的 2.5 Topology integration and assembly。将 2.2 standard topology、2.3 topo-linked nonstandard unit、2.4 independent nonstandard、以及当前 Task Sheet 中 2.1 已记录可直接使用的 solvent/ion definitions 整合成 final all-atom topology package；负责 final atom ordering/index、final moleculetype 组织、linked-site modification、charge replacement、bonded-term migration、parameter-definition 汇总和 final topology/coordinate/map assembly，但不替代 2.6 topology validation，也不重新执行 2.3 parameterization。
+description: Lightweight Runtime v2 的 2.5 Topology integration and assembly。将 2.2 standard topology、2.3 topo-linked nonstandard unit、2.4 independent nonstandard、以及当前 Task Sheet 中 2.1 已记录可直接使用的 solvent/ion definitions 整合成 final all-atom topology package；负责 final atom ordering/index、final moleculetype 组织、2.3 标准残基一侧原子删除与电荷修改范围的应用、bonded-term migration、parameter-definition 汇总和 final topology/coordinate/map assembly，但不替代 2.6 topology validation，也不重新执行 2.3 parameterization。
 ---
 
 # 目标
@@ -37,7 +37,7 @@ final topology package
 
 - 当前 Task Sheet 中 2.1 已记录的力场及其它参数定义来源、2.5 处理对象与直接输入；
 - 2.2 standard-only structure、topology、molecule `.itp`、map；
-- 每个 2.3 topo-linked nonstandard **unit** 的 parameterization result、map、linked-site modification information；
+- 每个 2.3 topo-linked nonstandard **unit** 对应的 `topology_linked_parameterization_result.yaml`，并由该正式结果记录定位五个核心结果、`standard_atom_deletions` 与 `charge_modification_scope`；
 - 2.4 independent nonstandard type-level topology 与当前体系实例 structure/map；
 - 当前 Task Sheet 中 2.1 已记录可以直接引用的 solvent/ion topology definitions；
 - Workflow 1 最终结构整理/映射结果中已经确定的 chain identity / chain assignment；
@@ -54,7 +54,7 @@ final topology package
 已有 2.5 正式结果只有在以下条件都明确等价时才可自动复用：
 
 1. 2.2 standard topology/structure/map 输入相同；
-2. 所有实际参与的 2.3 nonstandard unit 结果及 linked-site modification information 相同；
+2. 所有实际参与的 2.3 `topology_linked_parameterization_result.yaml` 及其所登记核心结果、`standard_atom_deletions`、`charge_modification_scope` 相同；
 3. 所有实际参与的 2.4 type/instance 结果相同；
 4. 2.1 已记录的力场及其它参数定义来源与实际引用 force-field include tree 相同；
 5. final system composition、chain assignment 与 covalent connectivity 组织相同；
@@ -80,7 +80,7 @@ final topology package
 
 1. 解析并固定本次 2.5 输入集合；
 2. 根据已确认 covalent connectivity 与上游 chain assignment 决定 final `moleculetype` 组织，同时保留 chain identity；
-3. 按 coordinate ownership 确定 final atom set：标准部分来自 2.2 并应用全部 confirmed standard-side deletions；topo-linked 只纳入 unit 自身最终 SOURCE + ADDED_H atoms；independent 使用 2.4 all-instance structure；FF-direct 组件使用当前体系实际实例；
+3. 按 coordinate ownership 确定 final atom set：标准部分来自 2.2 并应用 `topology_linked_parameterization_result.yaml.standard_atom_deletions`；topo-linked 只纳入 unit 自身最终存在的真实原子，包括原有原子与 2.3 为非标准残基新增的 H；independent 使用 2.4 all-instance structure；FF-direct 组件使用当前体系实际实例；
 4. 以 Workflow 1 heavy-atom identity/order 为结构骨架，结合 2.2/2.3/2.4 all-atom order，建立 final all-atom order；
 5. 在 topology integration 开始前同时冻结 canonical final atom index、`final_system.map` 与所有 source/local atom → final atom index mapping；
 6. 以第 5 步 final index 为唯一目标编号，对每个 final `moleculetype` 执行 molecule-level topology integration：建立 final `[ atoms ]`，执行 standard-side deletion cleanup、attachment-site atom-type review、charge modification/replacement，并迁移 bonded terms、`[ pairs ]`、`[ exclusions ]` 与其它 molecule-level directives；每个 final moleculetype 的 local `.itp` 在本步骤直接生成；
@@ -116,7 +116,7 @@ final all-atom order **必须先于 molecule-level topology integration 冻结**
 
 - Workflow 1 只提供 heavy-atom identity/order 骨架；
 - standard residue 内部继承 2.2 all-atom order minus confirmed deletions；
-- topo-linked unit 只保留 unit 自身 final SOURCE + ADDED_H atoms，并保持 2.3 相对顺序；
+- topo-linked unit 只保留 unit 自身最终存在的真实原子，并保持 2.3 相对顺序；
 - independent instances 继承 2.4 all-instance order；
 - linked nonstandard block 不按 attachment site 紧邻插入 standard residue，而在所属 standard residue block 后按上游 object order 组织；
 - 只做 final moleculetype organization 所需的块级组合，不自由重排。
@@ -133,7 +133,7 @@ source/local atom → final atom index mapping
 
 ### Multiple-unit overlap
 
-若 2.5 发现两个名义上不同的 nonstandard units 在 standard-side modification、attachment、deletion 或 charge modification 上出现实质重叠：
+若 2.5 发现两个名义上不同的 nonstandard units 在 `standard_atom_deletions`、`charge_modification_scope`、attachment 或其它 linked topology ownership 上出现实质重叠：
 
 - 不自动 merge 两套 2.3 结果；
 - 暂停对应 integration；
