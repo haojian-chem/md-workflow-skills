@@ -43,6 +43,30 @@ Stage 2 总体架构继续读取：
 3. 无论采用哪种依据，都必须计入当前已确认拓扑连接造成的连接状态变化，相应调整连接原子上的 H。
 4. 仍不能唯一确定补氢方式时，向用户确认。
 
-## 7. 后续专项规则
+## 7. atom map 维护
+
+2.3 的 `*.map` 以 `stage1_final_map.yaml` 为稳定身份与 atom-level history 的主 baseline，不重新建立 `SOURCE / ADDED_H / CAP` provenance 分类，也不把 2.2 map 作为 2.3 map 的整体父级。
+
+参数化模型中各类原子的维护规则：
+
+1. `TOPOLOGY_LINKED_NONSTANDARD` source heavy atoms，以及 standard fragment 中能够对应到 Stage 1 最终结构的 atoms：保留其 `stage1_final_map.yaml` record 中的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新为参数化模型中的 `output_atom_index`。
+2. standard fragment 中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 读取对应 record，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 operation history，再更新为参数化模型中的 `output_atom_index`。
+3. 2.3 为 `TOPOLOGY_LINKED_NONSTANDARD` residue 新增的 H：建立新 record，`original_atom_serial: null`，保存所属 residue 的 `component_id + residue_id`，`operations = [2.3ADD]`。
+4. 参数化模型截断/封端产生的临时 CAP atom：建立 `2.3CAP` record，`original_atom_serial: null`，`component_id: null`，`residue_id: null`。
+5. 因参数化模型截取而未纳入的 atoms，以及标准残基一侧因拓扑连接而在参数化模型中去除的 atoms，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子身份继续由 linked-site modification information 记录。
+
+2.3 map 的逐原子核心字段与 Stage 2 共享接口一致：
+
+```yaml
+output_atom_index:
+original_atom_serial:
+component_id:
+residue_id:
+operations:
+```
+
+参数化模型 atom order 冻结后，`.mol2 / .map / OPT / FREQ / SP / .chg / Sobtop / .gro / .itp` 使用同一套可确定 atom-index 对应；`output_atom_index` 即该冻结顺序中的索引。
+
+## 8. 后续专项规则
 
 其它适用体系的具体截取与封端规则继续在上述一般规则下分别讨论和冻结。
