@@ -125,6 +125,23 @@ require: 当前职责依赖哪项已冻结能力
 
 不得重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results 或文件生命周期。
 
+### Results / 字段说明边界
+
+当前 Skill 的 results、report format 或 schema 字段说明只定义**当前结果本身**，包括：
+
+- 当前结果文件 / 对象是什么；
+- 每个字段记录什么信息；
+- 字段的取值、`null`、路径、枚举等语义；
+- 为正确解释或验证当前结果所必需的结果内部约束。
+
+不得借 results、report format、schema 示例或字段含义说明去规定：
+
+- 相邻或后续 Skill 应如何消费某个字段；
+- 下游根据该字段应执行什么操作、判断或转换；
+- 其它 Skill 的 handoff、input interpretation、validation 或 official-result lifecycle。
+
+确有跨 Step 的流程关系时，由拥有该关系的 Stage main Skill 表达；某个下游 Skill 对输入结果有具体要求时，由该下游 Skill 自己的 Object requirements / input contract 定义。当前结果 owner 只需把当前结果及其字段语义定义清楚。
+
 ## 9. Negative scope / 禁止项
 
 Negative scope 只在边界本身需要被明确执行时出现，不要求列完整。
