@@ -10,9 +10,9 @@
 - `2.1–2.6` 的步骤结构、主要职责、核心输入输出关系和关键边界：**冻结**；
 - `2.1 Topology preparation setup` 保持完整独立 Step，不部分或整体并入 Stage 2 main Skill；当前 active entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；
 - `2.3 Topology-linked nonstandard parameterization` 的建立参数化模型科学规则，包括一般范围规则、蛋白质截取/封端、核酸截取/封端、标准残基一侧原子变化、非标准残基补氢与 map 维护：**已专项冻结**；
-- `2.3` 的量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有；几何优化固定原子规则已经专项冻结到当前版本，核酸体系固定原子范围与 FREQ 中固定坐标处理仍待继续确定；
+- `2.3` 的量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有；几何优化固定原子规则已经专项冻结到当前版本；
 - `2.3` 的 RESP / RESP2 电荷拟合科学规则：**已专项冻结**；
-- `2.3` 的当前科研处理环节、五个核心结果文件、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
+- `2.3` 的当前科研处理环节、六个核心结果文件、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
 - 尚未固定的其它文件 basename / schema / 目录名：**仍可在实现层细化**；
 - **当前只有 2.1 已生成 active Skill；Stage 2 main Skill 与 2.2–2.6 仍为 freeze-only / reserved package paths。**
@@ -317,7 +317,7 @@ WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md
 - 完成电荷拟合并生成 `parameterization.chg`；
 - 完成 Sobtop 参数化并生成 `parameterized_topology.itp`；
 - 建立并维护 `parameterization_model.map`；
-- 通过 `topology_linked_parameterization_result.yaml` 向 2.5 交付五个核心结果、标准残基一侧需要删除的原子和残基级电荷修改范围。
+- 通过 `topology_linked_parameterization_result.yaml` 向 2.5 交付六个核心结果、标准残基一侧需要删除的原子和残基级电荷修改范围。
 
 2.3 不直接修改 2.2 baseline topology/structure。
 
@@ -394,12 +394,13 @@ parameterization_model.map
 
 ## 5.9 正式结果
 
-每个 2.3 工作项的五个核心结果固定为：
+每个 2.3 工作项的六个核心结果固定为：
 
 ```text
 parameterization_model.mol2
 parameterization_model.map
 parameterization.chg
+charge_fitting_result.yaml
 parameterized_structure.gro
 parameterized_topology.itp
 ```
@@ -410,7 +411,7 @@ parameterized_topology.itp
 topology_linked_parameterization_result.yaml
 ```
 
-作为本环节正式结果记录。该 YAML 统一登记五个核心结果的完整路径，并记录标准残基一侧需要删除的原子与残基级电荷修改范围。项目结果索引只登记 `topology_linked_parameterization_result.yaml`，不分别登记五个核心结果文件。
+作为本环节正式结果记录。该 YAML 统一登记六个核心结果的完整路径，并记录标准残基一侧需要删除的原子与残基级电荷修改范围。项目结果索引只登记 `topology_linked_parameterization_result.yaml`，不分别登记六个核心结果文件。
 
 `.top` 若实际生成且有复现价值可保留，但不是强制核心 handoff。
 
@@ -629,9 +630,9 @@ topology_integration_report.yaml
 - 2.3 的科研处理环节为“建立参数化模型 → 量化计算 → 电荷拟合并生成 `parameterization.chg` → Sobtop 参数化并生成 `parameterized_topology.itp`”；
 - 2.3 建立参数化模型的一般规则、蛋白质与核酸截取/封端、标准残基一侧原子变化、非标准残基补氢和 map 维护已经专项冻结；
 - 2.3 量化计算的电子状态、OPT、FREQ 以及 RESP / RESP2 所需 SP 计算主线由 2.3 主 freeze 拥有；几何优化固定原子规则已经专项冻结到当前版本；
-- 2.3 RESP / RESP2 的 `Q_expected`、unconstrained / constrained 拟合、电荷约束和禁止后处理归一化规则已经专项冻结；
+- 2.3 RESP / RESP2 的 `Q_expected`、unconstrained / constrained two-stage 拟合、RESP2 混合与检查规则已经专项冻结；
 - 2.3 建立参数化模型时生成 `parameterization_model.mol2`、`parameterized_structure.gro`、`parameterization_model.map`，三者采用同一套已确定 atom order；
-- 2.3 五个核心结果 basename 以及 `topology_linked_parameterization_result.yaml` 正式结果记录已经固定；项目结果索引只登记该正式结果记录；
+- 2.3 六个核心结果 basename 以及 `topology_linked_parameterization_result.yaml` 正式结果记录已经固定；项目结果索引只登记该正式结果记录；
 - 2.2 / 2.3 / 2.4 主要职责与输出层级；
 - map 共享核心字段沿用 Workflow 1 的稳定 residue identity、`original_atom_serial` 与 operation history；2.2 / 2.3 的 producer 维护规则已冻结；
 - 2.3 判断标准残基一侧需要删除的原子并记录，2.5 实际应用；
@@ -654,8 +655,6 @@ topology_integration_report.yaml
 ## 仍可继续细化但不重新开放 Stage 2 架构
 
 - Stage 2 main Skill 正式生成时的 main/reference 文本组织与具体 reference basename；
-- 2.3 量化计算中核酸体系的固定原子范围；
-- 2.3 FREQ 中固定坐标的处理；
 - 2.3 Sobtop 参数化尚未敲定的详细科学规则；
 - 其它适用体系的 2.3 参数化模型截取/capping 专项规则；
 - 其余尚未固定的文件 basename、schema、deterministic tool implementation；
