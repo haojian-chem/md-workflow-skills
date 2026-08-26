@@ -136,11 +136,11 @@ charge_modification_scope:
 
 ```yaml
 results:
-  parameterization_map: /absolute/path/to/2.3_unit.map
-  charge_file: /absolute/path/to/2.3_unit.chg
+  parameterization_map: /absolute/path/to/<2.3-map-result>
+  charge_file: /absolute/path/to/<2.3-charge-result>
 ```
 
-路径使用完整绝对路径。该记录只负责定位本次 2.3 结果，不改变 `*.map` 或 `.chg` 自身的结果语义。
+这里的尖括号内容只是未冻结 basename 的占位，不是正式文件名。路径使用完整绝对路径。该记录只负责定位本次 2.3 结果，不改变 `*.map` 或 `.chg` 自身的结果语义。
 
 ### 8.5 最小结构示例
 
@@ -153,8 +153,8 @@ references:
   STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
 
 results:
-  parameterization_map: /absolute/path/to/2.3_unit.map
-  charge_file: /absolute/path/to/2.3_unit.chg
+  parameterization_map: /absolute/path/to/<2.3-map-result>
+  charge_file: /absolute/path/to/<2.3-charge-result>
 
 standard_atom_deletions:
   - structure: STANDARD_STRUCTURE_1
