@@ -116,6 +116,14 @@ STANDARD_RESIDUE
 
 不得继续以 `components[]` 的全局顺序直接替代上述类别顺序。类别内部在不违反本 Skill 其它组织规则的前提下，优先保持当前 target 中已有的稳定相对顺序。
 
+需要新分配 PDB chain ID 时，按上述处理顺序及同类对象的稳定顺序，从以下合法字符序列中选择尚未占用的 chain ID：
+
+```text
+A-Z → a-z → 0-9
+```
+
+已经存在且能够合法、无歧义表达最终 chain 组织的 chain ID 不因该分配顺序被强制改写。若当前 target 所需的独立 chain 数量超过 PDB chain ID 能够可靠表示的范围，不得静默合并不同 chain；应明确报告 PDB 表示限制并由用户决定处理方式。
+
 ### 3. `STANDARD_RESIDUE`
 
 先处理全部标准残基。
@@ -129,9 +137,14 @@ STANDARD_RESIDUE
 - 同一聚合物链内保持实际 residue sequence order；
 - 1.3 selection 造成的真实聚合物区段边界保留为结构边界，不因为最终 chain ID 相同而把不连续 selected segments 表示成连续聚合物区段。
 
-最终 chain ID 应能够在 PDB 中合法且无歧义地表示这些聚合物链。现有 chain ID 能满足最终组织要求时可以保留；存在冲突、空值或不能正确表达最终 chain 组织时，由执行 Agent 重新分配合法且不冲突的 PDB chain ID。
+最终 chain ID 应能够在 PDB 中合法且无歧义地表示这些聚合物链。现有 chain ID 能满足最终组织要求时可以保留；存在冲突、空值或不能正确表达最终 chain 组织时，按本 Skill 的 chain ID 分配规则重新分配。
 
-在最终 chain 确定后同步确定标准残基的最终 `resid`。现有 `resid` 在所属最终 chain 内无冲突且能够保持 residue order 时原则上保留；如果 chain 重组造成冲突或当前编号不能可靠表示最终残基身份，则在该最终 chain 内按实际 residue order 重新编号。不得只为了让编号连续或外观整齐而无必要改写全部标准残基的 `resid`。
+在最终 chain 确定后同步确定标准残基的最终 `resid`：
+
+- 现有 `resid` 在所属最终 chain 内无冲突且能够保持 residue order 时原则上保留；
+- 如果 chain 重组造成冲突或当前编号不能可靠表示最终残基身份，则该 final chain 内按实际 residue order 从 `1` 开始连续重新编号；
+- 同一 final chain 中即使存在多个由 selection 造成的聚合物区段，`TER` 不使 `resid` 重新从 `1` 开始；
+- 不得只为了让编号连续或外观整齐而无必要改写全部标准残基的 `resid`。
 
 ### 4. `TOPOLOGY_LINKED_NONSTANDARD` 单元
 
@@ -164,8 +177,9 @@ topology_effect_applied: true
 
 `resid` 与 chain 组织同步处理：
 
-- 使用某条聚合物链 chain ID 的 topology-linked 非标准残基，在该 chain 已有标准残基 `resid` 之后按单元及单元内 residue 顺序继续分配不冲突的 `resid`；
-- 使用独立 chain 的 topology-linked 非标准单元，在其独立 chain 内按单元内 residue order 分配不冲突的 `resid`；
+- 使用某条聚合物链 chain ID 的 topology-linked 非标准残基，从该 chain 标准残基最后占用的 `resid + 1` 开始，按单元顺序及单元内 residue order 连续分配；
+- 多个 topology-linked 非标准单元使用同一条聚合物链 chain ID 时，后一个单元从前一个单元最后占用的 `resid + 1` 继续；
+- 使用独立 chain 的 topology-linked 非标准单元，从 `resid = 1` 开始按单元内 residue order 连续分配；
 - 不为了保留 1.3 的中间编号而制造最终 chain 内的 `resid` 冲突。
 
 ### 5. `INDEPENDENT_NONSTANDARD`
@@ -174,9 +188,9 @@ topology_effect_applied: true
 
 同一 `component_id` 下属于 `INDEPENDENT_NONSTANDARD` 的 residues 作为同一个独立 component 保持连续，并保持其在 1.2 中的正式 residue order。不同独立非标准 components 不因为具有相同 `topology_class` 而合并成同一个化学对象。
 
-每个独立非标准 component 使用独立于标准聚合物链和独立 topology-linked 非标准单元的 chain 表示；chain ID 必须合法且不与已有 chain 组织产生歧义。
+每个独立非标准 component 使用独立于标准聚合物链和独立 topology-linked 非标准单元的 chain 表示；chain ID 按本 Skill 的稳定分配规则确定且不得与已有 chain 冲突。
 
-其 `resid` 在所属 chain 内按 component 内 residue order 分配且不得冲突。不同独立非标准 components 的总体顺序优先沿用它们在当前 target 中首次出现的顺序。
+每个独立非标准 component 在自己的 final chain 内从 `resid = 1` 开始，按 component 内 residue order 连续分配。不同独立非标准 components 的总体顺序优先沿用它们在当前 target 中首次出现的顺序。
 
 ### 6. `SOLVENT_COMPONENT` 与 `ION_COMPONENT`
 
@@ -189,7 +203,8 @@ topology_effect_applied: true
 - solvent 与 ion 分别使用独立于前述类别的 chain 表示；
 - 同一类别内部保持当前 target 的 residue 顺序；
 - 同一类别可以共用一个 chain，不要求每个 component 单独占用一个 PDB chain ID；
-- `resid` 在各自 chain 内按最终写出顺序分配且不得冲突。
+- 默认每个类别的第一个 final chain 从 `resid = 1` 开始，按最终写出顺序连续编号；
+- 如果同一类别因实际需要拆成多个 final chains，每个新 chain 的 `resid` 均从 `1` 开始。
 
 如果当前 PDB 表示或用户明确要求需要把同类对象拆成多个 chain，执行 Agent 可以在保持类别顺序、对象身份和映射连续性的前提下处理；不得因此改变 residue 分类或 component identity。
 
@@ -268,7 +283,8 @@ WATER      → HETATM
 - 所有最终 PDB atoms 都保持原有 `component_id + residue_id` 身份；
 - 最终 PDB 的类别顺序为 `STANDARD_RESIDUE → TOPOLOGY_LINKED_NONSTANDARD → INDEPENDENT_NONSTANDARD → SOLVENT_COMPONENT → ION_COMPONENT`；
 - 标准聚合物链、topology-linked 非标准单元和独立非标准 components 的 chain 组织符合本 Skill 规则；
-- 最终 chain 内没有 `resid` 冲突；
+- 新分配的 chain ID 符合本 Skill 的稳定分配规则且不存在冲突；
+- 最终 chain 内没有 `resid` 冲突，发生重新编号时符合本 Skill 规定的起点与顺序；
 - residue 内 atom order 未改变；
 - 本步骤没有新增、删除或修改不允许改变的原子属性；
 - `ATOM / HETATM / TER` serial 连续且唯一；
