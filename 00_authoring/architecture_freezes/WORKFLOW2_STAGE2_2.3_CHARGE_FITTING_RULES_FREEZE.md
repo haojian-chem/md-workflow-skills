@@ -4,11 +4,7 @@ Status: CURRENT AUTHORING REFERENCE
 
 本文件保存 `2.3 Topology-linked nonstandard parameterization` 中已经敲定的电荷拟合科学规则，作为后续正式 Skill generation 时“电荷拟合并生成 `parameterization.chg`”环节的详细 authoring input。
 
-量化计算规则读取：
-
-`WORKFLOW2_STAGE2_2.3_QUANTUM_CALCULATION_RULES_FREEZE.md`
-
-2.3 的环节结构、正式结果记录及其它规则读取：
+量化计算规则与 2.3 环节结构、正式结果记录读取：
 
 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md`
 
