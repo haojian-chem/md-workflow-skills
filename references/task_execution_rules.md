@@ -155,6 +155,12 @@ Tool 可以负责自己确定性输出的机械 / 格式有效性；科研 Skill
 
 Skill-specific project-result whitelist、结果文件语义和 validation 条件由对应结果 owner 定义；本文件不建立统一结果 schema。
 
+正式结果记录中的 `references` 可定义当前记录实际依赖的文件，也可定义多个字段共同复用的公共路径引用。具体 `references` 字段结构由对应结果 owner 定义，本文件不建立统一 `references` schema。
+
+结果文件路径必须保持完整绝对路径语义。若多个结果文件共享相同目录前缀，可在 `references` 中先定义该公共绝对路径，再在结果字段中使用 `${PATH_KEY}/filename` 形式引用；变量展开后的结果必须是完整绝对路径。
+
+由当前环节产生的结果文件仍记录在对应结果 owner 定义的结果字段中，不因使用公共路径引用而移入 `references`。
+
 ## Minimal reads
 
 真实科研执行按需读取。
