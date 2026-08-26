@@ -73,7 +73,7 @@ operations:
 
 ### 8.1 `references`
 
-文件级 `references` 集中记录本次修改信息实际引用的上游依据和相关 2.3 结果文件。正文记录优先使用短引用键，不重复写长绝对路径。
+文件级 `references` 集中记录本次修改信息实际引用的上游正式文件。正文记录优先使用短引用键，不重复写长绝对路径。
 
 至少记录实际使用的：
 
@@ -84,11 +84,11 @@ references:
   STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
   STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
   STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
-  PARAMETERIZATION_MAP_1: /absolute/path/to/2.3_unit.map
-  CHARGE_FILE_1: /absolute/path/to/2.3_unit.chg
 ```
 
-只为当前正式记录实际引用的文件建立条目；路径使用完整绝对路径。引用键用于当前文件内部定位，不改变被引用结果自身的字段或身份语义。
+只为当前正式记录实际引用的上游文件建立条目；路径使用完整绝对路径。引用键用于当前文件内部定位，不改变被引用结果自身的字段或身份语义。
+
+2.3 自己生成的 `*.map`、`.chg` 等文件属于本环节结果，不放入 `references`。
 
 ### 8.2 标准残基一侧需要删除的原子
 
@@ -130,7 +130,19 @@ charge_modification_scope:
 
 这里只记录实际电荷修改范围；仅作为参数化模型外围环境或封端环境而保留、最终不采用 2.3 新电荷的标准残基不列入该集合。
 
-### 8.4 最小结构示例
+### 8.4 本次 2.3 结果文件
+
+`*.map`、`.chg` 是 2.3 自己生成的结果文件。需要在本修改信息中定位这些结果时，使用独立的结果字段，不作为 `references` 条目：
+
+```yaml
+results:
+  parameterization_map: /absolute/path/to/2.3_unit.map
+  charge_file: /absolute/path/to/2.3_unit.chg
+```
+
+路径使用完整绝对路径。该记录只负责定位本次 2.3 结果，不改变 `*.map` 或 `.chg` 自身的结果语义。
+
+### 8.5 最小结构示例
 
 ```yaml
 references:
@@ -139,8 +151,10 @@ references:
   STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
   STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
   STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
-  PARAMETERIZATION_MAP_1: /absolute/path/to/2.3_unit.map
-  CHARGE_FILE_1: /absolute/path/to/2.3_unit.chg
+
+results:
+  parameterization_map: /absolute/path/to/2.3_unit.map
+  charge_file: /absolute/path/to/2.3_unit.chg
 
 standard_atom_deletions:
   - structure: STANDARD_STRUCTURE_1
