@@ -51,11 +51,11 @@ parameterization_model.map
 
 在几何优化得到的结构上进行 FREQ 计算，获得后续参数化所需的振动 / Hessian 信息，并提供对优化结构振动性质的判断依据。FREQ 中如何处理几何优化阶段的固定坐标尚未敲定。
 
-电荷拟合所需 SP 任务的设置读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 第 2 节，并按该节确定的任务完成相应 SP 计算与静电势数据获取。
+电荷拟合所需 SP 计算与对应检查读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 中相应规则，并按当前 RESP / RESP2 方案完成 SP 计算及结果记录。
 
 ### 1.3 电荷拟合并生成 `parameterization.chg`
 
-原子电荷拟合及 `parameterization.chg` 的生成读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 第 1、3–6 节。
+原子电荷拟合、`charge_fitting_result.yaml` 与 `parameterization.chg` 的生成读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md`。
 
 ### 1.4 Sobtop 参数化并生成 `parameterized_topology.itp`
 
@@ -72,13 +72,13 @@ topology_linked_parameterization_result.yaml
 作为本环节正式结果记录。该记录同时保存：
 
 - 本次实际引用的上游正式文件；
-- 五个 2.3 核心结果文件；
+- 六个 2.3 核心结果文件；
 - 标准残基一侧需要删除的原子；
 - 残基级电荷修改范围。
 
 ### 2.1 `references`
 
-文件级 `references` 集中记录本次正式结果实际引用的上游正式文件。正文记录优先使用短引用键，不重复写长绝对路径。
+文件级 `references` 记录本次正式结果实际依赖的文件；如多个字段需要复用同一公共绝对路径，也可按仓库级 `references/task_execution_rules.md` 定义公共路径引用。
 
 至少记录实际使用的：
 
@@ -91,7 +91,7 @@ references:
   STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
 ```
 
-只为当前正式记录实际引用的上游文件建立条目；路径使用完整绝对路径。2.3 自己生成的结果文件不放入 `references`。
+只为当前正式记录实际依赖的文件建立条目；结果文件和依赖文件路径保持完整绝对路径语义。2.3 自己生成的结果文件记录在对应结果字段中。
 
 ### 2.2 标准残基一侧需要删除的原子
 
@@ -131,25 +131,27 @@ charge_modification_scope:
 
 仅作为参数化模型外围环境或封端环境而保留、最终不采用 2.3 新电荷的标准残基不列入该集合。
 
-### 2.4 五个核心结果文件
+### 2.4 六个核心结果文件
 
-2.3 的五个核心结果 basename 固定为：
+2.3 的六个核心结果 basename 固定为：
 
 ```text
 parameterization_model.mol2
 parameterization_model.map
 parameterization.chg
+charge_fitting_result.yaml
 parameterized_structure.gro
 parameterized_topology.itp
 ```
 
-这五个文件统一登记在 `topology_linked_parameterization_result.yaml` 的 `results` 中，并保存完整绝对路径：
+这六个文件统一登记在 `topology_linked_parameterization_result.yaml` 的 `results` 中：
 
 ```yaml
 results:
   parameterization_model: /absolute/path/to/parameterization_model.mol2
   parameterization_map: /absolute/path/to/parameterization_model.map
   charge_file: /absolute/path/to/parameterization.chg
+  charge_fitting_result: /absolute/path/to/charge_fitting_result.yaml
   parameterized_structure: /absolute/path/to/parameterized_structure.gro
   parameterized_topology: /absolute/path/to/parameterized_topology.itp
 ```
@@ -159,7 +161,8 @@ results:
 - `parameterization_model.mol2`：建立参数化模型时生成的模型结构；
 - `parameterization_model.map`：建立参数化模型时生成、与模型原子顺序对应的 atom map；
 - `parameterized_structure.gro`：建立参数化模型时生成，与 `parameterization_model.mol2` 和 `parameterization_model.map` 使用同一原子集合和原子顺序；
-- `parameterization.chg`：电荷拟合环节生成的电荷结果；
+- `parameterization.chg`：电荷拟合环节最终生成、供 Sobtop 参数化使用的电荷结果；
+- `charge_fitting_result.yaml`：电荷拟合环节的独立正式结果记录，保存 SP 结果文件、实际拟合方法与设置、各候选 `.chg` 结果、检查结果及最终选中的电荷文件；
 - `parameterized_topology.itp`：Sobtop 参数化环节生成的 topology。
 
 ### 2.5 最小结构示例
@@ -176,6 +179,7 @@ results:
   parameterization_model: /absolute/path/to/parameterization_model.mol2
   parameterization_map: /absolute/path/to/parameterization_model.map
   charge_file: /absolute/path/to/parameterization.chg
+  charge_fitting_result: /absolute/path/to/charge_fitting_result.yaml
   parameterized_structure: /absolute/path/to/parameterized_structure.gro
   parameterized_topology: /absolute/path/to/parameterized_topology.itp
 
@@ -198,4 +202,4 @@ charge_modification_scope:
 
 2.3 完成并通过本环节 validation 后，将 `topology_linked_parameterization_result.yaml` 登记到项目结果索引。项目结果索引保存该正式结果记录的完整路径，用它作为定位本次 2.3 全部正式结果的入口。
 
-五个核心结果文件已经由该正式结果记录的 `results` 统一定位，因此不在项目结果索引中分别建立独立结果项。
+六个核心结果文件已经由该正式结果记录的 `results` 统一定位，因此不在项目结果索引中分别建立独立结果项。
