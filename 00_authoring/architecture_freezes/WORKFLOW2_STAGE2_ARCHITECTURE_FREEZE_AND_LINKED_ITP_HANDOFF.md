@@ -152,7 +152,7 @@ Stage 2 的实际工作集合由 2.1 在 Task Sheet 中确定；2.2 / 2.3 / 2.4 
 
 跨多个 Stage 2 producer / consumer 且必须保持统一语义的接口，由 Stage 2 main Skill拥有统一的阶段级接口定义；具体生成算法仍由各 Step owner 拥有。
 
-当前已冻结的统一 `*.map` 语义属于 Stage 2 共享接口。正式 Skill generation 时，其详细接口定义可以放在 Stage 2 main Skill 自己的 local reference 中，由 2.2 / 2.3 / 2.4 / 2.5 按需引用；不得在多个 Step Skill 中各维护一份可独立漂移的重复规范。
+当前已冻结的统一 `*.map` 语义属于 Stage 2 共享接口。正式 Skill generation 时，其详细接口定义可以放在 Stage 2 main Skill自己的 local reference 中，由 2.2 / 2.3 / 2.4 / 2.5 按需引用；不得在多个 Step Skill 中各维护一份可独立漂移的重复规范。
 
 2.1 的力场/参数定义来源、已有正式结果引用以及 2.2–2.5 处理对象直接保存在当前 Task Sheet 中。Stage 2 main Skill只消费这一当前计划状态，不建立第二份阶段级 assignment record。
 
@@ -198,36 +198,79 @@ standard molecule .itp file(s)
 corresponding *.map
 ```
 
+## 3.1 2.2 map 维护
+
+2.2 的 `*.map` 以 Workflow 1 的 `stage1_final_map.yaml` 为直接身份与 provenance 基线，不重新从 `stage1_final.pdb` 的 chain、resid、residue name、atom name 或 atom order 推断身份。
+
+对 2.2 输出中来自 Stage 1 最终结构的标准残基原子：
+
+- 从 `stage1_final_map.yaml` 取得对应 record；
+- 保留该 record 的 `original_atom_serial`、`component_id + residue_id` 和全部既有 `operations`；
+- 只把当前 locator 更新为 2.2 standard-only 输出中的 `output_atom_index`。
+
+2.2 新增的 H 在 Stage 1 map 中没有 atom record，因此建立新 record：
+
+```text
+original_atom_serial = null
+component_id + residue_id = 该 H 所属标准残基的 1.2 正式身份
+operations = [2.2ADD]
+```
+
+2.2 因只输出 `STANDARD_RESIDUE` 而未进入 standard-only 结构的其它 Stage 1 原子不写入 2.2 map；这属于当前输出 atom set 的限定，不建立删除记录。
+
 ---
 
 # 4. 统一 `*.map` 规则
 
-`*.map` 是 Stage 2 共享接口；其统一接口定义由 Stage 2 main Skill拥有，2.2 / 2.3 / 2.4 负责按该定义生成各自产物，2.5 负责按同一接口消费，不在各 Step 内重新定义第二套 map 语义。
+`*.map` 是 Stage 2 共享接口；其统一接口定义由 Stage 2 main Skill拥有。Stage 2 不在 2.2–2.4 重新初始化一套与 Workflow 1 无关的 provenance；凡能够对应到 `stage1_final_map.yaml` 的原子，都继续携带 Stage 1 已经建立的 identity 与 atom-level history。
 
-`*.map` 只回答“当前输出原子是谁、来自哪里”，不承担 connectivity、bond 描述、topology-link 删除逻辑或 linked-site chemical decision。
-
-映射方向固定为：
-
-```text
-generated/output atom → source provenance
-```
-
-字段：
+Stage 2 map 的稳定逐原子核心字段为：
 
 ```yaml
 output_atom_index:
-output_atom_name:
-output_residue_name:
-output_residue_number:
-origin: SOURCE | ADDED_H | CAP
-source_atom_serial:
+original_atom_serial:
+component_id:
+residue_id:
+operations:
 ```
 
-- `SOURCE`：`source_atom_serial` 必填；
-- `ADDED_H`：`source_atom_serial` 为空；
-- `CAP`：`source_atom_serial` 为空；
-- 不加入 `DELETED_BY_LINK`；
-- ADDED_H 的连接归属从 `.itp [ bonds ]` / `.mol2` 读取，不在 map 重复保存。
+字段语义：
+
+- `output_atom_index`：该 record 对应原子在当前 map 所描述输出 atom order 中的索引；当前结构格式不要求为 PDB，因此不继续使用 `current_atom_serial` 作为 Stage 2 当前 locator；
+- `original_atom_serial`：继续沿用 Stage 1 map 的语义，指向 Stage 1 map chain 的 `original_structure` 中对应 atom；原始结构中不存在对应 atom 时为 `null`；
+- `component_id + residue_id`：继续使用 1.2 正式稳定 residue identity；对属于真实体系 residue 的原子必须成对存在；
+- `operations`：保留 Stage 1 已有 operation history，并在 Stage 2 实际新增 atom 时追加/建立相应 Stage 2 operation code。
+
+Stage 2 map 必须能够定位其直接使用的 `stage1_final_map.yaml` 与当前 map 所描述的 structure / atom-order artifact。具体文件级 basename 与最终 schema 仍留到 Stage 2 main Skill正式生成时统一物化；2.3 额外使用 2.2 map 作为 standard-side H 的 supporting mapping 时，由 2.3 正式结果同时定位该 supporting map。
+
+当前为 2.2 / 2.3 冻结的 Stage 2 operation code：
+
+```text
+2.2ADD
+2.3ADD
+2.3CAP
+```
+
+- `2.2ADD`：2.2 新增、Stage 1 最终结构中不存在对应 atom 的 H；
+- `2.3ADD`：2.3 为 `TOPOLOGY_LINKED_NONSTANDARD` residue 新增、Stage 1 最终结构中不存在对应 atom 的 H；
+- `2.3CAP`：2.3 仅为 parameterization model 截断/封端而新增的临时 atom。
+
+`2.3CAP` record 使用：
+
+```text
+original_atom_serial = null
+component_id = null
+residue_id = null
+operations = [2.3CAP]
+```
+
+因为 CAP 不对应体系中的真实 residue atom。
+
+Stage 2 map 不再把 provenance 压缩成 `origin: SOURCE | ADDED_H | CAP`，也不再使用单独的 `source_atom_serial` 替代 Stage 1 已维护的 `original_atom_serial + operations`。`output_atom_name / output_residue_name / output_residue_number` 由 `output_atom_index` 在当前 mapped structure 中读取，不在 map 中重复保存。
+
+删除或未进入当前输出 atom set 的 atom 不在当前 map 中保留 tombstone record。Connectivity、bond 描述、topology-link standard-side deletion 判断仍由其正式 owner / artifact 表达，不重复塞入 map。
+
+本次只冻结 2.2 / 2.3 的具体 map producer behavior；2.4 后续生成正式 Skill 时必须沿用上述共享核心字段与 Stage 1 identity/provenance continuity，再单独确认其所需 Stage 2 operation code 与具体维护方式。
 
 ---
 
@@ -261,6 +304,8 @@ source_atom_serial:
 
 2.3 不重新给 standard fragment 补氢。
 
+2.3 的 map baseline 仍是 `stage1_final_map.yaml`；2.2 map 只作为 standard fragment 中 Stage 1 不存在的新增 H 及其 `component_id + residue_id` / `2.2ADD` history 的 supporting mapping，不把 2.3 map 改成 2.2 map 的继承链。
+
 ## 5.4 standard-side deletion
 
 2.3 根据已确认 topology relation 判断标准侧哪些新增原子与 linked 状态不兼容，并在参数化模型中删除；2.2 baseline 保持不变。
@@ -276,13 +321,25 @@ source_atom_serial:
 
 核酸/DNA/RNA 的 phosphodiester boundary / O3' / O5' capping 仍需专项冻结。
 
-## 5.6 atom order
+## 5.6 map 维护
+
+2.3 parameterization model 的 map 从 `stage1_final_map.yaml` 的稳定身份与 history 出发，并按实际进入 parameterization model 的 atom set 构造：
+
+1. unit 内 nonstandard source heavy atoms，以及 standard fragment 中能够对应到 Stage 1 最终结构的 atoms：保留其 `stage1_final_map.yaml` record 的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新 `output_atom_index`；
+2. standard fragment 中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 取得对应 record，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 history，再更新为 2.3 parameterization-model `output_atom_index`；
+3. 2.3 为 unit 内 nonstandard residue 新增的 H：新建 record，`original_atom_serial: null`，写入该 residue 的 `component_id + residue_id`，`operations = [2.3ADD]`；
+4. parameterization cap atom：新建 `2.3CAP` record，不赋予 `component_id + residue_id`；
+5. 因 parameterization-model 截取而未纳入的 atoms，以及 standard-side deletion 后不存在于当前 parameterization model 的 atoms，不进入当前 2.3 map；standard-side deletion 的正式身份继续由 linked-site modification information 记录，不在 map 建立删除 record。
+
+因此 2.3 map 不是 2.2 map 的整体 copy-and-update；它以 Stage 1 final map 为主 baseline，只对参数化模型中实际使用的 2.2-added standard H 读取并保留对应 2.2 map record/history。
+
+## 5.7 atom order
 
 完成 extraction + standard-side deletion + nonstandard hydrogenation + capping 后，参数化模型 atom order 冻结。
 
-后续 `.mol2 / .map / OPT / FREQ / SP / .chg / Sobtop / .gro / .itp` 必须保持可确定的一致 atom-index 对应。
+后续 `.mol2 / .map / OPT / FREQ / SP / .chg / Sobtop / .gro / .itp` 必须保持可确定的一致 atom-index 对应；2.3 map 的 `output_atom_index` 使用这套冻结的 parameterization-model atom index。
 
-## 5.7 DFT / charge 路线
+## 5.8 DFT / charge 路线
 
 ```text
 prepared model
@@ -297,7 +354,7 @@ prepared model
 
 具体 level of theory、basis、solvent model、RESP/RESP2 settings 不在架构层写死。
 
-## 5.8 输出
+## 5.9 输出
 
 每个 unit 至少：
 
@@ -523,7 +580,7 @@ topology_integration_report.yaml
 - 2.5 进入前必须对照当前 Task Sheet 中由 2.1 确定的处理对象和直接输入，确认所有 topology acquisition / parameterization 所需结果已经齐备；
 - 2.3 processing unit = topology-linked nonstandard unit，可包含一个或多个 nonstandard residues；
 - 2.2 / 2.3 / 2.4 主要职责与输出层级；
-- map 基本职责与字段，并作为 Stage 2 共享接口由未来 Stage 2 main Skill统一拥有接口定义；
+- map 共享核心字段沿用 Workflow 1 的稳定 residue identity、`original_atom_serial` 与 operation history；2.2 / 2.3 的 producer 维护规则已冻结；
 - 2.3 判断 standard-side deletion、2.5 执行；
 - Workflow 1 → Stage 2 的 topo-linked chain assignment handoff；
 - 2.5 final moleculetype organization；
