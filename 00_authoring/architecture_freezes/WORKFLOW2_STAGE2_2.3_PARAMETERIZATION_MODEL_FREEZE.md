@@ -12,7 +12,7 @@ Status: CURRENT AUTHORING REFERENCE
 
 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`
 
-电荷拟合的详细科学规则已经专项保存于：
+电荷拟合相关科学规则已经专项保存于：
 
 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md`
 
@@ -51,14 +51,11 @@ parameterization_model.map
 
 在几何优化得到的结构上进行 FREQ 计算，获得后续参数化所需的振动 / Hessian 信息，并提供对优化结构振动性质的判断依据。FREQ 中如何处理几何优化阶段的固定坐标尚未敲定。
 
-在同一优化后参数化模型几何结构上，根据实际采用的电荷拟合策略完成所需 SP 计算并获得相应静电势数据：
-
-- 采用 RESP 时，按当前所选 RESP / 力场参数化方案的要求完成用于 RESP 电荷拟合的 SP / 静电势计算；
-- 采用 RESP2 时，在同一优化后几何结构上分别完成 gas-phase SP 与 solvent-phase SP，分别获得气相和溶剂环境下用于 RESP2 电荷拟合的静电势数据。
+电荷拟合所需 SP 任务的设置读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 第 2 节，并按该节确定的任务完成相应 SP 计算与静电势数据获取。
 
 ### 1.3 电荷拟合并生成 `parameterization.chg`
 
-电荷拟合按 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 执行。RESP / RESP2 的电荷约束、unconstrained / constrained 结果用途、`Q_expected`、禁止后处理归一化以及 `parameterization.chg` 的结果语义由该专项 freeze 统一拥有。
+原子电荷拟合及 `parameterization.chg` 的生成读取 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 第 1、3–6 节。
 
 ### 1.4 Sobtop 参数化并生成 `parameterized_topology.itp`
 
