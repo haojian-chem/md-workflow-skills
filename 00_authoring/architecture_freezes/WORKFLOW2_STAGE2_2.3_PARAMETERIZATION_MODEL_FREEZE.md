@@ -2,7 +2,7 @@
 
 Status: CURRENT AUTHORING REFERENCE
 
-本文件记录 `2.3 Topology-linked nonstandard parameterization` 中已经敲定的参数化模型输入、截取规则、atom map 维护和向 2.5 交付的修改信息，作为后续继续设计和正式 Skill generation 的 authoring input。
+本文件记录 `2.3 Topology-linked nonstandard parameterization` 中已经敲定的参数化模型输入、截取规则、atom map 维护、正式结果记录以及向 2.5 交付的信息，作为后续继续设计和正式 Skill generation 的 authoring input。
 
 Stage 2 总体架构继续读取：
 
@@ -53,7 +53,7 @@ Stage 2 总体架构继续读取：
 2. standard fragment 中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 读取对应 record，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 operation history，再更新为参数化模型中的 `output_atom_index`。
 3. 2.3 为 `TOPOLOGY_LINKED_NONSTANDARD` residue 新增的 H：建立新 record，`original_atom_serial: null`，保存所属 residue 的 `component_id + residue_id`，`operations = [2.3ADD]`。
 4. 参数化模型截断/封端产生的临时 CAP atom：建立 `2.3CAP` record，`original_atom_serial: null`，`component_id: null`，`residue_id: null`。
-5. 因参数化模型截取而未纳入的 atoms，以及标准残基一侧因拓扑连接而在参数化模型中去除的 atoms，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子身份由第 8 节的修改信息记录。
+5. 因参数化模型截取而未纳入的 atoms，以及标准残基一侧因拓扑连接而在参数化模型中去除的 atoms，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子身份由第 8 节的正式结果记录保存。
 
 2.3 map 的逐原子核心字段与 Stage 2 共享接口一致：
 
@@ -67,13 +67,20 @@ operations:
 
 参数化模型 atom order 冻结后，`.mol2 / .map / OPT / FREQ / SP / .chg / Sobtop / .gro / .itp` 使用同一套可确定 atom-index 对应；`output_atom_index` 即该冻结顺序中的索引。
 
-## 8. 向 2.5 交付的修改信息
+## 8. 2.3 正式结果记录
 
-2.3 必须以结构化 YAML 记录本次参数化结果在 2.5 中需要应用的标准残基原子删除和残基级电荷修改范围。该修改信息 YAML 的 basename 留到正式 Skill generation 时统一确定；本节冻结其内容语义。
+2.3 生成一份结构化 YAML 作为本环节正式结果记录。该记录同时保存：
+
+- 本次实际引用的上游正式文件；
+- 五个 2.3 核心结果文件；
+- 标准残基一侧需要删除的原子；
+- 残基级电荷修改范围。
+
+该正式结果记录的 basename 留到正式 Skill generation 时统一确定。
 
 ### 8.1 `references`
 
-文件级 `references` 集中记录本次修改信息实际引用的上游正式文件。正文记录优先使用短引用键，不重复写长绝对路径。
+文件级 `references` 集中记录本次正式结果实际引用的上游正式文件。正文记录优先使用短引用键，不重复写长绝对路径。
 
 至少记录实际使用的：
 
@@ -86,15 +93,11 @@ references:
   STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
 ```
 
-只为当前正式记录实际引用的上游文件建立条目；路径使用完整绝对路径。引用键用于当前文件内部定位，不改变被引用结果自身的字段或身份语义。
-
-2.3 自己生成的结果文件不放入 `references`。
+只为当前正式记录实际引用的上游文件建立条目；路径使用完整绝对路径。2.3 自己生成的结果文件不放入 `references`。
 
 ### 8.2 标准残基一侧需要删除的原子
 
 每条记录明确：**哪个 2.2 标准残基全原子结构中的哪个原子，因为哪一条已确认的拓扑连接而需要删除。**
-
-记录形式：
 
 ```yaml
 standard_atom_deletions:
@@ -111,7 +114,7 @@ standard_atom_deletions:
 - `atom_name`：保留用于人工检查，不作为跨步骤唯一身份依据；
 - `relation_id`：指向 `CLASSIFICATION_RESULT_1` 的 `topology_linked_checks[]` 中导致该删除的已确认拓扑连接记录。
 
-拓扑连接端点不在本文件中再建立平行列表；需要检查完整端点时通过 `relation_id` 回到 `CLASSIFICATION_RESULT_1`。
+拓扑连接端点不再建立平行列表；需要检查完整端点时通过 `relation_id` 回到 `CLASSIFICATION_RESULT_1`。
 
 ### 8.3 残基级电荷修改范围
 
@@ -128,9 +131,9 @@ charge_modification_scope:
     topology_class: TOPOLOGY_LINKED_NONSTANDARD
 ```
 
-这里只记录实际电荷修改范围；仅作为参数化模型外围环境或封端环境而保留、最终不采用 2.3 新电荷的标准残基不列入该集合。
+仅作为参数化模型外围环境或封端环境而保留、最终不采用 2.3 新电荷的标准残基不列入该集合。
 
-### 8.4 本次 2.3 结果文件
+### 8.4 五个核心结果文件
 
 2.3 的五个核心结果 basename 固定为：
 
@@ -142,7 +145,7 @@ parameterized_structure.gro
 parameterized_topology.itp
 ```
 
-修改信息 YAML 中统一登记这五个结果的完整绝对路径：
+这五个文件统一登记在 2.3 正式结果记录的 `results` 中，并保存完整绝对路径：
 
 ```yaml
 results:
@@ -160,8 +163,6 @@ results:
 - `parameterization.chg`：2.3 电荷拟合结果；
 - `parameterized_structure.gro`：Sobtop 后与当前参数化结果对应的结构；
 - `parameterized_topology.itp`：Sobtop 后与当前参数化结果对应的 topology。
-
-这些文件属于 2.3 本环节结果，不作为 `references` 条目。
 
 ### 8.5 最小结构示例
 
@@ -194,6 +195,12 @@ charge_modification_scope:
     residue_id: residue_002
     topology_class: TOPOLOGY_LINKED_NONSTANDARD
 ```
+
+### 8.6 项目结果索引登记
+
+2.3 完成并通过本环节 validation 后，将 **2.3 正式结果记录**登记到项目结果索引。项目结果索引保存该正式结果记录的完整路径，用它作为定位本次 2.3 全部正式结果的入口。
+
+五个核心结果文件已经由该正式结果记录的 `results` 统一定位，因此不在项目结果索引中分别建立独立结果项。
 
 ## 9. 后续专项规则
 
