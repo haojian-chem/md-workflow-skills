@@ -21,7 +21,7 @@ references/atom_mapping_rules.md
 
 1.8 将当前 target 已完成前序结构准备的有效重原子结构整理为 Stage 1 最终 PDB，并把前序持续维护的原子映射更新为最终 `stage1_final_map.yaml`。
 
-1.8 拥有：
+1.8 负责：
 
 ```text
 最终 chain 组织
@@ -70,6 +70,14 @@ STANDARD_RESIDUE
 
 不得以 1.2 `components[]` 的全局顺序替代该类别顺序。
 
+需要新分配 PDB chain ID 时，按上述处理顺序及同类对象的稳定顺序，从：
+
+```text
+A-Z → a-z → 0-9
+```
+
+中选择尚未占用的合法 chain ID。已有 chain ID 能合法、无歧义表达最终 chain 组织时可以保留。若所需独立 chain 数量超过 PDB 能可靠表示的范围，不得静默合并不同 chain。
+
 ## 5. `STANDARD_RESIDUE`
 
 标准残基按实际所属聚合物链组织：
@@ -81,7 +89,7 @@ STANDARD_RESIDUE
 
 最终 chain ID 能合法、无歧义地继续使用现有表示时可以保留；否则在 1.8 重新分配。
 
-最终 `resid` 与 chain 组织同步确定。现有编号在所属最终 chain 内无冲突且能保持 residue order 时原则上保留；chain 重组造成冲突或当前编号不能可靠表示最终残基身份时，由 1.8 在该最终 chain 内按真实 residue order 调整。
+最终 `resid` 与 chain 组织同步确定：现有编号在所属最终 chain 内无冲突且能保持 residue order 时原则上保留；需要重新编号时，该 final chain 按真实 residue order 从 `1` 开始连续编号。同一 final chain 内的 `TER` 不使 `resid` 重新从 `1` 开始。
 
 ## 6. `TOPOLOGY_LINKED_NONSTANDARD`
 
@@ -109,15 +117,15 @@ topology_effect_applied: true
 
 所有 topology-linked 非标准单元都在总体顺序的 `TOPOLOGY_LINKED_NONSTANDARD` 部分写出，不插入与其发生 topology-linked 关系的标准残基旁边。
 
-使用某条聚合物链 chain ID 的 topology-linked 非标准残基，在该 chain 标准残基 `resid` 之后继续分配不冲突的 `resid`；独立 topology-linked chain 在自身 chain 内按单元 residue order 分配不冲突的 `resid`。
+使用某条聚合物链 chain ID 的 topology-linked 非标准残基，从该 chain 标准残基最后占用的 `resid + 1` 开始连续分配；后续同 chain 单元继续递增。独立 topology-linked chain 从 `resid = 1` 开始按单元 residue order 连续分配。
 
 ## 7. `INDEPENDENT_NONSTANDARD` / `SOLVENT_COMPONENT` / `ION_COMPONENT`
 
 `INDEPENDENT_NONSTANDARD` 以 `component_id` 保持独立 component 边界；同一 component 内 residue 连续并保持 1.2 正式 residue order，不把不同独立非标准 components 合并成同一个化学对象。
 
-`SOLVENT_COMPONENT` 在独立非标准 components 之后处理，`ION_COMPONENT` 最后处理。二者不因 component-level `chain_index` 被解释为聚合物链；同一类别可共用 chain，不要求每个 component 单独占用一个 PDB chain ID。
+每个独立非标准 component 使用独立 final chain，并从 `resid = 1` 开始按 component 内 residue order 连续编号。
 
-各 chain 内 `resid` 均按最终对象顺序确定并避免冲突。
+`SOLVENT_COMPONENT` 在独立非标准 components 之后处理，`ION_COMPONENT` 最后处理。二者不因 component-level `chain_index` 被解释为聚合物链；同一类别可共用 chain，不要求每个 component 单独占用一个 PDB chain ID。每个新 final chain 的 `resid` 从 `1` 开始，按最终写出顺序连续编号。
 
 ## 8. 重原子与 PDB 组织
 
