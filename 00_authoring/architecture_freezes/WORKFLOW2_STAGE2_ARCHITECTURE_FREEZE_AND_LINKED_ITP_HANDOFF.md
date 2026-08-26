@@ -9,10 +9,18 @@
 - Stage 2 需要阶段级 main Skill；其未来 runtime entry 固定为 `02_topology_preparation/SKILL.md`，阶段级职责边界：**冻结**；
 - `2.1–2.6` 的步骤结构、主要职责、核心输入输出关系和关键边界：**冻结**；
 - `2.1 Topology preparation setup` 保持完整独立 Step，不部分或整体并入 Stage 2 main Skill；当前 active entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；
+- `2.3 Topology-linked nonstandard parameterization` 的建立参数化模型科学规则，包括一般范围规则、蛋白质截取/封端、核酸截取/封端、标准残基一侧原子变化、非标准残基补氢与 map 维护：**已专项冻结**；
+- `2.3` 的当前科研处理环节、五个核心结果文件、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
-- 核酸/DNA/RNA 的 2.3 截断细节：**尚未专项冻结**；
-- 最终文件 basename / schema / 目录名：**仍可在实现层细化**；
+- 尚未固定的其它文件 basename / schema / 目录名：**仍可在实现层细化**；
 - **当前只有 2.1 已生成 active Skill；Stage 2 main Skill 与 2.2–2.6 仍为 freeze-only / reserved package paths。**
+
+2.3 当前详细冻结材料位于：
+
+```text
+WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md
+WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md
+```
 
 2.5 更详细、可直接用于后续 Skill generation 的冻结材料位于：
 
@@ -22,7 +30,7 @@ WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md
 WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
 ```
 
-这些文件保存此前未经授权物化的 2.5 guide/reference 细节，但它们仍是 architecture-freeze authoring input，不是 runtime Skill。
+这些文件都是 architecture-freeze authoring input，不是 runtime Skill。
 
 ---
 
@@ -276,6 +284,13 @@ Stage 2 map 不再把 provenance 压缩成 `origin: SOURCE | ADDED_H | CAP`，�
 
 # 5. 2.3 Topology-linked nonstandard parameterization
 
+2.3 的当前详细 authority 为：
+
+```text
+WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md
+WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md
+```
+
 ## 5.1 处理单位
 
 2.3 的处理单位是 **topology-linked nonstandard unit**，不是单个 residue。
@@ -286,15 +301,17 @@ Stage 2 map 不再把 provenance 压缩成 `origin: SOURCE | ADDED_H | CAP`，�
 
 2.3 负责：
 
-- 确定 parameterization model 范围；
-- 从 2.2 提取标准侧 all-atom fragment；
-- 从 Workflow 1 提取 unit 内 nonstandard source atoms；
-- 仅对 unit 内 nonstandard 部分补氢；
-- 判断 topology link 导致的标准侧多余原子；
-- 添加 parameterization cap；
-- 完成 DFT / RESP(2) / Sobtop；
-- 建立 mapping；
-- 向 2.5 输出 linked-site modification 信息。
+- 建立当前处理对象的参数化模型；
+- 从 2.2 提取参数化模型所需的标准残基全原子片段；
+- 从 Workflow 1 提取当前处理对象中的 nonstandard source atoms；
+- 对当前处理对象中的 nonstandard 部分补氢；
+- 确定 topology link 导致的标准残基一侧原子变化；
+- 按参数化模型边界进行封端；
+- 完成量化计算；
+- 完成电荷拟合并生成 `parameterization.chg`；
+- 完成 Sobtop 参数化并生成 `parameterized_topology.itp`；
+- 建立并维护 `parameterization_model.map`；
+- 通过 `topology_linked_parameterization_result.yaml` 向 2.5 交付五个核心结果、标准残基一侧需要删除的原子和残基级电荷修改范围。
 
 2.3 不直接修改 2.2 baseline topology/structure。
 
@@ -306,20 +323,31 @@ Stage 2 map 不再把 provenance 压缩成 `origin: SOURCE | ADDED_H | CAP`，�
 
 2.3 的 map baseline 仍是 `stage1_final_map.yaml`；2.2 map 只作为 standard fragment 中 Stage 1 不存在的新增 H 及其 `component_id + residue_id` / `2.2ADD` history 的 supporting mapping，不把 2.3 map 改成 2.2 map 的继承链。
 
-## 5.4 standard-side deletion
+## 5.4 标准残基一侧的原子变化
 
-2.3 根据已确认 topology relation 判断标准侧哪些新增原子与 linked 状态不兼容，并在参数化模型中删除；2.2 baseline 保持不变。
+2.3 根据已确认 topology relation 判断标准残基一侧哪些原子因 linked 状态形成而不应继续保留，并在参数化模型中删除；2.2 baseline 保持不变。
+
+对应 2.2 标准残基全原子结构中的原子及导致该删除的 `relation_id` 记录到 `topology_linked_parameterization_result.yaml.standard_atom_deletions`，由 2.5 在最终 structure / topology integration 时实际应用。
+
+## 5.5 建立参数化模型
+
+参数化模型的范围、蛋白质与核酸的截取/封端、标准残基一侧原子变化、非标准残基补氢、atom map 和原子顺序规则统一读取：
 
 ```text
-2.3 → 判断 standard-side modification
-2.5 → 在最终 topology / structure 中实际应用
+WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md
 ```
 
-## 5.5 参数化模型截取
+当前已经专项冻结：
 
-蛋白默认原则：完整保留直接相连 residue A，向 A-1/A+1 扩展，跨过肽键后尽量在合适 C-C 单键处截断，并以 H 形成 methyl-like cap。
+- 一般参数化模型范围规则；
+- 蛋白质体系的截取与封端规则；
+- 核酸体系的 5′ / 3′ 外扩、O5′ / O3′ 封端及互补配对核苷酸处理规则；
+- 标准残基一侧原子变化；
+- 非标准残基补氢；
+- `parameterization_model.map` 维护；
+- 建立参数化模型时生成 `parameterization_model.mol2`、`parameterized_structure.gro`、`parameterization_model.map`，三者采用同一套已确定的 atom order。
 
-核酸/DNA/RNA 的 phosphodiester boundary / O3' / O5' capping 仍需专项冻结。
+其它适用体系的具体截取与封端规则继续在该专项 freeze 的一般规则下按需讨论和冻结。
 
 ## 5.6 map 维护
 
@@ -329,43 +357,54 @@ Stage 2 map 不再把 provenance 压缩成 `origin: SOURCE | ADDED_H | CAP`，�
 2. standard fragment 中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 取得对应 record，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 history，再更新为 2.3 parameterization-model `output_atom_index`；
 3. 2.3 为 unit 内 nonstandard residue 新增的 H：新建 record，`original_atom_serial: null`，写入该 residue 的 `component_id + residue_id`，`operations = [2.3ADD]`；
 4. parameterization cap atom：新建 `2.3CAP` record，不赋予 `component_id + residue_id`；
-5. 因 parameterization-model 截取而未纳入的 atoms，以及 standard-side deletion 后不存在于当前 parameterization model 的 atoms，不进入当前 2.3 map；standard-side deletion 的正式身份继续由 linked-site modification information 记录，不在 map 建立删除 record。
+5. 因 parameterization-model 截取而未纳入的 atoms，以及标准残基一侧因 topology link 而在当前参数化模型中去除的 atoms，不进入当前 2.3 map；需要在 2.5 实际删除的标准残基原子由 `topology_linked_parameterization_result.yaml.standard_atom_deletions` 记录。
 
 因此 2.3 map 不是 2.2 map 的整体 copy-and-update；它以 Stage 1 final map 为主 baseline，只对参数化模型中实际使用的 2.2-added standard H 读取并保留对应 2.2 map record/history。
 
 ## 5.7 atom order
 
-完成 extraction + standard-side deletion + nonstandard hydrogenation + capping 后，参数化模型 atom order 冻结。
-
-后续 `.mol2 / .map / OPT / FREQ / SP / .chg / Sobtop / .gro / .itp` 必须保持可确定的一致 atom-index 对应；2.3 map 的 `output_atom_index` 使用这套冻结的 parameterization-model atom index。
-
-## 5.8 DFT / charge 路线
+完成参数化模型范围确定、标准残基一侧原子处理、nonstandard hydrogenation 和 capping 后，确定参数化模型的 atom set 与 atom order，并生成：
 
 ```text
-prepared model
-→ OPT
-→ 基于 optimized structure 一起生成 FREQ + SP task files
-→ FREQ / SP
-→ Multiwfn
-→ RESP / RESP2
-→ .chg
-→ Sobtop
+parameterization_model.mol2
+parameterized_structure.gro
+parameterization_model.map
 ```
 
-具体 level of theory、basis、solvent model、RESP/RESP2 settings 不在架构层写死。
+三者采用同一套 atom order。后续量化计算、电荷拟合生成的 `parameterization.chg` 以及 Sobtop 生成的 `parameterized_topology.itp` 必须沿用可确定的原子对应关系。
 
-## 5.9 输出
+## 5.8 科研处理环节
 
-每个 unit 至少：
+2.3 当前科研处理环节为：
 
 ```text
-*.mol2
-*.chg
-*.itp
-*.gro
-*.map
-linked-site modification information
+建立参数化模型
+→ 量化计算
+→ 电荷拟合并生成 parameterization.chg
+→ Sobtop 参数化并生成 parameterized_topology.itp
 ```
+
+建立参数化模型的详细科学规则已经专项冻结；量化计算、电荷拟合与 Sobtop 参数化的进一步详细规则继续在 2.3 设计中确定，不在 Stage 2 总架构中提前写成第二套规范。
+
+## 5.9 正式结果
+
+每个 2.3 工作项的五个核心结果固定为：
+
+```text
+parameterization_model.mol2
+parameterization_model.map
+parameterization.chg
+parameterized_structure.gro
+parameterized_topology.itp
+```
+
+并生成：
+
+```text
+topology_linked_parameterization_result.yaml
+```
+
+作为本环节正式结果记录。该 YAML 统一登记五个核心结果的完整路径，并记录标准残基一侧需要删除的原子与残基级电荷修改范围。项目结果索引只登记 `topology_linked_parameterization_result.yaml`，不分别登记五个核心结果文件。
 
 `.top` 若实际生成且有复现价值可保留，但不是强制核心 handoff。
 
@@ -450,8 +489,8 @@ chain identity / residue identity 保留；改变的是 GROMACS `moleculetype` �
 
 ## 8.3 coordinate ownership
 
-- 2.2：贡献全部 STANDARD_RESIDUE coordinates，并应用 2.3 confirmed deletions；
-- 2.3：只贡献 unit 自身最终存在的 SOURCE + ADDED_H atoms，不贡献 standard parameterization fragment / CAP；
+- 2.2：贡献全部 `STANDARD_RESIDUE` coordinates，并应用 2.3 正式结果记录中的标准残基一侧原子删除；
+- 2.3：只贡献 unit 自身最终存在的真实原子，包括原有原子和 2.3 为 unit 内非标准残基新增的 H；不贡献参数化模型中的 standard fragment / CAP；
 - 2.4：贡献 all-instance structure/map；
 - 直接进入 2.5 的 solvent/ion：贡献当前体系实际实例坐标，topology definition 使用当前 Task Sheet 中 2.1 已记录的实际来源。
 
@@ -478,8 +517,8 @@ chain identity / residue identity 保留；改变的是 GROMACS `moleculetype` �
 
 Workflow 1 只提供 heavy-atom identity/order 骨架。
 
-- STANDARD_RESIDUE 内部：继承 2.2 all-atom order，减去 2.3 deletion targets；其余相对顺序不变；
-- topo-linked unit 内：只保留 unit 自身最终 SOURCE + ADDED_H atoms，排除 standard fragment / CAP，并保持 2.3 相对顺序；
+- `STANDARD_RESIDUE` 内部：继承 2.2 all-atom order，减去 2.3 deletion targets；其余相对顺序不变；
+- topo-linked unit 内：只保留 unit 自身最终存在的真实原子，排除 standard fragment / CAP，并保持 2.3 相对顺序；
 - independent instances：继承 2.4 all-instance order；
 - linked nonstandard block 不按 attachment site 紧邻插入 standard residue，而是在所属 standard residue block 之后按 Workflow 1/object order 组织；
 - 只做 final moleculetype organization 所需的块级组合，不自由重排。
@@ -499,7 +538,7 @@ Workflow 1 只提供 heavy-atom identity/order 骨架。
 - `[ atoms ]` integration；
 - standard-side deletion cleanup；
 - attachment-site atom type applicability review；
-- `S_mod + U` charge modification；
+- 按 2.3 正式结果记录中的 `charge_modification_scope` 应用电荷修改；
 - `[ bonds ] / [ angles ] / [ dihedrals ]` migration；
 - `[ pairs ]` special handling；
 - `[ exclusions ]`；
@@ -579,9 +618,13 @@ topology_integration_report.yaml
 - 2.1 更新后的 Task Sheet 形成 2.2 / 2.3 / 2.4 实际工作集合：全部 standard residue 对应一个 2.2 工作项；每个实际需要共同参数化的非标准残基组合对应一个 2.3 工作项；每个需要独立参数化的 residue name 对应一个 2.4 工作项；已有完整 topology definition 的 solvent / ion 不创建对应 2.4 工作项；
 - 2.5 进入前必须对照当前 Task Sheet 中由 2.1 确定的处理对象和直接输入，确认所有 topology acquisition / parameterization 所需结果已经齐备；
 - 2.3 processing unit = topology-linked nonstandard unit，可包含一个或多个 nonstandard residues；
+- 2.3 的科研处理环节为“建立参数化模型 → 量化计算 → 电荷拟合并生成 `parameterization.chg` → Sobtop 参数化并生成 `parameterized_topology.itp`”；
+- 2.3 建立参数化模型的一般规则、蛋白质与核酸截取/封端、标准残基一侧原子变化、非标准残基补氢和 map 维护已经专项冻结；
+- 2.3 建立参数化模型时生成 `parameterization_model.mol2`、`parameterized_structure.gro`、`parameterization_model.map`，三者采用同一套已确定 atom order；
+- 2.3 五个核心结果 basename 以及 `topology_linked_parameterization_result.yaml` 正式结果记录已经固定；项目结果索引只登记该正式结果记录；
 - 2.2 / 2.3 / 2.4 主要职责与输出层级；
 - map 共享核心字段沿用 Workflow 1 的稳定 residue identity、`original_atom_serial` 与 operation history；2.2 / 2.3 的 producer 维护规则已冻结；
-- 2.3 判断 standard-side deletion、2.5 执行；
+- 2.3 判断标准残基一侧需要删除的原子并记录，2.5 实际应用；
 - Workflow 1 → Stage 2 的 topo-linked chain assignment handoff；
 - 2.5 final moleculetype organization；
 - 2.5 coordinate ownership；
@@ -601,8 +644,9 @@ topology_integration_report.yaml
 ## 仍可继续细化但不重新开放 Stage 2 架构
 
 - Stage 2 main Skill 正式生成时的 main/reference 文本组织与具体 reference basename；
-- 核酸/DNA/RNA 的 2.3 截断/capping 规则；
-- 文件 basename、schema、deterministic tool implementation；
+- 2.3 量化计算、电荷拟合与 Sobtop 参数化尚未敲定的详细科学规则；
+- 其它适用体系的 2.3 参数化模型截取/capping 专项规则；
+- 其余尚未固定的文件 basename、schema、deterministic tool implementation；
 - validator/testing fixture 与实现细节；
 - 新科学证据明确要求的局部规则修订。
 
