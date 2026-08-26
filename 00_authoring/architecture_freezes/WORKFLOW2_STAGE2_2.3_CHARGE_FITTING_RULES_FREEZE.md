@@ -131,7 +131,7 @@ unconstrained RESP2 .chg
 constrained RESP2 .chg
 ```
 
-采用哪套 RESP2 结果进入后续参数化由执行 Agent根据当前检查结果与参数化要求判断，不在本 freeze 中固定。
+采用哪套 RESP2 结果进入后续参数化由执行 Agent 根据当前检查结果与参数化要求判断，不在本 freeze 中固定。
 
 ### 4.4 RESP2 检查
 
@@ -207,7 +207,7 @@ results:
     unconstrained: ${CHARGE_FITTING_PATH}/resp2_unconstrained.chg
     constrained: ${CHARGE_FITTING_PATH}/resp2_constrained.chg
 
-  selected_charge_file: ${CHARGE_FITTING_PATH}/actual_selected_charge.chg
+  selected_charge_file: ${CHARGE_FITTING_PATH}/<actual-selected-charge-file>.chg
 
 checks:
   sp:
