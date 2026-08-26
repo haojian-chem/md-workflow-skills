@@ -69,7 +69,7 @@ operations:
 
 ## 8. 向 2.5 交付的修改信息
 
-2.3 必须以结构化 YAML 记录本次参数化结果在 2.5 中需要应用的标准残基原子删除和残基级电荷修改范围。具体 basename 留到正式 Skill generation 时统一确定；本节冻结其内容语义。
+2.3 必须以结构化 YAML 记录本次参数化结果在 2.5 中需要应用的标准残基原子删除和残基级电荷修改范围。该修改信息 YAML 的 basename 留到正式 Skill generation 时统一确定；本节冻结其内容语义。
 
 ### 8.1 `references`
 
@@ -88,7 +88,7 @@ references:
 
 只为当前正式记录实际引用的上游文件建立条目；路径使用完整绝对路径。引用键用于当前文件内部定位，不改变被引用结果自身的字段或身份语义。
 
-2.3 自己生成的 `*.map`、`.chg` 等文件属于本环节结果，不放入 `references`。
+2.3 自己生成的结果文件不放入 `references`。
 
 ### 8.2 标准残基一侧需要删除的原子
 
@@ -132,15 +132,36 @@ charge_modification_scope:
 
 ### 8.4 本次 2.3 结果文件
 
-`*.map`、`.chg` 是 2.3 自己生成的结果文件。需要在本修改信息中定位这些结果时，使用独立的结果字段，不作为 `references` 条目：
+2.3 的五个核心结果 basename 固定为：
+
+```text
+parameterization_model.mol2
+parameterization_model.map
+parameterization.chg
+parameterized_structure.gro
+parameterized_topology.itp
+```
+
+修改信息 YAML 中统一登记这五个结果的完整绝对路径：
 
 ```yaml
 results:
-  parameterization_map: /absolute/path/to/<2.3-map-result>
-  charge_file: /absolute/path/to/<2.3-charge-result>
+  parameterization_model: /absolute/path/to/parameterization_model.mol2
+  parameterization_map: /absolute/path/to/parameterization_model.map
+  charge_file: /absolute/path/to/parameterization.chg
+  parameterized_structure: /absolute/path/to/parameterized_structure.gro
+  parameterized_topology: /absolute/path/to/parameterized_topology.itp
 ```
 
-这里的尖括号内容只是未冻结 basename 的占位，不是正式文件名。路径使用完整绝对路径。该记录只负责定位本次 2.3 结果，不改变 `*.map` 或 `.chg` 自身的结果语义。
+其中：
+
+- `parameterization_model.mol2`：2.3 冻结 atom order 后用于后续量化计算与参数化的模型结构；
+- `parameterization_model.map`：与参数化模型 atom order 对应的 atom map；
+- `parameterization.chg`：2.3 电荷拟合结果；
+- `parameterized_structure.gro`：Sobtop 后与当前参数化结果对应的结构；
+- `parameterized_topology.itp`：Sobtop 后与当前参数化结果对应的 topology。
+
+这些文件属于 2.3 本环节结果，不作为 `references` 条目。
 
 ### 8.5 最小结构示例
 
@@ -153,8 +174,11 @@ references:
   STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
 
 results:
-  parameterization_map: /absolute/path/to/<2.3-map-result>
-  charge_file: /absolute/path/to/<2.3-charge-result>
+  parameterization_model: /absolute/path/to/parameterization_model.mol2
+  parameterization_map: /absolute/path/to/parameterization_model.map
+  charge_file: /absolute/path/to/parameterization.chg
+  parameterized_structure: /absolute/path/to/parameterized_structure.gro
+  parameterized_topology: /absolute/path/to/parameterized_topology.itp
 
 standard_atom_deletions:
   - structure: STANDARD_STRUCTURE_1
