@@ -8,9 +8,9 @@ Status: CURRENT AUTHORING REFERENCE
 
 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md`
 
-量化计算的详细科学规则已经专项保存于：
+几何优化中固定原子的详细科学规则已经专项保存于：
 
-`WORKFLOW2_STAGE2_2.3_QUANTUM_CALCULATION_RULES_FREEZE.md`
+`WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`
 
 电荷拟合的详细科学规则已经专项保存于：
 
@@ -43,7 +43,18 @@ parameterization_model.map
 
 ### 1.2 量化计算
 
-量化计算按 `WORKFLOW2_STAGE2_2.3_QUANTUM_CALCULATION_RULES_FREEZE.md` 执行。该专项 freeze 保存当前已经敲定的电子状态、几何优化、固定原子、FREQ 以及电荷拟合所需 SP 计算规则；尚未敲定的核酸固定原子范围和 FREQ 固定坐标处理继续在该专项规则下讨论。
+量化计算基于建立参数化模型环节得到的参数化模型结构进行。
+
+开始量化计算前，确定当前参数化模型的总电荷和自旋多重度。实际采用的量化计算方法、基组、溶剂模型及其它计算设置应与当前体系的元素组成、电子结构和后续参数化要求相适应，并记录实际使用的设置。
+
+对参数化模型进行几何优化。几何优化中需要固定的原子按 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md` 确定。
+
+在几何优化得到的结构上进行 FREQ 计算，获得后续参数化所需的振动 / Hessian 信息，并提供对优化结构振动性质的判断依据。FREQ 中如何处理几何优化阶段的固定坐标尚未敲定。
+
+在同一优化后参数化模型几何结构上，根据实际采用的电荷拟合策略完成所需 SP 计算并获得相应静电势数据：
+
+- 采用 RESP 时，按当前所选 RESP / 力场参数化方案的要求完成用于 RESP 电荷拟合的 SP / 静电势计算；
+- 采用 RESP2 时，在同一优化后几何结构上分别完成 gas-phase SP 与 solvent-phase SP，分别获得气相和溶剂环境下用于 RESP2 电荷拟合的静电势数据。
 
 ### 1.3 电荷拟合并生成 `parameterization.chg`
 
