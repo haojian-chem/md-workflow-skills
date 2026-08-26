@@ -26,11 +26,13 @@ Stage 1 使用一条随当前 target 结构持续维护的 atom map：
 
 1.3 是 map chain 的初始化步骤；1.4、1.6、1.7、1.8 均不得绕过当前输入 map、再从结构重新猜测一套独立 mapping。每一步都先复制与输入结构对应的正式 map，再依据本步骤实际结构操作维护该副本。
 
-## 2. 固定数据结构
+Stage 1 不额外建立永久 `atom_id`。
+
+## 2. Map 结果结构与字段含义
 
 每份 map 只记录 `current_structure` 中实际存在的 `ATOM / HETATM` 原子。已经从当前结构删除的 atom 不保留在当前输出 map 中。
 
-固定文件级结构：
+固定结果结构：
 
 ```yaml
 target_id: target_001
@@ -48,9 +50,16 @@ atoms:
       - 1.3ADD
 ```
 
-文件级路径均记录完整绝对路径。
+文件级字段含义：
 
-每个 atom record 固定保存：
+- `target_id`：当前 map 所属 target 的正式标识；
+- `original_structure`：当前 map chain 所追溯的原始结构文件完整绝对路径，即 1.2 实际检查的结构；
+- `input_structure`：生成当前 map 时所对应处理步骤的输入结构文件完整绝对路径；
+- `current_structure`：当前 map 实际描述的输出结构文件完整绝对路径；
+- `input_map`：生成当前 map 时所复制的上一份正式 atom map 完整绝对路径；1.3 初始化 map 时为 `null`；
+- `atoms`：`current_structure` 中实际存在的 `ATOM / HETATM` 原子的逐原子记录列表。
+
+每个 `atoms[]` record 固定保存：
 
 ```text
 current_atom_serial
@@ -60,16 +69,13 @@ residue_id
 operations
 ```
 
-字段语义：
+字段含义：
 
-- `current_atom_serial`：该 atom 在 `current_structure` 中的当前 PDB atom serial；
-- `original_atom_serial`：该 atom 在 `original_structure` 中对应 atom 的 PDB atom serial；如果该 atom 是后续步骤新增、原始结构中不存在对应 atom，则为 `null`；
-- `component_id + residue_id`：直接沿用 1.2 正式结果中的 residue identity；
-- `operations`：从该 atom 进入当前 target 的 map chain 开始，按实际发生顺序累积保存的 atom-level operation history。
-
-`original_atom_serial` 一旦为非空值，后续步骤不得改写。`component_id + residue_id` 也不得因为 chain、resid、residue name、atom name、atom order 或 atom serial 的表示变化而重新生成。
-
-Stage 1 不额外建立永久 `atom_id`。
+- `current_atom_serial`：该 atom 在 `current_structure` 中的 PDB atom serial；
+- `original_atom_serial`：该 atom 在 `original_structure` 中对应 atom 的 PDB atom serial；如果 `original_structure` 中不存在对应 atom，则为 `null`；
+- `component_id`：该 atom 所属 residue 对应的 1.2 正式 `component_id`；
+- `residue_id`：该 atom 所属 residue 对应的 1.2 正式 `residue_id`，与 `component_id` 共同定位该 residue；
+- `operations`：该 atom 在当前 Stage 1 map chain 中已经发生并被记录的 atom-level operation code，按实际发生顺序排列。
 
 ## 3. Copy-and-update 规则
 
@@ -83,6 +89,8 @@ Stage 1 不额外建立永久 `atom_id`。
 6. 对本步骤发生 replacement、但输入与输出能够明确判定为同一个 atom 的情况，保留原 record 及其 `original_atom_serial`，追加当前步骤的 replacement operation；
 7. 不删除、不改写 input map 中已经存在的 operation history；
 8. 写出后，输出 map 的 atom records 必须与当前输出结构中的 `ATOM / HETATM` 一一对应。
+
+`original_atom_serial` 一旦为非空值，后续步骤不得改写。`component_id + residue_id` 也不得因为 chain、resid、residue name、atom name、atom order 或 atom serial 的表示变化而重新生成。
 
 单纯 atom serial 重编号不单独追加 operation code；serial 的跨步骤变化由相邻两份 map 的 `current_atom_serial` 自然体现。
 
