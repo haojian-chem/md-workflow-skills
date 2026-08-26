@@ -88,3 +88,7 @@ parameterization_model.map
 三者使用同一套已确定的 atom order；后续量化计算、电荷拟合和 Sobtop 参数化沿用该原子对应关系。
 
 这些文件在 2.3 正式结果记录中的登记方式由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 定义。
+
+## 9. 其它适用体系
+
+其它适用体系的具体截取与封端规则后续继续在上述一般规则下分别讨论和冻结。
