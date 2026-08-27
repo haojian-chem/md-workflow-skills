@@ -2,11 +2,11 @@
 
 Status: CURRENT SHARED REFERENCE
 
-本文件定义真实 MD 项目中，各科研执行 Skill 共同遵守的跨 Stage Task Execution 规则。
+本文件定义真实 MD 项目中，各科研执行 Skill 共同遵守的 Task Execution 规则。
 
 它是仓库级 shared reference，**不是独立 Skill、不是额外 runtime 环节，也不改变 Scientific Stage 编号**。科研执行仍由当前 Stage / Step / capability `SKILL.md` 直接指导；各 active execution Skill 必须显式引用本文件。`00_authoring/SKILL.md` 也必须引用本文件，以保证后续 Skill 构筑与这些通用执行规则兼容。
 
-Stage-specific 的科学规则、计划调整方式、execution object、validation 和 results 继续由对应 Stage / Step / capability Skill 拥有。本文件只定义跨 Skill 共用的执行机制，不创建第二套科学决策规则。
+Stage-specific 的科学规则、计划调整方式、execution object、validation 和 results 继续由对应 Stage / Step / capability Skill 拥有。本文件只定义科研执行 Skill 共用的执行机制，不创建第二套科学决策规则。
 
 ## Project records
 
@@ -142,13 +142,13 @@ Stage-specific directory / index 组织以对应 current Stage Skill 为准。
 
 ## Validation and results
 
-Validation、正式结果生成、结果路径与结果内部 `references`、Markdown `References`、结果接口说明以及 `project_result_index.md` 登记的跨 Stage 通用规则统一读取：
+Validation、正式结果生成、结果路径与结果内部 `references`、Markdown `References`、结果接口说明以及 `project_result_index.md` 登记的通用规则统一读取：
 
 `references/result_generation_rules.md`
 
-Task Execution Agent 在进入当前 Skill 的 validation、正式结果生成、结果解释或 project-result registration 时按需读取该 shared reference。
+进入当前科研 Skill 的 validation、正式结果生成、结果解释或 project-result registration 时按需读取该 shared reference。
 
-当前 Stage / Step / capability Skill 继续拥有自己的正式结果集合、具体字段语义、Skill-specific validation requirement 和 project-result registration 白名单；`result_generation_rules.md` 只拥有跨 Skill 共用的结果生成与记录机制。
+各科研执行 Skill 继续拥有自身的正式结果集合、具体字段语义、Skill-specific validation requirement 和 project-result registration 白名单；`result_generation_rules.md` 只拥有科研执行 Skill 共用的结果生成与记录机制。
 
 ## Minimal reads
 
@@ -170,10 +170,10 @@ Task Execution Agent 不默认：
 
 ```text
 references/task_execution_rules.md
-→ 跨 Stage 通用 Task Execution 规则
+→ 科研执行 Skill 共用的 Task Execution 规则
 
 references/result_generation_rules.md
-→ 跨 Stage 通用 validation / result generation / result-recording 机制
+→ 科研执行 Skill 共用的 validation / result generation / result-recording 机制
 
 Stage main Skill（存在且确有 Stage-wide 职责时）
 → Stage-specific orchestration / plan adjustment / shared Stage objects
