@@ -1,12 +1,14 @@
 # 2.2 Standard residue topology generation 冻结记录
 
-Status: PARTIAL DETAIL FREEZE
+Status: IMPLEMENTED — AUTHORING RECORD
 
-本文件记录 2.2 已经确认的输入、标准残基结构提取、pdb2gmx 处理以及输出核验与 `.itp` 组织规则。
+本文件保留 2.2 正式生成前已经确认的输入、标准残基结构提取、pdb2gmx 处理以及输出核验与 `.itp` 组织规则。
 
-本次冻结只覆盖下述内容。`*.map` 构筑、reuse、results / 正式结果接口及其它尚未讨论内容不在本次冻结范围内，后续继续补充。
+2.2 已生成 active Skill，current runtime entry 为：
 
-2.2 当前仍为 freeze-only；本文件不等于 active `SKILL.md`，也不表示已生成完整 2.2 Skill。
+`02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`
+
+当前 runtime 规则由该 `SKILL.md`、其 `references/results.md` 以及 `references/atom_mapping_rules.md` 拥有。本冻结文件继续作为 authoring / architecture record，不再维护一套平行的 mutable specification。
 
 ## 输入与处理范围
 
