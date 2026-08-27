@@ -142,24 +142,13 @@ Stage-specific directory / index 组织以对应 current Stage Skill 为准。
 
 ## Validation and results
 
-Validation 默认跟随当前结果 owner：
+Validation、正式结果生成、结果路径与结果内部 `references`、Markdown `References`、结果接口说明以及 `project_result_index.md` 登记的跨 Stage 通用规则统一读取：
 
-```text
-谁产生 / 判定结果
-→ 谁拥有该结果的 validation requirement
-```
+`references/result_generation_rules.md`
 
-Tool 可以负责自己确定性输出的机械 / 格式有效性；科研 Skill 仍负责判断该输出是否满足当前科研目标。
+Task Execution Agent 在进入当前 Skill 的 validation、正式结果生成、结果解释或 project-result registration 时按需读取该 shared reference。
 
-`project_result_index.md` 只登记当前 Skill / Stage 明确允许登记的正式结果或结果事项，不登记 debug、scratch、cache 或为了“完整”而产生的重复文件索引。
-
-Skill-specific project-result whitelist、结果文件语义和 validation 条件由对应结果 owner 定义；本文件不建立统一结果 schema。
-
-正式结果记录中的结果文件和依赖文件路径必须保持完整绝对路径语义。
-
-`references` 可定义当前记录实际依赖的文件，也可定义供多个字段复用的公共绝对路径引用。若多个结果文件共享相同目录前缀，可在 `references` 中定义该公共绝对路径，并在结果字段中使用 `${PATH_KEY}/filename` 形式引用；展开后的结果仍必须是完整绝对路径。
-
-由当前环节产生的结果文件应记录在对应结果字段中。
+当前 Stage / Step / capability Skill 继续拥有自己的正式结果集合、具体字段语义、Skill-specific validation requirement 和 project-result registration 白名单；`result_generation_rules.md` 只拥有跨 Skill 共用的结果生成与记录机制。
 
 ## Minimal reads
 
@@ -183,11 +172,14 @@ Task Execution Agent 不默认：
 references/task_execution_rules.md
 → 跨 Stage 通用 Task Execution 规则
 
+references/result_generation_rules.md
+→ 跨 Stage 通用 validation / result generation / result-recording 机制
+
 Stage main Skill（存在且确有 Stage-wide 职责时）
 → Stage-specific orchestration / plan adjustment / shared Stage objects
 
 Step / capability Skill
-→ 具体科研处理、判断、validation 与 results
+→ 具体科研处理、判断、Skill-specific validation 与 results
 ```
 
 共享规则被多个 Skill引用不改变具体科学规则的 owner，也不意味着必须为 Task Execution 新建独立 Skill 或 dispatcher。
