@@ -51,13 +51,13 @@ WORKFLOW5_STAGE5_ANALYSIS_CAPABILITY_INVENTORY_FREEZE.md
 
 当前实现状态由 `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` 维护。目录或 freeze 文件存在本身不代表对应 Skill 已生成。
 
-Stage 1 原子映射维护统一冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`，runtime authority 为 `references/atom_mapping_rules.md`。当前 1.3、1.4、1.6、1.7、1.8 在实际结构改写时读取该共享规则，1.9 用其验证 Stage 1 final atom map；1.5 不修改结构，不引用该规则。该 freeze 不定义 Stage 2 atom mapping / provenance。
+Stage 1 原子映射维护统一冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`。当前 runtime authority 为 `references/atom_mapping_rules.md`：1.3、1.4、1.6、1.7、1.8 在实际结构改写时读取该共享规则，1.9 用其验证 Stage 1 final atom map；2.2 也沿用该共享规则维护标准残基全原子结构的 map，并使用 `2.2ADD` 记录新增 atom。Stage 1 freeze 本身仍只记录 Stage 1 architecture，不作为 Stage 2 规则来源。
 
 Stage 1.2 的 `topology-linked` 检查与正式记录规则已专项冻结于 `WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md`，并已同步到 current 1.2 `SKILL.md` / references / schema；该 freeze 保留为 authoring/architecture record，不取代 current runtime `SKILL.md`。
 
-Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为阶段级 main Skill，负责 Stage 2 内部科研编排与共享接口；`2.1 Topology preparation setup` 保持完整独立 Step，current active entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage 2 main Skill 与 2.2–2.6 当前仍为 freeze-only。
+Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为阶段级 main Skill，负责 Stage 2 内部科研编排与共享接口；`2.1 Topology preparation setup` 保持完整独立 Step。当前 2.1–2.4 已生成 active Skill；Stage 2 main Skill 与 2.5–2.6 仍为 freeze-only。
 
-2.2 已确认的输入、标准残基结构提取、pdb2gmx 处理、输出核验与 `.itp` 组织规则记录于 `WORKFLOW2_STAGE2_2.2_STANDARD_RESIDUE_TOPOLOGY_GENERATION_FREEZE.md`。该文件当前为 partial detail freeze；`*.map`、reuse、results / 正式结果接口及其它尚未讨论内容后续继续补充。
+2.2 current runtime entry 为 `02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`，详细正式结果接口由其 `references/results.md` 拥有，原子映射规则读取仓库级 `references/atom_mapping_rules.md`。`WORKFLOW2_STAGE2_2.2_STANDARD_RESIDUE_TOPOLOGY_GENERATION_FREEZE.md` 保留为 generation 前已确认内容的 authoring / architecture record，不再维护平行 runtime specification。
 
 Stage 2 的 2.3 环节结构、量化计算主线、正式结果记录和向 2.5 交付的信息记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md`；建立参数化模型、几何优化固定原子、电荷拟合和 Sobtop 参数化的详细科学/技术规则分别记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md`、`WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`、`WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 和 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md`。
 
