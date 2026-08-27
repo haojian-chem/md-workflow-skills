@@ -6,9 +6,9 @@
 
 电荷拟合对象为当前参数化模型。
 
-需要在最终拓扑中采用 2.3 新电荷的真实 residue 集合由当前 2.3 已经确定的 `charge_modification_scope` 给出；电荷拟合读取并使用该范围，不在本环节重新确定。
+需要在最终拓扑中采用 2.3 新电荷的真实残基集合由当前 2.3 已经确定的 `charge_modification_scope` 给出；电荷拟合读取并使用该范围，不在本环节重新确定。
 
-`Q_expected` 表示 `charge_modification_scope` 所覆盖真实 residue 在当前化学状态下应具有的预期总电荷。根据当前体系组成、质子化状态、拓扑连接及已经确认的化学状态进行判断；现有信息不能唯一确定时，向用户确认。
+`Q_expected` 表示 `charge_modification_scope` 所覆盖真实残基在当前化学状态下应具有的预期总电荷。根据当前体系组成、质子化状态、拓扑连接及已经确认的化学状态进行判断；现有信息不能唯一确定时，向用户确认。
 
 当前 RESP / RESP2 拟合使用 Multiwfn。
 
@@ -27,8 +27,8 @@ SP 默认采用比 OPT 高一级的计算水平；具体方法、基组和其它
 采用 RESP2 时，在同一个几何优化后结构上分别进行：
 
 ```text
-gas-phase SP
-implicit-solvent SP
+气相 SP
+隐式溶剂 SP
 ```
 
 两次 SP 分别提供后续气相 RESP 与隐式溶剂 RESP 所需结果。
@@ -44,16 +44,16 @@ implicit-solvent SP
 
 ## RESP
 
-每个 RESP 使用同一个对应 SP 结果分别完成两次完整的 two-stage RESP fitting：
+每个 RESP 使用同一个对应 SP 结果分别完成两次完整的两阶段 RESP 拟合：
 
 ```text
-without charge_modification_scope total-charge constraint
-with charge_modification_scope total-charge constraint toward Q_expected
+不对 charge_modification_scope 施加总电荷约束
+对 charge_modification_scope 施加以 Q_expected 为目标的总电荷约束
 ```
 
 两次拟合除是否施加上述总电荷约束外，采用相同的 RESP 拟合方案与其它拟合设置。
 
-有总电荷约束的 two-stage RESP 以 `Q_expected` 为目标；最终结果是否与 `Q_expected` 完全一致不预设，通过实际拟合后的总电荷检查记录。
+有总电荷约束的两阶段 RESP 以 `Q_expected` 为目标；最终结果是否与 `Q_expected` 完全一致不预设，通过实际拟合后的总电荷检查记录。
 
 每个 RESP 至少记录：
 
@@ -72,7 +72,7 @@ L_inf
 
 - `Q_unconstrained` / `Q_constrained`：两套最终原子电荷在 `charge_modification_scope` 上的总电荷；
 - `DeltaQ_unconstrained` / `DeltaQ_constrained`：相对 `Q_expected` 的偏差；
-- `MAE`、`RMSE`、`L_inf`：两套完整 two-stage RESP 最终逐原子电荷之间的差异。
+- `MAE`、`RMSE`、`L_inf`：两套完整两阶段 RESP 最终逐原子电荷之间的差异。
 
 两次 RESP 均生成各自的 `.chg` 结果文件。采用哪套结果进入后续参数化，由执行 Agent 根据当前检查结果与参数化要求判断。
 
@@ -83,13 +83,13 @@ RESP2 由同一个几何优化后结构上的气相 SP 和隐式溶剂 SP 分别
 气相和隐式溶剂各自均完成：
 
 ```text
-gas phase
-├─ unconstrained two-stage RESP
-└─ constrained two-stage RESP
+气相
+├─ 无约束两阶段 RESP
+└─ 有约束两阶段 RESP
 
-implicit solvent
-├─ unconstrained two-stage RESP
-└─ constrained two-stage RESP
+隐式溶剂
+├─ 无约束两阶段 RESP
+└─ 有约束两阶段 RESP
 ```
 
 因此 RESP2 共保留四个 RESP `.chg` 结果文件，并分别完成对应 RESP 检查。
@@ -97,26 +97,26 @@ implicit solvent
 参与同一组 RESP2 混合的气相和隐式溶剂 RESP 必须使用一致的电荷拟合约束设置：
 
 ```text
-gas unconstrained RESP
+气相无约束 RESP
 +
-implicit-solvent unconstrained RESP
-→ unconstrained RESP2
+隐式溶剂无约束 RESP
+→ 无约束 RESP2
 
-gas constrained RESP
+气相有约束 RESP
 +
-implicit-solvent constrained RESP
-→ constrained RESP2
+隐式溶剂有约束 RESP
+→ 有约束 RESP2
 ```
 
-有约束组合中，两次 RESP 对 `charge_modification_scope` 使用相同的目标 `Q_expected`。不得交叉混合 unconstrained 与 constrained RESP。
+有约束组合中，两次 RESP 对 `charge_modification_scope` 使用相同的目标 `Q_expected`。不得交叉混合无约束与有约束 RESP。
 
 对应气相 / 隐式溶剂 RESP 原子电荷按实际采用的 RESP2 权重组合。默认采用气相与隐式溶剂等权混合，即 `0.5 / 0.5`。
 
 分别生成：
 
 ```text
-unconstrained RESP2 .chg
-constrained RESP2 .chg
+无约束 RESP2 .chg
+有约束 RESP2 .chg
 ```
 
 采用哪套 RESP2 结果进入后续参数化，由执行 Agent 根据当前检查结果与参数化要求判断。
@@ -124,14 +124,14 @@ constrained RESP2 .chg
 除气相和隐式溶剂各自已经完成的 RESP 检查外，额外比较：
 
 ```text
-gas unconstrained RESP ↔ implicit-solvent unconstrained RESP
+气相无约束 RESP ↔ 隐式溶剂无约束 RESP
 MAE / RMSE / L_inf
 
-gas constrained RESP ↔ implicit-solvent constrained RESP
+气相有约束 RESP ↔ 隐式溶剂有约束 RESP
 MAE / RMSE / L_inf
 ```
 
-不额外固定 unconstrained RESP2 与 constrained RESP2 两套混合结果之间的逐原子电荷比较。
+不额外固定无约束 RESP2 与有约束 RESP2 两套混合结果之间的逐原子电荷比较。
 
 两套 RESP2 混合结果还分别记录其在 `charge_modification_scope` 上的总电荷及相对 `Q_expected` 的偏差：
 
@@ -253,6 +253,6 @@ checks:
 
 执行 Agent 根据当前检查结果与参数化要求选择实际采用的电荷结果；`charge_fitting_result.yaml.selected_charge_file` 记录该实际 `.chg` 文件。
 
-`parameterization.chg` 保存最终供 Sobtop 参数化使用的原子电荷，并与参数化模型已经确定的 atom order 保持可确定的一一对应。
+`parameterization.chg` 保存最终供 Sobtop 参数化使用的原子电荷，并与参数化模型已经确定的原子顺序保持可确定的一一对应。
 
-对于最终体系，只有 `topology_linked_parameterization_result.yaml.charge_modification_scope` 中列出的真实 residue 使用本次 2.3 新电荷；仅作为参数化模型外围环境或 CAP 环境保留的部分不因此成为最终拓扑的电荷修改对象。
+对于最终体系，只有 `topology_linked_parameterization_result.yaml.charge_modification_scope` 中列出的真实残基使用本次 2.3 新电荷；仅作为参数化模型外围环境或封端环境保留的部分不因此成为最终拓扑的电荷修改对象。
