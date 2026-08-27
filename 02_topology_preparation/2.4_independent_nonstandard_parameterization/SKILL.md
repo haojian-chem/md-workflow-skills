@@ -39,7 +39,7 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 - 当前体系的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
 - 当前对象补氢实际使用的 CCD 文件；不存在适用 CCD 时，使用当前结构的成键关系、价态和局部化学环境作为补氢依据。
 
-2.4 沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据 residue name、chain、resid 或空间位置重新建立身份。
+2.4 沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据残基名、chain、resid 或空间位置重新建立身份。
 
 ## Reuse
 
@@ -106,13 +106,13 @@ Gaussian → *.fch / *.fchk
 
 使用 Sobtop 参数化时，若当前体系所需的 LJ 参数缺失，根据当前实际体系从 `02_topology_preparation/references/12-6.itp` 或 `02_topology_preparation/references/12-6-4.itp` 中提取适用参数补充。
 
-Sobtop 生成的 `.itp` 中 residue name 或 atom name 与用于 Sobtop 的 mol2 中对应原子不一致时，按该 mol2 中对应原子的 residue name 和 atom name 修正后，再形成正式：
+Sobtop 生成的 `.itp` 中残基名或原子名与用于 Sobtop 的 mol2 中对应原子不一致时，按该 mol2 中对应原子的残基名和原子名修正后，再形成正式：
 
 ```text
 parameterized_topology.itp
 ```
 
-最终 `parameterized_topology.itp` 的 atom name、原子顺序和电荷必须能够与代表实例参数化模型及 `parameterization.chg` 建立确定的一一对应关系。
+最终 `parameterized_topology.itp` 的原子名、原子顺序和电荷必须能够与代表实例参数化模型及 `parameterization.chg` 建立确定的一一对应关系。
 
 ## 当前工作项全部实例的结构与 map
 
@@ -120,7 +120,7 @@ parameterized_topology.itp
 
 其它实例保留各自在 `stage1_final.pdb` 中的重原子坐标；模板提供代表实例已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制代表实例的坐标。
 
-全部实例采用与最终 `parameterized_topology.itp` 一致的 residue name、atom name 和 residue 内原子顺序，生成：
+全部实例采用与最终 `parameterized_topology.itp` 一致的残基名、原子名和残基内原子顺序，生成：
 
 ```text
 parameterized_structure.gro
@@ -139,9 +139,9 @@ residue_id:
 operations:
 ```
 
-来自 `stage1_final.pdb` 的原子沿用 `stage1_final_map.yaml` 中对应 record 的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新当前 `output_atom_index`。
+来自 `stage1_final.pdb` 的原子沿用 `stage1_final_map.yaml` 中对应记录的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新当前 `output_atom_index`。
 
-2.4 新增 H 建立新 record：
+2.4 新增 H 建立新记录：
 
 ```text
 original_atom_serial = null
@@ -159,17 +159,17 @@ operations = [2.4ADD]
 
 当前 2.4 工作项形成正式结果前至少确认：
 
-- 当前工作项全部同名实例已完成参数定义一致性检查；不存在需要通过不同 residue name 区分但仍被静默合并参数化的实例；
+- 当前工作项全部同名实例已完成参数定义一致性检查；不存在需要通过不同残基名区分但仍被静默合并参数化的实例；
 - `parameterization_model.mol2` 与 `parameterization_model.map` 描述同一个代表实例，原子集合和原子顺序一致；
 - 最终采纳的 OPT、FREQ 和 SP 结果完成对应检查，电荷拟合已形成明确选中的 `parameterization.chg`；
 - `parameterization.chg` 与代表实例参数化模型的原子顺序一一对应；
-- `parameterized_topology.itp` 的 residue name、atom name、原子顺序和电荷能够与代表实例参数化模型及 `parameterization.chg` 确定对应；
-- `parameterized_structure.gro` 与 `parameterized_structure.map` 覆盖当前工作项全部同名实例，每个实例的 residue name、atom name 和 residue 内原子顺序与 `parameterized_topology.itp` 一致；
-- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 provenance，2.4 新增 H 使用 `2.4ADD`。
+- `parameterized_topology.itp` 的残基名、原子名、原子顺序和电荷能够与代表实例参数化模型及 `parameterization.chg` 确定对应；
+- `parameterized_structure.gro` 与 `parameterized_structure.map` 覆盖当前工作项全部同名实例，每个实例的残基名、原子名和残基内原子顺序与 `parameterized_topology.itp` 一致；
+- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，2.4 新增 H 使用 `2.4ADD`。
 
 ## 正式结果
 
-正式结果生成前按需读取仓库级 `../../references/result_generation_rules.md`，并读取：
+生成正式结果时读取：
 
 `references/results.md`
 
