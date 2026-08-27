@@ -17,7 +17,7 @@ description: <何时使用；当前 Skill 指导 Agent 解决什么问题；必�
 
 - ...
 
-与其他 Skill 的关系只写接口级依赖/交接，不重新定义外部 Skill 的内部规则。
+与其他 Skill 的关系只写当前职责真实需要的接口级依赖，不重新定义外部 Skill 的内部规则。
 
 # Inputs / evidence
 
@@ -44,9 +44,19 @@ description: <何时使用；当前 Skill 指导 Agent 解决什么问题；必�
 
 说明什么证据代表当前结果有效。Validation 默认由当前结果 owner 定义；只有复杂且边界清晰时才拆 supporting validation Skill。
 
-# Results / handoff
+# Results
 
-说明正式结果、下游如何定位/理解，以及 intermediate/debug/cache 的边界。
+说明正式结果摘要、正式结果入口、必要的完成条件，以及 intermediate / debug / cache 的边界。
+
+如果当前结果包含多个正式文件、结构化字段、复杂定位关系、project-result registration 白名单，或会被后续 Skill 直接查阅，详细结果说明优先写入：
+
+`references/results.md`
+
+main Skill 只保留摘要和读取入口。结果生成、路径、结果内部 `references`、Markdown `References` section 与 project-result registration 的详细规则读取：
+
+`../../00_authoring/references/result_generation_rules.md`
+
+`references/results.md` 只定义当前结果本身，不规定下游 Skill 应如何执行。
 
 # References / supporting capabilities
 
@@ -81,5 +91,7 @@ legacy/  # Legacy executable/runtime material
 - [ ] 没有恢复 Workflow/Operation/Validator role-based roots；
 - [ ] supporting Skill 只有在复杂且边界清晰时才拆；
 - [ ] 推荐与强制要求区分清楚；
-- [ ] reuse、validation、handoff 足以支持跨对话继续；
+- [ ] reuse、validation 与 results 足以支持跨对话继续；
+- [ ] 复杂结果接口已经评估是否需要 `references/results.md`；
+- [ ] results 说明没有重新写成下游 handoff 规则；
 - [ ] 没有把 `evals/`、`tools/` 或 `legacy/` 当成 MD Workflow Stage Skill root。
