@@ -15,7 +15,7 @@ Status: CURRENT
 - reuse 怎么判断；
 - 执行时有哪些必须遵守的规则；
 - 怎样 validation；
-- 结果和 handoff 是什么；
+- results 是什么；
 - 什么情况下需要进一步读取 reference / supporting Skill / Tool guide。
 
 ## 2. Reference 按需读取
