@@ -67,15 +67,15 @@ parameterization_model.map
 
 `charge_modification_scope` 中每个残基使用 `component_id + residue_id` 定位，并保留 `topology_class` 供检查。
 
-## 量化计算
+## OPT / FREQ
 
 执行前读取：
 
-`references/quantum_and_sobtop.md`
+`references/opt_freq.md`
 
-基于当前参数化模型确定总电荷和自旋多重度，并完成几何优化与 FREQ 计算。几何优化固定原子规则、FREQ 检查以及后续 Sobtop 成键项拟合输入均由该 reference 定义。
+按其中规则确定参数化模型的总电荷、自旋多重度与实际计算设置，完成几何优化和 FREQ 计算，并执行 FREQ 结果检查。
 
-最终实际采纳的 OPT / FREQ 任务路径保留用于写入正式结果记录。
+最终实际采纳的 OPT / FREQ 任务路径保留用于正式结果记录。
 
 ## 电荷拟合
 
@@ -92,139 +92,40 @@ parameterization.chg
 
 `parameterization.chg` 与参数化模型原子顺序保持可确定的一一对应，并作为 Sobtop 参数化使用的最终电荷文件。
 
-最终实际采纳的 SP 任务路径保留用于写入正式结果记录。
+最终实际采纳的 SP 任务路径保留用于正式结果记录。
 
 ## Sobtop 参数化
 
-继续按 `references/quantum_and_sobtop.md` 完成 Sobtop 参数化，生成正式：
+基于检查通过的 OPT 结构生成用于 Sobtop 成键项拟合的 mol2，并与对应的频率计算结果一同用于成键参数拟合。
+
+频率计算结果文件：
+
+```text
+ORCA     → *.hess
+Gaussian → *.fch / *.fchk
+```
+
+使用 Sobtop 参数化时，若当前体系所需的 LJ 参数缺失，根据当前实际体系从 `02_topology_preparation/references/12-6.itp` 或 `02_topology_preparation/references/12-6-4.itp` 中提取适用参数补充。
+
+Sobtop 生成的 `.itp` 中 residue name 或 atom name 与用于 Sobtop 的 mol2 中对应原子不一致时，按该 mol2 中对应原子的 residue name 和 atom name 修正后，再形成正式：
 
 ```text
 parameterized_topology.itp
 ```
 
-该 reference 同时规定 FREQ 检查后的 Sobtop 输入、缺失 LJ 参数补充及 Sobtop 输出名称处理规则。
-
 ## 正式结果记录
 
-2.3 生成：
+完成本工作项后读取：
+
+`references/topology_linked_parameterization_result.md`
+
+按其中定义生成并登记：
 
 ```text
 topology_linked_parameterization_result.yaml
 ```
 
-作为当前 2.3 工作项的正式结果记录。
-
-### `references`
-
-记录本次正式结果实际依赖的上游文件；如多个字段复用同一公共绝对路径，可按仓库级 Task Execution 规则定义公共路径引用。
-
-至少记录实际使用的：
-
-```yaml
-references:
-  CLASSIFICATION_RESULT_1: /absolute/path/to/classification_result.yaml
-  STAGE1_STRUCTURE_1: /absolute/path/to/stage1_final.pdb
-  STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
-  STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
-  STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
-```
-
-只为当前正式记录实际依赖的文件建立条目。结果文件和依赖文件路径保持完整绝对路径语义。
-
-### 六个核心结果
-
-```yaml
-results:
-  parameterization_model: /absolute/path/to/parameterization_model.mol2
-  parameterization_map: /absolute/path/to/parameterization_model.map
-  charge_file: /absolute/path/to/parameterization.chg
-  charge_fitting_result: /absolute/path/to/charge_fitting_result.yaml
-  parameterized_structure: /absolute/path/to/parameterized_structure.gro
-  parameterized_topology: /absolute/path/to/parameterized_topology.itp
-```
-
-### 最终采纳的量化计算任务路径
-
-```yaml
-quantum_tasks:
-  opt: /absolute/path/to/opt_task
-  freq: /absolute/path/to/freq_task
-  sp:
-    - /absolute/path/to/sp_task_1
-    - /absolute/path/to/sp_task_2
-```
-
-`sp` 只记录本次最终实际采纳的 SP 任务路径；实际只有一个 SP 任务时仅记录一项。
-
-### 标准残基一侧需要删除的原子
-
-每条记录明确对应 2.2 标准残基全原子结构中的原子及导致该删除的已确认拓扑连接：
-
-```yaml
-standard_atom_deletions:
-  - structure: STANDARD_STRUCTURE_1
-    atom_index: 123
-    atom_name: HG
-    relation_id: relation_001
-```
-
-其中 `atom_index` 与对应 2.2 map / 结构原子顺序中的 `output_atom_index` 对齐；`atom_name` 用于人工检查；`relation_id` 指向 `CLASSIFICATION_RESULT_1` 中相应 `topology_linked_checks[]` 记录。
-
-### 残基级电荷修改范围
-
-```yaml
-charge_modification_scope:
-  - component_id: component_001
-    residue_id: residue_001
-    topology_class: STANDARD_RESIDUE
-  - component_id: component_001
-    residue_id: residue_002
-    topology_class: TOPOLOGY_LINKED_NONSTANDARD
-```
-
-### 最小结构示例
-
-```yaml
-references:
-  CLASSIFICATION_RESULT_1: /absolute/path/to/classification_result.yaml
-  STAGE1_STRUCTURE_1: /absolute/path/to/stage1_final.pdb
-  STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
-  STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
-  STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
-
-results:
-  parameterization_model: /absolute/path/to/parameterization_model.mol2
-  parameterization_map: /absolute/path/to/parameterization_model.map
-  charge_file: /absolute/path/to/parameterization.chg
-  charge_fitting_result: /absolute/path/to/charge_fitting_result.yaml
-  parameterized_structure: /absolute/path/to/parameterized_structure.gro
-  parameterized_topology: /absolute/path/to/parameterized_topology.itp
-
-quantum_tasks:
-  opt: /absolute/path/to/opt_task
-  freq: /absolute/path/to/freq_task
-  sp:
-    - /absolute/path/to/sp_task_1
-    - /absolute/path/to/sp_task_2
-
-standard_atom_deletions:
-  - structure: STANDARD_STRUCTURE_1
-    atom_index: 123
-    atom_name: HG
-    relation_id: relation_001
-
-charge_modification_scope:
-  - component_id: component_001
-    residue_id: residue_001
-    topology_class: STANDARD_RESIDUE
-  - component_id: component_001
-    residue_id: residue_002
-    topology_class: TOPOLOGY_LINKED_NONSTANDARD
-```
-
-## 结果登记与 Task Sheet 更新
-
-2.3 完成后，将 `topology_linked_parameterization_result.yaml` 的完整路径登记到项目结果索引。六个核心结果文件由该正式结果记录统一定位，不在项目结果索引中分别建立结果项。
+该 reference 统一定义正式结果记录中的上游依赖、六个核心结果、最终采纳的 OPT / FREQ / SP 任务路径、`standard_atom_deletions`、`charge_modification_scope` 及项目结果索引登记语义。
 
 随后按仓库级 Task Execution 规则更新当前 Task Sheet 的 2.3 工作项状态，并记录当前正式结果路径。
 
