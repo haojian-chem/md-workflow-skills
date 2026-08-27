@@ -25,17 +25,8 @@ Gaussian → *.fch / *.fchk
 
 ## 3. LJ 参数补充
 
-Sobtop 参数化过程中，当前体系所需 LJ 参数缺失时，根据当前实际体系从 Stage 2 共享 references 中相应参数文件提取适用参数进行补充：
-
-```text
-02_topology_preparation/references/12-6.itp
-02_topology_preparation/references/12-6-4.itp
-```
+使用 Sobtop 参数化时，若当前体系所需的 LJ 参数缺失，根据当前实际体系从 `02_topology_preparation/references/12-6.itp` 或 `02_topology_preparation/references/12-6-4.itp` 中提取适用参数补充。
 
 ## 4. Sobtop 输出名称修正
 
 Sobtop 生成的 `.itp` 中 residue name 或 atom name 与用于 Sobtop 的 mol2 中对应原子不一致时，按该 mol2 中对应原子的 residue name 和 atom name 修正后，再形成正式 `parameterized_topology.itp`。
-
-## 5. 其它 Sobtop 设置
-
-除本文件已经固定的规则外，其它 Sobtop 参数化设置由执行 Agent 根据当前实际体系与参数化要求判断。
