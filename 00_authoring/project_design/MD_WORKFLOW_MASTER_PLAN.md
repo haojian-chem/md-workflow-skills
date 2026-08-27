@@ -126,7 +126,7 @@ Current / reserved Step directories:
 02_topology_preparation/2.6_topology_validation/                               # reserved
 ```
 
-当前 2.1 与 2.3 已生成 active Skill；2.1 已完成 post-generation authoring/interface consistency check，2.3 已完成生成后 authoring/freeze consistency self-check。2.3 current entry 为 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`；Stage 2 main Skill、2.2 与 2.4–2.6 尚未生成 active `SKILL.md`。
+当前 2.1 与 2.3 已生成 active Skill；2.1 与 2.3 均已完成 post-generation authoring/interface consistency check。2.3 current entry 为 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`；Stage 2 main Skill、2.2 与 2.4–2.6 尚未生成 active `SKILL.md`。
 
 Stage-level architecture authority:
 
