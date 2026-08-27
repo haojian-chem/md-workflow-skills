@@ -74,7 +74,7 @@ references/atom_mapping_rules.md
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md
 ```
 
-当前固定由 1.3 初始化 map，1.4 / 1.6 / 1.7 / 1.8 copy-and-update，1.8 最终写出 `stage1_final_map.yaml`；每个 atom record 持续维护 `current_atom_serial`、`original_atom_serial`、`component_id`、`residue_id` 与累积 `operations`。1.5 不维护 map，1.9 只读验证 final map。该规则只属于 Stage 1，不定义 Stage 2 atom mapping / provenance。
+当前固定由 1.3 初始化 map，1.4 / 1.6 / 1.7 / 1.8 copy-and-update，1.8 最终写出 `stage1_final_map.yaml`；每个 atom record 持续维护 `current_atom_serial`、`original_atom_serial`、`component_id`、`residue_id` 与累积 `operations`。1.5 不维护 map，1.9 只读验证 final map。`references/atom_mapping_rules.md` 同时作为 2.2 的 runtime map authority；Stage 1 architecture freeze 本身仍只记录 Stage 1 mapping 设计。
 
 Stage 1.6 architecture freeze remains the authoring/architecture record:
 
@@ -94,7 +94,7 @@ Stage 1.7–1.9 architecture records:
 
 ## 4. Stage 2 — Topology / parameterization
 
-Status: ARCHITECTURE FROZEN; **2.1, 2.3, AND 2.4 ACTIVE; STAGE MAIN, 2.2, AND 2.5–2.6 FREEZE-ONLY**.
+Status: ARCHITECTURE FROZEN; **2.1–2.4 ACTIVE; STAGE MAIN AND 2.5–2.6 FREEZE-ONLY**.
 
 Stage 2 架构包括一个阶段级 main Skill 和六个编号科研 Step。未来阶段级 runtime entry 固定为：
 
@@ -119,18 +119,39 @@ Current / reserved Step directories:
 
 ```text
 02_topology_preparation/2.1_topology_preparation_setup/                         # active
-02_topology_preparation/2.2_standard_residue_topology_generation/              # reserved
+02_topology_preparation/2.2_standard_residue_topology_generation/              # active
 02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/      # active
 02_topology_preparation/2.4_independent_nonstandard_parameterization/          # active
 02_topology_preparation/2.5_topology_integration_and_assembly/                  # reserved
 02_topology_preparation/2.6_topology_validation/                               # reserved
 ```
 
-当前 2.1、2.3 与 2.4 已生成 active Skill；2.1、2.3 与 2.4 均已完成 post-generation authoring/interface consistency check。current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`；Stage 2 main Skill、2.2 与 2.5–2.6 尚未生成 active `SKILL.md`。
+当前 2.1–2.4 已生成 active Skill；2.1、2.3 与 2.4 已完成既有 post-generation authoring/interface consistency check，2.2 已完成正式生成及当前接口同步。current entries 分别为：
+
+```text
+02_topology_preparation/2.1_topology_preparation_setup/SKILL.md
+02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md
+02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md
+02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md
+```
+
+Stage 2 main Skill 与 2.5–2.6 尚未生成 active `SKILL.md`。
 
 Stage-level architecture authority:
 
 `00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
+
+2.2 current runtime entry:
+
+`02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`
+
+2.2 detailed result interface:
+
+`02_topology_preparation/2.2_standard_residue_topology_generation/references/results.md`
+
+2.2 atom mapping runtime authority:
+
+`references/atom_mapping_rules.md`
 
 2.3 current runtime entry:
 
@@ -154,7 +175,7 @@ Stage-level architecture authority:
 00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
 ```
 
-These files remain architecture/authoring records rather than runtime Skills; 2.3 and 2.4 now use their active current entries above, while 2.5 remains pending formal Skill generation.
+These files remain architecture/authoring records rather than runtime Skills; 2.2–2.4 now use their active current entries above, while 2.5 remains pending formal Skill generation.
 
 ## 5. Stage 3 — System construction / solvation
 
@@ -260,14 +281,14 @@ Cross-Stage Task Execution shared rules:
 
 该文件是 shared reference，不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 通过各自 main `SKILL.md` 显式引用它。
 
-Stage 1 atom-mapping shared runtime reference and architecture freeze:
+Shared atom-mapping runtime reference and Stage 1 architecture freeze:
 
 ```text
 references/atom_mapping_rules.md
 00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md
 ```
 
-该接口只定义 Stage 1 chained atom-map maintenance；不定义 Stage 2 atom mapping / provenance。
+`references/atom_mapping_rules.md` 当前定义 Stage 1 chained atom-map maintenance，并被 2.2 沿用以维护标准残基全原子结构的 map；Stage 1 architecture freeze 仍只记录 Stage 1 mapping 设计。
 
 Unnumbered active package:
 
@@ -289,11 +310,11 @@ Historical design Markdown: `00_authoring/archive/`.
 ## 9. Current work status
 
 - Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 保持 current；topology-linked 检查与正式记录已同步为 schema v4 的统一 `topology_linked_checks[]`，三类判据完整记录，人工关系决策仅通过 `relation_id` 对应；Stage 1 atom mapping 当前采用 chained map：1.3 初始化，1.4 / 1.6 / 1.7 / 1.8 copy-and-update，记录 `current_atom_serial + original_atom_serial + component_id + residue_id + operations`，1.8 写出 `stage1_final_map.yaml`，1.9 做最终逐原子/provenance验证；1.6 whole-residue / coordinate replacement 已区分 provenance-preserving `1.6REPLACE` 与真正新增的 `1.6ADD`；
-- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1、2.3 与 2.4 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`；Stage main、2.2 与 2.5–2.6 仍为 freeze-only，2.3 与 2.5 的详细方案保留专项 architecture freeze；
+- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1–2.4 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`；2.2 已同步标准残基 pdb2gmx 处理、chain-level `.itp` 组织、共享 atom map 与正式结果接口；Stage main 与 2.5–2.6 仍为 freeze-only，2.3 与 2.5 的详细方案保留专项 architecture freeze；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
-- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；跨 Skill Task Execution 共用规则集中于 `references/task_execution_rules.md`；Stage 1 atom mapping maintenance 由 `references/atom_mapping_rules.md` 作为 runtime authority，并冻结于 `00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
+- Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；跨 Skill Task Execution 共用规则集中于 `references/task_execution_rules.md`；atom mapping runtime authority 为 `references/atom_mapping_rules.md`，当前覆盖 Stage 1 chain 及 2.2 标准残基全原子 map 维护；Stage 1 mapping architecture freeze 保留于 `00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
 
