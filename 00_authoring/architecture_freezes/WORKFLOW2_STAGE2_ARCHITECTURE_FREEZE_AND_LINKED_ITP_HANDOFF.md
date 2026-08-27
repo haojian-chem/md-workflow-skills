@@ -12,8 +12,8 @@
 - `2.3 Topology-linked nonstandard parameterization` 的建立参数化模型科学规则，包括一般范围规则、蛋白质截取/封端、核酸截取/封端、标准残基一侧原子变化、非标准残基补氢与 map 维护：**已专项冻结**；
 - `2.3` 的量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有；几何优化固定原子规则已经专项冻结到当前版本；
 - `2.3` 的 RESP / RESP2 电荷拟合科学规则：**已专项冻结**；
-- `2.3` 的 Sobtop 参数化当前已敲定规则：**已专项冻结**；
-- `2.3` 的当前科研处理环节、六个核心结果文件、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
+- `2.3` 的 Sobtop 参数化规则：**已专项冻结**；
+- `2.3` 的当前科研处理环节、六个核心结果文件、最终实际采纳的 OPT / FREQ / SP 任务路径、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
 - 尚未固定的其它文件 basename / schema / 目录名：**仍可在实现层细化**；
 - **当前只有 2.1 已生成 active Skill；Stage 2 main Skill 与 2.2–2.6 仍为 freeze-only / reserved package paths。**
@@ -150,7 +150,7 @@ Stage 2 的实际工作集合由 2.1 在 Task Sheet 中确定；2.2 / 2.3 / 2.4 
 - 直接进入 2.5 的 `SOLVENT_COMPONENT` / `ION_COMPONENT` 仍能从 2.1 已记录的实际来源定位到完整 molecule topology definition；
 - 不存在尚未解决、会导致当前体系 topology acquisition 不完整的 2.2–2.5 工作项。
 
-这里的阶段级检查只判断当前 Task Sheet 要求的结果覆盖是否闭合。它不重新执行 2.2 / 2.3 / 2.4 的科学 validation，也不替 2.5 检查实际 integration artifact 的内部一致性。
+这里的阶段级检查只判断当前 Task Sheet 要求的结果覆盖是否闭合。它不重新执行 2.2 / 2.3 / 2.4 各自的科研处理与检查，也不替 2.5 检查实际 integration artifact 的内部一致性。
 
 2.5 自己仍负责确认其实际输入文件 / definition 可以读取并用于 assembly，以及完成 integration / assembly 的具体 validation。Stage 2 main Skill不得通过重新推断整个体系组成来替代 2.1，也不得通过重复检查上游结果内部科学细节来替代各结果 owner。
 
@@ -393,7 +393,7 @@ parameterization_model.map
 → Sobtop 参数化并生成 parameterized_topology.itp
 ```
 
-建立参数化模型和电荷拟合的详细科学规则已经分别专项保存；量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有，其中几何优化固定原子规则单独保存于 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`。Sobtop 参数化当前已经敲定的规则保存于 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md`，其余尚未敲定的详细规则继续在 2.3 设计中确定，不在 Stage 2 总架构中维护第二套规范。
+建立参数化模型和电荷拟合的详细科学规则已经分别专项保存；量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有，其中几何优化固定原子规则单独保存于 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`。Sobtop 参数化相关规则保存于 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md`，不在 Stage 2 总架构中维护第二套规范。
 
 ## 5.9 正式结果
 
@@ -414,7 +414,7 @@ parameterized_topology.itp
 topology_linked_parameterization_result.yaml
 ```
 
-作为本环节正式结果记录。该 YAML 统一登记六个核心结果的完整路径，并记录标准残基一侧需要删除的原子与残基级电荷修改范围。项目结果索引只登记 `topology_linked_parameterization_result.yaml`，不分别登记六个核心结果文件。
+作为本环节正式结果记录。该 YAML 统一登记六个核心结果的完整路径、最终实际采纳的 OPT / FREQ / SP 任务路径，并记录标准残基一侧需要删除的原子与残基级电荷修改范围。项目结果索引只登记 `topology_linked_parameterization_result.yaml`，不分别登记六个核心结果文件。
 
 `.top` 若实际生成且有复现价值可保留，但不是强制核心 handoff。
 
