@@ -71,7 +71,7 @@ operations
 
 字段含义：
 
-- `current_atom_serial`：该 atom 在 `current_structure` 中的当前 atom serial；
+- `current_atom_serial`：该 atom 在 `current_structure` 中的 atom serial；
 - `original_atom_serial`：该 atom 在 `original_structure` 中对应 atom 的 PDB atom serial；如果 `original_structure` 中不存在对应 atom，则为 `null`；
 - `component_id`：该 atom 所属 residue 对应的 1.2 正式 `component_id`；
 - `residue_id`：该 atom 所属 residue 对应的 1.2 正式 `residue_id`，与 `component_id` 共同定位该 residue；
