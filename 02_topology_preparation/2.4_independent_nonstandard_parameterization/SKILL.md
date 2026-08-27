@@ -47,7 +47,7 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 
 已有 2.4 参数化结果是否适用于当前处理对象由 2.1 判断；本 Skill 不重新维护与 2.1 平行的参数适用性判据。
 
-若当前 Task Sheet 已引用 2.1 判定可用于当前处理对象的 2.4 正式结果，复用其中已经完成的参数化结果，包括实际存在并适用的：
+若当前 Task Sheet 已引用 2.1 判定可用于当前处理对象的 2.4 正式结果，复用其中以下参数化结果：
 
 ```text
 parameterization_model.mol2
@@ -166,7 +166,7 @@ operations:
 
 ```text
 original_atom_serial = null
-component_id + residue_id = 该 H 所属真实 residue 的既有身份
+component_id + residue_id = 该 H 所属真实残基的既有身份
 operations = [2.4ADD]
 ```
 
