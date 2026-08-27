@@ -26,6 +26,8 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 → 生成 parameterized_structure.gro 与 parameterized_structure.map
 ```
 
+已有适用参数化结果时，可按本 Skill 的 Reuse 规则跳过已经完成且可复用的参数化处理，只生成当前工作项仍缺少的结果。
+
 形成当前工作项的正式结果记录：
 
 `independent_nonstandard_parameterization_result.yaml`
@@ -43,9 +45,26 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 
 ## Reuse
 
-已有 2.4 正式结果是否适用于当前体系由 2.1 判断。
+已有 2.4 参数化结果是否适用于当前处理对象由 2.1 判断；本 Skill 不重新维护与 2.1 平行的参数适用性判据。
 
-若当前 Task Sheet 已引用 2.1 判定可直接使用的 2.4 正式结果，直接复用该结果；否则执行当前 2.4 工作项。本 Skill 不重新维护与 2.1 平行的已有结果适用性判据。
+若当前 Task Sheet 已引用 2.1 判定可用于当前处理对象的 2.4 正式结果，复用其中已经完成的参数化结果，包括实际存在并适用的：
+
+```text
+parameterization_model.mol2
+parameterization_model.map
+parameterization.chg
+charge_fitting_result.yaml
+parameterized_topology.itp
+```
+
+以及对应的最终采纳 OPT / FREQ / SP 任务和参数生成方法，不重新执行这些已经完成的量化计算、电荷拟合或 Sobtop 参数化。
+
+`parameterized_structure.gro` 与 `parameterized_structure.map` 描述的是具体体系中的实际实例，因此在完成当前工作项前，检查被引用结果中的这两个文件是否覆盖当前工作项的全部 `component_id + residue_id`，且没有以其它体系的实例替代当前实例：
+
+- 覆盖的实例集合就是当前工作项实例集合时，可直接复用被引用正式结果；
+- 实例集合不同或当前实例结构 / map 尚未生成时，只复用上述参数化结果，并按本 Skill 的同名实例检查与补氢规则为当前工作项全部实例生成新的 `parameterized_structure.gro` 和 `parameterized_structure.map`，随后生成当前工作项自己的 `independent_nonstandard_parameterization_result.yaml`。
+
+这种检查只判断当前 2.4 正式结果要求的体系实例结果是否已经存在，不重新判断 2.1 所拥有的参数化结果适用性。
 
 ## 代表实例与参数化模型
 
@@ -53,9 +72,9 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 
 `references/parameterization_model.md`
 
-按其中规则检查当前工作项全部同名实例是否能够共用同一套参数定义，从中选择一个代表实例，提取其 Stage 1 重原子结构并补氢，随后确定参数化模型的原子集合与原子顺序。
+无论是否复用已有参数化结果，都按其中规则检查当前工作项全部同名实例是否能够共用同一套参数定义。
 
-生成：
+需要执行新的参数化时，从中选择一个代表实例，提取其 Stage 1 重原子结构并补氢，随后确定参数化模型的原子集合与原子顺序，生成：
 
 ```text
 parameterization_model.mol2
@@ -64,9 +83,11 @@ parameterization_model.map
 
 二者描述同一个代表实例，并使用同一原子集合与原子顺序。
 
+已有适用参数化结果时，不重新建立新的参数化模型；后续当前实例补氢使用被复用参数化结果中已经成功参数化的代表实例及其全原子定义作为模板。
+
 ## OPT / FREQ
 
-执行前读取：
+需要执行新的量化计算时，执行前读取：
 
 `references/opt_freq.md`
 
@@ -76,7 +97,7 @@ parameterization_model.map
 
 ## 电荷拟合
 
-执行前读取：
+需要执行新的电荷拟合时，执行前读取：
 
 `references/charge_fitting.md`
 
@@ -95,7 +116,7 @@ parameterization.chg
 
 ## Sobtop 参数化
 
-基于检查通过的 OPT 结构生成用于 Sobtop 成键项拟合的 mol2，并与对应的频率计算结果一同用于成键参数拟合。
+需要执行新的 Sobtop 参数化时，基于检查通过的 OPT 结构生成用于 Sobtop 成键项拟合的 mol2，并与对应的频率计算结果一同用于成键参数拟合。
 
 频率计算结果文件：
 
@@ -116,9 +137,9 @@ parameterized_topology.itp
 
 ## 当前工作项全部实例的结构与 map
 
-`parameterized_topology.itp` 生成并检查通过后，以成功完成参数化的代表实例作为补氢模板，对当前工作项中的其它同名实例补氢。
+当前工作项需要新的体系实例结构时，以成功完成参数化的代表实例作为补氢模板，对当前工作项中的全部同名实例补氢。新的参数化完成时使用本次代表实例；复用已有参数化结果时使用被复用结果中的代表实例及其全原子定义。
 
-其它实例保留各自在 `stage1_final.pdb` 中的重原子坐标；模板提供代表实例已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制代表实例的坐标。
+各实例保留各自在 `stage1_final.pdb` 中的重原子坐标；模板提供已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制模板实例的坐标。
 
 全部实例采用与最终 `parameterized_topology.itp` 一致的残基名、原子名和残基内原子顺序，生成：
 
@@ -160,12 +181,13 @@ operations = [2.4ADD]
 当前 2.4 工作项形成正式结果前至少确认：
 
 - 当前工作项全部同名实例已完成参数定义一致性检查；不存在需要通过不同残基名区分但仍被静默合并参数化的实例；
-- `parameterization_model.mol2` 与 `parameterization_model.map` 描述同一个代表实例，原子集合和原子顺序一致；
-- 最终采纳的 OPT、FREQ 和 SP 结果完成对应检查，电荷拟合已形成明确选中的 `parameterization.chg`；
+- 当前正式结果引用的 `parameterization_model.mol2` 与 `parameterization_model.map` 描述同一个成功参数化的代表实例，原子集合和原子顺序一致；
+- 当前正式结果引用的最终采纳 OPT、FREQ 和 SP 结果已经完成对应检查，电荷拟合已形成明确选中的 `parameterization.chg`；
 - `parameterization.chg` 与代表实例参数化模型的原子顺序一一对应；
 - `parameterized_topology.itp` 的残基名、原子名、原子顺序和电荷能够与代表实例参数化模型及 `parameterization.chg` 确定对应；
 - `parameterized_structure.gro` 与 `parameterized_structure.map` 覆盖当前工作项全部同名实例，每个实例的残基名、原子名和残基内原子顺序与 `parameterized_topology.itp` 一致；
-- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，2.4 新增 H 使用 `2.4ADD`。
+- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，2.4 新增 H 使用 `2.4ADD`；
+- 若参数化结果来自已有 2.4 正式结果，当前正式结果能够定位该来源结果，并且没有把来源体系的 `parameterized_structure.gro` / `parameterized_structure.map` 误作为当前实例结构结果。
 
 ## 正式结果
 
@@ -191,6 +213,6 @@ parameterized_structure.gro
 parameterized_structure.map
 ```
 
-并记录当前处理残基名、代表实例、当前工作项全部实例、实际补氢依据以及最终采纳的 OPT / FREQ / SP 任务路径和参数生成方法。
+并记录当前处理残基名、成功参数化的代表实例、当前工作项全部实例、实际补氢依据、最终采纳的 OPT / FREQ / SP 任务路径和参数生成方法；复用已有参数化结果时同时记录实际引用的 2.4 来源正式结果。
 
 完成后按仓库级 Task Execution 规则更新当前 Task Sheet 的 2.4 工作项状态，并将 `independent_nonstandard_parameterization_result.yaml` 的完整路径登记到项目结果索引。上述七个结果文件由该正式结果记录统一定位，不在项目结果索引中分别登记。
