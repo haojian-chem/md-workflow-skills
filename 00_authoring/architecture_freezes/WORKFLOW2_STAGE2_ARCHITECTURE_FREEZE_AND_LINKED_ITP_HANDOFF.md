@@ -16,7 +16,7 @@
 - `2.3` 的当前科研处理环节、六个核心结果文件、最终实际采纳的 OPT / FREQ / SP 任务路径、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
 - 尚未固定的其它文件 basename / schema / 目录名：**仍可在实现层细化**；
-- **当前只有 2.1 已生成 active Skill；Stage 2 main Skill 与 2.2–2.6 仍为 freeze-only / reserved package paths。**
+- **当前 2.1 与 2.3 已生成 active Skill；Stage 2 main Skill、2.2 与 2.4–2.6 仍为 freeze-only / reserved package paths。**
 
 2.3 当前详细冻结材料位于：
 
