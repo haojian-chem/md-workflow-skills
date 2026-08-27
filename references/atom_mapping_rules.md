@@ -1,8 +1,8 @@
-# Stage 1 原子映射维护共享规则
+# 原子映射维护共享规则
 
-本文件定义 Stage 1 中结构改写步骤共同使用的原子映射规则。当前适用步骤为 1.3、1.4、1.6、1.7、1.8；1.5 不修改结构，因此不维护 map；1.9 读取最终 map 做验证。
+本文件定义当前适用结构改写环节共同使用的原子映射规则。Stage 1 当前适用步骤为 1.3、1.4、1.6、1.7、1.8；1.5 不修改结构，因此不维护 map；1.9 读取最终 map 做验证。
 
-本文件只规定 Stage 1，不定义 Stage 2 的 mapping / provenance 语义。
+2.2 Standard residue topology generation 沿用本文件的 map 结果结构、copy-and-update 语义和 provenance 维护规则，并使用 `2.2ADD` 记录该环节新增的 atom。本文件当前不定义其它 Stage 2 环节的 mapping / provenance 语义。
 
 ## 1. Map chain
 
@@ -30,7 +30,7 @@ Stage 1 不额外建立永久 `atom_id`。
 
 ## 2. Map 结果结构与字段含义
 
-每份 map 只记录 `current_structure` 中实际存在的 `ATOM / HETATM` 原子。已经从当前结构删除的 atom 不保留在当前输出 map 中。
+每份 map 只记录 `current_structure` 中实际存在的 atom。已经从当前结构删除的 atom 不保留在当前输出 map 中。
 
 固定结果结构：
 
@@ -57,7 +57,7 @@ atoms:
 - `input_structure`：生成当前 map 时所对应处理步骤的输入结构文件完整绝对路径；
 - `current_structure`：当前 map 实际描述的输出结构文件完整绝对路径；
 - `input_map`：生成当前 map 时所复制的上一份正式 atom map 完整绝对路径；1.3 初始化 map 时为 `null`；
-- `atoms`：`current_structure` 中实际存在的 `ATOM / HETATM` 原子的逐原子记录列表。
+- `atoms`：`current_structure` 中实际存在的 atom 的逐原子记录列表。
 
 每个 `atoms[]` record 固定保存：
 
@@ -75,11 +75,11 @@ operations
 - `original_atom_serial`：该 atom 在 `original_structure` 中对应 atom 的 PDB atom serial；如果 `original_structure` 中不存在对应 atom，则为 `null`；
 - `component_id`：该 atom 所属 residue 对应的 1.2 正式 `component_id`；
 - `residue_id`：该 atom 所属 residue 对应的 1.2 正式 `residue_id`，与 `component_id` 共同定位该 residue；
-- `operations`：该 atom 在当前 Stage 1 map chain 中已经发生并被记录的 atom-level operation code，按实际发生顺序排列。
+- `operations`：该 atom 在当前 map chain 中已经发生并被记录的 atom-level operation code，按实际发生顺序排列。
 
 ## 3. Copy-and-update 规则
 
-1.4、1.6、1.7、1.8 每次维护 map 时按以下顺序执行：
+1.4、1.6、1.7、1.8 以及采用本规则的后续结构改写环节，每次维护 map 时按以下顺序执行：
 
 1. 完整复制与当前输入结构对应的正式 input map；
 2. 对本步骤删除的 atom，删除对应 atom record；
@@ -88,7 +88,7 @@ operations
 5. 对本步骤新增、且输入结构不存在对应 atom 的 atom，新建 atom record，`original_atom_serial: null`，并写入当前步骤的 `ADD` operation；
 6. 对本步骤发生 replacement、但输入与输出能够明确判定为同一个 atom 的情况，保留原 record 及其 `original_atom_serial`，追加当前步骤的 replacement operation；
 7. 不删除、不改写 input map 中已经存在的 operation history；
-8. 写出后，输出 map 的 atom records 必须与当前输出结构中的 `ATOM / HETATM` 一一对应。
+8. 写出后，输出 map 的 atom records 必须与当前输出结构中的 atom 一一对应。
 
 `original_atom_serial` 一旦为非空值，后续步骤不得改写。`component_id + residue_id` 也不得因为 chain、resid、residue name、atom name、atom order 或 atom serial 的表示变化而重新生成。
 
@@ -108,6 +108,7 @@ operations
 1.6REPLACE
 1.7RENAME
 1.8REORDER
+2.2ADD
 ```
 
 语义：
@@ -118,11 +119,12 @@ operations
 - `1.6RENAME`：1.6 修改了该 atom 的 atom name；
 - `1.6REPLACE`：1.6 对该 atom 执行 whole-residue replacement / coordinate replacement，但输入 atom 与输出 atom 能够明确判定为同一个 atom，因此保留原映射与 `original_atom_serial`；
 - `1.7RENAME`：1.7 修改了该 atom 所属 residue 的 residue name；
-- `1.8REORDER`：1.8 的 block / residue organization 改变了该 atom 在输出 atom records 中的位置。
+- `1.8REORDER`：1.8 的 block / residue organization 改变了该 atom 在输出 atom records 中的位置；
+- `2.2ADD`：该 atom 由 2.2 的 pdb2gmx 处理新增，输入结构中不存在对应 atom；`original_atom_serial` 必须为 `null`。
 
 同一个 atom 在同一步骤实际经历多个已定义操作时，按实际发生顺序追加多个 operation code。
 
-如果后续 Stage 1 Skill 新增其它会改变 atom identity / representation、且需要进入累积 map history 的操作，必须先在本共享规则中定义新的 Step-specific operation code，再由对应 Skill 使用。
+如果后续当前适用范围内的 Skill 新增其它会改变 atom identity / representation、且需要进入累积 map history 的操作，必须先在本共享规则中定义新的 Step-specific operation code，再由对应 Skill 使用。
 
 ## 5. 1.3 初始化
 
@@ -196,11 +198,27 @@ stage1_final_map.yaml
 
 `stage1_final_map.yaml` 使用本文件规定的同一数据结构，不另建第二套 final-map schema。
 
-## 10. Map validation
+## 10. 2.2 维护
+
+2.2 生成标准残基全原子结构时，以与当前体系 `stage1_final.pdb` 对应的 `stage1_final_map.yaml` 作为上游 map source。
+
+先按当前 2.2 处理范围保留进入 pdb2gmx 输入 PDB 的标准残基 atom records，再依据 pdb2gmx 实际输出维护 map：
+
+- 不属于当前 2.2 处理范围的 atom records 不进入 `2.2_standard.map`；
+- 来自 Stage 1 且在 2.2 输出结构中仍有明确对应的 atom，保留 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，并按 2.2 输出结构更新 `current_atom_serial`；
+- pdb2gmx 新增、且输入结构中不存在对应 atom 的 atom，新建 record，`original_atom_serial: null`，`component_id + residue_id` 取其所属 residue 的既有身份，`operations` 记录 `2.2ADD`；
+- `input_structure` 指向本次实际使用的 pdb2gmx 输入 PDB；
+- `input_map` 指向实际使用的 `stage1_final_map.yaml`；
+- `current_structure` 指向 2.2 正式标准残基全原子结构；
+- 输出 map basename 固定为 `2.2_standard.map`。
+
+2.2 不建立第二套 atom identity，也不根据输出 atom name、resid、chain 或 atom order 重建 `component_id + residue_id`。
+
+## 11. Map validation
 
 每个生成 map 的步骤至少确认：
 
-- 当前输出结构每个 `ATOM / HETATM` atom 恰有一个 map record；
+- 当前输出结构每个 atom 恰有一个 map record；
 - map 不存在当前结构中没有的额外 atom record；
 - `current_atom_serial` 在当前结构中唯一且可定位；
 - `component_id + residue_id` 能定位到当前 model 的 1.2 正式 residue；
