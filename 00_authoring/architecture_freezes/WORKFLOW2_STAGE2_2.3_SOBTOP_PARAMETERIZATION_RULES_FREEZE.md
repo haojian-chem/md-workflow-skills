@@ -31,6 +31,13 @@ Sobtop 参数化环节同时处理 LJ 参数。
 
 预存参数直接按 GROMACS 参数格式保存。12-6 与 12-6-4 参数分别维护在不同文件中，不混合保存。
 
+当前 Merz 离子 LJ 参数保存于 Stage 2 共享 references：
+
+```text
+02_topology_preparation/references/merz_ion_lj_12-6.itp
+02_topology_preparation/references/merz_ion_lj_12-6-4.itp
+```
+
 每个参数文件在注释区域集中定义文献引用，例如：
 
 ```text
@@ -49,7 +56,7 @@ Sobtop 参数化环节同时处理 LJ 参数。
 
 原文未将参数绑定到具体溶剂模型时，不补写溶剂模型。
 
-实际参数值及文献引用在取得对应原始文献和参数表后补充；本 freeze 当前只固定参数文件的组织与溯源方式。
+后续补充参数时继续沿用上述参数文件组织与溯源方式。
 
 ## 4. Sobtop 输出名称修正
 
