@@ -23,45 +23,19 @@ ORCA     → *.hess
 Gaussian → *.fch / *.fchk
 ```
 
-## 3. LJ 参数
+## 3. LJ 参数补充
 
-Sobtop 参数化环节同时处理 LJ 参数。
-
-金属离子 LJ 参数优先从预存且适用于当前参数化体系的参数文件中取得。
-
-预存参数直接按 GROMACS 参数格式保存。12-6 与 12-6-4 参数分别维护在不同文件中，不混合保存。
-
-当前 Merz 离子 LJ 参数保存于 Stage 2 共享 references：
+Sobtop 参数化过程中，当前体系所需 LJ 参数缺失时，根据当前实际体系从 Stage 2 共享 references 中相应参数文件提取适用参数进行补充：
 
 ```text
 02_topology_preparation/references/12-6.itp
 02_topology_preparation/references/12-6-4.itp
 ```
 
-每个参数文件在注释区域集中定义文献引用，例如：
-
-```text
-; References
-; ref1: Li et al., J. Chem. Theory Comput. 2013, DOI: 10.1021/ct400146w
-; ref2: ...
-```
-
-具体参数行的行尾备注记录参数集、文献中明确指定的配合使用溶剂模型及对应引用，例如：
-
-```text
-; CM  | TIP3P   | ref1
-; IOD | SPC/E   | ref1
-; HFE | TIP4PEW | ref1
-```
-
-原文未将参数绑定到具体溶剂模型时，不补写溶剂模型。
-
-后续补充参数时继续沿用上述参数文件组织与溯源方式。
-
 ## 4. Sobtop 输出名称修正
 
 Sobtop 生成的 `.itp` 中 residue name 或 atom name 与用于 Sobtop 的 mol2 中对应原子不一致时，按该 mol2 中对应原子的 residue name 和 atom name 修正后，再形成正式 `parameterized_topology.itp`。
 
-## 5. 尚待继续确定
+## 5. 其它 Sobtop 设置
 
-除本文件已经冻结的规则外，Sobtop 参数化的其它详细设置与检查要求继续在 2.3 设计中确定。
+除本文件已经固定的规则外，其它 Sobtop 参数化设置由执行 Agent 根据当前实际体系与参数化要求判断。
