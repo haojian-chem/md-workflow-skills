@@ -1,7 +1,5 @@
 # 2.3 OPT / FREQ
 
-本 reference 由 `../SKILL.md` 在执行参数化模型的 OPT / FREQ 计算时读取。电荷拟合所需 SP 计算及 RESP / RESP2 规则读取 `charge_fitting.md`。
-
 ## 计算设置
 
 开始计算前，确定当前参数化模型的总电荷和自旋多重度。
