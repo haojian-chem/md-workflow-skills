@@ -51,6 +51,15 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 - 本次实际需要处理的 model；
 - 当前分类模式：`REGISTRY` 或 `FORCE_FIELD_ANALYSIS`。
 
+其中 `model` 与 `classification_mode` 都是进入正式分类前必须闭合的关键信息：
+
+- 如果源结构含多个可处理 model，而当前 Task Sheet、已有正式项目信息或用户要求不能唯一确定本次处理哪个 model，向用户确认；不得自行挑选首个 model、默认 model 或“看起来最完整”的 model。
+- 如果 `classification_mode` 尚未由当前 Task Sheet、已有正式项目信息或用户要求唯一确定，向用户确认；不得因某种模式更常用、所需 reference 更容易获得或 Agent 经验而自行选择 `REGISTRY` 或 `FORCE_FIELD_ANALYSIS`。
+- 选择 `FORCE_FIELD_ANALYSIS` 时，实际目标力场及本次需要使用的 `*.rtp` 必须能够唯一定位；如果存在多个会导致分类或重原子判断不同的合理候选而当前信息不能唯一决定，先向用户确认。不得因为目标力场尚未明确就静默退回 `REGISTRY`。
+- 选择 `REGISTRY` 或其它需要 CCD 的具体检查时，如果存在多个内容不同且会改变当前判断的 CCD 候选，按 `references/classification_rules.md` 处理；现有证据仍不能唯一确定时向用户确认，不按文件顺序、路径便利性或名称相似度自行选定。
+
+只有已有正式项目信息、当前上下文或本 Skill / reference 的明确规则足以唯一确定上述事项时，Agent 才直接采用而不重复询问。关键事项未闭合前，不开始依赖该事项的正式分类、重原子检查或结果物化。
+
 一个源结构含多个 model 时，每个实际执行 1.2 的 model 独立处理并写入独立 model 目录；一份 `classification_result.yaml` 只描述一个 model，model 信息只在文件级记录一次，不复制到每个 component / residue。
 
 其余依据按当前判断需要读取：
