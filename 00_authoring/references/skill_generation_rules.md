@@ -70,10 +70,13 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 ```text
 references/task_execution_rules.md
+references/result_generation_rules.md
 references/canonical_terminology.md
 ```
 
-`task_execution_rules.md` 保存各科研执行 Skill 共同遵守的跨 Stage Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+`task_execution_rules.md` 保存各科研执行 Skill 共同遵守的 Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+
+`result_generation_rules.md` 保存科研执行 Skill 共同遵守的 validation、正式结果生成、结果记录与结果接口规则。Authoring 在当前工作涉及 validation、results、`references/results.md`、结果文件 / 字段语义或 project-result registration 时读取它；具体科学 validation、正式结果集合和 Skill-specific 结果语义仍由对应科研执行 Skill 拥有。
 
 `canonical_terminology.md` 维护跨 Skill 需要稳定一致的正式术语。它也不是独立 Skill 或执行环节，只拥有术语名称、优先表达、定义和边界；不接管具体科学规则。Authoring 在 Skill 构筑、设计讨论、architecture freeze 编写、生成、审查和重构全过程中必须读取并使用它。执行阶段可通过 `task_execution_rules.md` 按需读取它，因此不要求为现有 execution Skill 逐一建立平行 glossary。
 
@@ -214,6 +217,7 @@ heavy-atom name 是否兼容
 + references/task_execution_rules.md
 + references/canonical_terminology.md
 + 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
++ 当前工作涉及 validation / results / 结果接口时读取 references/result_generation_rules.md
 ↓
 从 authoring discussion 开始即使用 canonical terminology；用户口语仅作为语义输入
 ↓
@@ -342,12 +346,15 @@ MD_WORKFLOW_MASTER_PLAN.md
 
 ```text
 references/task_execution_rules.md
+references/result_generation_rules.md
 references/canonical_terminology.md
 ```
 
-前者定义跨 Stage Task Execution 通用规则；后者维护跨 Skill canonical terminology。两者都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。Authoring 在 Skill 构筑、设计讨论、freeze 编写、生成、审查和重构过程中读取两者；各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并在需要术语解释时由该 shared reference 继续读取 `canonical_terminology.md`。
+`task_execution_rules.md` 定义科研执行 Skill 共用的 Task Execution 规则；`result_generation_rules.md` 定义科研执行 Skill 共用的 validation、正式结果生成、结果记录与结果接口规则；`canonical_terminology.md` 维护跨 Skill canonical terminology。三者都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。
 
-不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design、shared Task Execution reference 或 canonical terminology；这些内容继续由对应 current Skill / reference / architecture freeze 拥有。
+Authoring 在 Skill 构筑、设计讨论、freeze 编写、生成、审查和重构过程中读取 `task_execution_rules.md` 与 `canonical_terminology.md`；当前工作涉及 validation / results / 结果接口时，再读取 `result_generation_rules.md`。各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并由该 shared reference 提供按需读取 `canonical_terminology.md` 与 `result_generation_rules.md` 的入口。
+
+不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design、shared Task Execution / result-generation reference 或 canonical terminology；这些内容继续由对应 current Skill / local reference / architecture freeze 拥有。
 
 不再单独维护 current `SYNC_STATUS.md`。如果某项内容只是“当前 Stage 建设到哪里”，归入 Master Plan；如果是具体规则，则归入真正的规则 owner。
 
@@ -416,6 +423,7 @@ Skill 当前是什么状态
 
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 当前 authoring 涉及 validation / results / 结果接口时，已读取 `references/result_generation_rules.md`；
 - [ ] 已读取 `references/canonical_terminology.md`；其中已有条目在 authoring discussion、freeze 和正式 Skill 中使用其 `Preferred expression`；
 - [ ] Agent 在设计讨论中没有继续沿用用户口语、简称或临时称呼作为新的项目正式术语；
 - [ ] 同一对象 / artifact / state / scientific concept 在 discussion / freeze / Skill / references 中没有出现多套正式术语；
@@ -425,7 +433,7 @@ Skill 当前是什么状态
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
-- [ ] 没有把 shared Task Execution reference 或 canonical terminology 误建成独立 Skill / dispatcher；
+- [ ] 没有把 shared Task Execution reference、result-generation reference 或 canonical terminology 误建成独立 Skill / dispatcher；
 - [ ] 没有把可由 Agent / 用户基于当前任务可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
 - [ ] 被撤回的伪 Skill 已删除，但正确的 Stage / Step 目录仍保留；
 - [ ] archive 没有被加入默认 startup/read list；
@@ -455,7 +463,8 @@ semantic explicitness → 对象、属性、reference / criterion 与实际判�
 Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architecture_freezes/
 freeze 完成 ≠ Skill generation 获批
 Skill generation 改变状态 → 必须同步 MD_WORKFLOW_MASTER_PLAN.md
-跨 Stage Task Execution 通用规则 → references/task_execution_rules.md
+科研执行 Skill 共用的 Task Execution 规则 → references/task_execution_rules.md
+科研执行 Skill 共用的 validation / result generation / result-recording 规则 → references/result_generation_rules.md
 项目级 authoring design / status → 00_authoring/project_design/
 多窗口 writer assignment → 00_authoring/coordination/
 已被取代的 Markdown → archive
