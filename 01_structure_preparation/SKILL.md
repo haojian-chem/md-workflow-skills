@@ -71,6 +71,27 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 → 继续下一实际需要的子环节
 ```
 
+### Stage 1 关键信息确认
+
+进入任一 1.x 子环节的实质执行前，先确认会实质改变当前执行对象、处理范围、方法 / 模式、科学判据 / reference 或正式结果语义的必要信息已经闭合。
+
+判断原则：
+
+```text
+已有正式项目信息、当前上下文或 current Skill 明确规则能够唯一确定
+→ 直接采用并继续
+
+current Skill 已明确给出默认值 / 默认行为
+→ 按 Skill 规则继续
+
+存在多个实质不同的合理选择，且不同选择会改变执行、判断或正式结果
+→ 向用户确认
+```
+
+不得仅因为某一选择常见、方便、文件先出现或符合 Agent 经验，就替用户 / 项目补出未明确的关键决定；也不得在关键决定尚未闭合时先开始依赖该决定的结构修改、分类、检查或结果生成，之后再补解释。
+
+各 1.x current Skill 可以定义更具体的必需输入、可由 Agent 科学判断的事项和确认条件；这些局部规则优先用于判断当前信息是否已经足以唯一闭合。
+
 从 1.3 初始化 target atom map 后，凡后续当前结构已有对应正式 map，Stage main 在结构 handoff 时始终把 **current structure + matching current atom map** 作为同一对接口继续传递。1.5 不修改 map，但也不使当前 map 失效。
 
 普通已实现子环节之间不需要返回 Manager 调度，也不需要额外 Workflow dispatcher。
