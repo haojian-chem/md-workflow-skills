@@ -81,16 +81,16 @@ main Skill 必须说明何时读取 reference；不得启动时扫描整个 refe
 references/results.md
 ```
 
-main Skill 只保留正式结果摘要、结果入口和必要完成条件；跨 Stage 通用的 validation / result generation / result-recording 规则读取仓库级 shared execution reference：
+main Skill 只保留正式结果摘要、结果入口和必要完成条件；科研执行 Skill 共用的 validation / result generation / result-recording 规则读取仓库级 shared execution reference：
 
-`references/result_generation_rules.md`
+`../../references/result_generation_rules.md`
 
 `references/results.md` 是 Skill source reference，不是科研执行生成的 result artifact，也不是 handoff 文件。
 
-确有跨多个科研执行 Skill 共用价值、且不属于任何单一 Stage / Step 科学职责的通用 Task Execution 规则统一位于：
+确有多个科研执行 Skill 共用价值、且不属于任何单一 Stage / Step 科学职责的通用 Task Execution 规则统一位于：
 
 ```text
-references/task_execution_rules.md
+../../references/task_execution_rules.md
 ```
 
 该文件是仓库级 shared reference，不是独立 Skill、dispatcher 或额外 runtime 环节。所有正式科研执行 Skill 的 main `SKILL.md` 必须显式引用它；引用只建立通用 Task Execution 规则的可达性，不改变各 Skill 对具体科学规则、validation 与 results 的 ownership。
@@ -104,7 +104,7 @@ main Skill 产生 / 判断结果
 → main Skill 定义该结果如何验证
 ```
 
-跨 Skill 通用的 validation ownership 与正式结果生成机制由 `references/result_generation_rules.md` 统一定义；本文件只固定 Skill ownership 边界。
+科研执行 Skill 共用的 validation ownership 与正式结果生成机制由 `../../references/result_generation_rules.md` 统一定义；本文件只固定 Skill ownership 边界。
 
 只有 validation 本身成为复杂、独立、可复用职责时才拆 supporting validation Skill。
 
