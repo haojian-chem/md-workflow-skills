@@ -52,11 +52,9 @@ description: <何时使用；当前 Skill 指导 Agent 解决什么问题；必�
 
 `references/results.md`
 
-main Skill 只保留摘要和读取入口。结果生成、路径、结果内部 `references`、Markdown `References` section 与 project-result registration 的详细规则读取：
+main Skill 只保留摘要和读取入口；`references/results.md` 只定义当前结果本身，不规定下游 Skill 应如何执行。
 
-`../../00_authoring/references/result_generation_rules.md`
-
-`references/results.md` 只定义当前结果本身，不规定下游 Skill 应如何执行。
+Authoring 时按 `00_authoring/references/result_generation_rules.md` 设计结果、路径、结果内部 `references`、Markdown `References` section 与 project-result registration。该 authoring reference 不写成生成后科研 Skill 的 runtime dependency。
 
 # References / supporting capabilities
 
@@ -94,4 +92,5 @@ legacy/  # Legacy executable/runtime material
 - [ ] reuse、validation 与 results 足以支持跨对话继续；
 - [ ] 复杂结果接口已经评估是否需要 `references/results.md`；
 - [ ] results 说明没有重新写成下游 handoff 规则；
+- [ ] 没有把 authoring reference 写成科研执行 Skill 的 runtime dependency；
 - [ ] 没有把 `evals/`、`tools/` 或 `legacy/` 当成 MD Workflow Stage Skill root。
