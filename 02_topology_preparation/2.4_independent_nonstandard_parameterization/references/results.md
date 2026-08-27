@@ -12,7 +12,7 @@ independent_nonstandard_parameterization_result.yaml
 
 该记录至少保存：
 
-- 当前工作项处理的 residue name；
+- 当前工作项处理的残基名；
 - 当前工作项覆盖的全部实例及其 `component_id + residue_id`；
 - 被选择用于参数化的代表实例；
 - 本次实际依赖的上游文件；
@@ -23,7 +23,7 @@ independent_nonstandard_parameterization_result.yaml
 
 ## 当前处理对象
 
-正式结果必须能够明确当前参数定义适用于哪个 residue name，以及当前体系中哪些实例使用该参数定义。
+正式结果必须能够明确当前参数定义适用于哪个残基名，以及当前体系中哪些实例使用该参数定义。
 
 建议组织为：
 
@@ -104,7 +104,7 @@ parameterized_structure.map
 
 - `parameterization_model.mol2` 与 `parameterization_model.map` 只描述代表实例，并使用同一原子集合与原子顺序；
 - `parameterization.chg` 与代表实例参数化模型原子顺序保持可确定的一一对应；
-- `parameterized_topology.itp` 保存当前 residue name 共用的一套参数定义；
+- `parameterized_topology.itp` 保存当前残基名共用的一套参数定义；
 - `parameterized_structure.gro` 与 `parameterized_structure.map` 覆盖当前工作项中的全部同名实例；
 - `parameterized_structure.map` 中每个实例继续使用自己的 `component_id + residue_id`。
 
@@ -125,7 +125,7 @@ quantum_tasks:
 
 ## 参数生成方法
 
-正式结果必须记录足以支持 2.1 判断“参数生成方法是否相同”的实际方法信息，而不是仅写“same method”或其它抽象结论。
+正式结果必须记录足以支持 2.1 判断“参数生成方法是否相同”的实际方法信息，而不是只保存抽象的“同一方法”结论。
 
 至少覆盖本次实际采用的：
 
@@ -134,7 +134,7 @@ quantum_tasks:
 - 电荷拟合采用 RESP 或 RESP2、Multiwfn 拟合设置，以及 RESP2 实际权重；
 - Sobtop 参数化及本次实际使用的 LJ 参数来源。
 
-具体组织方式可按当前实际方法设置决定；不得为了固定 schema 复制量化任务目录中的全部输入文件内容。正式结果中的方法摘要与 `quantum_tasks`、`charge_fitting_result.yaml` 及最终 topology 共同提供可追溯的参数生成依据。
+具体组织方式可按当前实际方法设置决定；不得为了固定 schema 复制量化任务目录中的全部输入文件内容。正式结果中的方法摘要与 `quantum_tasks`、`charge_fitting_result.yaml` 及最终拓扑共同提供可追溯的参数生成依据。
 
 ## 内部一致性要求
 
@@ -144,8 +144,8 @@ quantum_tasks:
 - `representative_instance` 能在 `parameterization_model.map` 中通过相同 `component_id + residue_id` 定位；
 - 七个核心结果均存在且已通过 2.4 main Skill 要求的检查；
 - `parameterization_model.mol2`、`parameterization.chg` 与 `parameterized_topology.itp` 之间的逐原子对应可确定；
-- `parameterized_structure.gro` 中每个实例的 residue name、atom name 和 residue 内原子顺序与 `parameterized_topology.itp` 一致；
-- `parameterization_model.map` 与 `parameterized_structure.map` 对 Stage 1 来源原子保留已有 identity / provenance，并对 2.4 新增 H 使用 `2.4ADD`。
+- `parameterized_structure.gro` 中每个实例的残基名、原子名和残基内原子顺序与 `parameterized_topology.itp` 一致；
+- `parameterization_model.map` 与 `parameterized_structure.map` 对 Stage 1 来源原子保留已有身份与逐原子历史，并对 2.4 新增 H 使用 `2.4ADD`。
 
 ## 项目结果索引登记
 
