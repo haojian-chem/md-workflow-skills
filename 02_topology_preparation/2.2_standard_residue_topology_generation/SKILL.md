@@ -1,6 +1,6 @@
 ---
 name: standard-residue-topology-generation
-description: 为当前处理范围内的标准残基生成 GROMACS 全原子结构与拓扑。当前仅包含已经确认并冻结的前半部分规则。
+description: 为当前处理范围内的标准残基生成 GROMACS 全原子结构、拓扑及对应原子映射，并形成正式结果记录。
 ---
 
 # 2.2 Standard residue topology generation
@@ -58,3 +58,54 @@ pdb2gmx 完成后，核验其生成的标准残基全原子结构和拓扑。
 
 若当前只有一条 chain，且 pdb2gmx 将该 moleculetype 的完整分子拓扑直接写入 `.top`，
 需将对应分子拓扑分离为独立 `.itp`，并使 `.top` 通过 `#include` 引用该 `.itp`。
+
+## 原子映射
+
+生成标准残基全原子结构后，读取：
+
+`../../references/atom_mapping_rules.md`
+
+同时读取与当前 `stage1_final.pdb` 对应的 `stage1_final_map.yaml`，
+按共享原子映射规则维护当前处理范围内标准残基的映射，生成：
+
+```text
+2.2_standard.map
+```
+
+来自 Stage 1 的原子继承已有 `original_atom_serial`、`component_id + residue_id` 和 `operations`，
+并按 2.2 输出结构更新 `current_atom_serial`。
+
+pdb2gmx 新增、且输入结构中不存在对应 atom 的原子建立新记录，
+`original_atom_serial` 为 `null`，并使用：
+
+```text
+2.2ADD
+```
+
+记录该新增操作。
+
+## 正式结果
+
+生成正式结果时读取：
+
+`references/results.md`
+
+按其中定义形成：
+
+```text
+standard_residue_topology_result.yaml
+2.2_standard_structure.gro
+2.2_standard.map
+2.2_standard.top
+每条 chain 对应的独立 .itp
+```
+
+`standard_residue_topology_result.yaml` 记录本次实际依赖的上游文件、
+实际使用的力场及其它参数定义来源、pdb2gmx 输入 PDB、实际执行命令、
+pdb2gmx 执行过程中实际采用的选择，以及上述正式结果文件的完整路径。
+
+`2.2_standard.top` 作为当前 2.2 topology 的主入口，
+正式结果记录同时逐项保存该 `.top` 实际引用的各 chain `.itp`。
+
+完成后按仓库级 Task Execution 规则更新当前 2.2 工作项状态，
+并按 `references/results.md` 将 2.2 正式结果文件登记到项目结果索引。
