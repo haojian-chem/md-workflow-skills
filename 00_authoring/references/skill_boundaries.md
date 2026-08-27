@@ -75,6 +75,18 @@ legacy/
 
 main Skill 必须说明何时读取 reference；不得启动时扫描整个 reference tree。
 
+复杂正式结果的详细接口说明也属于当前 Skill 自己的 reference。满足结果字段多、结果文件关系复杂、被多个后续环节读取等条件时，优先使用：
+
+```text
+references/results.md
+```
+
+main Skill 只保留正式结果摘要、结果入口和必要完成条件；详细结果生成与 `results.md` 规则读取：
+
+`result_generation_rules.md`
+
+`references/results.md` 是 Skill source reference，不是科研执行生成的 result artifact，也不是 handoff 文件。
+
 确有跨多个科研执行 Skill 共用价值、且不属于任何单一 Stage / Step 科学职责的通用 Task Execution 规则统一位于：
 
 ```text
@@ -133,6 +145,8 @@ require: 当前职责依赖哪项已冻结能力
 - 每个字段记录什么信息；
 - 字段的取值、`null`、路径、枚举等语义；
 - 为正确解释或验证当前结果所必需的结果内部约束。
+
+当这些内容已经进入当前 Skill 的 `references/results.md` 后，该文件是详细结果接口说明的 owner；main `SKILL.md` 不再复制同一套字段与格式说明。其它 Skill 为了解释该正式结果可以按需读取 `results.md`，但读取不改变当前结果 owner。
 
 不得借 results、report format、schema 示例或字段含义说明去规定：
 
