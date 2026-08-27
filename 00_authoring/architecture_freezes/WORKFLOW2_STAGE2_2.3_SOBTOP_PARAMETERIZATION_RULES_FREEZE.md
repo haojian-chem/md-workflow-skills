@@ -34,8 +34,8 @@ Sobtop 参数化环节同时处理 LJ 参数。
 当前 Merz 离子 LJ 参数保存于 Stage 2 共享 references：
 
 ```text
-02_topology_preparation/references/merz_ion_lj_12-6.itp
-02_topology_preparation/references/merz_ion_lj_12-6-4.itp
+02_topology_preparation/references/12-6.itp
+02_topology_preparation/references/12-6-4.itp
 ```
 
 每个参数文件在注释区域集中定义文献引用，例如：
