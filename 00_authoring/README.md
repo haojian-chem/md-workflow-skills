@@ -68,11 +68,11 @@ Manager：
 
 Stage / Step / Workflow freeze 位于 `architecture_freezes/`；跨 Stage runtime 与 Master Plan 位于 `project_design/`；历史材料位于 `archive/`。
 
-科研执行阶段的跨 Stage validation / result generation / result-recording 规则位于仓库级 shared reference：
+科研执行 Skill 共用的 validation、正式结果生成、结果记录与结果接口规则位于仓库级 shared reference：
 
 `../references/result_generation_rules.md`
 
-Authoring 在设计或重构 results 时也读取该 execution shared reference，而不是在 `00_authoring/references/` 维护第二份结果规则。
+Authoring 在设计或重构 results 时按上游 authoring 规则读取该 execution shared reference，而不是在 `00_authoring/references/` 维护第二份结果规则。
 
 复杂正式结果接口优先由对应 Skill 自己的 `references/results.md` 说明；该文件是 Skill source reference，不是 runtime result artifact。
 
@@ -98,8 +98,8 @@ main Skill
 
 ```text
 具体业务规则 → current Skill / local reference
-跨 Stage Task Execution 规则 → ../references/task_execution_rules.md
-跨 Stage validation / result generation / result-recording 规则 → ../references/result_generation_rules.md
+科研执行 Skill 共用的 Task Execution 规则 → ../references/task_execution_rules.md
+科研执行 Skill 共用的 validation / result generation / result-recording 规则 → ../references/result_generation_rules.md
 尚未生成 Skill 的已冻结规则 → architecture_freezes/
 跨 Stage runtime → project_design/lightweight_runtime_v2_spec.md
 Stage catalog / 建设状态 / current entry → project_design/MD_WORKFLOW_MASTER_PLAN.md
