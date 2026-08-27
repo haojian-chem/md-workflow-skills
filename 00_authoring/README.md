@@ -5,12 +5,13 @@
 ## Single authoring entry
 
 ```text
-AGENTS.md
-→ 00_authoring/SKILL.md
+00_authoring/SKILL.md
 → 当前负责的目标 Skill / 文件
 ```
 
 `00_authoring/SKILL.md` 是唯一 authoring 主入口。
+
+测试或运行环境中的 `AGENTS.md` 如果存在，只用于 Skill 体系外定位需要加载的 Skill；它不属于 authoring chain、Skill package 或 reference dependency。
 
 ## Scientific Stage roots
 
@@ -66,11 +67,17 @@ legacy/     # old contracts / runtime / runtime-dependent tools
 
 Stage / Step / Workflow freeze 位于 `architecture_freezes/`；跨 Stage runtime 与 Master Plan 位于 `project_design/`；历史材料位于 `archive/`。
 
+科研 Skill 的详细结果生成规则位于：
+
+`references/result_generation_rules.md`
+
+复杂正式结果接口优先由对应 Skill 自己的 `references/results.md` 说明；该文件是 Skill source reference，不是 runtime result artifact。
+
 ## Current Skill model
 
 ```text
 main Skill
-├── references/        # optional long / conditional detail
+├── references/        # optional long / conditional detail; complex result interface may use results.md
 ├── schemas/           # only when truly machine-useful
 ├── scripts/           # Skill-local deterministic helper
 └── supporting Skill   # only when complex and clearly bounded
