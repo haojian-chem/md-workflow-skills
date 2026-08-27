@@ -16,7 +16,7 @@
 
 普通空间构象差异本身不构成拆分参数定义的理由。
 
-若发现同名实例实际需要不同参数定义，不在 2.4 内静默拆分或为同一 residue name 生成多套参数；提醒用户为需要不同参数定义的对象设置不同 residue name 后再继续。
+若发现同名实例实际需要不同参数定义，不在 2.4 内静默拆分或为同一残基名生成多套参数；提醒用户为需要不同参数定义的对象设置不同残基名后再继续。
 
 ## 代表实例
 
@@ -28,7 +28,7 @@
 
 从 `stage1_final.pdb` 提取代表实例的当前重原子坐标，并使用 `stage1_final_map.yaml` 中已有的 `component_id + residue_id` 与逐原子记录建立对应关系。
 
-不得仅根据 residue name、chain、resid 或原子顺序重新推断原子身份。
+不得仅根据残基名、chain、resid 或原子顺序重新推断原子身份。
 
 ## 补氢
 
@@ -60,7 +60,7 @@ parameterization_model.map
 
 来自 `stage1_final.pdb` 的原子：
 
-- 保留 `stage1_final_map.yaml` 对应 record 的 `original_atom_serial`；
+- 保留 `stage1_final_map.yaml` 对应记录的 `original_atom_serial`；
 - 保留该原子的 `component_id + residue_id`；
 - 保留已有 `operations`；
 - 只更新为 `parameterization_model.mol2` 中对应的 `output_atom_index`。
