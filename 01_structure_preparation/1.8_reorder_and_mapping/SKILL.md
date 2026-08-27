@@ -61,6 +61,12 @@ topology_linked_checks[]
 
 1.3 target 记录用于确认当前 target 的 selection 以及其中已经建立的中间 residue mapping；最终 chain / `resid` 由本步骤重新组织后，以 `stage1_final.pdb` 与最终原子映射共同确定。
 
+进入实质重排前，上述当前 PDB、匹配原子映射、1.3 target 记录和 1.2 正式结果必须能够唯一组成同一个 target 的输入集合。若存在多个合理候选且正式 Stage 1 handoff、Task Sheet 或已有项目记录不能唯一确定，不按“最新文件”、目录顺序、文件名相似度或 Agent 经验自行选择，先向用户确认。
+
+最终 chain 组织按本 Skill 的明确规则由 Agent 判断。若现有正式分类、topology-linked 关系、residue 顺序和聚合物链证据仍留下多个实质不同且都合理的最终组织方案，并且不同方案会改变 final chain、`resid`、`TER` 或 `stage1_final_map.yaml` 对应关系，则向用户说明歧义后确认；不得仅根据空间接近、当前 PDB chain ID 外观或整理便利性自行决定。已有正式信息和本 Skill 规则能够唯一闭合时直接执行，不重复询问。
+
+上述关键输入或组织决定未闭合前，可以做只读核对，但不得开始依赖该未决事项的 chain / `resid` 改写、重排或正式结果生成。
+
 ## Reuse
 
 1.8 不设置 reuse。
