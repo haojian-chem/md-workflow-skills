@@ -16,6 +16,10 @@ Status: CURRENT AUTHORING REFERENCE
 
 `WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md`
 
+Sobtop 参数化相关规则已经专项保存于：
+
+`WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md`
+
 Stage 2 总体架构继续读取：
 
 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`
@@ -59,7 +63,7 @@ parameterization_model.map
 
 ### 1.4 Sobtop 参数化并生成 `parameterized_topology.itp`
 
-Sobtop 参数化及 `parameterized_topology.itp` 的生成属于同一科研处理环节。详细参数化规则继续在 2.3 设计中确定。
+Sobtop 参数化及 `parameterized_topology.itp` 的生成属于同一科研处理环节，读取 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md` 中已经敲定的规则；其它尚未敲定的详细规则继续在 2.3 设计中确定。
 
 ## 2. 2.3 正式结果记录
 
