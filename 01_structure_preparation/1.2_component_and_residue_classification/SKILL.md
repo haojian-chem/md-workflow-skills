@@ -5,7 +5,7 @@ description: 结构准备 1.2。对 1.1 已确定结构来源中的实际 model 
 
 # 1.2 Component and residue classification
 
-跨 Stage 的通用 Task Execution 规则读取：
+通用 Task Execution 规则读取：
 
 `../../references/task_execution_rules.md`
 
