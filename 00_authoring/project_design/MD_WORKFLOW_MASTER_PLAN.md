@@ -94,7 +94,7 @@ Stage 1.7–1.9 architecture records:
 
 ## 4. Stage 2 — Topology / parameterization
 
-Status: ARCHITECTURE FROZEN; **2.1 AND 2.3 ACTIVE; STAGE MAIN, 2.2, AND 2.4–2.6 FREEZE-ONLY**.
+Status: ARCHITECTURE FROZEN; **2.1, 2.3, AND 2.4 ACTIVE; STAGE MAIN, 2.2, AND 2.5–2.6 FREEZE-ONLY**.
 
 Stage 2 架构包括一个阶段级 main Skill 和六个编号科研 Step。未来阶段级 runtime entry 固定为：
 
@@ -121,12 +121,12 @@ Current / reserved Step directories:
 02_topology_preparation/2.1_topology_preparation_setup/                         # active
 02_topology_preparation/2.2_standard_residue_topology_generation/              # reserved
 02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/      # active
-02_topology_preparation/2.4_independent_nonstandard_parameterization/          # reserved
+02_topology_preparation/2.4_independent_nonstandard_parameterization/          # active
 02_topology_preparation/2.5_topology_integration_and_assembly/                  # reserved
 02_topology_preparation/2.6_topology_validation/                               # reserved
 ```
 
-当前 2.1 与 2.3 已生成 active Skill；2.1 与 2.3 均已完成 post-generation authoring/interface consistency check。2.3 current entry 为 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`；Stage 2 main Skill、2.2 与 2.4–2.6 尚未生成 active `SKILL.md`。
+当前 2.1、2.3 与 2.4 已生成 active Skill；2.1、2.3 与 2.4 均已完成 post-generation authoring/interface consistency check。current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`；Stage 2 main Skill、2.2 与 2.5–2.6 尚未生成 active `SKILL.md`。
 
 Stage-level architecture authority:
 
@@ -135,6 +135,10 @@ Stage-level architecture authority:
 2.3 current runtime entry:
 
 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`
+
+2.4 current runtime entry:
+
+`02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`
 
 2.3 detailed architecture freezes remain current authoring records, including:
 
@@ -150,7 +154,7 @@ Stage-level architecture authority:
 00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
 ```
 
-These files remain architecture/authoring records rather than runtime Skills; 2.3 now uses its active current entry above, while 2.5 remains pending formal Skill generation.
+These files remain architecture/authoring records rather than runtime Skills; 2.3 and 2.4 now use their active current entries above, while 2.5 remains pending formal Skill generation.
 
 ## 5. Stage 3 — System construction / solvation
 
@@ -285,7 +289,7 @@ Historical design Markdown: `00_authoring/archive/`.
 ## 9. Current work status
 
 - Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 保持 current；topology-linked 检查与正式记录已同步为 schema v4 的统一 `topology_linked_checks[]`，三类判据完整记录，人工关系决策仅通过 `relation_id` 对应；Stage 1 atom mapping 当前采用 chained map：1.3 初始化，1.4 / 1.6 / 1.7 / 1.8 copy-and-update，记录 `current_atom_serial + original_atom_serial + component_id + residue_id + operations`，1.8 写出 `stage1_final_map.yaml`，1.9 做最终逐原子/provenance验证；1.6 whole-residue / coordinate replacement 已区分 provenance-preserving `1.6REPLACE` 与真正新增的 `1.6ADD`；
-- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1 与 2.3 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md` 与 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`；Stage main、2.2 与 2.4–2.6 仍为 freeze-only，2.3 与 2.5 的详细方案保留专项 architecture freeze；
+- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1、2.3 与 2.4 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`；Stage main、2.2 与 2.5–2.6 仍为 freeze-only，2.3 与 2.5 的详细方案保留专项 architecture freeze；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
