@@ -40,9 +40,10 @@ Manager：
 ## Unnumbered repository infrastructure
 
 ```text
-evals/      # tests / fixtures / validation evidence / benchmark
-tools/      # current shared deterministic tools
-legacy/     # old contracts / runtime / runtime-dependent tools
+../references/   # execution shared references
+../evals/        # tests / fixtures / validation evidence / benchmark
+../tools/        # current shared deterministic tools
+../legacy/       # old contracts / runtime / runtime-dependent tools
 ```
 
 这些目录不是 Scientific Stage roots，因此不使用 `03_`、`04_`、`05_` 等 Stage 编号。
@@ -67,9 +68,11 @@ legacy/     # old contracts / runtime / runtime-dependent tools
 
 Stage / Step / Workflow freeze 位于 `architecture_freezes/`；跨 Stage runtime 与 Master Plan 位于 `project_design/`；历史材料位于 `archive/`。
 
-科研 Skill 的详细结果生成规则位于：
+科研执行阶段的跨 Stage validation / result generation / result-recording 规则位于仓库级 shared reference：
 
-`references/result_generation_rules.md`
+`../references/result_generation_rules.md`
+
+Authoring 在设计或重构 results 时也读取该 execution shared reference，而不是在 `00_authoring/references/` 维护第二份结果规则。
 
 复杂正式结果接口优先由对应 Skill 自己的 `references/results.md` 说明；该文件是 Skill source reference，不是 runtime result artifact。
 
@@ -94,11 +97,13 @@ main Skill
 ## Authority
 
 ```text
-具体业务规则 → current Skill / reference
+具体业务规则 → current Skill / local reference
+跨 Stage Task Execution 规则 → ../references/task_execution_rules.md
+跨 Stage validation / result generation / result-recording 规则 → ../references/result_generation_rules.md
 尚未生成 Skill 的已冻结规则 → architecture_freezes/
 跨 Stage runtime → project_design/lightweight_runtime_v2_spec.md
 Stage catalog / 建设状态 / current entry → project_design/MD_WORKFLOW_MASTER_PLAN.md
-current shared Tool → tools/
+current shared Tool → ../tools/
 historical design → archive/
 legacy executable/runtime material → ../legacy/
 ```
