@@ -1,9 +1,5 @@
 # 2.3 正式结果记录
 
-本 reference 由 `../SKILL.md` 在生成和登记 `topology_linked_parameterization_result.yaml` 时读取，并作为该正式结果记录格式与字段语义的 owner。
-
-结果文件和依赖文件路径遵循仓库级 `../../../references/task_execution_rules.md` 的正式结果路径规则。
-
 ## 正式结果文件
 
 2.3 生成：
