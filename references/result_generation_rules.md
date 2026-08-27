@@ -2,21 +2,17 @@
 
 Status: CURRENT SHARED REFERENCE
 
-本文件定义科研执行 Skill 在 validation、正式结果生成、结果接口解释与项目结果登记时共同遵守的跨 Stage 规则。
+本文件定义本项目所有科研执行 Skill 共同遵守的 validation、正式结果生成、结果记录与结果接口规则。
 
-它与 `references/task_execution_rules.md` 同属仓库级 execution shared references，不是独立 Skill、不是额外 runtime 环节，也不改变任何 Stage / Step / capability Skill 对自身科学结果的 ownership。
+各科研执行 Skill 继续拥有自身的：
 
-Task Execution Agent 在进入当前 Skill 的 validation、正式结果生成、结果解释或 project-result registration 时按需读取本文件。Authoring 在设计或重构科研 Skill 的 results 时也读取本文件，以保证 Skill-specific 结果接口与真实执行规则一致。
-
-当前 Stage / Step / capability Skill 继续拥有：
-
-- 自己产生哪些正式结果；
-- 各结果文件 / 字段的具体科学与接口语义；
+- 正式结果集合；
+- 结果文件 / 字段的具体科学与接口语义；
 - Skill-specific validation requirement；
 - project-result registration 白名单；
-- 当前结果成为正式可用结果的具体条件。
+- 结果成为正式可用结果的具体条件。
 
-本文件只拥有跨 Skill 共用的结果生成与记录机制，不建立统一科学结果 schema。
+本文件只拥有科研执行 Skill 共用的结果生成与记录机制，不建立统一科学结果 schema。
 
 ## 1. Validation ownership
 
@@ -33,7 +29,7 @@ Tool 可以负责自己确定性输出的机械 / 格式有效性；科研 Skill
 
 ## 2. 正式结果与项目结果索引
 
-`project_result_index.md` 只登记当前 Skill / Stage 明确允许登记的正式结果或结果事项，不登记 debug、scratch、cache、中间工作文件或为了“完整”而产生的重复索引。
+`project_result_index.md` 只登记当前结果 owner 明确允许登记的正式结果或结果事项，不登记 debug、scratch、cache、中间工作文件或为了“完整”而产生的重复索引。
 
 Skill-specific project-result registration 白名单由对应结果 owner 定义，包括：
 
@@ -214,9 +210,7 @@ schema
 
 普通相邻 Step 的流程关系由拥有该关系的 Stage main Skill 表达；下游如何消费上游结果，由下游 Skill 自己的输入 / 对象规则定义。
 
-## 12. 执行与 authoring 检查
-
-进入当前 Skill 的 validation / results 阶段或设计结果接口时确认：
+## 12. 结果规则检查
 
 - [ ] 当前结果 owner 与 validation ownership 清楚；
 - [ ] main `SKILL.md` 保留足够的正式结果摘要与详细结果说明入口；
