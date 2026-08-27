@@ -1,7 +1,5 @@
 # 2.3 电荷拟合
 
-本 reference 由 `../SKILL.md` 在 SP 计算、电荷拟合以及生成 `charge_fitting_result.yaml` / `parameterization.chg` 时读取。
-
 ## 电荷拟合对象与范围
 
 电荷拟合对象为当前参数化模型。
@@ -157,10 +155,8 @@ charge_fitting_result.yaml
 - RESP2 采用时的实际混合权重；
 - 各次 RESP 产生的 `.chg` 文件；
 - RESP2 采用时生成的两套 RESP2 `.chg` 文件；
-- 本 reference 规定的检查结果；
+- 上述检查结果；
 - 最终被选中用于生成 `parameterization.chg` 的实际 `.chg` 文件。
-
-结果文件和依赖文件路径按仓库级 `../../../references/task_execution_rules.md` 的正式结果路径规则记录。
 
 RESP2 情况下可采用以下组织方式；实际文件 basename 不统一固定：
 
