@@ -7,8 +7,8 @@
 建立参数化模型时使用：
 
 - 当前 Task Sheet 中本次 2.3 工作项确定的 `TOPOLOGY_LINKED_NONSTANDARD` 残基组合；
-- `classification_result.yaml` 中与这些残基相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`，包括 `relation_id`、连接端点 residue identity 与 atom name；
-- `stage1_final_map.yaml`，用于读取稳定的 `component_id + residue_id`、atom mapping 与既有 `operations`；
+- `classification_result.yaml` 中与这些残基相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`，包括 `relation_id`、连接端点的 `component_id + residue_id` 与 atom name；
+- `stage1_final_map.yaml`，用于读取稳定的 `component_id + residue_id`、原子映射与既有 `operations`；
 - `stage1_final.pdb`，用于读取 `TOPOLOGY_LINKED_NONSTANDARD` 残基当前重原子坐标；
 - 当前 2.2 正式结果中的全原子标准残基结构与对应 map，用于提取标准残基片段及 2.2 新增 H。
 
@@ -43,15 +43,15 @@
 
 ## `parameterization_model.map`
 
-`parameterization_model.map` 以 `stage1_final_map.yaml` 为稳定身份与 atom-level history 的主 baseline，不把 2.2 map 作为整体父级。
+`parameterization_model.map` 以 `stage1_final_map.yaml` 为稳定身份与逐原子历史的主基线，不把 2.2 map 作为整体父级。
 
 参数化模型中各类原子按以下方式维护：
 
-1. `TOPOLOGY_LINKED_NONSTANDARD` source heavy atoms，以及标准残基片段中能够对应到 Stage 1 最终结构的 atoms：保留 `stage1_final_map.yaml` 对应 record 的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新为参数化模型中的 `output_atom_index`。
-2. 标准残基片段中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 读取对应 record，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 operation history，再更新为参数化模型中的 `output_atom_index`。
-3. 2.3 为 `TOPOLOGY_LINKED_NONSTANDARD` residue 新增的 H：建立新 record，`original_atom_serial: null`，保存所属 residue 的 `component_id + residue_id`，`operations = [2.3ADD]`。
-4. 参数化模型截断 / 封端产生的临时 CAP atom：建立 `2.3CAP` record，`original_atom_serial: null`，`component_id: null`，`residue_id: null`。
-5. 因参数化模型截取而未纳入的 atoms，以及标准残基一侧因拓扑连接而在参数化模型中去除的 atoms，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子由正式结果记录保存。
+1. `TOPOLOGY_LINKED_NONSTANDARD` 来源重原子，以及标准残基片段中能够对应到 Stage 1 最终结构的原子：保留 `stage1_final_map.yaml` 对应记录的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新为参数化模型中的 `output_atom_index`。
+2. 标准残基片段中由 2.2 新增、Stage 1 最终结构中不存在的 H：从 2.2 map 读取对应记录，保留 `original_atom_serial: null`、`component_id + residue_id` 和包含 `2.2ADD` 的 `operations` 历史，再更新为参数化模型中的 `output_atom_index`。
+3. 2.3 为 `TOPOLOGY_LINKED_NONSTANDARD` 残基新增的 H：建立新记录，`original_atom_serial: null`，保存所属残基的 `component_id + residue_id`，`operations = [2.3ADD]`。
+4. 参数化模型截断 / 封端产生的临时 CAP 原子：建立 `2.3CAP` 记录，`original_atom_serial: null`，`component_id: null`，`residue_id: null`。
+5. 因参数化模型截取而未纳入的原子，以及标准残基一侧因拓扑连接而在参数化模型中去除的原子，不写入当前 2.3 map；标准残基一侧需要在 2.5 实际删除的原子由正式结果记录保存。
 
 逐原子核心字段：
 
@@ -65,7 +65,7 @@ operations:
 
 ## 结果
 
-完成模型范围、标准残基一侧原子处理、非标准残基补氢和封端后，确定参数化模型的 atom set 与 atom order，并生成：
+完成模型范围、标准残基一侧原子处理、非标准残基补氢和封端后，确定参数化模型的原子集合与原子顺序，并生成：
 
 ```text
 parameterization_model.mol2
@@ -73,4 +73,4 @@ parameterized_structure.gro
 parameterization_model.map
 ```
 
-三者使用同一套已确定的 atom order；后续量化计算、电荷拟合和 Sobtop 参数化沿用该原子对应关系。
+三者使用同一套已确定的原子顺序；后续量化计算、电荷拟合和 Sobtop 参数化沿用该原子对应关系。
