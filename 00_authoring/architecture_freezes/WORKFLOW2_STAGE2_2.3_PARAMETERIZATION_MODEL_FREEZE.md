@@ -63,7 +63,7 @@ parameterization_model.map
 
 ### 1.4 Sobtop 参数化并生成 `parameterized_topology.itp`
 
-Sobtop 参数化及 `parameterized_topology.itp` 的生成属于同一科研处理环节，读取 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md` 中已经敲定的规则；其它尚未敲定的详细规则继续在 2.3 设计中确定。
+Sobtop 参数化及 `parameterized_topology.itp` 的生成属于同一科研处理环节，读取 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md` 中已经敲定的规则。
 
 ## 2. 2.3 正式结果记录
 
@@ -77,6 +77,7 @@ topology_linked_parameterization_result.yaml
 
 - 本次实际引用的上游正式文件；
 - 六个 2.3 核心结果文件；
+- 最终实际采纳的 OPT / FREQ / SP 任务路径；
 - 标准残基一侧需要删除的原子；
 - 残基级电荷修改范围。
 
@@ -169,7 +170,22 @@ results:
 - `charge_fitting_result.yaml`：电荷拟合环节的独立正式结果记录，保存 SP 结果文件、实际拟合方法与设置、各候选 `.chg` 结果、检查结果及最终选中的电荷文件；
 - `parameterized_topology.itp`：Sobtop 参数化环节生成的 topology。
 
-### 2.5 最小结构示例
+### 2.5 最终采纳的量化计算任务路径
+
+`topology_linked_parameterization_result.yaml` 记录本次参数化最终实际采纳的 OPT、FREQ 和 SP 任务路径：
+
+```yaml
+quantum_tasks:
+  opt: /absolute/path/to/opt_task
+  freq: /absolute/path/to/freq_task
+  sp:
+    - /absolute/path/to/sp_task_1
+    - /absolute/path/to/sp_task_2
+```
+
+`sp` 只记录本次实际采纳的 SP 任务路径；实际只有一个 SP 任务时仅记录一项。
+
+### 2.6 最小结构示例
 
 ```yaml
 references:
@@ -187,6 +203,13 @@ results:
   parameterized_structure: /absolute/path/to/parameterized_structure.gro
   parameterized_topology: /absolute/path/to/parameterized_topology.itp
 
+quantum_tasks:
+  opt: /absolute/path/to/opt_task
+  freq: /absolute/path/to/freq_task
+  sp:
+    - /absolute/path/to/sp_task_1
+    - /absolute/path/to/sp_task_2
+
 standard_atom_deletions:
   - structure: STANDARD_STRUCTURE_1
     atom_index: 123
@@ -202,8 +225,8 @@ charge_modification_scope:
     topology_class: TOPOLOGY_LINKED_NONSTANDARD
 ```
 
-### 2.6 项目结果索引登记
+### 2.7 项目结果索引登记
 
-2.3 完成并通过本环节 validation 后，将 `topology_linked_parameterization_result.yaml` 登记到项目结果索引。项目结果索引保存该正式结果记录的完整路径，用它作为定位本次 2.3 全部正式结果的入口。
+2.3 完成后，将 `topology_linked_parameterization_result.yaml` 登记到项目结果索引。项目结果索引保存该正式结果记录的完整路径，用它作为定位本次 2.3 全部正式结果的入口。
 
 六个核心结果文件已经由该正式结果记录的 `results` 统一定位，因此不在项目结果索引中分别建立独立结果项。
