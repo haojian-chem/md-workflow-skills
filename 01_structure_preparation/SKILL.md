@@ -5,7 +5,7 @@ description: Stage 1 Structure preparation 的阶段级导航 Skill。定义 1.1
 
 # 1 Structure preparation
 
-跨 Stage 的通用 Task Execution 规则读取：
+通用 Task Execution 规则读取：
 
 `../references/task_execution_rules.md`
 
