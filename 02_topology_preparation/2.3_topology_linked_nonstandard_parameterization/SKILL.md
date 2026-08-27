@@ -1,6 +1,6 @@
 ---
 name: topology_linked_nonstandard_parameterization
-description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理的 topology-linked 非标准残基组合建立参数化模型，完成量化计算、电荷拟合与 Sobtop 参数化，并生成供 2.5 使用的正式参数化结果。
+description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理的 topology-linked 非标准残基组合建立参数化模型，完成量化计算、电荷拟合与 Sobtop 参数化，并生成正式参数化结果。
 ---
 
 # 2.3 Topology-linked nonstandard parameterization
@@ -22,7 +22,7 @@ description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理
 → Sobtop 参数化并生成 parameterized_topology.itp
 ```
 
-形成可由 2.5 定位和整合的 `topology_linked_parameterization_result.yaml`。
+形成当前 2.3 工作项的正式结果记录 `topology_linked_parameterization_result.yaml`。
 
 ## 输入与依据
 
@@ -31,10 +31,10 @@ description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理
 - 当前 Task Sheet，确定本次共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基组合，以及 2.1 已确认的力场 / 参数定义来源；
 - 当前体系对应的 1.2 正式 `classification_result.yaml`，读取与当前处理对象相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`；
 - 当前体系的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
-- 当前 Task Sheet 引用的有效 2.2 正式结果，从中定位标准残基全原子结构及对应 map；
-- 非标准残基补氢需要使用的实际 CCD reference。
+- 当前 Task Sheet 引用、且由 2.1 已判定可用于当前体系的 2.2 正式结果，从中定位标准残基全原子结构及对应 map；
+- 非标准残基补氢实际使用的 CCD 文件。
 
-下游身份持续使用正式结果中已有的 `component_id + residue_id`，不根据 residue name、chain、resid 或当前空间位置重新建立 residue identity。
+当前 2.3 沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据 residue name、chain、resid 或当前空间位置重新建立。
 
 ## Reuse
 
@@ -60,10 +60,10 @@ parameterization_model.map
 
 三者使用同一原子集合与原子顺序。
 
-同时确定并保留两类后续接口信息：
+同时确定并保留两类正式结果信息：
 
-1. `standard_atom_deletions`：标准残基一侧因已确认拓扑连接而需要在 2.5 实际删除的原子；
-2. `charge_modification_scope`：最终拓扑中需要采用本次 2.3 新电荷的全部真实残基，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 残基。仅作为参数化模型外围环境或 CAP 环境保留的部分不列入该范围。
+1. `standard_atom_deletions`：标准残基一侧因已确认拓扑连接而需要从最终结构 / 拓扑中删除的原子；
+2. `charge_modification_scope`：最终拓扑中需要采用本次 2.3 新电荷的全部真实残基，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 残基。仅作为参数化模型外围环境或封端环境保留的部分不列入该范围。
 
 `charge_modification_scope` 中每个残基使用 `component_id + residue_id` 定位，并保留 `topology_class` 供检查。
 
@@ -96,13 +96,13 @@ parameterization.chg
 
 ## Sobtop 参数化
 
-继续按 `references/quantum_and_sobtop.md` 执行 Sobtop 参数化，生成正式：
+继续按 `references/quantum_and_sobtop.md` 完成 Sobtop 参数化，生成正式：
 
 ```text
 parameterized_topology.itp
 ```
 
-若当前体系所需 LJ 参数缺失，按该 reference 指定的参数文件和当前实际体系补充；Sobtop 输出的 residue name / atom name 与用于 Sobtop 的 mol2 不一致时，按该 mol2 中对应原子的名称修正。
+该 reference 同时规定 FREQ 检查后的 Sobtop 输入、缺失 LJ 参数补充及 Sobtop 输出名称处理规则。
 
 ## 正式结果记录
 
@@ -118,7 +118,7 @@ topology_linked_parameterization_result.yaml
 
 记录本次正式结果实际依赖的上游文件；如多个字段复用同一公共绝对路径，可按仓库级 Task Execution 规则定义公共路径引用。
 
-至少能够定位实际使用的：
+至少记录实际使用的：
 
 ```yaml
 references:
@@ -228,4 +228,4 @@ charge_modification_scope:
 
 随后按仓库级 Task Execution 规则更新当前 Task Sheet 的 2.3 工作项状态，并记录当前正式结果路径。
 
-2.3 不直接修改 2.2 基线结构 / 拓扑；`standard_atom_deletions` 与 `charge_modification_scope` 的实际最终整合由 2.5 使用当前正式结果完成。
+2.3 不直接修改 2.2 基线结构 / 拓扑。
