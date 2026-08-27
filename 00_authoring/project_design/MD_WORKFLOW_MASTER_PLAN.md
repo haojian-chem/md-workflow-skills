@@ -150,7 +150,7 @@ Stage-level architecture authority:
 00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md
 ```
 
-These files preserve the detailed pre-authorization 2.3 / 2.5 material for later formal Skill generation; they are not runtime Skills.
+These files remain architecture/authoring records rather than runtime Skills; 2.3 now uses its active current entry above, while 2.5 remains pending formal Skill generation.
 
 ## 5. Stage 3 — System construction / solvation
 
