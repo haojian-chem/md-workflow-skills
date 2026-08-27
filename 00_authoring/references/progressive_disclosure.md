@@ -28,6 +28,18 @@ Status: CURRENT
 检测到金属配位问题时，再读取 references/coordination_rules.md
 ```
 
+复杂正式结果的详细接口说明也是渐进披露对象。结果包含多个正式文件、结构化字段、复杂定位关系或会被后续 Skill 直接查阅时，优先把详细结果说明放到：
+
+```text
+references/results.md
+```
+
+main `SKILL.md` 只保留正式结果摘要、入口和必要完成条件，并说明需要解释详细结果格式 / 字段时读取该文件。其它 Skill 如果只需要定位和解释上游结果，可以按需读取该 `results.md`，不必为此加载完整上游执行规则。
+
+`results.md` 的生成、结果内部 `references`、路径和 project-result registration 规则见：
+
+`result_generation_rules.md`
+
 不得要求启动时默认扫描整个 `references/`。
 
 ## 3. Supporting Skill 的拆分条件
@@ -75,6 +87,7 @@ Agent 先读 main Skill
 2. 是否把长数据/registry 放错位置；
 3. 是否包含大量示例；
 4. 是否把 Tool 接口实现细节写进主 Skill；
-5. 是否存在真正复杂且可独立加载的 supporting responsibility。
+5. 是否把复杂 results 的完整字段 / report format 留在 main Skill，而不是按需下放到 `references/results.md`；
+6. 是否存在真正复杂且可独立加载的 supporting responsibility。
 
 长度本身不是拆 Skill 的充分理由；职责边界和按需加载收益才是。
