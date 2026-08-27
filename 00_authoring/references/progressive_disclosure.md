@@ -36,9 +36,9 @@ references/results.md
 
 main `SKILL.md` 只保留正式结果摘要、入口和必要完成条件，并说明需要解释详细结果格式 / 字段时读取该文件。其它 Skill 如果只需要定位和解释上游结果，可以按需读取该 `results.md`，不必为此加载完整上游执行规则。
 
-跨 Stage 通用的 validation、结果生成、结果内部 `references`、路径和 project-result registration 规则见仓库级 execution shared reference：
+科研执行 Skill 共用的 validation、结果生成、结果内部 `references`、路径和 project-result registration 规则见仓库级 execution shared reference：
 
-`references/result_generation_rules.md`
+`../../references/result_generation_rules.md`
 
 不得要求启动时默认扫描整个 `references/`。
 
