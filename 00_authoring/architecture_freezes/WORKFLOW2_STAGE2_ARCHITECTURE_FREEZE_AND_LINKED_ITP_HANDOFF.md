@@ -12,6 +12,7 @@
 - `2.3 Topology-linked nonstandard parameterization` 的建立参数化模型科学规则，包括一般范围规则、蛋白质截取/封端、核酸截取/封端、标准残基一侧原子变化、非标准残基补氢与 map 维护：**已专项冻结**；
 - `2.3` 的量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有；几何优化固定原子规则已经专项冻结到当前版本；
 - `2.3` 的 RESP / RESP2 电荷拟合科学规则：**已专项冻结**；
+- `2.3` 的 Sobtop 参数化当前已敲定规则：**已专项冻结**；
 - `2.3` 的当前科研处理环节、六个核心结果文件、正式结果记录及向 2.5 交付的信息：**已冻结到当前版本**；
 - `2.5 linked .itp integration` 的主要 molecule-level / parameter-level 科学规则：**冻结到当前版本**；
 - 尚未固定的其它文件 basename / schema / 目录名：**仍可在实现层细化**；
@@ -24,6 +25,7 @@ WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md
 WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md
 WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md
 WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md
+WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md
 ```
 
 2.5 更详细、可直接用于后续 Skill generation 的冻结材料位于：
@@ -295,6 +297,7 @@ WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md
 WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md
 WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md
 WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md
+WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md
 ```
 
 ## 5.1 处理单位
@@ -390,7 +393,7 @@ parameterization_model.map
 → Sobtop 参数化并生成 parameterized_topology.itp
 ```
 
-建立参数化模型和电荷拟合的详细科学规则已经分别专项保存；量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有，其中几何优化固定原子规则单独保存于 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`。Sobtop 参数化尚未敲定的详细规则继续在 2.3 设计中确定，不在 Stage 2 总架构中维护第二套规范。
+建立参数化模型和电荷拟合的详细科学规则已经分别专项保存；量化计算主线由 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md` 拥有，其中几何优化固定原子规则单独保存于 `WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`。Sobtop 参数化当前已经敲定的规则保存于 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md`，其余尚未敲定的详细规则继续在 2.3 设计中确定，不在 Stage 2 总架构中维护第二套规范。
 
 ## 5.9 正式结果
 
@@ -631,6 +634,7 @@ topology_integration_report.yaml
 - 2.3 建立参数化模型的一般规则、蛋白质与核酸截取/封端、标准残基一侧原子变化、非标准残基补氢和 map 维护已经专项冻结；
 - 2.3 量化计算的电子状态、OPT、FREQ 以及 RESP / RESP2 所需 SP 计算主线由 2.3 主 freeze 拥有；几何优化固定原子规则已经专项冻结到当前版本；
 - 2.3 RESP / RESP2 的 `Q_expected`、unconstrained / constrained two-stage 拟合、RESP2 混合与检查规则已经专项冻结；
+- 2.3 Sobtop 参数化中 FREQ 虚频及振动模式检查、OPT 结构生成拟合用 mol2、ORCA / Gaussian 频率结果文件、金属离子 LJ 参数预存组织及 Sobtop 输出名称修正规则已经专项冻结；
 - 2.3 建立参数化模型时生成 `parameterization_model.mol2`、`parameterized_structure.gro`、`parameterization_model.map`，三者采用同一套已确定 atom order；
 - 2.3 六个核心结果 basename 以及 `topology_linked_parameterization_result.yaml` 正式结果记录已经固定；项目结果索引只登记该正式结果记录；
 - 2.2 / 2.3 / 2.4 主要职责与输出层级；
@@ -655,7 +659,7 @@ topology_integration_report.yaml
 ## 仍可继续细化但不重新开放 Stage 2 架构
 
 - Stage 2 main Skill 正式生成时的 main/reference 文本组织与具体 reference basename；
-- 2.3 Sobtop 参数化尚未敲定的详细科学规则；
+- 2.3 Sobtop 参数化其余尚未敲定的详细规则；
 - 其它适用体系的 2.3 参数化模型截取/capping 专项规则；
 - 其余尚未固定的文件 basename、schema、deterministic tool implementation；
 - validator/testing fixture 与实现细节；
