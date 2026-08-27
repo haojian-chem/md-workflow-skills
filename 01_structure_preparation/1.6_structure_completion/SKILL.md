@@ -334,4 +334,6 @@ scripts/README.md
 
 如果 repair scope 已明确，但当前 evidence 仍不足以唯一建立 required reference correspondence、缺少可用 coordinate reference，或多个可行方案之间存在会影响结构正确性的实质科学歧义，向用户说明当前对象、现有 evidence 和具体歧义后确认。
 
-确认前不发布可误认作完成状态的正式结果。
+已有正式项目信息、当前上下文以及本 Skill / method reference 的规则能够唯一闭合时，可以直接继续，不为已经明确的事项重复询问。仍存在上述实质歧义时，不得因为某个 reference 更方便、文件先出现或某种处理更常见而自行选择。
+
+确认前可以完成不依赖该未决事项的只读检查和证据整理，但不得开始依赖该决定的 rename、atom deletion、coordinate transplant、whole-residue replacement 或其它结构修改，也不得发布可误认作完成状态的正式结果。
