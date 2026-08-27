@@ -42,7 +42,7 @@ description: <何时使用；当前 Skill 指导 Agent 解决什么问题；必�
 
 # Validation
 
-说明什么证据代表当前结果有效。Validation 默认由当前结果 owner 定义；只有复杂且边界清晰时才拆 supporting validation Skill。
+说明什么证据代表当前结果有效。Validation 默认由当前结果 owner 定义；跨 Stage 通用 validation / result generation 机制读取 `references/result_generation_rules.md`。只有复杂且边界清晰时才拆 supporting validation Skill。
 
 # Results
 
@@ -54,7 +54,7 @@ description: <何时使用；当前 Skill 指导 Agent 解决什么问题；必�
 
 main Skill 只保留摘要和读取入口；`references/results.md` 只定义当前结果本身，不规定下游 Skill 应如何执行。
 
-Authoring 时按 `00_authoring/references/result_generation_rules.md` 设计结果、路径、结果内部 `references`、Markdown `References` section 与 project-result registration。该 authoring reference 不写成生成后科研 Skill 的 runtime dependency。
+Authoring 和真实执行都以仓库级 `references/result_generation_rules.md` 为跨 Stage 结果生成规则 owner；当前 Skill 只定义自己的结果集合、字段语义、Skill-specific validation requirement 与 project-result registration 白名单。
 
 # References / supporting capabilities
 
@@ -92,5 +92,5 @@ legacy/  # Legacy executable/runtime material
 - [ ] reuse、validation 与 results 足以支持跨对话继续；
 - [ ] 复杂结果接口已经评估是否需要 `references/results.md`；
 - [ ] results 说明没有重新写成下游 handoff 规则；
-- [ ] 没有把 authoring reference 写成科研执行 Skill 的 runtime dependency；
+- [ ] 跨 Stage 通用结果规则没有在当前 Skill 重复定义；
 - [ ] 没有把 `evals/`、`tools/` 或 `legacy/` 当成 MD Workflow Stage Skill root。
