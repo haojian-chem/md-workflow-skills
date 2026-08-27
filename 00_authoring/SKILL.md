@@ -17,21 +17,26 @@ Manager
 → Task Execution Agent
 → 当前科研 main Skill
    ├─ repository shared task-execution reference
+   ├─ repository shared result-generation reference（按需）
    ├─ repository shared canonical terminology
    ├─ 按需 local references
    ├─ 必要时 supporting Skill
    └─ 必要时 deterministic Tool
 ```
 
-跨 Stage 的通用 Task Execution 规则统一读取：
+科研执行 Skill 共用的 Task Execution 规则统一读取：
 
 `../references/task_execution_rules.md`
+
+科研执行 Skill 共用的 validation、正式结果生成、结果记录与结果接口规则统一维护：
+
+`../references/result_generation_rules.md`
 
 跨 Skill 的正式术语统一维护：
 
 `../references/canonical_terminology.md`
 
-两者都是仓库级 shared reference，不是独立 Skill 或额外执行环节。Authoring 不在本文件复制其中的通用 Task Execution 规则或另建平行术语表。
+上述文件都是仓库级 shared reference，不是独立 Skill 或额外执行环节。Authoring 不在本文件复制其中的通用执行、结果生成规则或另建平行术语表。
 
 # Authoring reads
 
@@ -49,6 +54,7 @@ Manager
 之后只按任务需要读取：
 
 - 构筑、设计、审查、重构科研执行 Skill 或编写对应 freeze 时必须读取 `../references/task_execution_rules.md` 和 `../references/canonical_terminology.md`；
+- 当前 authoring 涉及 validation、results、`references/results.md`、结果文件 / 字段语义或 project-result registration 时，读取 `../references/result_generation_rules.md`；
 - 对应 Stage / Step 的 `architecture_freezes/`；
 - 与当前输入/输出/边界直接相关的相邻 Skill；
 - 当前 Skill 明确需要的 reference / Tool guide；
@@ -114,7 +120,7 @@ Scientific roots 按 MD Workflow Stage 固定为：
 
 `references/task_execution_rules.md`
 
-引用只建立通用 Task Execution 规则的可达性；Stage/Step/capability 自己的科学规则仍由其自身拥有。`task_execution_rules.md` 同时提供执行阶段按需读取 `canonical_terminology.md` 的入口，因此现有科研执行 Skill 不需要为了建立术语可达性而逐一新增平行 glossary。
+引用只建立通用 Task Execution 规则的可达性；Stage/Step/capability 自己的科学规则仍由其自身拥有。`task_execution_rules.md` 提供执行阶段按需读取 `canonical_terminology.md` 和 `result_generation_rules.md` 的入口，因此现有科研执行 Skill 不需要为了这两类 shared rule 再逐一建立平行 glossary 或重复的直接 result-generation 引用。
 
 **Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
 
@@ -162,6 +168,8 @@ current Skill / freeze
 读取 current main + 对应 freeze + authoring rules
 ↓
 读取 references/task_execution_rules.md + references/canonical_terminology.md
+↓
+若当前工作涉及 validation / results / 结果接口，再读取 references/result_generation_rules.md
 ↓
 确认执行 Skill 的共享 Task Execution 规则引用，并按 canonical terminology 归一化正式术语
 ↓
@@ -263,7 +271,7 @@ write ownership 必须窄
 
 Supporting Skill 只有在内容复杂、可独立加载、边界稳定且独立维护有价值时才拆；不要为了 validation 配对、目录对称或角色分类增加 Skill hop。
 
-仓库级 `../references/task_execution_rules.md` 与 `../references/canonical_terminology.md` 都是跨 Skill shared reference，不因被多个执行 Skill 使用而变成 supporting Skill。
+仓库级 `../references/task_execution_rules.md`、`../references/result_generation_rules.md` 与 `../references/canonical_terminology.md` 都是 shared reference，不因被多个执行 Skill 使用而变成 supporting Skill。
 
 # Tool boundary
 
@@ -279,11 +287,15 @@ Legacy runtime-dependent tools 位于 `../legacy/tools/`，不得为了调用它
 
 # Reuse, validation and results
 
-跨 Skill 的默认 Task Execution 语义读取：
+科研执行 Skill 共用的默认 Task Execution 语义读取：
 
 `../references/task_execution_rules.md`
 
-具体 Skill 是否设置 reuse、哪些条件影响等价性、validation 如何判定以及哪些文件属于正式结果，仍由对应结果 / scientific responsibility owner 定义；authoring 不在这里维护第二份通用执行规范。
+其中 validation、正式结果生成、结果记录和结果接口的共享规则继续指向：
+
+`../references/result_generation_rules.md`
+
+具体 Skill 是否设置 reuse、哪些条件影响等价性、具体 validation 如何判定以及哪些文件属于正式结果，仍由对应结果 / scientific responsibility owner 定义；authoring 不在这里维护第二份通用执行或结果生成规范。
 
 正式结果必须让后续执行能够定位并理解，而不要求重读上游全过程。
 
@@ -301,13 +313,14 @@ Legacy executable/runtime material：`../legacy/`。
 
 - [ ] main Skill 能直接指导 Agent 完成当前职责；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 当前 authoring 涉及 validation / results / 结果接口时，已读取 `references/result_generation_rules.md`；
 - [ ] 已读取 `references/canonical_terminology.md`；其中已有跨 Skill 术语均采用其 `Preferred expression`，未在局部 Skill 建立平行 glossary；
 - [ ] authoring 讨论、设计记录、freeze 与正式 Skill 文本对同一对象使用一致的项目正式术语；用户口语或简称没有被 Agent 继续传播为新的正式称呼；
 - [ ] 同一对象没有因用户口语、简称或措辞变化而出现多套正式术语；已有 canonical term 未被随意改写；
 - [ ] 没有把用户口语、alias 或历史称呼写入 shared terminology 作为长期映射；只有确有跨 Skill 稳定价值的新术语才进入该文件；
 - [ ] 科学/技术判断没有用未定义的抽象词代替实际判据；需要时已写明检查对象、属性、reference / criterion 和判断关系；
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
-- [ ] 未把 shared Task Execution reference 误建成独立 runtime Skill / dispatcher；
+- [ ] 未把 shared Task Execution / result-generation reference 误建成独立 runtime Skill / dispatcher；
 - [ ] 未把可由 Agent / 用户按当前任务可靠判断的策略，无必要地固化成决策树、状态机、fallback 链或完整工作流；
 - [ ] 长/条件性细节没有在 main Skill 与 reference 重复；
 - [ ] supporting Skill 拆分有真实复杂度和边界价值；
