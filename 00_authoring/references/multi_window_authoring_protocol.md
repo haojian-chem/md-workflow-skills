@@ -18,20 +18,21 @@ Status: CURRENT
 
 读取的目的只有：
 
-- 理解 handoff；
+- 理解直接接口与上下游正式结果关系；
 - 避免重复定义；
 - 发现接口冲突；
 - 保证当前 Skill 不越权。
 
 ## 2. 新窗口启动
 
-业务 Skill authoring 窗口默认启动链：
+业务 Skill authoring 窗口的正式 authoring 链从本项目 authoring Skill 开始：
 
 ```text
-AGENTS.md
-→ 00_authoring/SKILL.md
+00_authoring/SKILL.md
 → 当前负责的目标 Skill / 文件
 ```
+
+测试或运行环境中的 `AGENTS.md` 如果存在，只属于 Skill 体系外的调用入口辅助；它不是本协议的 startup/read dependency，也不能作为 writer、authority、Skill dependency 或规则可达性的依据。
 
 随后只按当前任务需要继续读取：
 
@@ -50,7 +51,6 @@ AGENTS.md
 
 主窗口负责共享 authoring / architecture / coordination 文件，包括：
 
-- `AGENTS.md`；
 - `00_authoring/SKILL.md`；
 - `00_authoring/README.md`；
 - `00_authoring/references/`；
@@ -62,6 +62,8 @@ AGENTS.md
 - Manager shared references；
 - Tool registry；
 - 跨 Skill 接口裁决与最终集成。
+
+如测试环境需要维护外部 `AGENTS.md`，可由主窗口协调该辅助文件，但这不改变它位于 Skill 体系之外、且不属于 authoring dependency 的边界。
 
 不再通过每个 Skill 一份 content map 或一个全局 skill inventory 来授予/判断写入权。
 
@@ -100,12 +102,13 @@ AGENTS.md
 
 ## 6. Cross-Skill boundary
 
-在当前 Skill 中，对其他 Skill 只允许定义接口关系：
+在当前 Skill 中，对其他 Skill 只允许定义当前职责真实需要的接口关系：
 
 - 当前 Skill 消费哪个正式结果；
 - 当前 Skill 需要外部 Skill 的什么能力；
-- 当前 Skill 的结果如何交给下游；
 - 依赖哪个已经冻结的外部规则。
+
+普通相邻 Step 的流程关系由拥有该关系的 Stage main Skill 表达；下游怎样解释和消费当前结果，由下游 Skill 自己的 Object requirements / input contract 定义。当前 Skill 不因为存在下游而另外定义 handoff 规则或 handoff 文件。
 
 禁止把其他 Skill 的以下内容写进当前 Skill：
 
@@ -214,7 +217,7 @@ refetch current main
 - 当前 Skill 没有写其他环节“应该怎么做”；
 - 没有复制或改写另一个 owner 的规则；
 - 没有形成以后需要多处同步修改的 shadow specification；
-- 外部内容已经尽量缩成 `consume / require / handoff`；
+- 外部内容已经尽量缩成当前职责真实需要的 `consume / require`；
 - 若本次改变了 Skill/freeze/validation 建设状态，Master Plan 已同步，或已有明确 writer handoff；
 - 若 Stage main Skill 维护该 Step 的 current/freeze-only entry，该入口已同步。
 
