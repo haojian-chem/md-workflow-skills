@@ -15,47 +15,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Sync 2.3 implementation status
+      - name: Remove stale 2.3 freeze-only wording
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-
-          master = Path('00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md')
-          text = master.read_text()
-          reps = {
-              'Status: ARCHITECTURE FROZEN; **2.1 ACTIVE; STAGE MAIN AND 2.2–2.6 FREEZE-ONLY**.':
-              'Status: ARCHITECTURE FROZEN; **2.1 AND 2.3 ACTIVE; STAGE MAIN, 2.2, AND 2.4–2.6 FREEZE-ONLY**.',
-              '02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/      # reserved':
-              '02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/      # active',
-              '当前 2.1 已生成 active Skill，并完成 post-generation authoring/interface consistency check；Stage 2 main Skill 与 2.2–2.6 尚未生成 active `SKILL.md`。':
-              '当前 2.1 与 2.3 已生成 active Skill；2.1 已完成 post-generation authoring/interface consistency check，2.3 已完成生成后 authoring/freeze consistency self-check。2.3 current entry 为 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`；Stage 2 main Skill、2.2 与 2.4–2.6 尚未生成 active `SKILL.md`。',
-              '2.3 has detailed frozen parameterization-model material, but is still freeze-only:\n\n```text\n00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md\n```':
-              '2.3 current runtime entry:\n\n`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`\n\n2.3 detailed architecture freezes remain current authoring records, including:\n\n```text\n00_authoring/architecture_freezes/WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md\n```',
-              '- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；`2.1 Topology preparation setup` 已生成 active Skill并完成 post-generation authoring/interface consistency check，current entry 为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`；Stage main 与 2.2–2.6 仍为 freeze-only，其中 2.3 参数化模型规则与 2.5 详细方案已有专项 freeze；':
-              '- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1 与 2.3 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md` 与 `02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`；Stage main、2.2 与 2.4–2.6 仍为 freeze-only，2.3 与 2.5 的详细方案保留专项 architecture freeze；',
-          }
-          for old, new in reps.items():
-              if old not in text:
-                  raise RuntimeError(f'Master-plan expected text missing: {old}')
-              text = text.replace(old, new, 1)
-          master.write_text(text)
-
-          stage = Path('00_authoring/architecture_freezes/WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md')
-          text = stage.read_text()
-          old = '- **当前只有 2.1 已生成 active Skill；Stage 2 main Skill 与 2.2–2.6 仍为 freeze-only / reserved package paths。**'
-          new = '- **当前 2.1 与 2.3 已生成 active Skill；Stage 2 main Skill、2.2 与 2.4–2.6 仍为 freeze-only / reserved package paths。**'
+          p = Path('00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md')
+          text = p.read_text()
+          old = 'These files preserve the detailed pre-authorization 2.3 / 2.5 material for later formal Skill generation; they are not runtime Skills.'
+          new = 'These files remain architecture/authoring records rather than runtime Skills; 2.3 now uses its active current entry above, while 2.5 remains pending formal Skill generation.'
           if old not in text:
-              raise RuntimeError('Stage-2 freeze status text missing')
-          text = text.replace(old, new, 1)
-          stage.write_text(text)
+              raise RuntimeError('Expected stale 2.3/2.5 sentence missing')
+          p.write_text(text.replace(old, new, 1))
           PY
-
-          rm -f 02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/.gitkeep
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'Activate Stage 2.3 topology-linked parameterization Skill'
+          git add 00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md
+          git commit -m 'Remove stale 2.3 freeze-only wording'
           git push
