@@ -119,7 +119,7 @@ structure: ${RESULT_DIR}/structure.pdb
 
 如果当前 Skill 生成的正式结果本身是 Markdown，并且需要重复引用多个实际文件或公共绝对路径，可以在 Markdown 前部设置清楚的 `References` section，例如：
 
-```markdown
+````markdown
 ## References
 
 ```yaml
@@ -128,7 +128,7 @@ references:
   CLASSIFICATION_RESULT: /absolute/path/to/classification_result.yaml
   RESULT_DIR: /absolute/path/to/current/result_directory
 ```
-```
+````
 
 正文或结构化片段随后可以使用 `${FINAL_STRUCTURE}`、`${CLASSIFICATION_RESULT}` 或 `${RESULT_DIR}/filename`。所有引用都只在当前结果文档内解释；reference key 不是项目级永久 identity，也不要求建立全局 registry。
 
