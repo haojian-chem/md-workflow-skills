@@ -2,7 +2,7 @@
 
 本文件定义当前适用结构改写环节共同使用的原子映射规则。Stage 1 当前适用步骤为 1.3、1.4、1.6、1.7、1.8；1.5 不修改结构，因此不维护 map；1.9 读取最终 map 做验证。
 
-2.2 Standard residue topology generation 沿用本文件的 map 结果结构、copy-and-update 语义和 provenance 维护规则，并使用 `2.2ADD` 记录该环节新增的 atom。本文件当前不定义其它 Stage 2 环节的 mapping / provenance 语义。
+标准残基拓扑生成过程中沿用本文件的 map 结果结构、copy-and-update 语义和 provenance 维护规则，并使用 `2.2ADD` 记录该环节新增的 atom。本文件当前不定义其它 Stage 2 环节的 mapping / provenance 语义。
 
 ## 1. Map chain
 
@@ -120,7 +120,7 @@ operations
 - `1.6REPLACE`：1.6 对该 atom 执行 whole-residue replacement / coordinate replacement，但输入 atom 与输出 atom 能够明确判定为同一个 atom，因此保留原映射与 `original_atom_serial`；
 - `1.7RENAME`：1.7 修改了该 atom 所属 residue 的 residue name；
 - `1.8REORDER`：1.8 的 block / residue organization 改变了该 atom 在输出 atom records 中的位置；
-- `2.2ADD`：该 atom 由 2.2 的 pdb2gmx 处理新增，输入结构中不存在对应 atom；`original_atom_serial` 必须为 `null`。
+- `2.2ADD`：该 atom 由标准残基拓扑生成过程中的 pdb2gmx 处理新增，输入结构中不存在对应 atom；`original_atom_serial` 必须为 `null`。
 
 同一个 atom 在同一步骤实际经历多个已定义操作时，按实际发生顺序追加多个 operation code。
 
@@ -200,19 +200,19 @@ stage1_final_map.yaml
 
 ## 10. 2.2 维护
 
-2.2 生成标准残基全原子结构时，以与当前体系 `stage1_final.pdb` 对应的 `stage1_final_map.yaml` 作为上游 map source。
+生成标准残基全原子结构时，以与当前体系 `stage1_final.pdb` 对应的 `stage1_final_map.yaml` 作为上游 map source。
 
-先按当前 2.2 处理范围保留进入 pdb2gmx 输入 PDB 的标准残基 atom records，再依据 pdb2gmx 实际输出维护 map：
+先按当前处理范围保留进入 pdb2gmx 输入 PDB 的标准残基 atom records，再依据 pdb2gmx 实际输出维护 map：
 
-- 不属于当前 2.2 处理范围的 atom records 不进入 `2.2_standard.map`；
-- 来自 Stage 1 且在 2.2 输出结构中仍有明确对应的 atom，保留 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，并按 2.2 输出结构更新 `current_atom_serial`；
+- 不属于当前处理范围的 atom records 不进入 `2.2_standard.map`；
+- `stage1_final_map.yaml` 中对应、且在 `2.2_standard_structure.gro` 中仍有明确对应的 atom，保留 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，并按 `2.2_standard_structure.gro` 更新 `current_atom_serial`；
 - pdb2gmx 新增、且输入结构中不存在对应 atom 的 atom，新建 record，`original_atom_serial: null`，`component_id + residue_id` 取其所属 residue 的既有身份，`operations` 记录 `2.2ADD`；
 - `input_structure` 指向本次实际使用的 pdb2gmx 输入 PDB；
 - `input_map` 指向实际使用的 `stage1_final_map.yaml`；
-- `current_structure` 指向 2.2 正式标准残基全原子结构；
+- `current_structure` 指向 `2.2_standard_structure.gro`；
 - 输出 map basename 固定为 `2.2_standard.map`。
 
-2.2 不建立第二套 atom identity，也不根据输出 atom name、resid、chain 或 atom order 重建 `component_id + residue_id`。
+本环节不建立第二套 atom identity，也不根据输出 atom name、resid、chain 或 atom order 重建 `component_id + residue_id`。
 
 ## 11. Map validation
 
