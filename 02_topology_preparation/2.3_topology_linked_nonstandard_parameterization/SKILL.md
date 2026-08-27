@@ -32,7 +32,7 @@ description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理
 - 当前体系对应的 1.2 正式 `classification_result.yaml`，读取与当前处理对象相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`；
 - 当前体系的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
 - 当前 Task Sheet 引用的有效 2.2 正式结果，从中定位标准残基全原子结构及对应 map；
-- 当前任务实际需要的 CCD、量化计算与参数化软件输入 / reference。
+- 非标准残基补氢需要使用的实际 CCD reference。
 
 下游身份持续使用正式结果中已有的 `component_id + residue_id`，不根据 residue name、chain、resid 或当前空间位置重新建立 residue identity。
 
@@ -58,14 +58,14 @@ parameterized_structure.gro
 parameterization_model.map
 ```
 
-三者使用同一 atom set 与 atom order。
+三者使用同一原子集合与原子顺序。
 
 同时确定并保留两类后续接口信息：
 
 1. `standard_atom_deletions`：标准残基一侧因已确认拓扑连接而需要在 2.5 实际删除的原子；
-2. `charge_modification_scope`：最终拓扑中需要采用本次 2.3 新电荷的全部真实 residue，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` residue。仅作为参数化模型外围环境或 CAP 环境保留的部分不列入该范围。
+2. `charge_modification_scope`：最终拓扑中需要采用本次 2.3 新电荷的全部真实残基，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 残基。仅作为参数化模型外围环境或 CAP 环境保留的部分不列入该范围。
 
-`charge_modification_scope` 中每个 residue 使用 `component_id + residue_id` 定位，并保留 `topology_class` 供检查。
+`charge_modification_scope` 中每个残基使用 `component_id + residue_id` 定位，并保留 `topology_class` 供检查。
 
 ## 量化计算
 
@@ -90,7 +90,7 @@ charge_fitting_result.yaml
 parameterization.chg
 ```
 
-`parameterization.chg` 与参数化模型 atom order 保持可确定的一一对应，并作为 Sobtop 参数化使用的最终电荷文件。
+`parameterization.chg` 与参数化模型原子顺序保持可确定的一一对应，并作为 Sobtop 参数化使用的最终电荷文件。
 
 最终实际采纳的 SP 任务路径保留用于写入正式结果记录。
 
@@ -168,7 +168,7 @@ standard_atom_deletions:
     relation_id: relation_001
 ```
 
-其中 `atom_index` 与对应 2.2 map / 结构 atom order 中的 `output_atom_index` 对齐；`atom_name` 用于人工检查；`relation_id` 指向 `CLASSIFICATION_RESULT_1` 中相应 `topology_linked_checks[]` 记录。
+其中 `atom_index` 与对应 2.2 map / 结构原子顺序中的 `output_atom_index` 对齐；`atom_name` 用于人工检查；`relation_id` 指向 `CLASSIFICATION_RESULT_1` 中相应 `topology_linked_checks[]` 记录。
 
 ### 残基级电荷修改范围
 
@@ -228,4 +228,4 @@ charge_modification_scope:
 
 随后按仓库级 Task Execution 规则更新当前 Task Sheet 的 2.3 工作项状态，并记录当前正式结果路径。
 
-2.3 不直接修改 2.2 baseline structure / topology；`standard_atom_deletions` 与 `charge_modification_scope` 的实际最终整合由 2.5 使用当前正式结果完成。
+2.3 不直接修改 2.2 基线结构 / 拓扑；`standard_atom_deletions` 与 `charge_modification_scope` 的实际最终整合由 2.5 使用当前正式结果完成。
