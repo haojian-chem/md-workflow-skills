@@ -48,20 +48,16 @@ Status: CURRENT AUTHORING FREEZE
 - 当前对象对应的 `classification_result.yaml`；
 - 当前对象对应的 `stage1_final.pdb`；
 - 与该结构对应的 `stage1_final_map.yaml`；
-- Task Sheet 指定的全部标准残基拓扑生成正式结果记录；
-- Task Sheet 指定的全部 topology-linked 非标准残基参数化正式结果记录；
-- Task Sheet 指定的全部独立非标准参数化正式结果记录；
+- Task Sheet 指定的全部标准残基拓扑生成正式结果记录及下列已确认的结果文件；
+- Task Sheet 指定的全部 topology-linked 非标准残基参数化正式结果记录及下列已确认的结果文件；
+- Task Sheet 指定的全部独立非标准参数化正式结果记录及下列已确认的结果文件；
 - Task Sheet 已明确分配、可直接参与整合的 solvent / ion 实际对象所采用的参数定义来源文件。
 
 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的结果 owner 是结构准备最终重排与映射任务；后续结构准备终检只读检查这两个正式结果，不生成新的 PDB 或 map。
 
-标准残基拓扑生成、topology-linked 非标准残基参数化和独立非标准参数化的正式结果记录除作为正式结果入口外，可以按当前拓扑整合实际消费范围展开其结果文件，并将需要在当前正式结果、诊断或 evidence 中直接引用的结果文件建立为当前 `references` 条目。该展开只针对上游正式结果自身的结果部分，不因此继续递归展开其上游依赖引用。
-
-三类前置正式结果具体展开哪些结果文件、采用哪些 reference key，当前尚未确认；讨论草稿中出现的展开项不得视为冻结内容。
+三类前置正式结果只展开其正式结果记录中的结果部分；该展开不因此继续递归展开这些正式结果记录自身的上游依赖引用。
 
 ### 已确认的基础 reference key
-
-当前已确认：
 
 ```yaml
 references:
@@ -70,17 +66,63 @@ references:
   MAP_1: /absolute/path/to/stage1_final_map.yaml
 ```
 
-其中路径仅表示字段语义；正式执行时记录实际完整绝对路径。
+### 已确认的前置工作项分组与编号规则
 
-具体 reference key、文件分组、路径引用以及结果 / 诊断 / evidence 对这些 reference key 的使用方式，由 topology integration and assembly 的 `references/results.md` 定义。
+每个 Task Sheet 指定的前置工作项在 `references` 中建立一组条目。
+
+- 标准残基拓扑生成工作项使用 `STD_n_*`；
+- topology-linked 非标准残基参数化工作项使用 `LINKED_n_*`；
+- 独立非标准残基参数化工作项使用 `IND_n_*`。
+
+其中 `n` 表示当前类别中的前置工作项序号。
+
+标准残基拓扑生成正式结果中存在多个 chain `.itp` 时，使用 `STD_n_ITP_m`；其中 `m` 表示该前置工作项正式结果中的 `.itp` 序号。
+
+### 已确认的标准残基拓扑生成展开项
+
+```yaml
+STD_1_RESULT: /absolute/path/to/standard_residue_topology_result.yaml
+STD_1_STRUCTURE: /absolute/path/to/standard.gro
+STD_1_MAP: /absolute/path/to/standard.map
+STD_1_TOP: /absolute/path/to/standard.top
+STD_1_ITP_1: /absolute/path/to/chain_1.itp
+STD_1_ITP_2: /absolute/path/to/chain_2.itp
+```
+
+### 已确认的 topology-linked 非标准残基参数化展开项
+
+```yaml
+LINKED_1_RESULT: /absolute/path/to/topology_linked_parameterization_result.yaml
+LINKED_1_MODEL: /absolute/path/to/parameterization_model.mol2
+LINKED_1_MODEL_MAP: /absolute/path/to/parameterization_model.map
+LINKED_1_CHARGE: /absolute/path/to/parameterization.chg
+LINKED_1_CHARGE_RESULT: /absolute/path/to/charge_fitting_result.yaml
+LINKED_1_STRUCTURE: /absolute/path/to/parameterized_structure.gro
+LINKED_1_TOPO: /absolute/path/to/parameterized_topology.itp
+```
+
+### 已确认的独立非标准残基参数化展开项
+
+```yaml
+IND_1_RESULT: /absolute/path/to/independent_nonstandard_parameterization_result.yaml
+IND_1_MODEL: /absolute/path/to/parameterization_model.mol2
+IND_1_MODEL_MAP: /absolute/path/to/parameterization_model.map
+IND_1_CHARGE: /absolute/path/to/parameterization.chg
+IND_1_CHARGE_RESULT: /absolute/path/to/charge_fitting_result.yaml
+IND_1_TOPO: /absolute/path/to/parameterized_topology.itp
+IND_1_STRUCTURE: /absolute/path/to/parameterized_structure.gro
+IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
+```
+
+上述 YAML 中的 `_1` / `_2` 用于展示已冻结的编号规则，不表示实际工作项或结果文件数量固定。正式执行时按 Task Sheet 指定的工作项和各正式结果中的实际结果文件数量生成相应条目。
+
+`references/results.md` 最终正文的解释性表述仍需在本轮讨论中继续校正；本节冻结的是 reference key 体系、分组方式与展开项本身，不冻结此前讨论草稿中的不严谨表述。
 
 ### `references` 结果格式性质
 
 `references/results.md` 中给出的 `references` YAML 结构不是说明性示例，而是当前拓扑整合正式结果应遵循的规范性记录格式。
 
 执行时按实际对象和前置工作项数量扩展同类 reference key；实际不存在的工作项或结果文件不建立占位条目。完整绝对路径替换格式中的占位路径。除这些由实际执行数量和路径决定的变化外，结果记录应遵循 `references/results.md` 已确定的 key 命名和组织方式，不由执行 Agent 自由改写成另一套结构。
-
-未在本轮确认的临时 key 名或结果展开项，不因出现在讨论草稿中自动冻结。
 
 ## 5. 正式文本规则
 
