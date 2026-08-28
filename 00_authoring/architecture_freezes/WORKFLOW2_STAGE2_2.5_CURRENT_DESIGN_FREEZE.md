@@ -150,6 +150,15 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 - 未参与 topology-linked relation 的标准链，如无其它 topology 信息要求改变其组织，保留标准残基拓扑生成结果中的 `moleculetype` 组织。
 - 独立非标准残基、solvent 和 ion 按各自采用的 topology 定义组织 `moleculetype`；不存在额外连接关系时，不与其它对象合并。
 
+### `moleculetype` 名称
+
+完成 `moleculetype` 组织后：
+
+- 标准残基、topology-linked 非标准残基和独立非标准残基形成的 `moleculetype`，按当前组织顺序从 1 开始连续命名为 `molecule_1`、`molecule_2`、`molecule_3`……；
+- solvent / ion 对应的 `moleculetype` 使用其 residue name 作为名称。
+
+确定的名称写入对应 `.itp` 的 `[ moleculetype ]`。
+
 ### `moleculetype` 结果记录
 
 `references/results.md` 只需要记录每个整合后 `moleculetype` 包含哪些 residue。
@@ -178,6 +187,12 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 完成上述结构内容组合后，按新的 `.gro` residue 顺序从 1 开始连续重新编号 residue number；同一 residue 的全部原子使用同一 residue number。随后按最终 atom 顺序从 1 开始连续重新编号 atom number。上述 residue number 与 atom number 仅是当前整合 `.gro` 的文件内编号，不改变既有 `component_id + residue_id`。
 
 新的 map 与整合 `.gro` 同时形成。已有的 `component_id + residue_id` 和可继承的逐原子映射直接沿用；map 记录整合后实际保留的原子集合、顺序及其来源对应关系，并以整合 `.gro` 重排后的 atom number 更新 `current_atom_serial`，不在后续 `.itp` 生成后重新建立另一套 atom correspondence。
+
+### `references/itp_integration.md` 中已确认的 `.itp` 文件命名规则
+
+当前整合生成的每个 `moleculetype` 主拓扑文件命名为：
+
+`<moleculetype name>.itp`
 
 ### `references/itp_integration.md` 中已确认的 `[ atoms ]` 规则
 
@@ -260,6 +275,24 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 必须按照当前 `[ atoms ] nr` 同步更新；引用已删除或未进入当前 `moleculetype` 的原子时，删除相应无效项。
 
 其它内容的保留或调整，由执行 Agent 根据实际 GROMACS 语义和来源拓扑定义判断。
+
+### `references/itp_integration.md` 中已确认的 position restraint 规则
+
+对于当前整合生成的 `<moleculetype name>.itp`，同时生成：
+
+`posre_<moleculetype name>.itp`
+
+并在对应 `<moleculetype name>.itp` 中使用：
+
+```text
+#ifdef POSRES
+#include "posre_<moleculetype name>.itp"
+#endif
+```
+
+`posre_<moleculetype name>.itp` 使用 `[ position_restraints ]`，默认采用 harmonic position restraint（`funct = 1`），仅对当前 `moleculetype` 中的重原子施加 restraint，`fcx`、`fcy`、`fcz` 均设为 `1000 kJ mol^-1 nm^-2`。
+
+其中使用的原子编号必须与当前 `<moleculetype name>.itp` 的 `[ atoms ] nr` 一致。
 
 ### 已确认的参数定义汇总与去重规则
 
