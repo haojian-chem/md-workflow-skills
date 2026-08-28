@@ -126,13 +126,15 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 ## 5. `moleculetype` 组织规则归属
 
-拓扑整合设置独立的 `moleculetype` 组织执行环节。
+拓扑整合过程中需要进行 `moleculetype` 组织。
 
-- 主 `SKILL.md` 保留该执行环节的职责、输入、调用关系与必要的异常处理，不展开完整组织规则；
+- 主 `SKILL.md` 保留 `moleculetype` 组织这部分处理的职责、调用关系与必要的异常处理，不展开完整组织规则；
 - 具体 `moleculetype` 组织规则由 `references/moleculetype_organization.md` 统一定义；
 - `references/results.md` 只定义 `moleculetype` 组织结果如何进入正式结果记录及相关字段语义，不承担组织判定规则。
 
-`moleculetype` 组织不得改变既有 `component` 身份、`component_id + residue_id`、component membership 或已确认的 topology-linked relation。该环节只建立 GROMACS topology representation 所需的 `moleculetype` 组织。
+当前只确认上述规则归属，不将 `moleculetype` 组织定义为独立执行环节。
+
+`moleculetype` 组织不得改变既有 `component` 身份、`component_id + residue_id`、component membership 或已确认的 topology-linked relation。该处理只建立 GROMACS topology representation 所需的 `moleculetype` 组织。
 
 ## 6. 正式文本规则
 
