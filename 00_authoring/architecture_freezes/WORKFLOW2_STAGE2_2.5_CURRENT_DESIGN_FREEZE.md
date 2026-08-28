@@ -248,6 +248,19 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 在当前生成的 `.itp` 中，为每个 topology-linked 参数化结果单独设置 `[ pairs ]` 补充区域，
 集中写入该参数化结果中经过上述处理后保留的 `[ pairs ]` 条目，并在区域前注明参数化结果来源。
 
+### `references/itp_integration.md` 中已确认的其它 `.itp` 项目规则
+
+完成前述项目整合后，执行 Agent 必须检查各来源 `.itp` 中实际存在的其它项目，包括但不限于
+`[ exclusions ]`、`[ constraints ]`、`[ settles ]` 和 `[ virtual_sites* ]`，并按其 GROMACS 语义处理。
+
+涉及原子编号的项目按照当前 `[ atoms ] nr` 更新编号；引用已删除或未进入当前 `moleculetype` 的原子时，
+删除相应无效项。
+
+同时检查当前 `.itp` 引用的其它拓扑文件。若这些文件中的 restraint 或其它设置使用原子编号，
+必须按照当前 `[ atoms ] nr` 同步更新；引用已删除或未进入当前 `moleculetype` 的原子时，删除相应无效项。
+
+其它内容的保留或调整，由执行 Agent 根据实际 GROMACS 语义和来源拓扑定义判断。
+
 当前正式设计不再使用旧冻结中的 `nonstandard unit` 作为拓扑整合处理对象；topology-linked 参数化输入按 Task Sheet 指定的具体参数化工作项及其中包含的非标准残基组合解释。
 
 ## 7. 正式文本规则
