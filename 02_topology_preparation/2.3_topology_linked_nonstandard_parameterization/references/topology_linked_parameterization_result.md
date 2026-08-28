@@ -29,8 +29,8 @@ references:
   CLASSIFICATION_RESULT_1: /absolute/path/to/classification_result.yaml
   STAGE1_STRUCTURE_1: /absolute/path/to/stage1_final.pdb
   STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
-  STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
-  STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
+  STANDARD_STRUCTURE_1: /absolute/path/to/standard.gro
+  STANDARD_MAP_1: /absolute/path/to/standard.map
 ```
 
 只为当前正式记录实际依赖的文件建立条目。结果文件和依赖文件路径保持完整绝对路径语义。
@@ -88,7 +88,7 @@ standard_atom_deletions:
 字段语义：
 
 - `structure`：引用 `references` 中对应的 2.2 标准残基全原子结构；
-- `atom_index`：该原子在对应 2.2 map / 结构原子顺序中的索引，与对应 map 的 `output_atom_index` 对齐；
+- `atom_index`：取该原子在对应 `standard.map` 中的 `current_atom_serial`，用于定位 `standard.gro` 中的同一原子；
 - `atom_name`：用于人工检查，不作为跨步骤唯一身份依据；
 - `relation_id`：指向 `CLASSIFICATION_RESULT_1` 中相应 `topology_linked_checks[]` 记录。
 
@@ -117,8 +117,8 @@ references:
   CLASSIFICATION_RESULT_1: /absolute/path/to/classification_result.yaml
   STAGE1_STRUCTURE_1: /absolute/path/to/stage1_final.pdb
   STAGE1_MAP_1: /absolute/path/to/stage1_final_map.yaml
-  STANDARD_STRUCTURE_1: /absolute/path/to/2.2_standard_structure.gro
-  STANDARD_MAP_1: /absolute/path/to/2.2_standard.map
+  STANDARD_STRUCTURE_1: /absolute/path/to/standard.gro
+  STANDARD_MAP_1: /absolute/path/to/standard.map
 
 results:
   parameterization_model: /absolute/path/to/parameterization_model.mol2
