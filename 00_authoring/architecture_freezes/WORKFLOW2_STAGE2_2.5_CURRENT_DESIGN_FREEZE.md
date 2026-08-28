@@ -136,6 +136,14 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 `moleculetype` 组织不得改变既有 `component` 身份、`component_id + residue_id`、component membership 或已确认的 topology-linked relation。该处理只建立 GROMACS topology representation 所需的 `moleculetype` 组织。
 
+`references/moleculetype_organization.md` 的进入说明固定为：
+
+> 对当前 Task Sheet 指定进入拓扑整合的全部 residue / component 进行 `moleculetype` 组织。
+>
+> 组织时结合这些对象之间已确认的 topology-linked relation，以及各前置拓扑结果提供的结构、映射和 topology 信息。
+
+上述两句之后直接进入代表性情况说明，不再设置独立的 `Organization basis` 或重复解释拓扑整合已经确定的输入来源。
+
 ## 6. 正式文本规则
 
 正式生成 `SKILL.md`、`references/results.md` 或其它科研执行 reference 时，不得使用 `Stage 1`、`1.2`、`2.2`、`2.3`、`2.4`、`2.5` 等编号简称代替任务、结果、输入、依赖或职责语义。正式文本必须直接写明任务名称、正式结果文件、数据字段、对象或职责语义。
