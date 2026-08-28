@@ -173,7 +173,9 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 - 独立非标准残基从对应的 `IND_n_STRUCTURE` 中，结合 `IND_n_STRUCTURE_MAP` 提取当前体系实际实例；
 - 无需独立参数化、直接采用既定 topology definition 的 solvent / ion，其坐标从 `STRUCTURE_1` 中对应的实际 residue 提取，并通过 `MAP_1` 保持既有 `component_id + residue_id` 与原子对应关系。若直接采用既定 topology definition 的 solvent / ion 在 `STRUCTURE_1` 对应 residue 中缺失该 topology definition 所定义的原子，则按该 topology definition 补全这些原子。
 
-新的 map 与整合 `.gro` 同时形成。已有的 `component_id + residue_id` 和可继承的逐原子映射直接沿用；map 记录整合后实际保留的原子集合、顺序及其来源对应关系，不在后续 `.itp` 生成后重新建立另一套 atom correspondence。
+完成上述结构内容组合后，按新的 `.gro` residue 顺序从 1 开始连续重新编号 residue number；同一 residue 的全部原子使用同一 residue number。随后按最终 atom 顺序从 1 开始连续重新编号 atom number。上述 residue number 与 atom number 仅是当前整合 `.gro` 的文件内编号，不改变既有 `component_id + residue_id`。
+
+新的 map 与整合 `.gro` 同时形成。已有的 `component_id + residue_id` 和可继承的逐原子映射直接沿用；map 记录整合后实际保留的原子集合、顺序及其来源对应关系，并以整合 `.gro` 重排后的 atom number 更新 `current_atom_serial`，不在后续 `.itp` 生成后重新建立另一套 atom correspondence。
 
 在上述 atom / residue 顺序冻结后，为各 `moleculetype` 生成整合后的 `.itp`。来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
 
