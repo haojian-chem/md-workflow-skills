@@ -55,9 +55,17 @@ Status: CURRENT AUTHORING FREEZE
 
 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的结果 owner 是结构准备最终重排与映射任务；后续结构准备终检只读检查这两个正式结果，不生成新的 PDB 或 map。
 
-上游正式结果中的具体结果文件和直接结果信息按当前拓扑整合实际需要读取；是否需要将其中某个具体文件作为当前正式结果自己的独立 `references` 条目，由该文件是否在当前结果、诊断或 evidence 中被直接引用决定，不因其出现在上游 `results` 中就机械复制。
+标准残基拓扑生成、topology-linked 非标准残基参数化和独立非标准参数化的正式结果记录除作为正式结果入口外，还应按当前拓扑整合实际消费范围展开其结果文件，并将需要在当前正式结果、诊断或 evidence 中直接引用的结果文件建立为当前 `references` 条目。该展开只针对上游正式结果自身的结果部分，不因此继续递归展开其上游依赖引用。
 
 具体 reference key、文件分组、路径引用以及结果 / 诊断 / evidence 对这些 reference key 的使用方式，由 topology integration and assembly 的 `references/results.md` 定义。
+
+### `references` 结果格式性质
+
+`references/results.md` 中给出的 `references` YAML 结构不是说明性示例，而是当前拓扑整合正式结果应遵循的规范性记录格式。
+
+执行时按实际对象和前置工作项数量扩展同类 reference key；实际不存在的工作项或结果文件不建立占位条目。完整绝对路径替换格式中的占位路径。除这些由实际执行数量和路径决定的变化外，结果记录应遵循 `references/results.md` 已确定的 key 命名和组织方式，不由执行 Agent 自由改写成另一套结构。
+
+当前 reference key 的最终命名仍以本轮后续确认并写入 `references/results.md` 的版本为准；未在本轮确认的临时 key 名不因出现在讨论草稿中自动冻结。
 
 ## 5. 正式文本规则
 
