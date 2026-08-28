@@ -132,6 +132,7 @@ Scientific roots 按 MD Workflow Stage 固定为：
 
 - 同一 execution object、artifact、state、scientific concept 或判断对象使用一个稳定的 canonical term；`canonical_terminology.md` 已有条目时使用其 `Preferred expression`。已有 current Skill、freeze、正式接口或 shared reference 已确定但尚未进入 shared terminology 的局部术语，也不得因用户本轮口语表达而随意改名。
 - 用户简称、口语、临时称呼和不完整表达只用于当前上下文理解；它们不约束用户输入，也不登记为 alias。Agent 应理解其实际指代，并在自己的后续讨论、设计记录、freeze 和正式 Skill 文本中恢复为当前项目正式术语。
+- 正式科研执行 Skill 中，禁止以 Stage / Step 编号或编号简称（如 `Stage 1`、`1.2`、`2.3`）代替任务、职责、输入、输出、依赖、结果来源或规则来源的实际语义。涉及跨环节接口时，必须直接写明任务名称、正式结果或文件、数据字段、对象及其职责语义，使文本脱离当前编号上下文后仍可独立理解；阶段编号只用于 authoring 讨论、架构定位、目录/状态管理等元信息，不得作为正式 Skill 正文中的语义性引用。
 - 只有需要跨 Skill 稳定、会进入 Task Sheet / 项目结果索引 / Stage 间接口，或名称漂移会造成对象混淆的术语才进入 `canonical_terminology.md`；单个 Skill 的局部术语继续由该 Skill 自己维护。
 - `canonical_terminology.md` 只负责对象或概念“正式叫什么、具体指什么、与什么不同”；科学/技术关系如何写清楚由本 authoring guidance 的 semantic-explicitness 规则负责，具体科学判据仍由对应科学 Skill 拥有。
 - 科学/技术判断必须写出实际判断关系。若“兼容、合理、正确、有效、一致、匹配”等词在未展开时可能有多种解释，则明确检查对象、属性、reference / criterion 和判断关系，不用抽象标签替代可执行判据。
@@ -317,6 +318,7 @@ Legacy executable/runtime material：`../legacy/`。
 - [ ] 已读取 `references/canonical_terminology.md`；其中已有跨 Skill 术语均采用其 `Preferred expression`，未在局部 Skill 建立平行 glossary；
 - [ ] authoring 讨论、设计记录、freeze 与正式 Skill 文本对同一对象使用一致的项目正式术语；用户口语或简称没有被 Agent 继续传播为新的正式称呼；
 - [ ] 同一对象没有因用户口语、简称或措辞变化而出现多套正式术语；已有 canonical term 未被随意改写；
+- [ ] 正式科研执行 Skill 未使用 Stage / Step 编号或编号简称代替任务、职责、输入、输出、依赖、结果来源或规则来源；跨环节接口已直接写明实际任务、结果、文件、字段、对象及职责语义；
 - [ ] 没有把用户口语、alias 或历史称呼写入 shared terminology 作为长期映射；只有确有跨 Skill 稳定价值的新术语才进入该文件；
 - [ ] 科学/技术判断没有用未定义的抽象词代替实际判据；需要时已写明检查对象、属性、reference / criterion 和判断关系；
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
