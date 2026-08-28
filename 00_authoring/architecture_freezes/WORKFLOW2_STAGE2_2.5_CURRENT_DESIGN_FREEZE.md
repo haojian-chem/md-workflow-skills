@@ -184,9 +184,9 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 生成每个 `moleculetype` 的 `.itp` 时，首先整合 `[ atoms ]`。
 
 - `[ atoms ]` 中 residue / atom 的顺序必须与已经冻结的整合 `.gro` 中该 `moleculetype` 对应部分保持一致；
-- 应用相关 topology-linked 参数化正式结果中的 `standard_atom_deletions` 删除相应原子，并按对应正式结果更新需要修改的原子电荷；
+- 应用相关 topology-linked 参数化正式结果中的 `standard_atom_deletions`；对 `charge_modification_scope` 列出的真实残基，使用对应 `parameterization.chg` 中的电荷更新当前生成 `.itp` 的 `[ atoms ]` 中相应原子的 `charge`，原子对应通过 `parameterization_model.map` 确定；
 - `[ atoms ]` 内容确定后，按当前 atom 顺序重新编号 `nr`，并令 `cgnr` 与重排后的 `nr` 保持一致；
-- 同步记录生成后 `.itp` 中每个 `[ atoms ] nr` 对应的来源 `.itp` 及该来源 `.itp` 中的原始 `nr`，用于后续 directive 迁移、编号更新与来源追踪。
+- 同步记录生成后 `.itp` 中每个 `[ atoms ] nr` 能够确定的全部来源 `.itp` 及各来源 `.itp` 中的原始 `nr`，用于后续 directive 迁移、编号更新与来源追踪；一个最终 `nr` 可以对应多个来源 `.itp` 中的原始 `nr`。
 
 来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
 
