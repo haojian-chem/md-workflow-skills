@@ -179,7 +179,16 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 新的 map 与整合 `.gro` 同时形成。已有的 `component_id + residue_id` 和可继承的逐原子映射直接沿用；map 记录整合后实际保留的原子集合、顺序及其来源对应关系，并以整合 `.gro` 重排后的 atom number 更新 `current_atom_serial`，不在后续 `.itp` 生成后重新建立另一套 atom correspondence。
 
-在上述 atom / residue 顺序冻结后，为各 `moleculetype` 生成整合后的 `.itp`。来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
+### `references/itp_integration.md` 中已确认的 `[ atoms ]` 规则
+
+生成每个 `moleculetype` 的 `.itp` 时，首先整合 `[ atoms ]`。
+
+- `[ atoms ]` 中 residue / atom 的顺序必须与已经冻结的整合 `.gro` 中该 `moleculetype` 对应部分保持一致；
+- 应用相关 topology-linked 参数化正式结果中的 `standard_atom_deletions` 删除相应原子，并按对应正式结果更新需要修改的原子电荷；
+- `[ atoms ]` 内容确定后，按当前 atom 顺序重新编号 `nr`，并令 `cgnr` 与重排后的 `nr` 保持一致；
+- 同步记录生成后 `.itp` 中每个 `[ atoms ] nr` 对应的来源 `.itp` 及该来源 `.itp` 中的原始 `nr`，用于后续 directive 迁移、编号更新与来源追踪。
+
+来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
 
 整合后的 `.itp` 内容形成后，对每个 `moleculetype` 的 `[ atoms ] nr` 按当前 `.itp` 中已经确定的原子顺序重新编号，并同步更新该 `.itp` 中所有引用原子编号的条目。这里的 `nr` 是处理完成后的 `moleculetype` 内局部原子编号，不是来源 `.itp` 的原始 `nr`。
 
