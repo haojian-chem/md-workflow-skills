@@ -10,8 +10,8 @@ Status: CURRENT AUTHORING FREEZE
 
 - 当前拓扑整合工作不设置 reuse 职责；进入当前工作项后，直接消费 Task Sheet 已指定的前置工作项及其正式结果。
 - 不重新判断 residue / component 的 `topology_class`，不重新判断 topology-linked relation 是否成立，也不重新决定 `topology_effect_applied`。
-- 继承已经建立的 `component_id + residue_id`、component membership、residue order 与 topology-linked relation；不重新分类或重新划分 component。
-- GROMACS `moleculetype` 属于最终 topology representation，必要时可根据最终 topology organization 重新建立；不得把 `component` 与 `moleculetype` 视为同一层级对象。
+- 继承已经建立的 `component_id + residue_id`、component 的 residue 组成、residue 顺序与 topology-linked relation；不重新分类或重新划分 component。
+- GROMACS `moleculetype` 属于拓扑表示，不等同于既有 component；必要时可在拓扑整合中重新建立 `moleculetype`。
 
 ## 2. Task Sheet 输入集合
 
@@ -34,7 +34,7 @@ Status: CURRENT AUTHORING FREEZE
 
 执行 Agent 确定并读取这些文件时，只展开到当前拓扑整合实际需要的深度：
 
-- 上游正式结果中由当前整合实际消费的正式结果文件和直接结果信息，应按需要读取；
+- 上游正式结果中由当前整合实际消费的结果文件和直接结果信息，应按需要读取；
 - 除非当前整合确有需要，不继续展开上游正式结果自身用于记录其上游 / 外部文件的依赖引用部分。
 
 上述“不继续展开”是对执行 Agent 的读取行为限制，不是当前正式结果接口本身的字段语义。
@@ -55,7 +55,7 @@ Status: CURRENT AUTHORING FREEZE
 
 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的结果 owner 是结构准备最终重排与映射任务；后续结构准备终检只读检查这两个正式结果，不生成新的 PDB 或 map。
 
-三类前置正式结果只展开其正式结果记录中的结果部分；该展开不因此继续递归展开这些正式结果记录自身的上游依赖引用。
+三类前置正式结果读取当前拓扑整合实际需要的结果文件和直接结果信息；不因此继续递归展开这些正式结果记录自身的上游依赖引用。
 
 ### 已确认的基础 reference key
 
@@ -124,17 +124,15 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 执行时按实际对象和前置工作项数量扩展同类 reference key；实际不存在的工作项或结果文件不建立占位条目。完整绝对路径替换格式中的占位路径。除这些由实际执行数量和路径决定的变化外，结果记录应遵循 `references/results.md` 已确定的 key 命名和组织方式，不由执行 Agent 自由改写成另一套结构。
 
-## 5. `moleculetype` 组织规则归属
+## 5. `moleculetype` 组织
 
-拓扑整合过程中需要进行 `moleculetype` 组织。
+拓扑整合需要对进入当前工作项的 residue / component 进行 `moleculetype` 组织。
 
-- 主 `SKILL.md` 保留 `moleculetype` 组织这部分处理的职责、调用关系与必要的异常处理，不展开完整组织规则；
-- 具体 `moleculetype` 组织规则由 `references/moleculetype_organization.md` 统一定义；
-- `references/results.md` 只定义 `moleculetype` 组织结果如何进入正式结果记录及相关字段语义，不承担组织判定规则。
+- 主 `SKILL.md` 在拓扑整合主线中保留 `moleculetype` 组织，并提供 `references/moleculetype_organization.md` 的读取入口；
+- `references/moleculetype_organization.md` 定义具体组织规则；
+- `references/results.md` 定义 `moleculetype` 组织结果的正式记录方式与相关字段语义。
 
-当前只确认上述规则归属，不将 `moleculetype` 组织定义为独立执行环节。
-
-`moleculetype` 组织不得改变既有 `component` 身份、`component_id + residue_id`、component membership 或已确认的 topology-linked relation。该处理只建立 GROMACS topology representation 所需的 `moleculetype` 组织。
+`moleculetype` 组织不得改变既有 `component` 身份、`component_id + residue_id`、component 的 residue 组成或已确认的 topology-linked relation；其结果是建立 GROMACS 拓扑所需的 `moleculetype` 组织。
 
 `references/moleculetype_organization.md` 的进入说明固定为：
 
@@ -148,9 +146,15 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 - topology-linked 非标准残基连接一条标准链时，将该非标准残基与相关标准链组织到同一个 `moleculetype`。
 - topology-linked 非标准残基连接多条标准链时，将该非标准残基与相关标准链组织到同一个 `moleculetype`。
-- 多个 topology-linked 非标准残基连接同一条标准链时，综合处理作用于该标准链的全部 topology-linked relation；不得仅因这些非标准残基来自不同参数化工作项而拆分为不同 `moleculetype`。
+- 多个 topology-linked 非标准残基连接同一条标准链时，将该标准链与这些 topology-linked 非标准残基组织到同一个 `moleculetype`。
 - 未参与 topology-linked relation 的标准链，如无其它 topology 信息要求改变其组织，保留标准残基拓扑生成结果中的 `moleculetype` 组织。
 - 独立非标准残基、solvent 和 ion 按各自采用的 topology 定义组织 `moleculetype`；不存在额外连接关系时，不与其它对象合并。
+
+### `moleculetype` 结果记录
+
+`references/results.md` 必须定义 `moleculetype` 组织结果如何进入当前拓扑整合的正式结果记录。
+
+该记录至少需要明确每个整合后的 `moleculetype` 及其包含的 residue / component；成员身份使用既有 `component_id + residue_id` 表达。具体字段名称、与结果 topology 文件的关联方式及其它记录项，在完整结果接口设计时确定。
 
 ## 6. 正式文本规则
 
