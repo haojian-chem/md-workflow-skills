@@ -91,6 +91,12 @@ integrated.map
 `integrated.map` 与 `integrated.gro` 同时形成，只记录整合后实际存在的原子。已有的 `component_id + residue_id`
 和可继承的逐原子映射继续沿用，并以整合 `.gro` 的 atom number 更新 `current_atom_serial`。
 
+对按既定拓扑定义补全、且进入整合前不存在对应原子的 solvent / ion atom，在 `integrated.map` 中建立新 atom
+record：`original_atom_serial: null`，使用所属 residue 既有的 `component_id + residue_id`，并记录
+`operations: [2.5ADD]`。`2.5ADD` 的共享 operation-code 语义读取：
+
+`../../references/atom_mapping_rules.md`
+
 完成后冻结当前整合结果的 residue / atom 顺序；后续 `.itp` 生成不得再改变这套顺序。
 
 ## 整合 `.itp`
