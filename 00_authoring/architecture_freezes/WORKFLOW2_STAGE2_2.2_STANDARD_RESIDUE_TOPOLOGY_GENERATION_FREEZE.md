@@ -10,6 +10,8 @@ Status: IMPLEMENTED — AUTHORING RECORD
 
 当前 runtime 规则由该 `SKILL.md`、其 `references/results.md` 以及 `references/atom_mapping_rules.md` 拥有。本冻结文件继续作为 authoring / architecture record，不再维护一套平行的 mutable specification。
 
+Stage-level architecture freeze 中早期记录的 2.2 `standard-only` 文件称呼、`output_atom_index` map 字段及由未来 Stage 2 main Skill 另行物化 2.2 map 接口的方案，均已被上述 current runtime authority 取代；后续 authoring 不再据这些旧描述恢复 2.2 接口。
+
 ## 输入与处理范围
 
 当前环节的处理范围由 Task Sheet 中对应工作项确定。
