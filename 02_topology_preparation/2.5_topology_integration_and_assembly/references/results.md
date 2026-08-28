@@ -75,7 +75,7 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 无需独立参数化、由当前体系直接采用的 solvent / ion 拓扑定义文件使用 `DIRECT_n_TOPOLOGY` 逐项记录：
 
 ```yaml
-DIRECT_1_TOPOLOGY: /absolute/path/to/direct_solvent_or_ion_topology.itp
+DIRECT_1_TOPOLOGY: /absolute/path/to/direct_solvent_or_ion_topology
 ```
 
 同一实际文件只建立一个 reference key。实际不存在的工作项、文件或直接拓扑定义不建立占位条目。
@@ -97,7 +97,7 @@ moleculetypes:
       - component_id: component_002
         residue_id: residue_001
 
-  - name: LIG
+  - name: molecule_2
     residues:
       - component_id: component_003
         residue_id: residue_001
@@ -122,8 +122,8 @@ results:
     - /absolute/path/to/parameters.itp
     - /absolute/path/to/molecule_1.itp
     - /absolute/path/to/posre_molecule_1.itp
-    - /absolute/path/to/LIG.itp
-    - /absolute/path/to/posre_LIG.itp
+    - /absolute/path/to/molecule_2.itp
+    - /absolute/path/to/posre_molecule_2.itp
 ```
 
 `results.itp` 只列出本次拓扑整合实际生成的 `.itp`。不存在的文件不建立占位条目；若本次没有生成
