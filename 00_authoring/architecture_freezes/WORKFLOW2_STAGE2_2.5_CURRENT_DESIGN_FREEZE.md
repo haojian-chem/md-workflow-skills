@@ -234,6 +234,20 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 的 `[ bonds ]`、`[ angles ]` 和 `[ dihedrals ]`，
 并按当前 `[ atoms ] nr` 更新原子编号。
 
+### `references/itp_integration.md` 中已确认的 `[ pairs ]` 规则
+
+`[ pairs ]` 在 `[ bonds ]`、`[ angles ]` 和 `[ dihedrals ]` 完成整合后处理。
+
+#### topology-linked 非标准残基
+
+从对应 `parameterized_topology.itp` 中提取两个端点原子均存在于当前 `moleculetype` 的 `[ pairs ]` 条目。
+
+对这些提取出的条目，按当前 `[ atoms ] nr` 更新两个端点的原子编号，并与当前 `moleculetype` 中已有的
+`[ pairs ]` 条目进行比较，去除重复项。
+
+在当前生成的 `.itp` 中，为每个 topology-linked 参数化结果单独设置 `[ pairs ]` 补充区域，
+集中写入该参数化结果中经过上述处理后保留的 `[ pairs ]` 条目，并在区域前注明参数化结果来源。
+
 当前正式设计不再使用旧冻结中的 `nonstandard unit` 作为拓扑整合处理对象；topology-linked 参数化输入按 Task Sheet 指定的具体参数化工作项及其中包含的非标准残基组合解释。
 
 ## 7. 正式文本规则
