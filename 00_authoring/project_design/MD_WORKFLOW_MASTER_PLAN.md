@@ -126,7 +126,7 @@ Current / reserved Step directories:
 02_topology_preparation/2.6_topology_validation/                               # reserved
 ```
 
-当前 2.1–2.5 已生成 active Skill，并均已完成 post-generation authoring/interface consistency check。current entries 分别为：
+当前 2.1–2.5 已生成 active Skill，并均已完成 post-generation authoring/interface consistency check；2.5 已在当前 authoring 规则下再次复查通过。current entries 分别为：
 
 ```text
 02_topology_preparation/2.1_topology_preparation_setup/SKILL.md
@@ -315,7 +315,7 @@ Historical design Markdown: `00_authoring/archive/`.
 ## 9. Current work status
 
 - Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 保持 current；topology-linked 检查与正式记录已同步为 schema v4 的统一 `topology_linked_checks[]`，三类判据完整记录，人工关系决策仅通过 `relation_id` 对应；Stage 1 atom mapping 当前采用 chained map：1.3 初始化，1.4 / 1.6 / 1.7 / 1.8 copy-and-update，记录 `current_atom_serial + original_atom_serial + component_id + residue_id + operations`，1.8 写出 `stage1_final_map.yaml`，1.9 做最终逐原子/provenance验证；1.6 whole-residue / coordinate replacement 已区分 provenance-preserving `1.6REPLACE` 与真正新增的 `1.6ADD`；
-- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1–2.5 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`、`02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md`；2.5 已完成 post-generation authoring/interface consistency check，并已同步 `moleculetype` 组织、整合 `.gro` / map、`.itp` 整合、参数定义汇总、`.top` 生成与正式结果接口；Stage main 与 2.6 仍为 freeze-only；
+- Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1–2.5 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`、`02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md` 与 `02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md`；2.5 已完成并再次通过 post-generation authoring/interface consistency check，并已同步 `moleculetype` 组织、整合 `.gro` / map、`2.5ADD` provenance、`.itp` 整合、参数定义汇总、`.top` 生成与正式结果接口；Stage main 与 2.6 仍为 freeze-only；
 - Stage 3：3.1–3.3 环节与目录已确定；architecture freeze 已完成；正式 Stage 3 Skill generation 尚未获批；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
