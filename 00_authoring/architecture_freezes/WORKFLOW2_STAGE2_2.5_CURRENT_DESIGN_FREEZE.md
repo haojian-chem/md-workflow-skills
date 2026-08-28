@@ -55,7 +55,22 @@ Status: CURRENT AUTHORING FREEZE
 
 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的结果 owner 是结构准备最终重排与映射任务；后续结构准备终检只读检查这两个正式结果，不生成新的 PDB 或 map。
 
-标准残基拓扑生成、topology-linked 非标准残基参数化和独立非标准参数化的正式结果记录除作为正式结果入口外，还应按当前拓扑整合实际消费范围展开其结果文件，并将需要在当前正式结果、诊断或 evidence 中直接引用的结果文件建立为当前 `references` 条目。该展开只针对上游正式结果自身的结果部分，不因此继续递归展开其上游依赖引用。
+标准残基拓扑生成、topology-linked 非标准残基参数化和独立非标准参数化的正式结果记录除作为正式结果入口外，可以按当前拓扑整合实际消费范围展开其结果文件，并将需要在当前正式结果、诊断或 evidence 中直接引用的结果文件建立为当前 `references` 条目。该展开只针对上游正式结果自身的结果部分，不因此继续递归展开其上游依赖引用。
+
+三类前置正式结果具体展开哪些结果文件、采用哪些 reference key，当前尚未确认；讨论草稿中出现的展开项不得视为冻结内容。
+
+### 已确认的基础 reference key
+
+当前已确认：
+
+```yaml
+references:
+  BASIS_1: /absolute/path/to/classification_result.yaml
+  STRUCTURE_1: /absolute/path/to/stage1_final.pdb
+  MAP_1: /absolute/path/to/stage1_final_map.yaml
+```
+
+其中路径仅表示字段语义；正式执行时记录实际完整绝对路径。
 
 具体 reference key、文件分组、路径引用以及结果 / 诊断 / evidence 对这些 reference key 的使用方式，由 topology integration and assembly 的 `references/results.md` 定义。
 
@@ -65,7 +80,7 @@ Status: CURRENT AUTHORING FREEZE
 
 执行时按实际对象和前置工作项数量扩展同类 reference key；实际不存在的工作项或结果文件不建立占位条目。完整绝对路径替换格式中的占位路径。除这些由实际执行数量和路径决定的变化外，结果记录应遵循 `references/results.md` 已确定的 key 命名和组织方式，不由执行 Agent 自由改写成另一套结构。
 
-当前 reference key 的最终命名仍以本轮后续确认并写入 `references/results.md` 的版本为准；未在本轮确认的临时 key 名不因出现在讨论草稿中自动冻结。
+未在本轮确认的临时 key 名或结果展开项，不因出现在讨论草稿中自动冻结。
 
 ## 5. 正式文本规则
 
