@@ -33,7 +33,7 @@ standard.top
 standard_residue_topology_result.yaml
 ```
 
-`standard.gro` 与 `standard.map` 的 basename 固定。
+`standard.gro`、`standard.map` 与 `standard.top` 的 basename 固定。
 
 `standard.top` 作为标准残基 topology 的主入口。
 各 chain `.itp` 的实际文件路径由 `standard.top` 中的 `#include` 关系确定，
