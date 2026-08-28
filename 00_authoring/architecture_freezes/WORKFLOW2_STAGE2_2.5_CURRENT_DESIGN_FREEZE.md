@@ -26,32 +26,38 @@ Status: CURRENT AUTHORING FREEZE
 
 当前拓扑整合不扫描项目并自行选择前置结果，也不通过文件名、目录顺序或“最新文件”推断输入集合。
 
-## 3. 依赖确定与记录
+## 3. 引用文件确定与读取边界
 
-根据当前 Task Sheet 及其指定的前置工作项，确定本次拓扑整合实际使用的全部依赖文件，并按照 `references/results.md` 记录到当前拓扑整合结果中。依赖无法完整定位或存在未解决歧义时，不继续执行拓扑整合。
+根据当前 Task Sheet 及其指定的前置工作项，确定本次拓扑整合实际使用的上游 / 外部文件。当前拓扑整合正式结果使用结果记录内部的 `references` 保存这些实际引用文件，并由 `references/results.md` 定义具体 reference key、路径与字段引用语义；不另行建立平行的 `dependencies` 顶层字段。
 
-执行 Agent 确定依赖时，只展开到当前拓扑整合实际需要的深度：
+`references` 中的条目不仅用于记录文件来源，也作为当前正式结果内部可复用的文件引用。后续结果字段、诊断记录或 evidence 需要指向同一文件时，应复用相应 reference key，而不是重复建立另一套文件身份或路径记录。
+
+执行 Agent 确定并读取这些文件时，只展开到当前拓扑整合实际需要的深度：
 
 - 上游正式结果中由当前整合实际消费的正式结果文件和直接结果信息，应按需要读取；
-- 除非当前整合确有需要，不继续展开上游正式结果自身的 `dependencies` / `references` 依赖链。
+- 除非当前整合确有需要，不继续展开上游正式结果自身用于记录其上游 / 外部文件的依赖引用部分。
 
 上述“不继续展开”是对执行 Agent 的读取行为限制，不是当前正式结果接口本身的字段语义。
 
-## 4. 当前已确认的直接依赖范围
+引用文件无法完整定位或存在未解决歧义时，不继续执行拓扑整合。
 
-当前拓扑整合正式结果的依赖范围至少包括：
+## 4. 当前已确认的引用文件范围
+
+当前拓扑整合正式结果的 `references` 至少包括：
 
 - 当前对象对应的 `classification_result.yaml`；
 - 当前对象对应的 `stage1_final.pdb`；
 - 与该结构对应的 `stage1_final_map.yaml`；
-- Task Sheet 指定的全部标准残基拓扑生成正式结果记录，以及当前整合实际需要的其正式结果文件；
-- Task Sheet 指定的全部 topology-linked 非标准残基参数化正式结果记录，以及当前整合实际需要的其正式结果文件与直接结果信息；
-- Task Sheet 指定的全部独立非标准参数化正式结果记录，以及当前整合实际需要的其正式结果文件；
-- Task Sheet 已明确分配、可直接参与整合的 solvent / ion 实际对象及其参数定义来源。
+- Task Sheet 指定的全部标准残基拓扑生成正式结果记录；
+- Task Sheet 指定的全部 topology-linked 非标准残基参数化正式结果记录；
+- Task Sheet 指定的全部独立非标准参数化正式结果记录；
+- Task Sheet 已明确分配、可直接参与整合的 solvent / ion 实际对象所采用的参数定义来源文件。
 
 `stage1_final.pdb` 与 `stage1_final_map.yaml` 的结果 owner 是结构准备最终重排与映射任务；后续结构准备终检只读检查这两个正式结果，不生成新的 PDB 或 map。
 
-具体依赖字段、文件分组与路径记录语义由 topology integration and assembly 的 `references/results.md` 定义。
+上游正式结果中的具体结果文件和直接结果信息按当前拓扑整合实际需要读取；是否需要将其中某个具体文件作为当前正式结果自己的独立 `references` 条目，由该文件是否在当前结果、诊断或 evidence 中被直接引用决定，不因其出现在上游 `results` 中就机械复制。
+
+具体 reference key、文件分组、路径引用以及结果 / 诊断 / evidence 对这些 reference key 的使用方式，由 topology integration and assembly 的 `references/results.md` 定义。
 
 ## 5. 正式文本规则
 
