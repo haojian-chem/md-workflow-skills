@@ -204,13 +204,13 @@ stage1_final_map.yaml
 
 先按当前处理范围保留进入 pdb2gmx 输入 PDB 的标准残基 atom records，再依据 pdb2gmx 实际输出维护 map：
 
-- 不属于当前处理范围的 atom records 不进入 `2.2_standard.map`；
-- `stage1_final_map.yaml` 中对应、且在 `2.2_standard_structure.gro` 中仍有明确对应的 atom，保留 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，并按 `2.2_standard_structure.gro` 更新 `current_atom_serial`；
+- 不属于当前处理范围的 atom records 不进入 `standard.map`；
+- `stage1_final_map.yaml` 中对应、且在 `standard.gro` 中仍有明确对应的 atom，保留 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，并按 `standard.gro` 更新 `current_atom_serial`；
 - pdb2gmx 新增、且输入结构中不存在对应 atom 的 atom，新建 record，`original_atom_serial: null`，`component_id + residue_id` 取其所属 residue 的既有身份，`operations` 记录 `2.2ADD`；
 - `input_structure` 指向本次实际使用的 pdb2gmx 输入 PDB；
 - `input_map` 指向实际使用的 `stage1_final_map.yaml`；
-- `current_structure` 指向 `2.2_standard_structure.gro`；
-- 输出 map basename 固定为 `2.2_standard.map`。
+- `current_structure` 指向 `standard.gro`；
+- 输出 map basename 固定为 `standard.map`。
 
 本环节不建立第二套 atom identity，也不根据输出 atom name、resid、chain 或 atom order 重建 `component_id + residue_id`。
 
