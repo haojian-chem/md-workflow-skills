@@ -158,11 +158,24 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 同一个 `moleculetype` 同时包含标准残基与非标准残基时，记录与组织顺序为标准残基在前、非标准残基在后。各来源 `.itp` 内部已有的 residue / atom 顺序保持不变，不为满足该组织顺序重新排列来源 `.itp` 内部内容。
 
-## 6. 拓扑实际合并顺序与 `.itp` 编号
+## 6. 整合 `.gro` 与拓扑实际合并顺序
 
-完成 `moleculetype` 组织后，先生成新的 `.gro` 文件，并据此冻结当前整合结果的 atom / residue 顺序。后续 `.itp` 生成不得再改变这套已经冻结的 atom / residue 顺序。
+整合 `.gro` 的生成规则直接由拓扑整合 main `SKILL.md` 承载，不再单独拆分 local reference。
 
-在 atom / residue 顺序冻结后，为各 `moleculetype` 生成整合后的 `.itp`。来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
+完成 `moleculetype` 组织后，先生成新的全原子 `.gro` 文件，并同步生成与其 atom order 对应的 map。该 `.gro` 确定后冻结当前整合结果的 atom / residue 顺序；后续 `.itp` 生成不得再改变这套顺序。
+
+结构按照已经确定的 `moleculetype` 组织组合。同一个 `moleculetype` 同时包含标准残基和 topology-linked 非标准残基时，标准残基在前，topology-linked 非标准残基在后。各来源结构内部已有的 residue / atom 相对顺序保持不变。
+
+各类结构内容按以下正式来源取得：
+
+- 标准残基从对应标准残基拓扑生成结果的 `STD_n_STRUCTURE` 提取，并应用相关 topology-linked 参数化正式结果中的 `standard_atom_deletions`；
+- topology-linked 非标准残基从对应的 `LINKED_n_STRUCTURE` 中，按当前参数化工作项包含的非标准残基身份及 `LINKED_n_MODEL_MAP` 提取实际进入整合结构的原子；参数化模型中的外围标准残基和封端原子不进入整合 `.gro`；
+- 独立非标准残基从对应的 `IND_n_STRUCTURE` 中，结合 `IND_n_STRUCTURE_MAP` 提取当前体系实际实例；
+- 无需独立参数化、直接采用既定 topology definition 的 solvent / ion，其坐标从 `STRUCTURE_1` 中对应的实际 residue 提取，并通过 `MAP_1` 保持既有 `component_id + residue_id` 与原子对应关系。
+
+新的 map 与整合 `.gro` 同时形成。已有的 `component_id + residue_id` 和可继承的逐原子映射直接沿用；map 记录整合后实际保留的原子集合、顺序及其来源对应关系，不在后续 `.itp` 生成后重新建立另一套 atom correspondence。
+
+在上述 atom / residue 顺序冻结后，为各 `moleculetype` 生成整合后的 `.itp`。来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
 
 整合后的 `.itp` 内容形成后，对每个 `moleculetype` 的 `[ atoms ] nr` 按当前 `.itp` 中已经确定的原子顺序重新编号，并同步更新该 `.itp` 中所有引用原子编号的条目。这里的 `nr` 是处理完成后的 `moleculetype` 内局部原子编号，不是来源 `.itp` 的原始 `nr`。
 
