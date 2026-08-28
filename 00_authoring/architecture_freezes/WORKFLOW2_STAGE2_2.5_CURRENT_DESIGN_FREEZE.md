@@ -152,9 +152,11 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 ### `moleculetype` 结果记录
 
-`references/results.md` 必须定义 `moleculetype` 组织结果如何进入当前拓扑整合的正式结果记录。
+`references/results.md` 只需要记录每个整合后 `moleculetype` 包含哪些 residue。
 
-该记录至少需要明确每个整合后的 `moleculetype` 及其包含的 residue / component；成员身份使用既有 `component_id + residue_id` 表达。具体字段名称、与结果 topology 文件的关联方式及其它记录项，在完整结果接口设计时确定。
+残基身份继续使用既有的 `component_id + residue_id`。连续的 residue 不必逐项列出，可以在同一 `component_id` 下使用 `residue_id: <start>-<end>` 记录连续范围；这里的范围表示该 component 正式 residue 顺序中的连续区间，不重新定义或计算 `residue_id`。
+
+同一个 `moleculetype` 同时包含标准残基与非标准残基时，记录与组织顺序为标准残基在前、非标准残基在后。各来源 `.itp` 内部已有的 residue / atom 顺序保持不变，不为满足该组织顺序重新排列来源 `.itp` 内部内容。
 
 ## 6. 正式文本规则
 
