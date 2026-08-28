@@ -29,6 +29,7 @@ moleculetype 组织
 
 当前工作项从 Task Sheet 读取本次整合明确指定的输入集合，包括：
 
+- 当前体系已经确定采用的基础力场及其它参数定义来源；
 - 当前体系对应的 `classification_result.yaml`、`stage1_final.pdb` 和 `stage1_final_map.yaml`；
 - Task Sheet 指定的全部标准残基拓扑生成正式结果；
 - Task Sheet 指定的全部 topology-linked 非标准残基参数化正式结果；
@@ -139,8 +140,6 @@ integrated.map
 
 正式结果记录必须能够定位本次生成的 `integrated.gro`、`integrated.map`、`topol.top` 和全部 `.itp`，
 并保存当前 `moleculetype` 的组成以及本次实际使用的上游 / 外部文件引用。
-
-当前工作项不执行独立拓扑验证；该检查由独立的拓扑验证工作项负责，不作为当前正式结果生成条件。
 
 随后按 `references/results.md` 定义的项目结果索引登记范围登记正式结果，并按仓库级 Task Execution 规则
 更新当前 Task Sheet 工作项状态与正式结果路径。
