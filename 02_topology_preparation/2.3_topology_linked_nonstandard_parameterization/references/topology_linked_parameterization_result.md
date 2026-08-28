@@ -80,7 +80,7 @@ quantum_tasks:
 ```yaml
 standard_atom_deletions:
   - structure: STANDARD_STRUCTURE_1
-    atom_index: 123
+    current_atom_serial: 123
     atom_name: HG
     relation_id: relation_001
 ```
@@ -88,7 +88,7 @@ standard_atom_deletions:
 字段语义：
 
 - `structure`：引用 `references` 中对应的 2.2 标准残基全原子结构；
-- `atom_index`：取该原子在对应 `standard.map` 中的 `current_atom_serial`，用于定位 `standard.gro` 中的同一原子；
+- `current_atom_serial`：取对应 `standard.map` 中该原子的 `current_atom_serial`，用于定位 `standard.gro` 中的同一原子；
 - `atom_name`：用于人工检查，不作为跨步骤唯一身份依据；
 - `relation_id`：指向 `CLASSIFICATION_RESULT_1` 中相应 `topology_linked_checks[]` 记录。
 
@@ -137,7 +137,7 @@ quantum_tasks:
 
 standard_atom_deletions:
   - structure: STANDARD_STRUCTURE_1
-    atom_index: 123
+    current_atom_serial: 123
     atom_name: HG
     relation_id: relation_001
 
