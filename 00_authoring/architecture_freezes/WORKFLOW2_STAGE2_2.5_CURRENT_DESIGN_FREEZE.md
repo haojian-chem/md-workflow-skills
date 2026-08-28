@@ -169,9 +169,9 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 各类结构内容按以下正式来源取得：
 
 - 标准残基从对应标准残基拓扑生成结果的 `STD_n_STRUCTURE` 提取，并应用相关 topology-linked 参数化正式结果中的 `standard_atom_deletions`；
-- topology-linked 非标准残基从对应的 `LINKED_n_STRUCTURE` 中，按当前参数化工作项包含的非标准残基身份及 `LINKED_n_MODEL_MAP` 提取实际进入整合结构的原子；参数化模型中的外围标准残基和封端原子不进入整合 `.gro`；
+- topology-linked 非标准残基从对应的 `LINKED_n_STRUCTURE` 中，按当前参数化工作项包含的非标准残基身份及 `LINKED_n_MODEL_MAP` 提取实际进入整合结构的原子；
 - 独立非标准残基从对应的 `IND_n_STRUCTURE` 中，结合 `IND_n_STRUCTURE_MAP` 提取当前体系实际实例；
-- 无需独立参数化、直接采用既定 topology definition 的 solvent / ion，其坐标从 `STRUCTURE_1` 中对应的实际 residue 提取，并通过 `MAP_1` 保持既有 `component_id + residue_id` 与原子对应关系。
+- 无需独立参数化、直接采用既定 topology definition 的 solvent / ion，其坐标从 `STRUCTURE_1` 中对应的实际 residue 提取，并通过 `MAP_1` 保持既有 `component_id + residue_id` 与原子对应关系。若采用的 topology definition 包含 `STRUCTURE_1` 对应 residue 中缺失的原子，则按该 topology definition 补全这些原子。
 
 新的 map 与整合 `.gro` 同时形成。已有的 `component_id + residue_id` 和可继承的逐原子映射直接沿用；map 记录整合后实际保留的原子集合、顺序及其来源对应关系，不在后续 `.itp` 生成后重新建立另一套 atom correspondence。
 
