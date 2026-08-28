@@ -124,6 +124,16 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 执行时按实际对象和前置工作项数量扩展同类 reference key；实际不存在的工作项或结果文件不建立占位条目。完整绝对路径替换格式中的占位路径。除这些由实际执行数量和路径决定的变化外，结果记录应遵循 `references/results.md` 已确定的 key 命名和组织方式，不由执行 Agent 自由改写成另一套结构。
 
-## 5. 正式文本规则
+## 5. `moleculetype` 组织规则归属
+
+拓扑整合设置独立的 `moleculetype` 组织执行环节。
+
+- 主 `SKILL.md` 保留该执行环节的职责、输入、调用关系与必要的异常处理，不展开完整组织规则；
+- 具体 `moleculetype` 组织规则由 `references/moleculetype_organization.md` 统一定义；
+- `references/results.md` 只定义 `moleculetype` 组织结果如何进入正式结果记录及相关字段语义，不承担组织判定规则。
+
+`moleculetype` 组织不得改变既有 `component` 身份、`component_id + residue_id`、component membership 或已确认的 topology-linked relation。该环节只建立 GROMACS topology representation 所需的 `moleculetype` 组织。
+
+## 6. 正式文本规则
 
 正式生成 `SKILL.md`、`references/results.md` 或其它科研执行 reference 时，不得使用 `Stage 1`、`1.2`、`2.2`、`2.3`、`2.4`、`2.5` 等编号简称代替任务、结果、输入、依赖或职责语义。正式文本必须直接写明任务名称、正式结果文件、数据字段、对象或职责语义。
