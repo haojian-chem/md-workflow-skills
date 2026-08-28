@@ -121,8 +121,8 @@ record：`original_atom_serial: null`，使用所属 residue 既有的 `componen
 2. 若本次生成独立参数定义 `.itp`，在各 `moleculetype` 定义之前引用该文件；
 3. 引用本次整合生成的各 `<moleculetype name>.itp`；
 4. 引用无需独立参数化、直接采用既定拓扑定义的 solvent / ion 拓扑文件；
-5. 若实际采用的 solvent topology 使用 `POSRES_WATER`，在对应 solvent topology 引用后保留该条件
-   position restraint 内容；
+5. 对采用 `POSRES_WATER` 的 solvent topology，在对应 solvent topology 引用之后保留或设置
+   `#ifdef POSRES_WATER` 条件 position restraint；
 6. 写入 `[ system ]`；
 7. 写入 `[ molecules ]`。
 
