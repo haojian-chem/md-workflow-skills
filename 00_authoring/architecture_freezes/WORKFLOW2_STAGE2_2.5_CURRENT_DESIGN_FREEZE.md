@@ -162,6 +162,8 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 整合 `.gro` 的生成规则直接由拓扑整合 main `SKILL.md` 承载，不再单独拆分 local reference。
 
+整合 `.itp` 的具体生成、合并、编号与各 directive 处理规则统一由 `references/itp_integration.md` 定义；主 `SKILL.md` 只保留完成整合 `.gro` 后进入该 reference 的执行入口与必要主线。
+
 完成 `moleculetype` 组织后，先生成新的全原子 `.gro` 文件，并同步生成与其 atom order 对应的 map。该 `.gro` 确定后冻结当前整合结果的 atom / residue 顺序；后续 `.itp` 生成不得再改变这套顺序。
 
 结构按照已经确定的 `moleculetype` 组织组合。同一个 `moleculetype` 同时包含标准残基和 topology-linked 非标准残基时，标准残基在前，topology-linked 非标准残基在后。各来源结构内部已有的 residue / atom 相对顺序保持不变。
