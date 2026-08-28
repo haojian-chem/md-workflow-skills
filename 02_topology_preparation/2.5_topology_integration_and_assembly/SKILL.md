@@ -98,8 +98,8 @@ integrated.map
 
 `references/itp_integration.md`
 
-按其中规则生成当前整合需要的 `<moleculetype name>.itp`、对应 position-restraint `.itp`，以及本次需要的
-独立参数定义 `.itp`。所有 molecule-local 原子编号均以已经冻结的整合结构顺序为依据建立，不把 `.gro`
+按其中规则生成当前整合需要的 `<moleculetype name>.itp`、对应 position restraint `.itp`，以及本次需要的
+独立参数定义 `.itp`。每个 `moleculetype` 内的局部原子编号均以已经冻结的整合结构顺序为依据建立，不把 `.gro`
 全局 atom number 直接当作 `.itp` 的 `[ atoms ] nr`。
 
 ## 生成 `.top`
@@ -139,6 +139,8 @@ integrated.map
 
 正式结果记录必须能够定位本次生成的 `integrated.gro`、`integrated.map`、`topol.top` 和全部 `.itp`，
 并保存当前 `moleculetype` 的组成以及本次实际使用的上游 / 外部文件引用。
+
+当前工作项不执行独立拓扑验证；该检查由独立的拓扑验证工作项负责，不作为当前正式结果生成条件。
 
 随后按 `references/results.md` 定义的项目结果索引登记范围登记正式结果，并按仓库级 Task Execution 规则
 更新当前 Task Sheet 工作项状态与正式结果路径。
