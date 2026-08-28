@@ -158,6 +158,18 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 同一个 `moleculetype` 同时包含标准残基与非标准残基时，记录与组织顺序为标准残基在前、非标准残基在后。各来源 `.itp` 内部已有的 residue / atom 顺序保持不变，不为满足该组织顺序重新排列来源 `.itp` 内部内容。
 
-## 6. 正式文本规则
+## 6. 拓扑实际合并顺序与 `.itp` 编号
+
+完成 `moleculetype` 组织后，先生成新的 `.gro` 文件，并据此冻结当前整合结果的 atom / residue 顺序。后续 `.itp` 生成不得再改变这套已经冻结的 atom / residue 顺序。
+
+在 atom / residue 顺序冻结后，为各 `moleculetype` 生成整合后的 `.itp`。来源 `.itp` 中已有的原子编号只用于迁移和对应，不直接作为整合后 `.itp` 的最终 `[ atoms ] nr`。
+
+整合后的 `.itp` 内容形成后，对每个 `moleculetype` 的 `[ atoms ] nr` 按当前 `.itp` 中已经确定的原子顺序重新编号，并同步更新该 `.itp` 中所有引用原子编号的条目。这里的 `nr` 是处理完成后的 `moleculetype` 内局部原子编号，不是来源 `.itp` 的原始 `nr`。
+
+本项目中 `cgnr` 与重排完成后的 `[ atoms ] nr` 保持一致。该规则中的 `nr` 指上述整合并重排后的局部编号，不指来源 `.itp` 的原始编号。
+
+当前正式设计不再使用旧冻结中的 `nonstandard unit` 作为拓扑整合处理对象；topology-linked 参数化输入按 Task Sheet 指定的具体参数化工作项及其中包含的非标准残基组合解释。
+
+## 7. 正式文本规则
 
 正式生成 `SKILL.md`、`references/results.md` 或其它科研执行 reference 时，不得使用 `Stage 1`、`1.2`、`2.2`、`2.3`、`2.4`、`2.5` 等编号简称代替任务、结果、输入、依赖或职责语义。正式文本必须直接写明任务名称、正式结果文件、数据字段、对象或职责语义。
