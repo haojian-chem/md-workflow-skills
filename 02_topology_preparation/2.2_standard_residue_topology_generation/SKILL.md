@@ -69,12 +69,12 @@ pdb2gmx 完成后，核验其生成的标准残基全原子结构和拓扑。
 按共享原子映射规则维护当前处理范围内标准残基的映射，生成：
 
 ```text
-2.2_standard.map
+standard.map
 ```
 
 `stage1_final_map.yaml` 中与当前处理范围对应的已有 atom record 保留
 `original_atom_serial`、`component_id + residue_id` 和 `operations`，
-并按 `2.2_standard_structure.gro` 更新 `current_atom_serial`。
+并按 `standard.gro` 更新 `current_atom_serial`。
 
 pdb2gmx 新增、且输入结构中不存在对应 atom 的原子建立新记录，
 `original_atom_serial` 为 `null`，并使用：
@@ -95,9 +95,9 @@ pdb2gmx 新增、且输入结构中不存在对应 atom 的原子建立新记录
 
 ```text
 standard_residue_topology_result.yaml
-2.2_standard_structure.gro
-2.2_standard.map
-2.2_standard.top
+standard.gro
+standard.map
+standard.top
 每条 chain 对应的独立 .itp
 ```
 
@@ -105,7 +105,7 @@ standard_residue_topology_result.yaml
 实际使用的力场及其它参数定义来源、pdb2gmx 输入 PDB、实际执行命令、
 pdb2gmx 执行过程中实际采用的选择，以及上述正式结果文件的完整路径。
 
-`2.2_standard.top` 作为标准残基 topology 的主入口，
+`standard.top` 作为标准残基 topology 的主入口，
 正式结果记录同时逐项保存该 `.top` 实际引用的各 chain `.itp`。
 
 完成后按仓库级 Task Execution 规则更新当前 2.2 工作项状态，
