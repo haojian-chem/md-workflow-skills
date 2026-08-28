@@ -147,12 +147,10 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 ### 已确认的代表性情况
 
 - topology-linked 非标准残基连接一条标准链时，将该非标准残基与相关标准链组织到同一个 `moleculetype`。
-- topology-linked 非标准残基连接多条标准链时，将该非标准残基与相关标准链组织到同一个 `moleculetype`；不额外引入 `bonded topology` 等中间判定概念。
+- topology-linked 非标准残基连接多条标准链时，将该非标准残基与相关标准链组织到同一个 `moleculetype`。
 - 多个 topology-linked 非标准残基连接同一条标准链时，综合处理作用于该标准链的全部 topology-linked relation；不得仅因这些非标准残基来自不同参数化工作项而拆分为不同 `moleculetype`。
 - 未参与 topology-linked relation 的标准链，如无其它 topology 信息要求改变其组织，保留标准残基拓扑生成结果中的 `moleculetype` 组织。
 - 独立非标准残基、solvent 和 ion 按各自采用的 topology 定义组织 `moleculetype`；不存在额外连接关系时，不与其它对象合并。
-
-“topology-linked 非标准残基之间相互连接”不作为本 reference 的独立代表性情况。此类对象在 topology preparation setup 中已经直接分入同一组，拓扑整合不在 `moleculetype` 组织时重新识别这一关系。
 
 ## 6. 正式文本规则
 
