@@ -195,6 +195,45 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 本项目中 `cgnr` 与重排完成后的 `[ atoms ] nr` 保持一致。该规则中的 `nr` 指上述整合并重排后的局部编号，不指来源 `.itp` 的原始编号。
 
+### `references/itp_integration.md` 中已确认的 `[ bonds ]` / `[ angles ]` / `[ dihedrals ]` 规则
+
+完成 `[ atoms ]` 整合后，整合 `[ bonds ]`、`[ angles ]`
+和 `[ dihedrals ]`，并按当前 `[ atoms ] nr` 更新原子编号。
+
+#### 标准残基
+
+保留标准残基来源 `.itp` 中属于当前 `moleculetype`
+且仍然有效的 `[ bonds ]`、`[ angles ]` 和 `[ dihedrals ]`。
+
+涉及 `standard_atom_deletions` 中已删除原子的条目删除；
+其余条目的 `funct`、显式参数及已有 comment 保持不变，
+仅按当前 `[ atoms ] nr` 更新原子编号。
+
+#### topology-linked 非标准残基
+
+从对应 `parameterized_topology.itp` 中提取同时满足以下两个条件的
+`[ bonds ]`、`[ angles ]` 和 `[ dihedrals ]` 条目：
+
+1. 全部参与原子均存在于当前 `moleculetype`；
+2. 至少一个参与原子属于当前 topology-linked 参数化对象中的非标准残基。
+
+在当前生成的 `.itp` 中，为每个 topology-linked 参数化结果单独设置一段补充内容。
+该段集中写入从该参数化结果提取出的 `[ bonds ]`、`[ angles ]` 和 `[ dihedrals ]`，
+与标准残基来源的相应条目分开组织，并在段首注明参数化结果来源。
+
+#### 独立非标准残基
+
+采用对应 `parameterized_topology.itp` 中属于当前
+`moleculetype` 的 `[ bonds ]`、`[ angles ]`
+和 `[ dihedrals ]`，并按当前 `[ atoms ] nr`
+更新原子编号。
+
+#### 经独立非标准参数化处理的 solvent / ion
+
+采用对应 `parameterized_topology.itp` 中属于当前 `moleculetype`
+的 `[ bonds ]`、`[ angles ]` 和 `[ dihedrals ]`，
+并按当前 `[ atoms ] nr` 更新原子编号。
+
 当前正式设计不再使用旧冻结中的 `nonstandard unit` 作为拓扑整合处理对象；topology-linked 参数化输入按 Task Sheet 指定的具体参数化工作项及其中包含的非标准残基组合解释。
 
 ## 7. 正式文本规则
