@@ -1,4 +1,4 @@
-# `.itp` integration
+# `.itp` 整合
 
 本 reference 在 `integrated.gro` 与 `integrated.map` 的 residue / atom 顺序已经冻结后读取。
 
@@ -35,7 +35,7 @@
 或 atom number 代替。
 
 生成过程中，为当前 `.itp` 中每个 `[ atoms ] nr` 建立能够确定的全部来源 `.itp` 与来源原始 `nr` 对应，
-用于后续各 section 的编号迁移和来源追踪。一个当前 `nr` 可以对应多个来源 `.itp` 中的原始 `nr`。
+用于后续各拓扑项的编号迁移和来源追踪。一个当前 `nr` 可以对应多个来源 `.itp` 中的原始 `nr`。
 
 ## `[ bonds ]` / `[ angles ]` / `[ dihedrals ]`
 
@@ -90,7 +90,7 @@
 
 ## 其它 `.itp` 项目
 
-完成前述 section 后，检查各来源 `.itp` 中实际存在的其它项目，包括但不限于：
+完成前述项目后，检查各来源 `.itp` 中实际存在的其它项目，包括但不限于：
 
 ```text
 [ exclusions ]
@@ -105,7 +105,7 @@
 同时检查当前 `.itp` 实际引用的其它拓扑文件。若这些文件中的 restraint 或其它设置使用原子编号，按照当前
 `[ atoms ] nr` 同步更新；引用已删除或未进入当前 `moleculetype` 的原子时，删除相应无效条目。
 
-其余内容的保留或调整，由执行 Agent 根据对应 GROMACS section 的实际语义和当前采用的来源拓扑定义判断。
+其余内容的保留或调整，由执行 Agent 根据对应 GROMACS 项目的实际语义和当前采用的来源拓扑定义判断。
 
 ## Position restraint
 
@@ -151,7 +151,7 @@ fcz = 1000 kJ mol^-1 nm^-2
 
 不按参数类别拆分为多个文件。
 
-是否属于同一参数项，由执行 Agent 按对应 GROMACS section 的实际语义判断，不另行固化六套匹配规则。
+是否属于同一参数项，由执行 Agent 按对应 GROMACS 项目的实际语义判断，不另行固化六套匹配规则。
 
 先在收集到的来源定义之间处理：
 
