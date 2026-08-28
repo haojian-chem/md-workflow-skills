@@ -314,6 +314,41 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 
 当前正式设计不再使用旧冻结中的 `nonstandard unit` 作为拓扑整合处理对象；topology-linked 参数化输入按 Task Sheet 指定的具体参数化工作项及其中包含的非标准残基组合解释。
 
-## 7. 正式文本规则
+## 7. `.top` 生成
+
+完成各 `moleculetype` 的 `.itp` 和独立参数定义 `.itp` 后，生成当前体系的 `.top` 文件。
+
+`.top` 按以下顺序组织：
+
+1. 引用当前体系已经确定采用的基础力场 topology 入口文件；
+2. 引用本次整合生成的独立参数定义 `.itp`；
+3. 引用本次整合生成的各 `<moleculetype name>.itp`；
+4. 引用无需独立参数化、直接采用既定 topology definition 的 solvent / ion 拓扑文件；
+5. 对采用 `POSRES_WATER` 的 solvent topology，在对应 solvent topology 引用之后保留或设置 `#ifdef POSRES_WATER` 条件 position restraint；
+6. 写入 `[ system ]`；
+7. 写入 `[ molecules ]`。
+
+各 `#include` 按实际依赖关系组织，不重复引用同一拓扑文件。
+
+### `[ system ]`
+
+`[ system ]` 使用当前 Task Sheet 中的 `target_id` 作为体系名称。
+
+例如：
+
+```text
+[ system ]
+target_001
+```
+
+### `[ molecules ]`
+
+`[ molecules ]` 按整合 `.gro` 中各分子的实际排列顺序填写。
+
+本次整合生成的 `moleculetype` 使用已经确定的 `moleculetype` 名称；直接采用既定 topology definition 的 solvent / ion 使用其对应的 `moleculetype` 名称。
+
+每个条目的数量必须与整合 `.gro` 中对应 `moleculetype` 的实际分子数量一致。
+
+## 8. 正式文本规则
 
 正式生成 `SKILL.md`、`references/results.md` 或其它科研执行 reference 时，不得使用 `Stage 1`、`1.2`、`2.2`、`2.3`、`2.4`、`2.5` 等编号简称代替任务、结果、输入、依赖或职责语义。正式文本必须直接写明任务名称、正式结果文件、数据字段、对象或职责语义。
