@@ -13,7 +13,7 @@
 - 当前 `target_id`；
 - 本次实际使用的上游 / 外部文件引用；
 - 整合后的 `moleculetype` 组成；
-- `integrated.gro`；
+- 体系整合 `.gro`；
 - `integrated.map`；
 - 体系主 `.top`；
 - 本次实际生成的全部 `.itp`。
@@ -115,7 +115,7 @@ moleculetypes:
 
 ```yaml
 results:
-  structure: /absolute/path/to/integrated.gro
+  structure: /absolute/path/to/sys.gro
   map: /absolute/path/to/integrated.map
   top: /absolute/path/to/sys.top
   itp:
@@ -126,6 +126,8 @@ results:
     - /absolute/path/to/posre_molecule_2.itp
 ```
 
+`results.structure` 记录本次实际生成的体系整合 `.gro`；其默认 basename 为 `sys.gro`。
+
 `results.itp` 只列出本次拓扑整合实际生成的 `.itp`。不存在的文件不建立占位条目；若本次没有生成
 `parameters.itp`，列表中不写该路径。
 
@@ -135,7 +137,7 @@ results:
 默认 basename 为：
 
 ```text
-integrated.gro
+sys.gro
 integrated.map
 sys.top
 <moleculetype name>.itp
@@ -178,7 +180,7 @@ moleculetypes:
         residue_id: residue_001
 
 results:
-  structure: /absolute/path/to/integrated.gro
+  structure: /absolute/path/to/sys.gro
   map: /absolute/path/to/integrated.map
   top: /absolute/path/to/sys.top
   itp:
@@ -194,7 +196,7 @@ results:
 当前工作项完成后，将下列正式结果的完整路径登记到项目结果索引：
 
 - `topology_integration_result.yaml`；
-- `integrated.gro`；
+- 实际生成的体系整合 `.gro`；
 - `integrated.map`；
 - 实际生成的体系主 `.top`；
 - 本次实际生成的全部 `.itp`。
