@@ -35,6 +35,7 @@ WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md
 WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md
 WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md
 WORKFLOW2_STAGE2_2.5_CURRENT_DESIGN_FREEZE.md
+WORKFLOW2_STAGE2_2.6_TOPOLOGY_VALIDATION_FREEZE.md
 
 WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
 WORKFLOW3_STAGE3_3.1_PERIODIC_BOX_CONSTRUCTION_FREEZE.md
@@ -53,7 +54,9 @@ Stage 1 原子映射维护统一冻结于 `WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTEN
 
 Stage 1.2 的 `topology-linked` 检查与正式记录规则已专项冻结于 `WORKFLOW1_STAGE1_1.2_TOPOLOGY_LINKED_CHECK_FREEZE.md`，并已同步到 current 1.2 `SKILL.md` / references / schema；该 freeze 保留为 authoring/architecture record，不取代 current runtime `SKILL.md`。
 
-Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 已明确：Stage 2 未来设置 `02_topology_preparation/SKILL.md` 作为阶段级 main Skill，负责 Stage 2 内部科研编排与共享接口；`2.1 Topology preparation setup` 保持完整独立 Step。当前 2.1–2.4 已生成 active Skill；Stage 2 main Skill 与 2.5–2.6 仍为 freeze-only。
+Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md`。当前该 freeze 仍只作为尚未被其它 current freeze / active Skill 取代的 Stage-level architecture authority。当前 2.1–2.5 已生成 active Skill；Stage 2 main Skill 与 2.6 尚未生成 active Skill。
+
+**2.6 Topology validation 的 current generation authority 唯一为 `WORKFLOW2_STAGE2_2.6_TOPOLOGY_VALIDATION_FREEZE.md`。** `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_AND_LINKED_ITP_HANDOFF.md` 中与 2.6 的具体依赖、检查内容、结果记录和 GROMACS preprocessing 有关的旧文本已经被该 dedicated freeze 取代，后续 2.6 Skill generation 不得从旧综合冻结恢复这些规则。只有需要 Stage-level architecture 时才读取旧综合冻结中仍未被 current authority 取代的 Stage-level 内容。
 
 2.2 current runtime entry 为 `02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`，详细正式结果接口由其 `references/results.md` 拥有，原子映射规则读取仓库级 `references/atom_mapping_rules.md`。`WORKFLOW2_STAGE2_2.2_STANDARD_RESIDUE_TOPOLOGY_GENERATION_FREEZE.md` 保留为 generation 前已确认内容的 authoring / architecture record，不再维护平行 runtime specification。
 
@@ -61,4 +64,4 @@ Stage 2 的 2.3 环节结构、量化计算主线、正式结果记录和向 2.5
 
 Stage 2 的 topology integration and assembly 当前 authoring authority 统一为 `WORKFLOW2_STAGE2_2.5_CURRENT_DESIGN_FREEZE.md`。本轮讨论确认的内容持续写入该文件，并在最终生成对应 `SKILL.md` / local references 时以该文件为当前设计来源。既有 `WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_FREEZE.md`、`WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md` 与 `WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md` 仅作为历史设计参考；其中内容不自动继承，只有经本轮重新确认并写入 current design freeze 后才具有当前生成 authority。
 
-Stage 5 的 analysis planning and orchestration 已由 `WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md` 直接作为 Stage-level architecture 拥有；旧 `5.1` freeze 已退出 current path 并归档。Stage 5 analysis inventory 当前统一使用 capability 语义；旧 `ANALYSIS_TOOL_INVENTORY_FREEZE` 已归档。
+Stage 5 的 analysis planning and orchestration 已由 `WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md` 直接作为 Stage-level architecture 拥有；旧 `5.1` freeze 已退出 current path并归档。Stage 5 analysis inventory 当前统一使用 capability 语义；旧 `ANALYSIS_TOOL_INVENTORY_FREEZE` 已归档。
