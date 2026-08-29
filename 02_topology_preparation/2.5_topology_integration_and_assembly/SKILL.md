@@ -61,12 +61,13 @@ moleculetype 组织
 
 ## 生成整合全原子结构与 map
 
-完成 `moleculetype` 组织后，生成：
+完成 `moleculetype` 组织后，体系整合 `.gro` 默认命名为：
 
-```text
-integrated.gro
-integrated.map
-```
+`sys.gro`
+
+并同步生成：
+
+`integrated.map`
 
 结构按已经确定的 `moleculetype` 组织组合。同一个 `moleculetype` 同时包含标准残基和 topology-linked
 非标准残基时，标准残基在前，topology-linked 非标准残基在后；各来源结构内部已有的 residue / atom
@@ -88,8 +89,8 @@ integrated.map
 的全部 atom 使用同一 residue number。随后按当前 atom 顺序从 1 开始连续重新编号 `.gro` atom number。
 这些文件内编号不改变既有 `component_id + residue_id`。
 
-`integrated.map` 与 `integrated.gro` 同时形成，只记录整合后实际存在的原子。已有的 `component_id + residue_id`
-和可继承的逐原子映射继续沿用，并以整合 `.gro` 的 atom number 更新 `current_atom_serial`。
+`integrated.map` 与体系整合 `.gro` 同时形成，只记录整合后实际存在的原子。已有的 `component_id + residue_id`
+和可继承的逐原子映射继续沿用，并以体系整合 `.gro` 的 atom number 更新 `current_atom_serial`。
 
 对按既定拓扑定义补全、且进入整合前不存在对应原子的 solvent / ion atom，在 `integrated.map` 中建立新 atom
 record：`original_atom_serial: null`，使用所属 residue 既有的 `component_id + residue_id`，并记录
@@ -101,7 +102,7 @@ record：`original_atom_serial: null`，使用所属 residue 既有的 `componen
 
 ## 整合 `.itp`
 
-整合 `.gro` 与 map 的顺序冻结后读取：
+体系整合 `.gro` 与 map 的顺序冻结后读取：
 
 `references/itp_integration.md`
 
@@ -130,9 +131,9 @@ record：`original_atom_serial: null`，使用所属 residue 既有的 `componen
 
 `[ system ]` 使用当前 Task Sheet 的 `target_id` 作为体系名称。
 
-`[ molecules ]` 按 `integrated.gro` 中各分子的实际排列顺序填写。本次整合生成的 `moleculetype` 使用已经确定的
-名称；直接采用既定拓扑定义的 solvent / ion 使用对应 `moleculetype` 名称。每个条目的数量与
-`integrated.gro` 中对应 `moleculetype` 的实际分子数量一致。
+`[ molecules ]` 按体系整合 `.gro` 中各分子的实际排列顺序填写。本次整合生成的 `moleculetype` 使用已经确定的
+名称；直接采用既定拓扑定义的 solvent / ion 使用对应 `moleculetype` 名称。每个条目的数量与体系整合 `.gro`
+中对应 `moleculetype` 的实际分子数量一致。
 
 ## 正式结果
 
@@ -144,7 +145,7 @@ record：`original_atom_serial: null`，使用所属 residue 既有的 `componen
 
 `topology_integration_result.yaml`
 
-正式结果记录必须能够定位本次生成的 `integrated.gro`、`integrated.map`、体系主 `.top` 和全部 `.itp`，
+正式结果记录必须能够定位本次生成的体系整合 `.gro`、`integrated.map`、体系主 `.top` 和全部 `.itp`，
 并保存当前 `moleculetype` 的组成以及本次实际使用的上游 / 外部文件引用。
 
 随后按 `references/results.md` 定义的项目结果索引登记范围登记正式结果，并按仓库级 Task Execution 规则
