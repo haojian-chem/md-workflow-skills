@@ -15,7 +15,7 @@
 - 整合后的 `moleculetype` 组成；
 - `integrated.gro`；
 - `integrated.map`；
-- `topol.top`；
+- `sys.top`；
 - 本次实际生成的全部 `.itp`。
 
 结果文件与依赖文件路径遵守仓库级结果生成规则的完整绝对路径语义。
@@ -117,7 +117,7 @@ moleculetypes:
 results:
   structure: /absolute/path/to/integrated.gro
   map: /absolute/path/to/integrated.map
-  top: /absolute/path/to/topol.top
+  top: /absolute/path/to/sys.top
   itp:
     - /absolute/path/to/parameters.itp
     - /absolute/path/to/molecule_1.itp
@@ -137,7 +137,7 @@ results:
 ```text
 integrated.gro
 integrated.map
-topol.top
+sys.top
 <moleculetype name>.itp
 posre_<moleculetype name>.itp
 parameters.itp            # 仅在本次实际生成时存在
@@ -180,7 +180,7 @@ moleculetypes:
 results:
   structure: /absolute/path/to/integrated.gro
   map: /absolute/path/to/integrated.map
-  top: /absolute/path/to/topol.top
+  top: /absolute/path/to/sys.top
   itp:
     - /absolute/path/to/parameters.itp
     - /absolute/path/to/molecule_1.itp
@@ -196,7 +196,7 @@ results:
 - `topology_integration_result.yaml`；
 - `integrated.gro`；
 - `integrated.map`；
-- `topol.top`；
+- `sys.top`；
 - 本次实际生成的全部 `.itp`。
 
 上游正式结果、基础力场文件、直接采用的 solvent / ion topology 和其它外部参数定义不作为当前工作项生成的
