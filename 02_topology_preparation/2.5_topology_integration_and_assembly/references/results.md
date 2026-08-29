@@ -15,7 +15,7 @@
 - 整合后的 `moleculetype` 组成；
 - `integrated.gro`；
 - `integrated.map`；
-- `sys.top`；
+- 体系主 `.top`；
 - 本次实际生成的全部 `.itp`。
 
 结果文件与依赖文件路径遵守仓库级结果生成规则的完整绝对路径语义。
@@ -132,7 +132,7 @@ results:
 无需独立参数化、直接采用的 solvent / ion topology 属于本次整合的外部定义，记录在 `references`，
 不作为当前工作项生成的 `.itp` 写入 `results.itp`。
 
-固定 basename 为：
+默认 basename 为：
 
 ```text
 integrated.gro
@@ -196,7 +196,7 @@ results:
 - `topology_integration_result.yaml`；
 - `integrated.gro`；
 - `integrated.map`；
-- `sys.top`；
+- 实际生成的体系主 `.top`；
 - 本次实际生成的全部 `.itp`。
 
 上游正式结果、基础力场文件、直接采用的 solvent / ion topology 和其它外部参数定义不作为当前工作项生成的
