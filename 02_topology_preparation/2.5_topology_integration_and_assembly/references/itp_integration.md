@@ -1,6 +1,6 @@
 # `.itp` 整合
 
-本 reference 在 `integrated.gro` 与 `integrated.map` 的 residue / atom 顺序已经冻结后读取。
+本 reference 在体系整合 `.gro` 与 `integrated.map` 的 residue / atom 顺序已经冻结后读取。
 
 对当前整合需要生成 `.itp` 的每个 `moleculetype`，主拓扑文件命名为：
 
@@ -18,7 +18,7 @@
 
 生成每个 `moleculetype` 的 `.itp` 时，首先整合 `[ atoms ]`。
 
-`[ atoms ]` 中 residue / atom 的顺序必须与已经冻结的 `integrated.gro` 中该 `moleculetype` 对应部分一致。
+`[ atoms ]` 中 residue / atom 的顺序必须与已经冻结的体系整合 `.gro` 中该 `moleculetype` 对应部分一致。
 
 标准残基的原子属性以对应标准残基来源 `.itp` 为基础，并应用相关 topology-linked 参数化正式结果中的
 `standard_atom_deletions`。topology-linked 非标准残基和独立非标准残基的原子属性从对应
@@ -31,7 +31,7 @@
 每个 `moleculetype` 内按当前 residue 顺序从 1 开始连续重新编号 `resnr`；同一 residue 的全部 atom 使用同一
 `resnr`。随后按当前 atom 顺序从 1 开始连续重新编号 `[ atoms ] nr`，并令 `cgnr` 与重新编号后的 `nr` 一致。
 
-这里的 `resnr` 和 `nr` 都是当前 `moleculetype` 内的局部编号，不使用 `integrated.gro` 的全局 residue number
+这里的 `resnr` 和 `nr` 都是当前 `moleculetype` 内的局部编号，不使用体系整合 `.gro` 的全局 residue number
 或 atom number 代替。
 
 生成过程中，为当前 `.itp` 中每个 `[ atoms ] nr` 建立能够确定的全部来源 `.itp` 与来源原始 `nr` 对应，
