@@ -111,7 +111,7 @@ record：`original_atom_serial: null`，使用所属 residue 既有的 `componen
 
 ## 生成 `.top`
 
-完成各当前生成的 `moleculetype` `.itp` 及独立参数定义 `.itp` 后，生成：
+完成各当前生成的 `moleculetype` `.itp` 及独立参数定义 `.itp` 后，体系主拓扑文件默认命名为：
 
 `sys.top`
 
@@ -144,7 +144,7 @@ record：`original_atom_serial: null`，使用所属 residue 既有的 `componen
 
 `topology_integration_result.yaml`
 
-正式结果记录必须能够定位本次生成的 `integrated.gro`、`integrated.map`、`sys.top` 和全部 `.itp`，
+正式结果记录必须能够定位本次生成的 `integrated.gro`、`integrated.map`、体系主 `.top` 和全部 `.itp`，
 并保存当前 `moleculetype` 的组成以及本次实际使用的上游 / 外部文件引用。
 
 随后按 `references/results.md` 定义的项目结果索引登记范围登记正式结果，并按仓库级 Task Execution 规则
