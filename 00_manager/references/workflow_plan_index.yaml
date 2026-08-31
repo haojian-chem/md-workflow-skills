@@ -1,4 +1,4 @@
-schema_version: 3
+schema_version: 4
 status: active
 purpose: lightweight_manager_initial_planning
 
@@ -70,6 +70,7 @@ workflows:
     name: topology_preparation
     project_directory: 02_topology_preparation
     step_catalog_status: defined
+    planning_mode: defined_steps_with_optional_validation
     steps:
       - id: "2.1"
         name: topology_preparation_setup
@@ -89,6 +90,7 @@ workflows:
       - id: "2.6"
         name: topology_validation
         base_work_directory: 02_topology_preparation/06_topology_validation
+        initial_planning: explicit_scope_only
 
   md_preparation:
     workflow_id: "3"
@@ -123,15 +125,21 @@ workflows:
     project_directory: 05_analysis
     step_catalog_status: no_numbered_substages
     planning_mode: stage_level
+    capability_planning_owner: stage_runtime
+    capability_catalog_mode: continuously_maintained_runtime_inventory
 
 planning_rules:
   - preserve_defined_step_order
   - defined_step_order_is_the_default_planning_order_not_a_one-instance_only_constraint
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
+  - topology_preparation_2_1_through_2_5_are_the_default_initial_planning_sequence_for_full_stage2_preparation_scope
+  - topology_validation_2_6_is_not_automatically_added_and_is_planned_only_when_validation_is_explicitly_within_user_scope
   - md_preparation_task_sheet_uses_stage_level_entry_without_numbered_substages
   - md_simulation_task_sheet_uses_planned_run_route_instead_of_serialized_sub_stage_instances
   - md_simulation_formal_run_unit_ids_are_not_allocated_during_initial_planning
   - analysis_task_sheet_uses_stage_level_entry_without_5_1_substage
+  - analysis_capabilities_are_discovered_and_planned_by_stage5_runtime_not_by_manager
+  - analysis_capability_inventory_is_continuously_maintained_and_has_no_fixed_completion_catalog
   - task_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_task_sheet
   - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
   - manager_does_not_evaluate_scientific_step_applicability
