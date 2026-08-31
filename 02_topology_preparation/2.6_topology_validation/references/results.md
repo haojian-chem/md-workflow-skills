@@ -87,7 +87,7 @@ top_includes:
 ## `structure_topology`
 
 本项记录当前结构文件的 residue / atom 数量，以及按体系 `.top [ molecules ]` 和对应
-`moleculetype [ atoms ]` 展开的拓扑规模；同时记录对 position-restraint `.itp` 的检查结果：
+`moleculetype [ atoms ]` 展开的拓扑规模；同时记录对 position restraint `.itp` 的检查结果：
 
 ```yaml
 structure_topology:
@@ -152,9 +152,9 @@ atom_name_differences:
 其它差异数组只记录与该差异类型相关的位置和值；不适用的定位字段省略。
 
 `position_restraints` 是本项对 `.itp` 的检查记录，不是独立检查项。对体系 `.top` 或最终
-`moleculetype` `.itp` 通过条件 `#include` 引用的每个 position-restraint `.itp` 建立一条记录：
+`moleculetype` `.itp` 通过条件 `#include` 引用的每个 position restraint `.itp` 建立一条记录：
 
-- `file`：实际 position-restraint `.itp`；
+- `file`：实际 position restraint `.itp`；
 - `moleculetype`：该 restraint 文件对应的 `moleculetype`；
 - `heavy_atom_count`：对应 `moleculetype [ atoms ]` 中的重原子数量；
 - `restraint_entry_count`：该文件 `[ position_restraints ]` 中实际记录的条目数量；
