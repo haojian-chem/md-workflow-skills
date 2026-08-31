@@ -1,6 +1,6 @@
-schema_version: 4
+schema_version: 5
 status: active
-purpose: lightweight_manager_initial_planning
+purpose: lightweight_manager_initial_planning_and_runtime_entry_index
 
 runtime_policy:
   manager_reads_for:
@@ -21,6 +21,11 @@ workflow_order:
   - md_simulation
   - analysis
 
+runtime_entry_policy:
+  entry_fields_are_navigation_only: true
+  manager_does_not_read_all_entries_during_initial_planning: true
+  scientific_execution_reads_the_current_runtime_entry_when_handoff_reaches_that_stage_or_step: true
+
 directory_policy:
   base_directory_initialization_owner: project_initialization
   manager_may_ensure_defined_base_directories: true
@@ -28,67 +33,87 @@ directory_policy:
   task_execution_directory_pattern: "{base_work_directory}/{task_id}"
   task_execution_directory_creation_owner: task_execution_agent
   create_task_directory_only_when_execution_is_required: true
-  reuse_without_local_execution_does_not_require_task_directory: true
 
 workflows:
   structure_preparation:
     workflow_id: "1"
     name: structure_preparation
     project_directory: 01_structure_preparation
+    stage_runtime_entry: 01_structure_preparation/SKILL.md
+    runtime_structure: stage_main_with_numbered_steps
+    runtime_handoff: stage_runtime_entry
     step_catalog_status: defined
     steps:
       - id: "1.1"
         name: source_recognition
+        entry: 01_structure_preparation/1.1_source_recognition/SKILL.md
         base_work_directory: 01_structure_preparation/01_source_recognition
       - id: "1.2"
         name: component_and_residue_classification
+        entry: 01_structure_preparation/1.2_component_and_residue_classification/SKILL.md
         base_work_directory: 01_structure_preparation/02_component_and_residue_classification
       - id: "1.3"
         name: chain_and_residue_selection
+        entry: 01_structure_preparation/1.3_chain_and_residue_selection/SKILL.md
         base_work_directory: 01_structure_preparation/03_chain_and_residue_selection
       - id: "1.4"
         name: altloc_occupancy_resolution
+        entry: 01_structure_preparation/1.4_altloc_occupancy_resolution/SKILL.md
         base_work_directory: 01_structure_preparation/04_altloc_occupancy_resolution
       - id: "1.5"
         name: completeness_check
+        entry: 01_structure_preparation/1.5_completeness_check/SKILL.md
         base_work_directory: 01_structure_preparation/05_completeness_check
       - id: "1.6"
         name: structure_completion
+        entry: 01_structure_preparation/1.6_structure_completion/SKILL.md
         base_work_directory: 01_structure_preparation/06_structure_completion
       - id: "1.7"
         name: protein_protonation_assignment
+        entry: 01_structure_preparation/1.7_protein_protonation_assignment/SKILL.md
         base_work_directory: 01_structure_preparation/07_protein_protonation_assignment
       - id: "1.8"
         name: reorder_and_mapping
+        entry: 01_structure_preparation/1.8_reorder_and_mapping/SKILL.md
         base_work_directory: 01_structure_preparation/08_reorder_and_mapping
       - id: "1.9"
         name: validation
+        entry: 01_structure_preparation/1.9_validation/SKILL.md
         base_work_directory: 01_structure_preparation/09_validation
 
   topology_preparation:
     workflow_id: "2"
     name: topology_preparation
     project_directory: 02_topology_preparation
+    stage_runtime_entry: null
+    runtime_structure: numbered_steps_without_stage_main
+    runtime_handoff: current_step_entry
     step_catalog_status: defined
     planning_mode: defined_steps_with_optional_validation
     steps:
       - id: "2.1"
         name: topology_preparation_setup
+        entry: 02_topology_preparation/2.1_topology_preparation_setup/SKILL.md
         base_work_directory: 02_topology_preparation/01_topology_preparation_setup
       - id: "2.2"
         name: standard_residue_topology_generation
+        entry: 02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md
         base_work_directory: 02_topology_preparation/02_standard_residue_topology_generation
       - id: "2.3"
         name: topology_linked_nonstandard_parameterization
+        entry: 02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md
         base_work_directory: 02_topology_preparation/03_topology_linked_nonstandard_parameterization
       - id: "2.4"
         name: independent_nonstandard_parameterization
+        entry: 02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md
         base_work_directory: 02_topology_preparation/04_independent_nonstandard_parameterization
       - id: "2.5"
         name: topology_integration_and_assembly
+        entry: 02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md
         base_work_directory: 02_topology_preparation/05_topology_integration_and_assembly
       - id: "2.6"
         name: topology_validation
+        entry: 02_topology_preparation/2.6_topology_validation/SKILL.md
         base_work_directory: 02_topology_preparation/06_topology_validation
         initial_planning: explicit_scope_only
 
@@ -96,6 +121,9 @@ workflows:
     workflow_id: "3"
     name: md_preparation
     project_directory: 03_md_preparation
+    stage_runtime_entry: 03_md_preparation/SKILL.md
+    runtime_structure: stage_main_only
+    runtime_handoff: stage_runtime_entry
     step_catalog_status: no_numbered_substages
     planning_mode: stage_level
 
@@ -103,28 +131,38 @@ workflows:
     workflow_id: "4"
     name: md_simulation
     project_directory: 04_md_simulation
+    stage_runtime_entry: 04_md_simulation/SKILL.md
+    runtime_structure: stage_main_with_run_class_subskills
+    runtime_handoff: stage_runtime_entry
     step_catalog_status: defined
     planning_mode: planned_run_route
     manager_allocates_formal_run_unit_ids: false
     steps:
       - id: "4.1"
         name: energy_minimization
+        entry: 04_md_simulation/4.1_energy_minimization/SKILL.md
         execution_object_prefix: em
       - id: "4.2"
         name: equilibration
+        entry: 04_md_simulation/4.2_equilibration/SKILL.md
         execution_object_prefixes:
           - nvt
           - npt
       - id: "4.3"
         name: production_simulation
+        entry: 04_md_simulation/4.3_production_simulation/SKILL.md
         execution_object_prefix: md
 
   analysis:
     workflow_id: "5"
     name: analysis
     project_directory: 05_analysis
+    stage_runtime_entry: 05_analysis/SKILL.md
+    runtime_structure: stage_main_with_capability_entries
+    runtime_handoff: stage_runtime_entry
     step_catalog_status: no_numbered_substages
     planning_mode: stage_level
+    capability_inventory: 05_analysis/references/analysis_capability_inventory.yaml
     capability_planning_owner: stage_runtime
     capability_catalog_mode: continuously_maintained_runtime_inventory
 
@@ -132,12 +170,18 @@ planning_rules:
   - preserve_defined_step_order
   - defined_step_order_is_the_default_planning_order_not_a_one-instance_only_constraint
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
+  - runtime_entry_fields_define_current_handoff_navigation_but_do_not_expand_manager_scientific_reads
+  - structure_preparation_handoff_enters_the_stage1_main_skill_before_stage_specific_execution
+  - topology_preparation_has_no_stage_main_skill_and_handoff_enters_the_current_planned_step_entry
   - topology_preparation_2_1_through_2_5_are_the_default_initial_planning_sequence_for_full_stage2_preparation_scope
   - topology_validation_2_6_is_not_automatically_added_and_is_planned_only_when_validation_is_explicitly_within_user_scope
   - md_preparation_task_sheet_uses_stage_level_entry_without_numbered_substages
+  - md_preparation_runtime_has_only_the_stage_main_skill_entry
   - md_simulation_task_sheet_uses_planned_run_route_instead_of_serialized_sub_stage_instances
+  - md_simulation_runtime_handoff_enters_the_stage4_main_skill
   - md_simulation_formal_run_unit_ids_are_not_allocated_during_initial_planning
   - analysis_task_sheet_uses_stage_level_entry_without_5_1_substage
+  - analysis_runtime_handoff_enters_the_stage5_main_skill
   - analysis_capabilities_are_discovered_and_planned_by_stage5_runtime_not_by_manager
   - analysis_capability_inventory_is_continuously_maintained_and_has_no_fixed_completion_catalog
   - task_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_task_sheet
