@@ -1,6 +1,6 @@
 ---
 name: md-preparation
-description: System construction / solvation main Skill。根据当前 Task Sheet 中的处理对象和体系构建要求，规划并执行周期盒构建、溶剂添加和离子添加，维护同一阶段级操作计划，并生成 system_construction_result.yaml。
+description: System construction / solvation main Skill。根据当前 Task Sheet 中的处理对象和需要完成的体系构建工作，规划并执行周期盒构建、溶剂添加和离子添加，维护同一阶段级操作计划，并生成 system_construction_result.yaml。
 ---
 
 # 3 System construction / solvation
@@ -61,7 +61,7 @@ Task Execution Agent 以当前处理对象为准，结合当前任务上下文�
 
 `../02_topology_preparation/2.6_topology_validation/references/results.md`
 
-发现具有实际影响的风险时，在用户可见回复和当前 Task Sheet 中说明。
+发现具有实际影响的风险时，适当提醒用户。
 
 ## 操作计划
 
