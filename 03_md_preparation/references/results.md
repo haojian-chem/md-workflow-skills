@@ -35,21 +35,21 @@ references:
 
 ```yaml
 - directory: /absolute/path/to/01_periodic_box_construction
-  type: periodic_box_construction
+  operation_type: periodic_box_construction
   structure: /absolute/path/to/actual_boxed_structure.gro
 
 - directory: /absolute/path/to/02_solvent_addition
-  type: solvent_addition
+  operation_type: solvent_addition
   structure: /absolute/path/to/actual_solvated_structure.gro
   top: /absolute/path/to/actual_solvated_system.top
 
 - directory: /absolute/path/to/03_ion_addition
-  type: ion_addition
+  operation_type: ion_addition
   structure: /absolute/path/to/actual_ionized_structure.gro
   top: /absolute/path/to/actual_ionized_system.top
 ```
 
-`type` 当前使用：
+`operation_type` 当前使用：
 
 ```text
 periodic_box_construction
@@ -60,7 +60,7 @@ ion_addition
 字段语义：
 
 - `directory`：该实际操作的完整工作目录；
-- `type`：操作类型；
+- `operation_type`：操作类型；
 - `structure`：该操作实际生成并继续保留的结构文件；
 - `top`：该操作实际生成或修改并继续保留的体系主 `.top`。
 
@@ -89,16 +89,16 @@ references:
 results:
   operations:
     - directory: /absolute/path/to/01_periodic_box_construction
-      type: periodic_box_construction
+      operation_type: periodic_box_construction
       structure: /absolute/path/to/actual_boxed_structure.gro
 
     - directory: /absolute/path/to/02_solvent_addition
-      type: solvent_addition
+      operation_type: solvent_addition
       structure: /absolute/path/to/actual_solvated_structure.gro
       top: /absolute/path/to/actual_solvated_system.top
 
     - directory: /absolute/path/to/03_ion_addition
-      type: ion_addition
+      operation_type: ion_addition
       structure: /absolute/path/to/actual_ionized_structure.gro
       top: /absolute/path/to/actual_ionized_system.top
 
