@@ -1,0 +1,30 @@
+; Preset used only for gmx grompp during topology validation.
+; It is not an energy-minimization or MD protocol, and the generated .tpr
+; must not be used as a simulation input.
+;
+; No topology preprocessor macro is enabled by this file.
+; The structure supplied with -c must contain box vectors that GROMACS can use;
+; this preset does not construct or modify a periodic box.
+;
+; The nonbonded settings below are preprocessing-only settings. They are not
+; intended to define the later simulation protocol.
+
+integrator                  = steep
+nsteps                      = 0
+emtol                       = 1000.0
+emstep                      = 0.01
+
+constraints                 = none
+
+cutoff-scheme               = Verlet
+nstlist                     = 10
+pbc                         = xyz
+verlet-buffer-tolerance     = -1
+rlist                       = 0.5
+
+coulombtype                 = Cut-off
+rcoulomb                    = 0.5
+
+vdwtype                     = Cut-off
+rvdw                        = 0.5
+DispCorr                    = no
