@@ -24,22 +24,13 @@ Stage / Step 目录可以在正式 Skill generation 前预留，因此：
 
 当前总体建设状态：
 
-- Stage 1：partially implemented；已有正式 active Skills，同时仍有处于 authoring / freeze-only 状态的后续 Step；
-- Stage 2：architecture frozen；`2.1 Topology preparation setup` 已生成 active Skill，Stage main 与 `2.2–2.6` 仍为 freeze-only；
-- Stage 3：architecture frozen；`3.1–3.3` Step package directories 已预留，尚无 active Stage 3 Skill；
-- Stage 4：active Skill generation completed；Stage main Skill 与 `4.1–4.3` Skills 已存在；
-- Stage 5：architecture frozen；`5.1` Step package directory 已预留，尚无 active Stage 5 Skill。
+- Stage 1：active Skill generation completed；
+- Stage 2：`2.1–2.6` active；Stage-level main Skill 仍为 freeze-only；
+- Stage 3：architecture frozen；不设置编号化 sub-stage；未来 Stage-level entry 为 `03_md_preparation/SKILL.md`，尚未生成 active Skill；
+- Stage 4：active Skill generation completed；
+- Stage 5：Stage-level main Skill、`trjconv`、`trjcat` 和 `make_ndx` active；其它初始 capabilities 仍待分别实现。
 
-例如当前 Stage 3 scientific source tree 为：
-
-```text
-03_md_preparation/
-├── 3.1_periodic_box_construction/
-├── 3.2_solvent_addition/
-└── 3.3_ion_addition/
-```
-
-这些目录当前是 future Skill package locations，不表示 first-pass Step Skills 已经生成。
+Stage 3 当前只保留 `03_md_preparation/` 作为未来 Stage-level Skill package root。
 
 精确的 Stage / Step 建设状态与 current entry 统一读取：
 
