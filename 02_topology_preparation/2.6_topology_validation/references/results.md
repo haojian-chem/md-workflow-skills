@@ -6,10 +6,10 @@
 
 `topology_validation_result.yaml`
 
-作为本次 topology validation 的正式结果记录。
+作为本次拓扑终检的正式结果记录。
 
 该 YAML 保存当前 `target_id`、实际文件引用和六项检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、
-`result_status`、overall conclusion 或 blocking finding。
+`result_status`、整体结论或阻断性结论。
 
 结果文件和依赖文件路径遵守仓库级结果生成规则的完整绝对路径语义。
 
@@ -81,7 +81,7 @@ top_includes:
 - `exists`：解析路径指向的文件是否存在；
 - `readable`：该文件是否可读取；文件不存在时记录 `false`。
 
-本项不记录 line number，也不递归登记 `.itp` 内部的 `#include`。
+本项不记录 `line_number`，也不递归登记 `.itp` 内部的 `#include`。
 
 ## `structure_topology`
 
@@ -105,8 +105,8 @@ structure_topology:
   atom_name_differences: []
 ```
 
-`topology_molecule_count` 是体系 `.top [ molecules ]` 按数量展开后的 molecule instance 总数；
-`topology_residue_count` 和 `topology_atom_count` 是全部 molecule instance 展开后的总数。
+`topology_molecule_count` 是体系 `.top [ molecules ]` 按数量展开后的分子实例总数；
+`topology_residue_count` 和 `topology_atom_count` 是全部分子实例展开后的总数。
 
 不为没有差异的普通 molecule、residue 或 atom 逐项生成记录。每个实际差异按所在数组记录能够定位问题的字段：
 
@@ -117,7 +117,7 @@ structure_topology:
 - `structure` 下的结构文件实际位置和值；
 - `topology` 下的拓扑文件实际位置和值。
 
-例如 atom name 差异：
+例如 atom name 的差异：
 
 ```yaml
 atom_name_differences:
@@ -268,7 +268,7 @@ topology_matches:
 
 ## `standard_side_charge_modifications`
 
-检查过程逐 atom 核对，正式结果只按 residue 记录：
+检查过程逐原子核对，正式结果只按 residue 记录：
 
 ```yaml
 standard_side_charge_modifications:
