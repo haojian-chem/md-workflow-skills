@@ -38,9 +38,6 @@ WORKFLOW2_STAGE2_2.5_CURRENT_DESIGN_FREEZE.md
 WORKFLOW2_STAGE2_2.6_TOPOLOGY_VALIDATION_FREEZE.md
 
 WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md
-WORKFLOW3_STAGE3_3.1_PERIODIC_BOX_CONSTRUCTION_FREEZE.md
-WORKFLOW3_STAGE3_3.2_SOLVENT_ADDITION_FREEZE.md
-WORKFLOW3_STAGE3_3.3_ION_ADDITION_FREEZE.md
 
 WORKFLOW4_STAGE4_ARCHITECTURE_FREEZE.md
 
@@ -63,5 +60,7 @@ Stage 2 的阶段级架构 authority 为 `WORKFLOW2_STAGE2_ARCHITECTURE_FREEZE_A
 Stage 2 的 2.3 环节结构、量化计算主线、正式结果记录和向 2.5 交付的信息记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_FREEZE.md`；建立参数化模型、几何优化固定原子、电荷拟合和 Sobtop 参数化的详细科学/技术规则分别记录于 `WORKFLOW2_STAGE2_2.3_PARAMETERIZATION_MODEL_CONSTRUCTION_FREEZE.md`、`WORKFLOW2_STAGE2_2.3_GEOMETRY_OPTIMIZATION_FIXED_ATOMS_FREEZE.md`、`WORKFLOW2_STAGE2_2.3_CHARGE_FITTING_RULES_FREEZE.md` 和 `WORKFLOW2_STAGE2_2.3_SOBTOP_PARAMETERIZATION_RULES_FREEZE.md`。
 
 Stage 2 的 topology integration and assembly 当前 authoring authority 统一为 `WORKFLOW2_STAGE2_2.5_CURRENT_DESIGN_FREEZE.md`。本轮讨论确认的内容持续写入该文件，并在最终生成对应 `SKILL.md` / local references 时以该文件为当前设计来源。既有 `WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_FREEZE.md`、`WORKFLOW2_STAGE2_2.5_TOPOLOGY_INTEGRATION_RULES_FREEZE.md` 与 `WORKFLOW2_STAGE2_2.5_PARAMETER_DEFINITION_DEDUPLICATION_FREEZE.md` 仅作为历史设计参考；其中内容不自动继承，只有经本轮重新确认并写入 current design freeze 后才具有当前生成 authority。
+
+Stage 3 的 current architecture authority 为 `WORKFLOW3_STAGE3_ARCHITECTURE_FREEZE.md`。Stage 3 当前不设置编号化 sub-stage；周期盒构建、溶剂添加和离子添加由未来 Stage-level main Skill 在执行期作为内部 operations 规划和维护。原 `3.1 / 3.2 / 3.3` step-level freezes 已移入 `00_authoring/archive/stage3_history/`，不再属于 current authoring path。未来 runtime entry 为 `03_md_preparation/SKILL.md`，active Skill generation 尚未获批。
 
 Stage 5 的 analysis planning and orchestration 已由 `WORKFLOW5_STAGE5_ARCHITECTURE_FREEZE.md` 直接作为 Stage-level architecture 拥有；旧 `5.1` freeze 已退出 current path并归档。Stage 5 analysis inventory 当前统一使用 capability 语义；旧 `ANALYSIS_TOOL_INVENTORY_FREEZE` 已归档。
