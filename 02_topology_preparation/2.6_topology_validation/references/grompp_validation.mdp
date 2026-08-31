@@ -3,11 +3,12 @@
 ; must not be used as a simulation input.
 ;
 ; No topology preprocessor macro is enabled by this file.
-; The structure supplied with -c must contain box vectors that GROMACS can use;
-; this preset does not construct or modify a periodic box.
+; Periodic boundary conditions are disabled so that this check does not require
+; the periodic box that will be constructed in the later system-construction stage.
 ;
-; The nonbonded settings below are preprocessing-only settings. They are not
-; intended to define the later simulation protocol.
+; Non-bonded cut-offs and neighbor-list updates are disabled. These settings are
+; used only to preprocess and inspect the current structure/topology association;
+; they do not define the later simulation protocol.
 
 integrator                  = steep
 nsteps                      = 0
@@ -17,14 +18,14 @@ emstep                      = 0.01
 constraints                 = none
 
 cutoff-scheme               = Verlet
-nstlist                     = 10
-pbc                         = xyz
+pbc                         = no
+nstlist                     = 0
 verlet-buffer-tolerance     = -1
-rlist                       = 0.5
+rlist                       = 0
 
 coulombtype                 = Cut-off
-rcoulomb                    = 0.5
+rcoulomb                    = 0
 
 vdwtype                     = Cut-off
-rvdw                        = 0.5
+rvdw                        = 0
 DispCorr                    = no
