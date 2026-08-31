@@ -1,0 +1,9 @@
+; Used only to generate a .tpr for gmx genion.
+; This is not an energy-minimization or MD protocol, and the generated .tpr
+; must not be used as a simulation input.
+; Periodic boundary conditions are kept explicit because gmx genion uses the
+; box stored in the .tpr, including for concentration-based ion addition.
+
+integrator                  = steep
+nsteps                      = 0
+pbc                         = xyz
