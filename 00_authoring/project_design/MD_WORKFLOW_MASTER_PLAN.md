@@ -204,7 +204,7 @@ Current execution rules are owned by the active 2.6 `SKILL.md` and its local ref
 
 ## 5. Stage 3 — System construction / solvation
 
-Status: ARCHITECTURE FROZEN; **ACTIVE STAGE-LEVEL SKILL GENERATED; STATIC AUTHORING / INTERFACE CHECK COMPLETED**.
+Status: ARCHITECTURE FROZEN; **ACTIVE STAGE-LEVEL SKILL GENERATED; POST-GENERATION AUTHORING / INTERFACE REVIEW COMPLETED**.
 
 Stage 3 不设置编号化 sub-stage。Current Stage-level runtime entry：
 
@@ -214,12 +214,14 @@ Stage 3 不设置编号化 sub-stage。Current Stage-level runtime entry：
 
 `system_construction_result.yaml`
 
-Detailed result interface 与 dedicated minimal genion preset：
+Detailed result interface 与 ion-addition reference `.mdp`：
 
 ```text
 03_md_preparation/references/results.md
 03_md_preparation/references/genion.mdp
 ```
+
+`references/genion.mdp` 是可按当前任务直接采用、调整或替换的参考预设，不是强制执行模板。
 
 Stage-level implemented architecture record：
 
@@ -231,7 +233,7 @@ Stage-level implemented architecture record：
 
 原预留 Step directories 已退出 current source layout；current `03_md_preparation/` 已物化为 Stage-level active Skill package。
 
-Dedicated minimal `genion.mdp` 的精确内容已经生成并完成静态检查。代表性 GROMACS `grompp → genion` 实际执行验证仍待后续 validation milestone。
+Stage 3 active Skill package 已完成基于 current authoring guidance 的 post-generation authoring / interface review。代表性 GROMACS `grompp → genion` 实际执行验证仍待后续 validation milestone。
 
 ## 6. Stage 4 — MD simulation
 
@@ -333,7 +335,7 @@ Historical design Markdown: `00_authoring/archive/`.
 
 - Stage 1：1.1–1.9 active Skills 已生成；1.2 的 model-scoped `component_id → residue_id` 层级、三级 residue 检查短路语义和直接 RTP / CCD evidence 保持 current；topology-linked 检查与正式记录已同步为 schema v4 的统一 `topology_linked_checks[]`，三类判据完整记录，人工关系决策仅通过 `relation_id` 对应；Stage 1 atom mapping 当前采用 chained map：1.3 初始化，1.4 / 1.6 / 1.7 / 1.8 copy-and-update，记录 `current_atom_serial + original_atom_serial + component_id + residue_id + operations`，1.8 写出 `stage1_final_map.yaml`，1.9 做最终逐原子/provenance验证；1.6 whole-residue / coordinate replacement 已区分 provenance-preserving `1.6REPLACE` 与真正新增的 `1.6ADD`；
 - Stage 2：Stage-level main Skill 架构与 2.1–2.6 六个 Step 均已冻结；2.1–2.6 已生成 active Skill，current entries 分别为 `02_topology_preparation/2.1_topology_preparation_setup/SKILL.md`、`02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md`、`02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md`、`02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md`、`02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md` 与 `02_topology_preparation/2.6_topology_validation/SKILL.md`；2.5 已同步 `moleculetype` 组织、体系整合 `.gro` / map、`2.5ADD` provenance、`.itp` 整合、参数定义汇总、体系 `.top` 生成与正式结果接口；2.6 已同步独立只读终检、单一 `topology_validation_result.yaml` 接口及 `grompp_validation.mdp`；Stage main 仍为 freeze-only；
-- Stage 3：Stage-level main Skill 已正式生成，current entry 为 `03_md_preparation/SKILL.md`；不设置编号化 sub-stage；周期盒构建、溶剂添加和离子添加作为内部 operations 在同一 Task Sheet Stage-level 条目中规划和维护；详细结果接口为 `03_md_preparation/references/results.md`，dedicated minimal preset 为 `03_md_preparation/references/genion.mdp`；静态 authoring / interface consistency check 已完成，代表性 GROMACS `grompp → genion` 实际执行验证仍待后续 validation milestone；
+- Stage 3：Stage-level main Skill 已正式生成，current entry 为 `03_md_preparation/SKILL.md`；不设置编号化 sub-stage；周期盒构建、溶剂添加和离子添加作为内部 operations 在同一 Task Sheet Stage-level 条目中规划和维护；详细结果接口为 `03_md_preparation/references/results.md`，离子添加参考预设为 `03_md_preparation/references/genion.mdp`；post-generation authoring / interface review 已完成，代表性 GROMACS `grompp → genion` 实际执行验证仍待后续 validation milestone；
 - Stage 4：正式 Skill generation 已完成；
 - Stage 5：Stage-level main Skill 已正式生成，current entry 为 `05_analysis/SKILL.md`；`trjconv`、`trjcat` 与 `make_ndx` capability 已生成并登记到 active capability inventory，current entries 分别为 `05_analysis/trjconv/SKILL.md`、`05_analysis/trjcat/SKILL.md` 与 `05_analysis/make_ndx/SKILL.md`；`rmsd / rmsf / hbond / rdf` capability entries 仍待后续分别生成；
 - Infrastructure：旧 contracts/runtime/tools/evals/CI 已移出 Stage 编号根目录；跨 Skill Task Execution 共用规则集中于 `references/task_execution_rules.md`；atom mapping runtime authority 为 `references/atom_mapping_rules.md`，当前覆盖 Stage 1 chain 及 2.2 标准残基全原子 map 维护；Stage 1 mapping architecture freeze 保留于 `00_authoring/architecture_freezes/WORKFLOW1_STAGE1_ATOM_MAPPING_MAINTENANCE_FREEZE.md`；后续只按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
