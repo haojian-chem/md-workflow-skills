@@ -39,7 +39,7 @@ periodic_box_construction
 
 当前 Task Sheet 提供本次体系构建的处理对象和需要完成的体系构建工作。
 
-执行 Agent 以当前处理对象为准，结合当前任务上下文和：
+Task Execution Agent 以当前处理对象为准，结合当前任务上下文和：
 
 `<project_root>/00_project_records/project_result_index.md`
 
@@ -125,8 +125,6 @@ periodic_box_construction
 1. `gmx editconf` 进程正常结束；
 2. 溶质位于生成周期盒的中心。
 
-该操作通常只生成新的结构文件；体系主 `.top` 未发生改变时，不把它记录成当前操作新生成的结果。
-
 ## 溶剂添加
 
 根据用户要求确定溶剂模型及其拓扑 / 参数定义来源；用户未指定时，根据当前体系和模拟要求判断实际采用的模型及参数定义来源。若存在多个会实质改变体系组成或参数定义的合理选择且无法可靠确定，向用户确认。
@@ -166,11 +164,9 @@ periodic_box_construction
 
 `references/genion.mdp`
 
-它只用于为 `gmx genion` 生成当前操作的 `.tpr`，不是能量最小化、平衡或生产模拟的参数方案。
+作为生成 `gmx genion` 所需 `.tpr` 的可用起点。Task Execution Agent 根据当前结构、体系主 `.top`、实际 GROMACS 版本和本次离子添加需要，判断是否直接采用该文件，或在当前操作目录调整 / 重新生成本次使用的 `genion.mdp`。
 
-执行离子添加时，将该文件复制到当前操作目录并保持文件名：
-
-`genion.mdp`
+无论直接采用、调整还是重新生成，本次使用的 `genion.mdp` 只用于 `gmx grompp` 生成 `gmx genion` 所需 `.tpr`，不作为能量最小化、平衡或生产模拟的参数方案。
 
 执行关系：
 
@@ -189,14 +185,6 @@ genion.mdp
 -c    当前结构文件
 -p    当前操作中可修改的体系主 .top
 -o    当前操作的 .tpr
-```
-
-`genion.mdp` 当前预设使用：
-
-```text
-integrator = steep
-nsteps     = 0
-pbc        = xyz
 ```
 
 `gmx genion` 参数习惯：
