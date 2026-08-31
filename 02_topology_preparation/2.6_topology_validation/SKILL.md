@@ -57,8 +57,9 @@ description: 对 Task Sheet 当前 topology validation 工作项指定的处理�
 体系 `.top` 和 `.itp` 均使用 `topology_integration_result.yaml` 中记录的实际完整路径，不根据默认 basename、
 目录顺序或“最新文件”重新推断。
 
-若两个直接正式依赖不能唯一确定，或其记录的必需检查文件无法读取，不伪造依赖这些文件的检查结果；
-先解决输入定位问题，再完成当前工作项。
+若两个直接正式依赖，或当前结构文件、map、体系 `.top` 不能唯一定位或读取，不伪造依赖这些文件的检查结果；
+先解决对应的输入定位问题，再执行相关检查。体系 `.top` 中 `#include` 指向的文件缺失或不可读取，属于
+`top_includes` 应记录的实际检查结果，不在开始该项检查前将这些问题作为输入条件排除。
 
 ## No reuse
 
@@ -109,7 +110,7 @@ description: 对 Task Sheet 当前 topology validation 工作项指定的处理�
 
 ## 检查已确认并产生 topology effect 的 `topology-linked` 关系
 
-从依赖文件 `classification_result.yaml.topology_linked_checks` 中读取属于当前处理对象、且同时满足以下条件的关系：
+从依赖文件 `classification_result.yaml` 的 `topology_linked_checks` 中读取属于当前处理对象、且同时满足以下条件的关系：
 
 ```text
 judgment = CONFIRMED
