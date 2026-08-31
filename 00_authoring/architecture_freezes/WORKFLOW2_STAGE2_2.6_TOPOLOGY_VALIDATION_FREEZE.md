@@ -39,22 +39,30 @@ Topology validation 对当前拓扑整合正式结果进行独立、只读终检
 2.6 正式结果记录中的 `references` 同时承担：
 
 1. 记录当前结果实际依赖的上游正式文件；
-2. 为结果正文中反复引用的实际检查文件提供公共绝对路径引用。
+2. 为结果中反复引用的实际检查文件提供公共绝对路径引用。
 
-因此 `references` 应能够定位：
+当前固定使用：
 
-- `classification_result.yaml`；
-- `topology_integration_result.yaml`；
-- 当前结构文件；
-- 当前 map；
-- 体系 `.top`；
-- `topology_integration_result.yaml` 中记录的本次拓扑整合生成的全部 `.itp`。
+```yaml
+references:
+  CLASSIFICATION_RESULT: /absolute/path/to/classification_result.yaml
+  TOPOLOGY_INTEGRATION_RESULT: /absolute/path/to/topology_integration_result.yaml
+  STRUCTURE: /absolute/path/to/current_structure_file.gro
+  MAP: /absolute/path/to/current_map_file
+  TOP: /absolute/path/to/current_system.top
+  ITP_1: /absolute/path/to/first_actual_itp
+  ITP_2: /absolute/path/to/second_actual_itp
+```
 
-上述路径均保持完整绝对路径语义。实际不存在的可选 `.itp` 不建立占位引用。
+其中：
+
+- `STRUCTURE`、`MAP` 和 `TOP` 分别使用 `topology_integration_result.yaml` 中实际记录的结构文件、map 和体系 `.top` 路径；
+- `ITP_n` 按 `topology_integration_result.yaml` 中本次拓扑整合生成的 `.itp` 实际顺序逐项记录；
+- 实际不存在的可选 `.itp` 不建立占位引用；
+- 所有路径保持完整绝对路径语义；
+- 不根据任何默认 basename 推断实际文件名。
 
 当前 map 作为需要通过 `component_id + residue_id` 或 atom identity 定位当前结构 / 拓扑原子时的映射依据；本轮不为 map 单独设置逐原子对应检查或 provenance 检查项目。
-
-具体 reference key 名称和正式结果文件 basename 在 Skill generation 时按仓库级结果生成规则统一确定，不在本 freeze 提前建立无必要的平行 schema。
 
 ## 4. 必需检查项
 
@@ -126,51 +134,251 @@ topology_effect_applied = true
 
 读取参数化正式结果中的 `charge_modification_scope`。
 
-对该范围内相关 atom，检查最终拓扑文件中对应 `moleculetype` 的 `[ atoms ]` 所记录 `charge` 是否采用对应参数化结果指定的电荷值。
+对其中属于标准残基一侧的每个 residue，按照参数化模型 map 与电荷文件确定相关 atom 的指定电荷，并逐 atom 检查最终拓扑文件中对应 `moleculetype` 的 `[ atoms ]` 所记录 `charge` 是否采用这些电荷值。
 
-发现差异时记录对应 topology-linked 参数化正式结果、`component_id + residue_id`、atom、参数化结果指定值和最终 `[ atoms ]` 实际值。
+正式结果不展开每个 atom 的指定值和最终值；按 residue 记录实际检查 atom 数量及发现电荷差异的 atom 数量。
 
 ### 4.6 使用 `gmx grompp` 检查当前结构文件和体系 `.top`
 
 使用当前结构文件和体系 `.top` 执行 `gmx grompp`。
 
-正式结果至少记录：
+正式结果记录：
 
 - 实际使用的 GROMACS version；
 - 实际执行命令；
+- process return code；
 - `gmx grompp` 输出的 note；
 - warning；
-- error；
-- preprocessing 是否成功。
+- error。
 
-`gmx grompp` 成功不能替代 4.1–4.5 的独立检查。
+`return_code = 0` 不能替代 4.1–4.5 的独立检查。
 
 用于本项检查的 `.mdp`、临时 `.tpr` 或其它 preprocessing 工作文件不因执行本检查自动成为正式结果或项目结果索引项；如 Skill generation 时需要固定专用 validation `.mdp`，应在当时基于 current GROMACS / Stage 3 接口重新确认，不从旧冻结自动继承。
 
-## 5. 正式结果需要记录的内容
+## 5. 正式结果与记录格式
 
-2.6 的正式结果至少记录：
+### 5.1 唯一正式结果
 
-1. 本次使用的 `classification_result.yaml` 和 `topology_integration_result.yaml`；
-2. 当前结构文件、当前 map、体系 `.top` 和本次拓扑整合生成的全部 `.itp` 的文件引用；
-3. 第 4 节六项检查各自实际执行的检查对象和结果；
-4. 每个发现问题对应的实际文件、`moleculetype`、`component_id + residue_id`、atom、`relation_id` 或其它能够唯一定位问题的当前标识；
-5. `gmx grompp` 的 note、warning、error 和 preprocessing 结果；
-6. 当前规定检查是否全部执行，以及是否仍存在阻止当前结构文件和对应拓扑文件作为同一体系继续使用的问题。
+2.6 只生成一个正式结果：
 
-正式结果采用 YAML、Markdown 或组合形式以及具体 basename，在 Skill generation 时按结果复杂度和下游机器消费需求确定；本 freeze 不为了格式对称提前创建 schema。
+`topology_validation_result.yaml`
 
-项目结果索引登记范围也在 Skill generation 时根据最终正式结果集合确定；不得把 `gmx grompp` 临时文件、debug、scratch 或 cache 机械登记为正式结果。
+不生成平行 Markdown report，也不生成第二份 validation summary。
+
+该 YAML 只记录实际检查对象和检查结果，不记录：
+
+```text
+PASS
+FAIL
+COMPLETE
+result_status
+validation status
+overall conclusion
+blocking findings
+```
+
+### 5.2 顶层结构
+
+正式结果固定采用：
+
+```yaml
+target_id: target_001
+
+references:
+  # 按第 3 节记录
+
+check_results:
+  top_includes: []
+  structure_topology: {}
+  topology_linked_relations: []
+  standard_atom_deletions: []
+  standard_side_charge_modifications: []
+  grompp: {}
+```
+
+六个检查结果字段均保留；每个字段按以下规则记录对应检查的实际结果。
+
+### 5.3 `top_includes`
+
+体系 `.top` 中每个实际 `#include` 记录：
+
+```yaml
+top_includes:
+  - include_value: "molecule_1.itp"
+    resolved_path: /absolute/path/to/molecule_1.itp
+    exists: true
+    readable: true
+```
+
+字段语义：
+
+- `include_value`：`#include` 中实际写出的文件表达；
+- `resolved_path`：解析得到的实际完整路径；
+- `exists`：该路径指向的文件是否存在；
+- `readable`：该文件是否可读取。
+
+本项不记录 `line_number`。
+
+### 5.4 `structure_topology`
+
+本项记录当前结构文件和按体系 `.top [ molecules ]`、对应 `moleculetype [ atoms ]` 展开的拓扑规模，并只展开实际发现的差异：
+
+```yaml
+structure_topology:
+  structure_residue_count: 512
+  structure_atom_count: 8241
+  topology_molecule_count: 4
+  topology_residue_count: 512
+  topology_atom_count: 8241
+
+  molecule_count_differences: []
+  molecule_order_differences: []
+  molecule_atom_count_differences: []
+  residue_order_differences: []
+  atom_order_differences: []
+  residue_name_differences: []
+  atom_name_differences: []
+```
+
+各差异记录按对应层级保存能够定位问题的 `moleculetype`、molecule instance、residue / atom 位置，以及结构文件与拓扑文件中的实际值。
+
+不为没有差异的普通 molecule、residue 或 atom 逐项生成记录。
+
+### 5.5 `topology_linked_relations`
+
+每条 `judgment = CONFIRMED` 且 `topology_effect_applied = true` 的关系均建立一条记录。
+
+对 `COVALENT_CONNECTION`，保留 `atom_1` 和 `atom_2`：
+
+```yaml
+topology_linked_relations:
+  - relation_id: relation_001
+    relation_type: COVALENT_CONNECTION
+
+    atom_1:
+      component_id: component_001
+      residue_id: residue_042
+      atom_name: SG
+      moleculetype: molecule_1
+      atom_nr: 652
+
+    atom_2:
+      component_id: component_001
+      residue_id: residue_121
+      atom_name: C1
+      moleculetype: molecule_1
+      atom_nr: 1854
+
+    topology_entries:
+      - file: ${ITP_1}
+        moleculetype: molecule_1
+        section: bonds
+        line_number: 724
+        atom_nrs: [652, 1854]
+        entry: "652 1854 1 ..."
+```
+
+对 `METAL_COORDINATION`，保留 `metal` 和 `donor`，其定位字段与上例相同；`topology_entries` 记录最终拓扑中实际采用的 section 和条目，不预设所有金属配位均通过 `[ bonds ]` 表达。
+
+完成检索但未找到对应 topology entry 时记录：
+
+```yaml
+topology_entries: []
+```
+
+不另设 `topology_effect_found` 或其它判断字段。
+
+### 5.6 `standard_atom_deletions`
+
+按实际采用的 topology-linked 参数化正式结果分组：
+
+```yaml
+standard_atom_deletions:
+  - source_result: /absolute/path/to/topology_linked_parameterization_result.yaml
+
+    deletions:
+      - relation_id: relation_001
+        source_current_atom_serial: 123
+        component_id: component_001
+        residue_id: residue_042
+        atom_name: HG
+        structure_matches: []
+        topology_matches: []
+```
+
+`structure_matches` 记录当前结构文件中实际找到的对应 atom 及其位置；`topology_matches` 记录最终拓扑文件中对应 `moleculetype [ atoms ]` 中实际找到的对应 atom 及其位置。
+
+未找到对应 atom 时保留空数组，不另设 `deleted`、`status` 或其它判断字段。
+
+### 5.7 `standard_side_charge_modifications`
+
+检查过程仍按 4.5 逐 atom 完成；正式结果只按 residue 记录：
+
+```yaml
+standard_side_charge_modifications:
+  - source_result: /absolute/path/to/topology_linked_parameterization_result.yaml
+    residue_count: 2
+
+    residues:
+      - component_id: component_001
+        residue_id: residue_042
+        checked_atom_count: 11
+        charge_difference_count: 0
+
+      - component_id: component_001
+        residue_id: residue_043
+        checked_atom_count: 10
+        charge_difference_count: 2
+```
+
+字段语义：
+
+- `source_result`：本组检查实际采用的 topology-linked 参数化正式结果完整路径；
+- `residue_count`：本组实际检查的标准残基数量；
+- `checked_atom_count`：对应 residue 中实际完成电荷核对的 atom 数量；
+- `charge_difference_count`：参数化结果指定电荷与最终拓扑文件对应 `[ atoms ] charge` 不同的 atom 数量。
+
+本项不记录 atom name、指定电荷值或最终拓扑电荷值。
+
+### 5.8 `grompp`
+
+只记录实际执行事实：
+
+```yaml
+grompp:
+  gromacs_version: "GROMACS 2022.2"
+  command: >
+    gmx grompp -f /absolute/path/to/validation.mdp
+    -c ${STRUCTURE}
+    -p ${TOP}
+    -o /absolute/path/to/temporary.tpr
+  return_code: 0
+  notes: []
+  warnings: []
+  errors: []
+```
+
+不记录 `preprocessing_succeeded`、`status` 或其它二次结论字段。
+
+### 5.9 项目结果索引登记
+
+项目结果索引只登记：
+
+`topology_validation_result.yaml`
+
+当前结构文件、map、体系 `.top`、`.itp`、用于 `gmx grompp` 的 `.mdp`、临时 `.tpr`、debug、scratch 和 cache 均不作为 2.6 新结果重复登记。
 
 ## 6. 当前明确删除的旧 2.6 规则
 
-以下旧设计不再作为 current 2.6 必需检查：
+以下旧设计不再作为 current 2.6 必需检查或结果记录：
 
 - 单独检查当前 map 与结构文件逐原子对应；
 - 单独检查当前 map provenance；
 - 单独计算当前体系总电荷并设置电荷判据；
 - 在 `gmx grompp` 之外再维护一套 atom type / bonded parameter definition 查找检查；
-- 以抽象的 `package completeness`、`internal consistency`、`charge/connectivity sanity` 等标签代替具体检查关系。
+- 以抽象的 `package completeness`、`internal consistency`、`charge/connectivity sanity` 等标签代替具体检查关系；
+- 为六项检查增加 PASS / FAIL、完成状态、overall conclusion 或 blocking finding；
+- 为标准残基一侧电荷修改在正式结果中展开 atom-level 电荷明细。
 
 如果后续出现新的实际需求，应按 current authoring rules 重新证明其必要性后再修改本 freeze 或 current Skill，不从旧 Stage 2 综合冻结恢复这些已经退出的规则。
 
