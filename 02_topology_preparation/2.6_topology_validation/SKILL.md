@@ -1,6 +1,6 @@
 ---
 name: topology_validation
-description: 对 Task Sheet 当前 topology validation 工作项指定的处理对象执行独立、只读终检，检查体系 .top 引用、结构文件与拓扑文件中的分子/残基/原子逐项对应及 position-restraint 条目、topology-linked 关系、标准残基原子删除与电荷修改，并使用 gmx grompp 检查 GROMACS 预处理结果，生成 topology_validation_result.yaml。
+description: 对 Task Sheet 当前 topology validation 工作项指定的处理对象执行独立、只读终检，检查体系 .top 引用、结构文件与拓扑文件中的分子/残基/原子逐项对应及 position restraint 条目、topology-linked 关系、标准残基原子删除与电荷修改，并使用 gmx grompp 检查 GROMACS 预处理结果，生成 topology_validation_result.yaml。
 ---
 
 # Topology validation
@@ -15,7 +15,7 @@ description: 对 Task Sheet 当前 topology validation 工作项指定的处理�
 
 ```text
 检查体系 .top 中的 #include
-→ 检查结构文件与 .top / .itp 中的分子、残基和原子及 position-restraint 条目
+→ 检查结构文件与 .top / .itp 中的分子、残基和原子及 position restraint 条目
 → 检查 topology-linked 关系
 → 检查标准残基原子删除
 → 检查标准残基一侧电荷修改
@@ -97,9 +97,9 @@ description: 对 Task Sheet 当前 topology validation 工作项指定的处理�
 
 ### Position restraint
 
-读取体系 `.top` 和最终各 `moleculetype` `.itp` 中通过条件 `#include` 引用的 position-restraint `.itp`。
+读取体系 `.top` 和最终各 `moleculetype` `.itp` 中通过条件 `#include` 引用的 position restraint `.itp`。
 
-对每个 position-restraint 文件，将 `[ position_restraints ]` 中引用的 atom nr 与对应
+对每个 position restraint 文件，将 `[ position_restraints ]` 中引用的 atom nr 与对应
 `moleculetype [ atoms ]` 比较，确认：
 
 - 对应 `moleculetype` 中的全部重原子均施加了 position restraint；
@@ -159,7 +159,7 @@ Skill package 提供预建检查参数：
 体系 `.top` 判断是否直接使用该预设，或在当前工作目录生成适用于本次预处理检查的 `.mdp`。无论采用哪种方式，
 都应保持本次运行只承担 GROMACS 预处理检查，不把检查参数解释为后续模拟方案，并在正式结果中记录实际命令。
 
-默认不启用 `POSRES`、`POSRES_WATER` 或其它条件宏；position-restraint 文件已在 `.itp` 检查中处理。
+默认不启用 `POSRES`、`POSRES_WATER` 或其它条件宏；position restraint 文件已在 `.itp` 检查中处理。
 不使用 `-maxwarn` 强制越过 warning。
 
 使用当前结构文件和体系 `.top` 执行 `gmx grompp`，记录实际使用的 GROMACS version、实际命令和进程返回码。
