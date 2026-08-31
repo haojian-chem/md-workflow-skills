@@ -26,11 +26,19 @@ Stage / Step 目录可以在正式 Skill generation 前预留，因此：
 
 - Stage 1：active Skill generation completed；
 - Stage 2：`2.1–2.6` active；Stage-level main Skill 仍为 freeze-only；
-- Stage 3：architecture frozen；不设置编号化 sub-stage；未来 Stage-level entry 为 `03_md_preparation/SKILL.md`，尚未生成 active Skill；
+- Stage 3：Stage-level main Skill active；不设置编号化 sub-stage；current entry 为 `03_md_preparation/SKILL.md`；
 - Stage 4：active Skill generation completed；
 - Stage 5：Stage-level main Skill、`trjconv`、`trjcat` 和 `make_ndx` active；其它初始 capabilities 仍待分别实现。
 
-Stage 3 当前只保留 `03_md_preparation/` 作为未来 Stage-level Skill package root。
+Stage 3 current package：
+
+```text
+03_md_preparation/
+├── SKILL.md
+└── references/
+    ├── results.md
+    └── genion.mdp
+```
 
 精确的 Stage / Step 建设状态与 current entry 统一读取：
 
