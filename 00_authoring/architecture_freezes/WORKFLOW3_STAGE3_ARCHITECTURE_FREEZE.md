@@ -34,15 +34,7 @@ solvent_addition
 ion_addition
 ```
 
-普通水溶液体系的常见顺序为：
-
-```text
-periodic_box_construction
-→ solvent_addition
-→ ion_addition
-```
-
-实际操作可以根据当前体系构建需要省略、重复或调整顺序。
+操作计划根据当前体系构建需要确定实际包含的操作及其顺序。
 
 ## 2. 上游正式结果接口
 
