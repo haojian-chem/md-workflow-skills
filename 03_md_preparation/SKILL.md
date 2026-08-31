@@ -67,7 +67,7 @@ periodic_box_construction
 
 在当前 Task Sheet 的 `3 System construction / solvation` 条目内部维护操作计划。
 
-操作计划只记录当前处理对象需要经过哪些体系构建操作，按实际执行顺序列出操作类型并维护状态。
+操作计划只记录当前处理对象需要经过哪些体系构建操作，按计划顺序列出操作类型并维护状态。
 
 每项操作使用以下状态：
 
@@ -97,9 +97,9 @@ periodic_box_construction
 
 不原地覆盖上游正式结构文件、体系主 `.top` 或 `.itp`。
 
-当 `gmx solvate -p` 或 `gmx genion -p` 需要修改 `[ molecules ]` 时，先在当前操作目录形成可修改的派生体系主 `.top`。确定本次实际采用的溶剂或离子拓扑 / 参数定义后，如果该派生 `.top` 尚未引用相应定义，当前 Stage 3 直接在该 `.top` 中补充对应 `#include`。
+当 `gmx solvate -p` 或 `gmx genion -p` 需要修改 `[ molecules ]` 时，先在当前操作目录形成可修改的派生体系主 `.top`。确定本次实际采用的溶剂或离子拓扑 / 参数定义后，如果该派生 `.top` 尚未引用相应定义，本 Skill 直接在该 `.top` 中补充对应 `#include`。
 
-`.gro`、`.top`、`.itp`、`.mdp` 和 `.tpr` 的 basename 除 `genion.mdp` 外不是正式接口；正式结果记录使用实际完整绝对路径。
+除 `genion.mdp` 外，`.gro`、`.top`、`.itp`、`.mdp` 和 `.tpr` 的文件名不作为正式接口；正式结果记录使用实际完整绝对路径。
 
 ## 周期盒构建
 
@@ -113,9 +113,9 @@ periodic_box_construction
 -f     当前结构文件
 -o     当前操作的输出结构文件
 -c     显式保留，表达构盒 / 调整后的居中意图
--box   当前任务给出明确 box dimensions 时使用
--d     当前任务给出 solute-to-boundary distance 时使用
--bt    按当前任务要求确定 box type
+-box   当前任务给出明确盒尺寸时使用
+-d     当前任务给出溶质到盒边界距离时使用
+-bt    按当前任务要求确定盒类型
 ```
 
 `-box` 与 `-d` 按当前任务要求选择。GROMACS 中二者本身会隐含居中，本 Skill 仍保留 `-c` 作为显式命令习惯。
@@ -162,7 +162,7 @@ periodic_box_construction
 
 根据用户要求确定离子种类及其拓扑 / 参数定义来源；用户未指定时，根据当前体系和模拟要求判断实际采用的离子及参数定义来源。若存在多个会实质改变体系组成或参数定义的合理选择且无法可靠确定，向用户确认。
 
-当前 Skill package 提供：
+本 Skill 提供：
 
 `references/genion.mdp`
 
@@ -202,12 +202,12 @@ pbc        = xyz
 `gmx genion` 参数习惯：
 
 ```text
--neutral        当前任务要求 neutralization 时使用
+-neutral        当前任务要求中和时使用
 -conc 0.154     生物体系在用户和 Task Sheet 未指定其它盐浓度或离子组成时使用
 -pname/-nname   按本次实际采用的离子定义确定
 ```
 
-替换组选择当前实际需要被替换的主体溶剂 group。
+替换组选择当前实际需要被替换的主体溶剂分组。
 
 用户或 Task Sheet 明确给出的盐浓度或离子组成覆盖 `0.154 M` 默认倾向。若当前体系已经含有需要计入最终浓度的相关离子，根据当前组成和目标确定本次实际添加数量，不机械重复使用 `-conc` 解释最终总浓度。
 
