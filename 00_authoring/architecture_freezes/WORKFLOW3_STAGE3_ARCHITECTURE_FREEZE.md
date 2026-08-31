@@ -1,344 +1,295 @@
 # Workflow 3 / Stage 3 architecture freeze
 
-## 0. Document role
+## 0. 文档定位
 
-This file records the frozen architecture and current-version execution boundary for MD Workflow Stage 3 — System construction / solvation.
-
-It is a design/implementation handoff record. Future Step Skills may refine command construction, validation details, and templates without reopening the Stage 3 step architecture unless new scientific evidence requires an architecture change.
+本文件记录 MD Workflow Stage 3 — System construction / solvation 的当前架构、
+职责边界、内部 operation 习惯、Task Sheet 维护方式和正式结果接口。
 
 Status: **FROZEN — NO ACTIVE SKILL GENERATION APPROVED YET**
 
-The reserved scientific package paths are:
+未来 Stage-level runtime entry 固定为：
+
+`03_md_preparation/SKILL.md`
+
+Stage 3 不设置编号化 sub-stage。周期盒构建、溶剂添加和离子添加是 Stage 3 main Skill
+内部按任务规划和执行的 operation types，不建立独立 `SKILL.md`。
+
+原 `3.1 / 3.2 / 3.3` step-level freezes 已由本文件取代并移入 authoring archive。
+Architecture freeze 完成不等于已经批准生成 active Skill。
+
+## 1. Stage 3 职责
+
+Stage 3 main Skill 读取当前 Task Sheet 中的体系构建目标、处理对象和已经明确的约束，
+以当前拓扑整合正式结果为主要上游依据，完成：
 
 ```text
-03_md_preparation/3.1_periodic_box_construction/
-03_md_preparation/3.2_solvent_addition/
-03_md_preparation/3.3_ion_addition/
+理解当前体系构建目标
+→ 读取当前结构与拓扑/参数文件集合
+→ 形成并维护当前 Stage 3 operation plan
+→ 执行实际体系构建 operations
+→ 完成各 operation 的必要检查
+→ 生成 system_construction_result.yaml
 ```
 
-Directory existence does not mean an active `SKILL.md` exists.
-
----
-
-# 1. Frozen Stage 3 catalog
-
-Stage 3 contains three reusable operation types:
-
-1. `3.1 Periodic box construction`
-2. `3.2 Solvent addition`
-3. `3.3 Ion addition`
-
-Default scientific route:
+Stage 3 当前定义三类内部 operation：
 
 ```text
-3.1 Periodic box construction
-→ 3.2 Solvent addition
-→ 3.3 Ion addition
+periodic_box_construction
+solvent_addition
+ion_addition
 ```
 
-The numbering records the default scientific order; it is not a cardinality constraint.
-
-Each of `3.1`, `3.2`, and `3.3` may appear zero, one, or multiple times as separate Task Sheet substep instances when the current system and task objective require it. The Task Execution Agent may skip, repeat, insert, or reorder future Stage 3 instances according to the existing Task Sheet rules and execution evidence.
-
-Examples of valid task routes include:
+普通水溶液体系的常见顺序为：
 
 ```text
-3.1 → 3.2 → 3.3
-3.1 → 3.2 → 3.2 → 3.3
-3.1 → 3.2 → 3.1 → 3.2 → 3.3
-3.2 → 3.3
+periodic_box_construction
+→ solvent_addition
+→ ion_addition
 ```
 
-Stage 3 does **not** add separate steps for:
+实际 operation plan 由当前结构—拓扑状态和 Task Sheet 中的体系构建目标决定；
+operation 可以省略、重复或按当前任务需要调整顺序。
 
-- system construction specification;
-- final system assembly;
-- stage-level system construction validation.
+## 2. 输入、检查证据与 reuse
 
-Stage 3 is intentionally lightweight and Task-Sheet-driven. Each actual construction operation performs its own required local checks and hands forward the updated system state.
+Stage 3 以当前 Task Sheet 指定的：
 
----
+`topology_integration_result.yaml`
 
-# 2. Shared execution principle
+作为主要上游正式结果，并从其中记录的实际完整路径定位当前结构文件、体系主 `.top`
+以及当前拓扑/参数文件集合所需的 `.itp` 和外部拓扑定义。
+不根据默认 basename、目录顺序或文件修改时间重新推断这些文件。
 
-Stage 3 operations primarily wrap GROMACS construction commands.
+若存在与当前拓扑整合对象对应的：
 
-A Stage 3 substep consumes the currently selected validated coordinate structure and the information needed to keep its associated topology files identifiable across the handoff.
+`topology_validation_result.yaml`
 
-Topology-associated records should identify the actual `.top` and required `.itp` files associated with the current `.gro`. Force-field / parameter include files are not listed separately when they are already expressed through the `.top` / `.itp` include tree.
+Stage 3 读取其中记录的检查事实，分析已记录问题对当前体系构建的影响；
+发现可能影响后续构建或模拟准备的风险时，在用户可见回复和当前 Task Sheet 中说明。
+当前结构与拓扑/参数文件集合仍由拓扑整合正式结果定位。
 
-`sys.top` is the preferred Stage 3 topology basename when naming is under workflow control. An existing validated topology with another basename is not renamed merely to satisfy this tendency.
+Stage 3 遵守仓库级 Task Execution reuse 规则。已有 `system_construction_result.yaml`
+在其上游结构—拓扑对象与当前周期盒、溶剂、离子和其它结果相关要求均明确等价，
+且最终结构文件和体系主 `.top` 仍可定位时，可以直接复用。
 
-For GROMACS commands, each future Step Skill should expose an **arg tendency** rather than a rigid command template. Priority is:
+## 3. Operation plan 与工作目录
+
+Stage 3 main Skill 在当前 Task Sheet 的 Stage 3 条目内部补充并维护 operation plan，
+使执行 Agent 能恢复当前 operation 顺序、type、状态、工作目录、当前结构文件、
+当前体系主 `.top`、已完成 operation 的关键结果和 Stage 3 正式结果入口。
+
+实际结果改变后续构建需要时，Stage 3 更新尚未完成的 operation plan；
+已经实际执行并形成有意义历史的 operation 继续保留在 Task Sheet 中。
+
+需要本地执行时，Stage 3 使用：
+
+`<project_root>/03_md_preparation/<task_id>/`
+
+每次实际 operation 建立独立目录，使用两位数字表示当前 Task 内的实际执行顺序：
 
 ```text
-explicit user requirement
-> current Task Sheet requirement
-> actual current object/state
-> Step Skill arg tendency
-> GROMACS default
+03_md_preparation/<task_id>/
+├── 01_periodic_box_construction/
+├── 02_solvent_addition/
+├── 03_ion_addition/
+└── system_construction_result.yaml
 ```
 
----
-
-# 3. 3.1 Periodic box construction
-
-## 3.1.1 Processing object
-
-3.1 may process **any validated `.gro` file**. It does not require the input `.gro` to come directly from Stage 2 or from a fixed preceding Stage 3 step.
-
-The 3.1 handoff also records the `.top` / `.itp` files associated with that `.gro` so later steps can preserve the correct topology relationship.
-
-## 3.1.2 Current-version tool boundary
-
-Current implementation design uses only:
+重复或重排 operation 时继续使用下一个顺序号，例如：
 
 ```text
-gmx editconf
+01_periodic_box_construction/
+02_solvent_addition/
+03_periodic_box_construction/
+04_solvent_addition/
+05_ion_addition/
 ```
 
-Current-version 3.1 does not allow the Agent to directly rewrite `.gro` coordinates or box vectors and does not use custom coordinate-editing scripts as an alternative execution path.
+`01_ / 02_ / ...` 只表示当前 Task 内的 operation 顺序，不是 MD Workflow Step identity。
 
-Agent-controlled or deterministic-tool-based complex box modification is a **future enhancement**, not current behavior.
+`.gro`、`.top`、`.itp`、`.mdp` 和 `.tpr` 等实际文件只设置默认 basename 或命名倾向；
+正式结果记录保存实际完整路径。
 
-## 3.1.3 Arg tendency
+Stage 3 不原地覆盖上游正式结构文件、体系主 `.top` 或 `.itp`。
+需要由 `gmx solvate -p` 或 `gmx genion -p` 修改体系组成时，
+先在当前 operation 目录形成可修改的派生体系主 `.top`。
 
-Primary tendencies:
+## 4. Internal operation habits
+
+### 4.1 Periodic box construction
+
+当前使用：
+
+`gmx editconf`
+
+参数习惯：
 
 ```text
--c
-→ normally preferred for box construction / centering
-
--box
-→ use when explicit box dimensions are given
-
--d
-→ use when a system/solute-to-box-boundary distance is given
-
--box / -d
-→ select according to the current task requirement; do not force both as defaults
+-f     当前结构文件
+-o     当前 operation 的输出结构文件
+-c     显式保留，表达构盒 / 调整后的居中意图
+-box   当前任务给出明确 box dimensions 时使用
+-d     当前任务给出 solute-to-boundary distance 时使用
+-bt    按当前任务要求确定 box type
 ```
 
-Typical current forms:
+`-box` 与 `-d` 按当前任务要求选择。
+GROMACS 中二者本身会隐含居中；Stage 3 仍保留 `-c` 作为显式命令习惯。
 
-```bash
-gmx editconf -f input.gro -o output.gro -c -box X Y Z
-```
+完成当前 operation 前检查：
 
-or:
+1. `gmx editconf` 进程正常结束；
+2. 溶质位于生成周期盒的中心。
 
-```bash
-gmx editconf -f input.gro -o output.gro -c -d D
-```
+该 operation 通常只生成新的结构文件；体系主 `.top` 未改变时，
+不把它记录为当前 operation 新生成的结果。
 
-Other `editconf` arguments are added only when the task gives a reason to use them.
+### 4.2 Solvent addition
 
-## 3.1.4 Result boundary
+当前使用：
 
-3.1 changes the coordinate/box file but normally does not change atom composition, atom order, molecule topology, or molecule counts.
+`gmx solvate`
 
-Formal handoff therefore records:
-
-- new validated boxed `.gro`;
-- inherited association with the existing `.top` / `.itp` files.
-
-The topology files are referenced, not recopied merely for directory symmetry.
-
----
-
-# 4. 3.2 Solvent addition
-
-## 4.1 Current-version tool
-
-Current implementation design uses:
+参数习惯：
 
 ```text
-gmx solvate
+-cp    当前结构文件
+-cs    当前任务采用的 solvent coordinate / template
+-p     当前 operation 中可修改的体系主 .top
+-o     当前 operation 的输出结构文件
 ```
 
-3.2 adds solvent to the current validated system and updates the topology composition when `-p` is used.
-
-A Task Sheet may contain multiple independent 3.2 instances. A single 3.2 call may also use a solvent coordinate/template containing a mixed-solvent configuration when that is the intended construction method.
-
-## 4.2 Arg tendency
-
-Primary tendencies:
+普通情况下沿用 GROMACS 2022 的默认：
 
 ```text
--cp
-→ current validated .gro
-
--cs
-→ explicitly selected solvent coordinate/template
-
--p
-→ current associated topology; prefer sys.top when that is the actual/preferred basename
-
--o
-→ new solvated .gro for the current substep
+-scale  0.57
+-radius 0.105 nm
 ```
 
-Typical form:
+命令可以依赖软件默认值；若当前任务采用其它值，在 Task Sheet 当前 operation 中记录实际设置。
 
-```bash
-gmx solvate -cp current.gro -cs solvent.gro -p sys.top -o solvated.gro
-```
+完成当前 operation 前检查：
 
-3.2 normally inherits the box already present in the current `.gro`. Box construction/modification is normally handled by 3.1 rather than by using 3.2 as a substitute for 3.1.
+1. `gmx solvate` 进程正常结束；
+2. 当前体系主 `.top` 中的溶剂分子记录与数量已由本次操作正常更新。
 
-Arguments such as `-scale`, `-radius`, `-shell`, or `-maxsol` are not automatic tendencies; use them only when required by the task.
+### 4.3 Ion addition
 
-## 4.3 Result boundary
-
-3.2 normally produces:
-
-- new solvated `.gro`;
-- updated current `.top` / `sys.top` composition;
-- continued references to required `.itp` files.
-
-The Step performs lightweight consistency checks sufficient to confirm that the solvent addition succeeded and that coordinate composition and topology molecule counts remain aligned.
-
----
-
-# 5. 3.3 Ion addition
-
-## 5.1 Internal execution structure
-
-3.3 is one Workflow Step with two internal GROMACS command stages:
+当前内部执行结构为：
 
 ```text
-Skill-provided genion MDP template
-↓
-gmx grompp
-↓
-genion.tpr
-↓
-gmx genion
-↓
-ionized .gro + updated topology
+dedicated genion.mdp
+→ gmx grompp
+→ current-operation .tpr
+→ gmx genion
+→ ionized structure + updated system .top
 ```
 
-The `.tpr` is an intermediate execution file for the current 3.3 instance. The principal handoff result is the ionized coordinate/topology state.
+Stage 3 Skill package 需要携带一个只用于生成 `gmx genion` 输入 `.tpr` 的 minimal `genion.mdp`。
+它不承担 energy minimization、equilibration 或 production simulation 的参数语义。
+精确模板内容与代表性执行验证在正式 Skill generation 时完成。
 
-Each repeated 3.3 instance reruns `grompp` against its own current `.gro` and topology; an earlier instance's `.tpr` is not reused after the system composition has changed.
-
-## 5.2 MDP template requirement
-
-The future 3.3 implementation must carry a dedicated minimal MDP template, conceptually:
+`gmx grompp` 参数习惯：
 
 ```text
-templates/genion.mdp
+-f    dedicated genion.mdp
+-c    当前结构文件
+-p    当前 operation 中可修改的体系主 .top
+-o    当前 operation 的 .tpr
 ```
 
-Its sole purpose is to let `gmx grompp` generate the `.tpr` required by `gmx genion`.
-
-It is not an EM, equilibration, or production-MD parameter set and carries no Stage 4 simulation semantics.
-
-The exact template contents remain implementation work until separately added and validated after Skill generation is approved.
-
-## 5.3 `gmx grompp` arg tendency
-
-Primary tendencies:
+`gmx genion` 参数习惯：
 
 ```text
--f
-→ Skill-provided genion.mdp
-
--c
-→ current validated .gro
-
--p
-→ current associated topology; normally sys.top when applicable
-
--o
-→ genion.tpr for the current 3.3 instance
+-neutral        当前任务要求 neutralization 时使用
+-conc 0.154     生物体系在用户和 Task Sheet 未指定其它盐浓度或离子组成时使用
+-pname/-nname   按当前实际离子拓扑定义确定
+replacement     选择当前实际需要被替换的主体溶剂 group
 ```
 
-Typical form:
+用户或 Task Sheet 明确给出的盐浓度或离子组成覆盖生物体系的 `0.154 M` 默认倾向。
 
-```bash
-gmx grompp -f genion.mdp -c current.gro -p sys.top -o genion.tpr
+完成当前 operation 前检查：
+
+1. `gmx grompp` 进程正常结束并生成当前 operation 的 `.tpr`；
+2. `gmx genion` 进程正常结束；
+3. 当前体系主 `.top` 中被替换的 solvent 和新增 ion 记录已由本次操作正常更新。
+
+`.mdp` 和 `.tpr` 保留在 operation 目录中作为执行文件，不进入项目结果索引。
+
+## 5. 正式结果
+
+Stage 3 固定生成：
+
+`system_construction_result.yaml`
+
+正式 Skill generation 时，详细结果接口下放到：
+
+`03_md_preparation/references/results.md`
+
+结果结构冻结为：
+
+```yaml
+references:
+  INTEGRATION: /absolute/path/to/topology_integration_result.yaml
+  VALIDATION: /absolute/path/to/topology_validation_result.yaml
+
+results:
+  operations:
+    - directory: /absolute/path/to/01_periodic_box_construction
+      type: periodic_box_construction
+      structure: /absolute/path/to/actual_boxed_structure.gro
+
+    - directory: /absolute/path/to/02_solvent_addition
+      type: solvent_addition
+      structure: /absolute/path/to/actual_solvated_structure.gro
+      top: /absolute/path/to/actual_solvated_system.top
+
+    - directory: /absolute/path/to/03_ion_addition
+      type: ion_addition
+      structure: /absolute/path/to/actual_ionized_structure.gro
+      top: /absolute/path/to/actual_ionized_system.top
+
+  final:
+    structure: /absolute/path/to/actual_final_structure.gro
+    top: /absolute/path/to/actual_final_system.top
 ```
 
-## 5.4 `gmx genion` arg tendency
+结果规则：
 
-Primary tendencies:
+- `references` 遵守仓库级结果生成规则；
+- `INTEGRATION` 记录本次实际采用的拓扑整合正式结果；
+- `VALIDATION` 只在本次实际读取并分析对应拓扑终检结果时记录；
+- `results.operations` 按实际执行顺序记录；
+- 每项 operation 只记录目录、type 及该 operation 实际保留的结构文件和 / 或体系主 `.top`；
+- 没有由当前 operation 生成的结果字段不建立占位；
+- `results.final` 只记录最终结构文件和最终体系主 `.top`；
+- Stage 3 不生成或登记 atom map；
+- 所有路径使用实际完整绝对路径；
+- `.gro` 和 `.top` basename 不是固定接口。
 
-```text
--neutral
-→ preferred when the requested system should be neutralized
+项目结果索引只登记：
 
--conc 0.154
-→ biomolecular-system tendency when no different salt concentration is explicitly requested
+`system_construction_result.yaml`
 
--pname / -nname
-→ derive from the actual ion definitions and task requirement; do not hard-code one universal species
+各 operation 产生的 `.gro` / `.top`、最终 `.gro` / `.top`、`.mdp`、`.tpr`
+和 operation directory 均通过该 YAML 定位，不分别登记到项目结果索引。
 
-replacement group
-→ select the actual intended bulk-solvent group; do not hard-code SOL
-```
+## 6. 完成条件与 implementation status
 
-Typical biomolecular form when applicable:
+Stage 3 工作项完成需要：
 
-```bash
-gmx genion -s genion.tpr -o ionized.gro -p sys.top -neutral -conc 0.154
-```
+1. 当前 operation plan 中实际需要的 operations 已完成；
+2. 每个已执行 operation 已完成本文件规定的检查；
+3. `system_construction_result.yaml` 已生成，并能够定位全部保留的 operation 结果以及最终结构文件和体系主 `.top`；
+4. 当前 Task Sheet 的 Stage 3 条目已更新；
+5. `system_construction_result.yaml` 已登记到项目结果索引。
 
-User-specified concentration/composition overrides the biomolecular `0.154 M` tendency.
+Current architecture 已冻结；active Skill generation 尚未获批。
 
-## 5.5 Result boundary
+正式生成时仍需：
 
-3.3 normally produces:
-
-- new ionized `.gro`;
-- updated current `.top` / `sys.top` molecule composition;
-- continued references to required `.itp` files;
-- intermediate `genion.tpr` retained as execution evidence when useful.
-
-The Step performs lightweight consistency checks for successful ion replacement/addition and coordinate/topology composition alignment.
-
----
-
-# 6. Validation boundary
-
-Stage 3 has no separate stage-level Validator Step.
-
-Each 3.1 / 3.2 / 3.3 execution instance owns the local checks necessary to ensure that its output is a valid handoff object for the next task substep.
-
-The last Stage 3 operation actually executed and successfully checked in the Task Sheet is the current constructed-system result for subsequent workflow use.
-
----
-
-# 7. Frozen vs future work
-
-Frozen architecture:
-
-- three-step catalog `3.1 / 3.2 / 3.3`;
-- default route `3.1 → 3.2 → 3.3`;
-- repeatable Task Sheet execution instances for every Stage 3 step;
-- no separate settings / final assembly / stage-level validation step;
-- current 3.1 tool boundary = `gmx editconf`;
-- 3.2 tool boundary = `gmx solvate`;
-- 3.3 internal boundary = `gmx grompp → gmx genion`;
-- 3.3 Skill-provided `genion.mdp` template requirement;
-- current arg tendencies described above;
-- `sys.top` naming tendency;
-- 3.1 input may be any validated `.gro` with associated topology-file records.
-
-Detailed generation-ready Step freezes preserved from pre-authorization material:
-
-```text
-00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.1_PERIODIC_BOX_CONSTRUCTION_FREEZE.md
-00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.2_SOLVENT_ADDITION_FREEZE.md
-00_authoring/architecture_freezes/WORKFLOW3_STAGE3_3.3_ION_ADDITION_FREEZE.md
-```
-
-These are authoring references only. There is no active Stage 3 `SKILL.md` until explicit generation approval.
-
-Remaining implementation/refinement work:
-
-- exact `genion.mdp` template contents and representative/deterministic execution validation;
-- more complex Agent/deterministic-tool box editing beyond `gmx editconf`;
-- implementation-level filenames/schemas only where they become genuinely useful.
-
-Pre-authorization Stage-main material was previously stored in blob `9e6a8fd5c566dfdcf70f7ffef6c44a85a55c93f6`; its substantive catalog/handoff content is represented by this Stage freeze and the three Step freezes above.
+- 生成 `03_md_preparation/SKILL.md`；
+- 生成 `03_md_preparation/references/results.md`；
+- 建立并验证 dedicated minimal `genion.mdp`；
+- 完成代表性或确定性执行验证。
