@@ -64,6 +64,12 @@ references:
 
 当前 map 作为需要通过 `component_id + residue_id` 或 atom identity 定位当前结构 / 拓扑原子时的映射依据；本轮不为 map 单独设置逐原子对应检查或 provenance 检查项目。
 
+## Reuse
+
+2.6 不设置 reuse。
+
+每次实际进入当前工作项，都针对当前 `classification_result.yaml`、当前 `topology_integration_result.yaml` 及其记录的当前结构文件和拓扑文件重新执行全部规定检查，不使用既有 `topology_validation_result.yaml` 跳过本次检查。
+
 ## 4. 必需检查项
 
 ### 4.1 检查体系 `.top` 中各 `#include` 指向的文件是否存在
@@ -105,15 +111,16 @@ judgment = CONFIRMED
 topology_effect_applied = true
 ```
 
-使用其中记录的关系两端身份，在需要时结合当前 map 定位当前结构文件和最终拓扑中的对应 atom。
+满足上述条件的 `COVALENT_CONNECTION` 和 `METAL_COORDINATION` 都是当前 topology-linked 参数化与拓扑整合需要落实的正式关系。
 
-对每条关系检查最终拓扑是否实际写入与该正式关系相对应的 topology effect。
+使用正式结果记录的关系两端身份，在需要时结合当前 map 定位当前结构文件和最终拓扑中的对应 atom；再依据当前拓扑整合实际采用的 topology-linked 参数化结果，检查其中针对该关系形成的拓扑项是否已经写入最终拓扑。
+
+- `COVALENT_CONNECTION` 使用 `atom_1` 和 `atom_2` 定位关系两端；
+- `METAL_COORDINATION` 使用 `metal` 和 `donor` 定位关系两端。
+
+2.6 不根据 `relation_type` 另行发明拓扑表示规则；两类关系均以当前 topology-linked 参数化结果及拓扑整合结果实际采用的拓扑项为检查依据。
 
 `judgment = REJECTED` 或 `topology_effect_applied = false` 的记录不作为本项要求最终拓扑必须体现的关系。
-
-对 `COVALENT_CONNECTION`，后续 Skill 应检查关系两端 atom 是否在最终拓扑中形成相应成键关系。
-
-对 `METAL_COORDINATION`，本轮只冻结“必须核对其已经要求的 topology effect 是否体现在最终拓扑”这一检查要求；不得未经进一步确认把所有产生 topology effect 的金属配位机械等同为 `[ bonds ]` 直接成键。具体 topology representation 如在 Skill generation 前仍不能由 current upstream result 唯一确定，应保留为需要进一步敲定的科学细节，不自行发明固定表示。
 
 ### 4.4 检查 topology-linked 参数化要求删除的标准残基原子是否已经删除
 
@@ -142,6 +149,8 @@ topology_effect_applied = true
 
 使用当前结构文件和体系 `.top` 执行 `gmx grompp`。
 
+用于本项检查的 `.mdp` 可以由 Agent 根据当前检查需要生成，也可以使用 Skill reference 中预建的检查用 `.mdp`；两种方式均可。正式结果通过实际执行命令记录本次采用的 `.mdp` 路径和其它设置。
+
 正式结果记录：
 
 - 实际使用的 GROMACS version；
@@ -153,7 +162,7 @@ topology_effect_applied = true
 
 `return_code = 0` 不能替代 4.1–4.5 的独立检查。
 
-用于本项检查的 `.mdp`、临时 `.tpr` 或其它 preprocessing 工作文件不因执行本检查自动成为正式结果或项目结果索引项；如 Skill generation 时需要固定专用 validation `.mdp`，应在当时基于 current GROMACS / Stage 3 接口重新确认，不从旧冻结自动继承。
+用于本项检查的 `.mdp`、临时 `.tpr` 或其它 preprocessing 工作文件不因执行本检查自动成为正式结果或项目结果索引项。
 
 ## 5. 正式结果与记录格式
 
@@ -278,7 +287,7 @@ topology_linked_relations:
         entry: "652 1854 1 ..."
 ```
 
-对 `METAL_COORDINATION`，保留 `metal` 和 `donor`，其定位字段与上例相同；`topology_entries` 记录最终拓扑中实际采用的 section 和条目，不预设所有金属配位均通过 `[ bonds ]` 表达。
+对 `METAL_COORDINATION`，保留 `metal` 和 `donor`，其定位字段与上例相同；`topology_entries` 记录对应 topology-linked 参数化结果中针对该关系形成、并由拓扑整合写入最终拓扑的实际条目。
 
 完成检索但未找到对应 topology entry 时记录：
 
@@ -368,6 +377,12 @@ grompp:
 
 当前结构文件、map、体系 `.top`、`.itp`、用于 `gmx grompp` 的 `.mdp`、临时 `.tpr`、debug、scratch 和 cache 均不作为 2.6 新结果重复登记。
 
+### 5.10 工作项完成条件
+
+完成第 4 节规定的六项检查并生成 `topology_validation_result.yaml` 后，当前 2.6 工作项即完成，并按 Task Execution 规则更新当前 Task Sheet。
+
+检查中发现的问题继续保留在正式结果中；问题是否要求重新进入其它 Stage 2 工作项，由 Stage 2 main Skill根据实际检查结果维护后续计划，不改变当前 2.6 工作项已经完成检查并生成正式结果这一事实。
+
 ## 6. 当前明确删除的旧 2.6 规则
 
 以下旧设计不再作为 current 2.6 必需检查或结果记录：
@@ -378,7 +393,8 @@ grompp:
 - 在 `gmx grompp` 之外再维护一套 atom type / bonded parameter definition 查找检查；
 - 以抽象的 `package completeness`、`internal consistency`、`charge/connectivity sanity` 等标签代替具体检查关系；
 - 为六项检查增加 PASS / FAIL、完成状态、overall conclusion 或 blocking finding；
-- 为标准残基一侧电荷修改在正式结果中展开 atom-level 电荷明细。
+- 为标准残基一侧电荷修改在正式结果中展开 atom-level 电荷明细；
+- 为 `METAL_COORDINATION` 另设脱离 current topology-linked 参数化结果的拓扑表示判据。
 
 如果后续出现新的实际需求，应按 current authoring rules 重新证明其必要性后再修改本 freeze 或 current Skill，不从旧 Stage 2 综合冻结恢复这些已经退出的规则。
 
