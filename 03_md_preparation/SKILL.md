@@ -13,7 +13,7 @@ description: System construction / solvation main Skill。根据当前 Task Shee
 
 ## 目标
 
-根据当前 Task Sheet 中的处理对象、体系构建目标和已经明确的约束，形成后续模拟使用的结构文件与体系主 `.top`，并生成：
+根据当前 Task Sheet 中的处理对象和需要完成的体系构建工作，形成后续模拟使用的结构文件与体系主 `.top`，并生成：
 
 `system_construction_result.yaml`
 
@@ -37,9 +37,9 @@ periodic_box_construction
 
 ## 输入与依据
 
-当前 Task Sheet 用于明确本次体系构建的处理对象、目标和已经确定的约束。
+当前 Task Sheet 提供本次体系构建的处理对象和需要完成的体系构建工作。
 
-执行 Agent 以当前 Task Sheet 中的处理对象为准，结合当前任务上下文和：
+执行 Agent 以当前处理对象为准，结合当前任务上下文和：
 
 `<project_root>/00_project_records/project_result_index.md`
 
@@ -65,7 +65,9 @@ periodic_box_construction
 
 ## 操作计划
 
-在当前 Task Sheet 的 `3 System construction / solvation` 条目内部维护操作计划，不建立额外的体系构建计划文件。
+在当前 Task Sheet 的 `3 System construction / solvation` 条目内部维护操作计划。
+
+操作计划只记录当前处理对象需要经过哪些体系构建操作，按实际执行顺序列出操作类型并维护状态。
 
 每项操作使用以下状态：
 
@@ -74,17 +76,6 @@ periodic_box_construction
 已完成
 已终止
 ```
-
-操作计划保留足以恢复以下内容的信息：
-
-- 实际执行顺序；
-- 操作类型；
-- 当前状态；
-- 工作目录；
-- 当前操作使用的结构文件和体系主 `.top`；
-- 当前操作的关键实际设置；
-- 已完成操作产生并继续保留的关键结果；
-- `system_construction_result.yaml` 的实际路径。
 
 实际结果改变后续体系构建需要时，更新尚未完成的操作计划。
 
@@ -106,7 +97,7 @@ periodic_box_construction
 
 不原地覆盖上游正式结构文件、体系主 `.top` 或 `.itp`。
 
-当 `gmx solvate -p` 或 `gmx genion -p` 需要修改 `[ molecules ]` 时，先在当前操作目录形成可修改的派生体系主 `.top`。新增溶剂或离子所需的拓扑 / 参数定义如果尚不能由该 `.top` 解析，则根据本次实际采用的模型补充对应定义或引用。
+当 `gmx solvate -p` 或 `gmx genion -p` 需要修改 `[ molecules ]` 时，先在当前操作目录形成可修改的派生体系主 `.top`。确定本次实际采用的溶剂或离子拓扑 / 参数定义后，如果该派生 `.top` 尚未引用相应定义，当前 Stage 3 直接在该 `.top` 中补充对应 `#include`。
 
 `.gro`、`.top`、`.itp`、`.mdp` 和 `.tpr` 的 basename 除 `genion.mdp` 外不是正式接口；正式结果记录使用实际完整绝对路径。
 
@@ -160,9 +151,7 @@ periodic_box_construction
 -radius 0.105 nm
 ```
 
-命令可以依赖软件默认值；如果当前任务或实际 GROMACS 版本采用其它值，在 Task Sheet 当前操作中记录实际设置。
-
-如果当前派生体系主 `.top` 尚不能解析本次新增溶剂的 `moleculetype`，补充本次实际采用的溶剂拓扑 / 参数定义，再形成当前操作使用的体系主 `.top`。
+命令可以依赖软件默认值；当前任务或实际 GROMACS 版本需要其它值时使用相应设置。
 
 完成当前操作前检查：
 
@@ -209,8 +198,6 @@ integrator = steep
 nsteps     = 0
 pbc        = xyz
 ```
-
-如果当前派生体系主 `.top` 尚不能解析本次新增离子的 `moleculetype`，补充本次实际采用的离子拓扑 / 参数定义，再生成 `gmx genion` 所需 `.tpr`。
 
 `gmx genion` 参数习惯：
 
