@@ -3,8 +3,13 @@
 # Discovery aid for 05_analysis/SKILL.md. This is not a parser or mandatory
 # dispatcher schema.
 #
+# This inventory is maintained continuously as analysis needs expand. It has no
+# fixed completion boundary or closed final capability set. Historical or initial
+# capability cohorts are planning context only and do not limit later additions.
+#
 # Add an entry only when the referenced capability entry actually exists and is
-# intended to be discoverable by Stage 5.
+# intended to be discoverable by Stage 5. Do not create placeholder rows for
+# planned capabilities before their actual entries exist.
 #
 # Minimum fields for each entry:
 # - name
@@ -16,10 +21,6 @@
 # duplicate capability-specific execution, selection, preprocessing, validation,
 # result-lifecycle, or project_result_index.md whitelist rules owned by the
 # referenced capability Skill / README.
-#
-# Initial planned capability cohort is documented in the Stage 5 architecture
-# freeze. No placeholder rows are created here before the corresponding entries
-# exist.
 
 - name: trjconv
   purpose: Process an existing trajectory according to a Stage 5 plan item and produce a traceable processed trajectory when needed.
