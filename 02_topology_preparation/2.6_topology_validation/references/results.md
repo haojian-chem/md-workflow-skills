@@ -8,10 +8,23 @@
 
 作为本次拓扑终检的正式结果记录。
 
-该 YAML 保存当前 `target_id`、实际文件引用和六项检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、
+该 YAML 保存当前检查对象的来源、实际文件引用和全部检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、
 `result_status`、整体结论或阻断性结论。
 
 结果文件和依赖文件路径遵守仓库级结果生成规则的完整绝对路径语义。
+
+## 当前检查对象与前置来源
+
+```yaml
+target:
+  target_id: target_001
+  source_topology_integration_result: ${TOPOLOGY_INTEGRATION_RESULT}
+```
+
+- `target_id` 只在当前拓扑终检工作项内标识当前 target，不作为跨环节或项目级全局身份；
+- `source_topology_integration_result` 使用当前接收对象对应的拓扑整合正式结果完整绝对路径，使当前 target 能够
+  追溯到其前置来源；
+- 不通过不同环节中恰好相同的 `target_id` 字符串推断它们是同一个 execution object。
 
 ## `references`
 
@@ -40,7 +53,9 @@ references:
 ## 顶层结构
 
 ```yaml
-target_id: target_001
+target:
+  target_id: target_001
+  source_topology_integration_result: ${TOPOLOGY_INTEGRATION_RESULT}
 
 references:
   # 按上一节记录
@@ -49,12 +64,13 @@ check_results:
   top_includes: []
   structure_topology: {}
   topology_linked_relations: []
+  position_restraints: []
   standard_atom_deletions: []
   standard_side_charge_modifications: []
   grompp: {}
 ```
 
-六个 `check_results` 字段均保留。当前工作项只有完成全部六项检查后才生成正式结果，因此各空数组表示已经完成
+全部 `check_results` 字段均保留。当前工作项只有完成全部规定检查后才生成正式结果，因此各空数组表示已经完成
 对应检查但没有发现该类记录或差异，不表示该检查尚未执行。
 
 ## `top_includes`
@@ -144,7 +160,7 @@ atom_name_differences:
 
 ## `topology_linked_relations`
 
-对 `classification_result.yaml.topology_linked_checks` 中每条同时满足：
+对属于当前接收对象，并在 `classification_result.yaml.topology_linked_checks` 中同时满足：
 
 ```text
 judgment = CONFIRMED
@@ -152,7 +168,8 @@ judgment = CONFIRMED
 topology_effect_applied = true
 ```
 
-的关系建立一条记录。
+的每条关系建立一条记录。关系来源固定为 `classification_result.yaml`；实际检查文件是最终对应
+`moleculetype` 的 `.itp`。
 
 ### `COVALENT_CONNECTION`
 
@@ -209,20 +226,47 @@ topology_linked_relations:
     topology_entries:
       - file: ${ITP_1}
         moleculetype: molecule_1
-        section: <actual_section>
+        section: bonds
         line_number: 810
         atom_nrs: [1860, 1198]
-        entry: "<actual topology entry>"
+        entry: "1860 1198 1 ..."
 ```
 
-`topology_entries` 记录对应 topology-linked 参数化结果中针对该关系形成、并由拓扑整合写入最终拓扑的实际条目。
-完成检索但未找到对应条目时记录：
+`topology_entries` 记录最终 `moleculetype` `.itp` 的 `[ bonds ]` 中直接连接关系两端 atom 的实际条目。
+两端 atom 已经定位、但 `[ bonds ]` 中没有对应直接连接时记录：
 
 ```yaml
 topology_entries: []
 ```
 
-不另设 `topology_effect_found`、`status` 或其它二次判断字段。
+该空数组表示“`classification_result.yaml` 规定两端应形成 topology-linked 关系，但最终
+`moleculetype` `.itp` 中没有相应 `[ bonds ]` 条目”，不表示未执行检查。
+
+## `position_restraints`
+
+对体系 `.top` 或最终 `moleculetype` `.itp` 通过条件 `#include` 引用的每个 position-restraint `.itp`
+建立一条记录：
+
+```yaml
+position_restraints:
+  - file: ${ITP_2}
+    moleculetype: molecule_1
+    heavy_atom_count: 928
+    restraint_entry_count: 928
+    missing_heavy_atom_nrs: []
+    restrained_hydrogen_atom_nrs: []
+```
+
+字段语义：
+
+- `file`：实际 position-restraint `.itp`；
+- `moleculetype`：该 restraint 文件对应的 `moleculetype`；
+- `heavy_atom_count`：对应 `moleculetype [ atoms ]` 中的重原子数量；
+- `restraint_entry_count`：该文件 `[ position_restraints ]` 中实际记录的条目数量；
+- `missing_heavy_atom_nrs`：没有 position restraint 的重原子 `[ atoms ] nr`；
+- `restrained_hydrogen_atom_nrs`：被错误施加 position restraint 的氢原子 `[ atoms ] nr`。
+
+没有缺失或错误施加时保留空数组，不增加 `status` 字段。
 
 ## `standard_atom_deletions`
 
@@ -298,7 +342,7 @@ standard_side_charge_modifications:
 
 ## `grompp`
 
-只记录实际执行事实：
+记录实际执行事实，并对每一项 note、warning 和 error 保存分析：
 
 ```yaml
 grompp:
@@ -309,17 +353,24 @@ grompp:
     -p ${TOP}
     -o /absolute/path/to/temporary.tpr
   return_code: 0
-  notes: []
-  warnings: []
+
+  notes:
+    - message: "<actual note>"
+      analysis: "<触发原因，以及是否反映当前结构或拓扑问题的分析>"
+
+  warnings:
+    - message: "<actual warning>"
+      analysis: "<触发原因，以及是否反映当前结构或拓扑问题的分析>"
+
   errors: []
 ```
 
 - `gromacs_version`：本次实际调用的版本；
 - `command`：实际执行命令，包括本次采用的 `.mdp` 和输出路径；
 - `return_code`：实际进程返回码；
-- `notes`、`warnings`、`errors`：分别保存 `gmx grompp` 的实际对应输出。
+- `notes`、`warnings`、`errors`：每项分别记录 GROMACS 原始信息和执行 Agent 对该信息的分析。
 
-不记录 `preprocessing_succeeded`、`status` 或其它二次结论字段。
+没有相应输出时保留空数组。不记录 `preprocessing_succeeded`、`status` 或其它二次结论字段。
 
 ## 项目结果索引登记
 
@@ -332,7 +383,7 @@ grompp:
 
 ## 工作项完成条件
 
-完成全部六项检查并生成 `topology_validation_result.yaml` 后，当前工作项完成。
+完成全部规定检查并生成 `topology_validation_result.yaml` 后，当前工作项完成。
 
 检查中发现的问题继续保留在正式结果中；问题是否要求重新进入其它拓扑准备工作项，不改变当前工作项已经完成检查
 并生成正式结果这一事实。
