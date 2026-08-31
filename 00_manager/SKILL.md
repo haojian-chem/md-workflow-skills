@@ -104,7 +104,7 @@ Task Sheet 是可动态维护的计划，不是科学适用性判决。
 
 ### Ordinary Stage planning
 
-Stages 1–3 使用普通 sub-stage Task Sheet planning。
+Stages 1–2 使用普通 sub-stage Task Sheet planning。
 
 普通 Step 至少记录：状态、对象、工作目录；对象尚未形成时不猜测具体文件路径。
 
@@ -115,6 +115,18 @@ Stages 1–3 使用普通 sub-stage Task Sheet planning。
 未完成
 已完成
 ```
+
+### Stage 3 planning
+
+Stage 3 不设置编号化 sub-stage。任务范围包含体系构建时，Manager 在 Task Sheet 中建立一个 stage-level 条目：
+
+`3 System construction / solvation`
+
+该条目记录用户提出的体系构建目标、当前处理对象、已经明确的约束，以及：
+
+`<project_root>/03_md_preparation/<task_id>/`
+
+作为 task-specific 工作目录。具体 operation plan 由 Stage 3 在执行期补充并维护。
 
 ### Stage 4 planning exception
 
