@@ -1,6 +1,6 @@
 ---
 name: topology_validation
-description: 对 topology_integration_result.yaml 定位的当前结构文件与拓扑文件执行独立、只读终检，检查体系 .top 引用、结构文件与拓扑文件中的分子/残基/原子对应、topology-linked 关系、标准残基原子删除与电荷修改，并使用 gmx grompp 记录预处理结果，生成 topology_validation_result.yaml。
+description: 对 topology_integration_result.yaml 定位的当前结构文件与拓扑文件执行独立、只读终检，检查体系 .top 引用、结构文件与拓扑文件中的分子/残基/原子逐项对应、topology-linked 关系、标准残基原子删除与电荷修改，并使用 gmx grompp 记录预处理结果，生成 topology_validation_result.yaml。
 ---
 
 # Topology validation
@@ -86,7 +86,7 @@ description: 对 topology_integration_result.yaml 定位的当前结构文件与
 - 对应位置的 residue name；
 - 对应位置的 atom name。
 
-发现差异时，记录对应 `moleculetype`、molecule instance、结构文件位置、拓扑文件位置以及两侧实际值。
+发现差异时，记录对应 `moleculetype`、分子实例、结构文件位置、拓扑文件位置以及两侧实际值。
 
 ## 检查已确认并产生 topology effect 的 `topology-linked` 关系
 
@@ -122,8 +122,8 @@ topology-linked 参数化结果，检查其中针对该关系形成的拓扑项�
 - 当前结构文件中不存在该 atom；
 - 最终拓扑文件中对应 `moleculetype` 的 `[ atoms ]` 中不存在该 atom。
 
-使用参数化正式结果记录的标准结构 atom identity 和相应 map，保持与既有
-`component_id + residue_id` 的对应，不根据 atom name 单独重建原子身份。
+使用参数化正式结果记录的标准结构原子身份和相应 map，保持与既有 `component_id + residue_id` 的对应，
+不根据 atom name 单独重建原子身份。
 
 ## 检查 topology-linked 参数化要求的标准残基一侧电荷修改
 
@@ -133,7 +133,7 @@ topology-linked 参数化结果，检查其中针对该关系形成的拓扑项�
 对该范围中 `topology_class: STANDARD_RESIDUE` 的每个 residue，通过参数化模型 map 与电荷文件确定相关 atom 的
 指定电荷，并逐 atom 检查最终拓扑文件中对应 `moleculetype` 的 `[ atoms ]` 所记录 `charge` 是否采用这些值。
 
-正式结果只按 residue 记录实际检查的 atom 数量和发现电荷差异的 atom 数量，不展开 atom-level 电荷明细。
+正式结果只按 residue 记录实际检查的 atom 数量和发现电荷差异的 atom 数量，不展开逐原子电荷明细。
 
 ## 使用 `gmx grompp` 检查当前结构文件和体系 `.top`
 
@@ -141,7 +141,7 @@ topology-linked 参数化结果，检查其中针对该关系形成的拓扑项�
 
 `references/grompp_validation.mdp`
 
-该预设只用于 topology preprocessing，不启用 topology preprocessor macro，不要求当前结构文件已经完成周期盒构建，
+该预设只用于 GROMACS 预处理，不启用 topology preprocessor macro，不要求当前结构文件已经完成周期盒构建，
 生成的临时 `.tpr` 不作为模拟输入。
 
 若当前 GROMACS 版本或实际检查对象需要等价的预处理参数调整，可以在当前工作目录生成检查用 `.mdp`；
@@ -158,7 +158,7 @@ topology-linked 参数化结果，检查其中针对该关系形成的拓扑项�
 
 不使用 `-maxwarn` 强制越过 warning。`return_code = 0` 不能替代前述五项独立检查。
 
-检查用 `.mdp`、临时 `.tpr` 及其它 preprocessing 工作文件不自动成为正式结果。
+检查用 `.mdp`、临时 `.tpr` 及其它预处理工作文件不自动成为正式结果。
 
 ## 正式结果
 
@@ -170,8 +170,7 @@ topology-linked 参数化结果，检查其中针对该关系形成的拓扑项�
 
 `topology_validation_result.yaml`
 
-该 YAML 只记录实际检查对象和检查结果，不记录 `PASS`、`FAIL`、`COMPLETE`、overall conclusion 或
-blocking finding。
+该 YAML 只记录实际检查对象和检查结果，不记录 `PASS`、`FAIL`、`COMPLETE`、整体结论或阻断性结论。
 
 项目结果索引只登记 `topology_validation_result.yaml`。当前结构文件、map、体系 `.top`、`.itp`、检查用 `.mdp`
 和临时 `.tpr` 不作为当前职责的新结果重复登记。
