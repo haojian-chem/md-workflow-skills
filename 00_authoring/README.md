@@ -58,7 +58,6 @@ Manager：
 ├── README.md
 ├── references/
 ├── assets/
-├── scripts/
 ├── architecture_freezes/
 ├── project_design/
 ├── coordination/
