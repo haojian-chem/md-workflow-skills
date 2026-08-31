@@ -31,16 +31,16 @@ description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理
 - 当前 Task Sheet，确定本次共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基组合，以及 2.1 已确认的力场 / 参数定义来源；
 - 当前体系对应的 1.2 正式 `classification_result.yaml`，读取与当前处理对象相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`；
 - 当前体系的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
-- 当前 Task Sheet 引用、且由 2.1 已判定可用于当前体系的 2.2 正式结果，从中定位标准残基全原子结构及对应 map；
+- 当前 Task Sheet 中本体系标准残基拓扑生成工作项产生的正式结果，从中定位标准残基全原子结构及对应 map；
 - 非标准残基补氢实际使用的 CCD 文件。
 
 当前 2.3 沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据 residue name、chain、resid 或当前空间位置重新建立。
 
 ## Reuse
 
-已有 2.3 正式结果是否适用于当前体系由 2.1 判断。
+当前 2.3 不设置 reuse。
 
-若当前 Task Sheet 已引用 2.1 判定可直接使用的 2.3 正式结果，直接复用该结果；否则执行当前 2.3 工作项。本 Skill 不重新维护一套与 2.1 平行的已有结果适用性判据。
+在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都对当前 Task Sheet 指定的 topology-linked 参数化对象重新建立参数化模型并完成本 Skill 规定的参数化流程。
 
 ## 建立参数化模型
 
