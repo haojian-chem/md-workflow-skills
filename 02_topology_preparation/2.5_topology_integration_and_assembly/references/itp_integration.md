@@ -12,7 +12,13 @@
 
 `[ moleculetype ]` 使用已经确定的 `moleculetype` 名称。
 
-`nrexcl` 由用户确定。当前任务已有明确值时直接使用；没有明确值时先向用户确认，不按来源顺序、来源数量或多数值自行决定。
+`nrexcl` 不是由用户任意指定的独立参数。对本次新生成的 `moleculetype`，根据当前实际采用的来源拓扑和基础力场对 bonded-neighbor exclusion 的定义确定：
+
+- 当前 `moleculetype` 直接继承一个来源 `moleculetype`，且本次整合没有改变其 exclusion 语义时，沿用该来源的 `nrexcl`；
+- 当前 `moleculetype` 由多个来源拓扑整合形成时，检查这些来源的 `nrexcl` 及其所属力场 / 参数体系的 exclusion 约定；来源语义一致时采用该共同值；
+- 来源值或 exclusion 约定存在冲突时，不按来源顺序、数量多数或固定默认值选择。先根据当前体系实际采用的基础力场、来源拓扑和本次新建立的拓扑连接判断哪套 exclusion 语义适用于当前 `moleculetype`；仍不能唯一确定时，向用户说明冲突来源和科学影响，确认采用的力场 / 拓扑约定后再确定 `nrexcl`，而不是要求用户脱离这些依据直接填写一个数值。
+
+最终实际写入每个本次生成 `moleculetype` 的 `nrexcl` 必须能够追溯到上述来源拓扑 / 力场依据。
 
 ## `[ atoms ]`
 
