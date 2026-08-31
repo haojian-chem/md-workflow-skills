@@ -8,23 +8,10 @@
 
 作为本次拓扑终检的正式结果记录。
 
-该 YAML 保存当前检查对象的来源、实际文件引用和全部检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、
-`result_status`、整体结论或阻断性结论。
+该 YAML 保存实际文件引用和全部检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、`result_status`、
+整体结论或阻断性结论。
 
 结果文件和依赖文件路径遵守仓库级结果生成规则的完整绝对路径语义。
-
-## 当前检查对象与前置来源
-
-```yaml
-target:
-  target_id: target_001
-  source_topology_integration_result: ${TOPOLOGY_INTEGRATION_RESULT}
-```
-
-- `target_id` 只在当前拓扑终检工作项内标识当前 target，不作为跨环节或项目级全局身份；
-- `source_topology_integration_result` 使用当前接收对象对应的拓扑整合正式结果完整绝对路径，使当前 target 能够
-  追溯到其前置来源；
-- 不通过不同环节中恰好相同的 `target_id` 字符串推断它们是同一个 execution object。
 
 ## `references`
 
@@ -50,13 +37,12 @@ references:
 - 不根据任何默认 basename 推断实际文件名；
 - `${PATH_KEY}` 展开后必须具有完整绝对路径语义。
 
+当前工作项的处理对象由 Task Sheet 确定；本 YAML 不另建 `target_id` 或平行对象记录。当前检查使用的两个直接正式
+依赖和具体结构、map、`.top`、`.itp` 均已由本节的完整绝对路径记录。
+
 ## 顶层结构
 
 ```yaml
-target:
-  target_id: target_001
-  source_topology_integration_result: ${TOPOLOGY_INTEGRATION_RESULT}
-
 references:
   # 按上一节记录
 
@@ -64,13 +50,12 @@ check_results:
   top_includes: []
   structure_topology: {}
   topology_linked_relations: []
-  position_restraints: []
   standard_atom_deletions: []
   standard_side_charge_modifications: []
   grompp: {}
 ```
 
-全部 `check_results` 字段均保留。当前工作项只有完成全部规定检查后才生成正式结果，因此各空数组表示已经完成
+六个 `check_results` 字段均保留。当前工作项只有完成全部规定检查后才生成正式结果，因此各空数组表示已经完成
 对应检查但没有发现该类记录或差异，不表示该检查尚未执行。
 
 ## `top_includes`
@@ -102,7 +87,7 @@ top_includes:
 ## `structure_topology`
 
 本项记录当前结构文件的 residue / atom 数量，以及按体系 `.top [ molecules ]` 和对应
-`moleculetype [ atoms ]` 展开的拓扑规模：
+`moleculetype [ atoms ]` 展开的拓扑规模；同时记录对 position-restraint `.itp` 的检查结果：
 
 ```yaml
 structure_topology:
@@ -119,6 +104,14 @@ structure_topology:
   atom_order_differences: []
   residue_name_differences: []
   atom_name_differences: []
+
+  position_restraints:
+    - file: ${ITP_2}
+      moleculetype: molecule_1
+      heavy_atom_count: 928
+      restraint_entry_count: 928
+      missing_heavy_atom_nrs: []
+      restrained_hydrogen_atom_nrs: []
 ```
 
 `topology_molecule_count` 是体系 `.top [ molecules ]` 按数量展开后的分子实例总数；
@@ -158,9 +151,22 @@ atom_name_differences:
 
 其它差异数组只记录与该差异类型相关的位置和值；不适用的定位字段省略。
 
+`position_restraints` 是本项对 `.itp` 的检查记录，不是独立检查项。对体系 `.top` 或最终
+`moleculetype` `.itp` 通过条件 `#include` 引用的每个 position-restraint `.itp` 建立一条记录：
+
+- `file`：实际 position-restraint `.itp`；
+- `moleculetype`：该 restraint 文件对应的 `moleculetype`；
+- `heavy_atom_count`：对应 `moleculetype [ atoms ]` 中的重原子数量；
+- `restraint_entry_count`：该文件 `[ position_restraints ]` 中实际记录的条目数量；
+- `missing_heavy_atom_nrs`：没有 position restraint 的重原子 `[ atoms ] nr`；
+- `restrained_hydrogen_atom_nrs`：被错误施加 position restraint 的氢原子 `[ atoms ] nr`。
+
+没有缺失或错误施加时保留空数组，不增加 `status` 字段。
+
 ## `topology_linked_relations`
 
-对属于当前接收对象，并在 `classification_result.yaml.topology_linked_checks` 中同时满足：
+从依赖文件 `${CLASSIFICATION_RESULT}` 的 `topology_linked_checks` 中，对属于当前 Task Sheet 工作项指定的处理对象、
+且同时满足以下条件的每条关系建立一条记录：
 
 ```text
 judgment = CONFIRMED
@@ -168,8 +174,7 @@ judgment = CONFIRMED
 topology_effect_applied = true
 ```
 
-的每条关系建立一条记录。关系来源固定为 `classification_result.yaml`；实际检查文件是最终对应
-`moleculetype` 的 `.itp`。
+本项的检查对象文件是最终对应 `moleculetype` 的 `.itp`。
 
 ### `COVALENT_CONNECTION`
 
@@ -239,34 +244,8 @@ topology_linked_relations:
 topology_entries: []
 ```
 
-该空数组表示“`classification_result.yaml` 规定两端应形成 topology-linked 关系，但最终
-`moleculetype` `.itp` 中没有相应 `[ bonds ]` 条目”，不表示未执行检查。
-
-## `position_restraints`
-
-对体系 `.top` 或最终 `moleculetype` `.itp` 通过条件 `#include` 引用的每个 position-restraint `.itp`
-建立一条记录：
-
-```yaml
-position_restraints:
-  - file: ${ITP_2}
-    moleculetype: molecule_1
-    heavy_atom_count: 928
-    restraint_entry_count: 928
-    missing_heavy_atom_nrs: []
-    restrained_hydrogen_atom_nrs: []
-```
-
-字段语义：
-
-- `file`：实际 position-restraint `.itp`；
-- `moleculetype`：该 restraint 文件对应的 `moleculetype`；
-- `heavy_atom_count`：对应 `moleculetype [ atoms ]` 中的重原子数量；
-- `restraint_entry_count`：该文件 `[ position_restraints ]` 中实际记录的条目数量；
-- `missing_heavy_atom_nrs`：没有 position restraint 的重原子 `[ atoms ] nr`；
-- `restrained_hydrogen_atom_nrs`：被错误施加 position restraint 的氢原子 `[ atoms ] nr`。
-
-没有缺失或错误施加时保留空数组，不增加 `status` 字段。
+该空数组表示依赖文件中规定两端应形成 topology-linked 关系，但检查对象文件中没有相应 `[ bonds ]` 条目；
+不表示未执行检查。
 
 ## `standard_atom_deletions`
 
@@ -383,7 +362,7 @@ grompp:
 
 ## 工作项完成条件
 
-完成全部规定检查并生成 `topology_validation_result.yaml` 后，当前工作项完成。
+完成全部六项检查并生成 `topology_validation_result.yaml` 后，当前工作项完成。
 
 检查中发现的问题继续保留在正式结果中；问题是否要求重新进入其它拓扑准备工作项，不改变当前工作项已经完成检查
 并生成正式结果这一事实。
