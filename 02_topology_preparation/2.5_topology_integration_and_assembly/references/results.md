@@ -12,7 +12,7 @@
 
 - 当前 `target_id`；
 - 本次实际使用的上游 / 外部文件引用；
-- 整合后的 `moleculetype` 组成；
+- 整合后的 `moleculetype` 组成及本次生成 `moleculetype` 实际采用的 `nrexcl`；
 - 体系整合 `.gro`；
 - `integrated.map`；
 - 体系主 `.top`；
@@ -40,12 +40,11 @@ STD_1_RESULT: /absolute/path/to/standard_residue_topology_result.yaml
 STD_1_STRUCTURE: /absolute/path/to/standard.gro
 STD_1_MAP: /absolute/path/to/standard.map
 STD_1_TOP: /absolute/path/to/standard.top
-STD_1_ITP_1: /absolute/path/to/chain_1.itp
-STD_1_ITP_2: /absolute/path/to/chain_2.itp
+STD_1_ITP_1: /absolute/path/to/molecule_1.itp
+STD_1_ITP_2: /absolute/path/to/molecule_2.itp
 ```
 
-其中 `n` 是当前类别中的前置工作项序号；同一正式结果包含多个 `.itp` 时，以 `STD_n_ITP_m` 逐项记录，
-`m` 是该正式结果中的 `.itp` 序号。
+其中 `n` 是当前类别中的前置工作项序号；同一正式结果包含多个 `.itp` 时，以 `STD_n_ITP_m` 逐项记录，`m` 是该正式结果中的 `.itp` 序号。
 
 每个 Task Sheet 指定的 topology-linked 非标准残基参数化工作项使用一组 `LINKED_n_*`：
 
@@ -91,6 +90,7 @@ DIRECT_1_TOPOLOGY: /absolute/path/to/direct_solvent_or_ion_topology
 ```yaml
 moleculetypes:
   - name: molecule_1
+    nrexcl: 3
     residues:
       - component_id: component_001
         residue_id: residue_001-residue_120
@@ -98,16 +98,17 @@ moleculetypes:
         residue_id: residue_001
 
   - name: molecule_2
+    nrexcl: 3
     residues:
       - component_id: component_003
         residue_id: residue_001
 ```
 
-同一 `component_id` 下连续的 residue 可以使用 `residue_id: <start>-<end>` 压缩记录。该范围表示该 component
-正式 residue 顺序中的连续区间，不通过 `residue_id` 字符串重新计算 residue identity。
+对本次 2.5 实际生成 `.itp` 的 `moleculetype`，`nrexcl` 记录其最终 `[ moleculetype ]` 中实际采用的值；该值的确定依据由 `references/itp_integration.md` 定义。直接采用外部既定 topology、且 2.5 不生成其 `.itp` 的 solvent / ion，不为了重复记录而强制增加 `nrexcl` 字段；其实际定义由对应 `DIRECT_n_TOPOLOGY` 文件定位。
 
-不连续的 residue 分开记录。同一个 `moleculetype` 同时包含标准残基与非标准残基时，记录顺序与实际组织顺序一致，
-标准残基在前、非标准残基在后。
+同一 `component_id` 下连续的 residue 可以使用 `residue_id: <start>-<end>` 压缩记录。该范围表示该 component 正式 residue 顺序中的连续区间，不通过 `residue_id` 字符串重新计算 residue identity。
+
+不连续的 residue 分开记录。同一个 `moleculetype` 同时包含标准残基与非标准残基时，记录顺序与实际组织顺序一致，标准残基在前、非标准残基在后。
 
 ## `results`
 
@@ -128,11 +129,9 @@ results:
 
 `results.structure` 记录本次实际生成的体系整合 `.gro`；其默认 basename 为 `sys.gro`。
 
-`results.itp` 只列出本次拓扑整合实际生成的 `.itp`。不存在的文件不建立占位条目；若本次没有生成
-`parameters.itp`，列表中不写该路径。
+`results.itp` 只列出本次拓扑整合实际生成的 `.itp`。不存在的文件不建立占位条目；若本次没有生成 `parameters.itp`，列表中不写该路径。
 
-无需独立参数化、直接采用的 solvent / ion topology 属于本次整合的外部定义，记录在 `references`，
-不作为当前工作项生成的 `.itp` 写入 `results.itp`。
+无需独立参数化、直接采用的 solvent / ion topology 属于本次整合的外部定义，记录在 `references`，不作为当前工作项生成的 `.itp` 写入 `results.itp`。
 
 默认 basename 为：
 
@@ -161,7 +160,7 @@ references:
   STD_1_STRUCTURE: /absolute/path/to/standard.gro
   STD_1_MAP: /absolute/path/to/standard.map
   STD_1_TOP: /absolute/path/to/standard.top
-  STD_1_ITP_1: /absolute/path/to/chain_1.itp
+  STD_1_ITP_1: /absolute/path/to/molecule_1.itp
 
   LINKED_1_RESULT: /absolute/path/to/topology_linked_parameterization_result.yaml
   LINKED_1_MODEL: /absolute/path/to/parameterization_model.mol2
@@ -173,6 +172,7 @@ references:
 
 moleculetypes:
   - name: molecule_1
+    nrexcl: 3
     residues:
       - component_id: component_001
         residue_id: residue_001-residue_120
@@ -201,5 +201,4 @@ results:
 - 实际生成的体系主 `.top`；
 - 本次实际生成的全部 `.itp`。
 
-上游正式结果、基础力场文件、直接采用的 solvent / ion topology 和其它外部参数定义不作为当前工作项生成的
-正式结果重复登记。
+上游正式结果、基础力场文件、直接采用的 solvent / ion topology 和其它外部参数定义不作为当前工作项生成的正式结果重复登记。
