@@ -172,25 +172,33 @@ target_record: /absolute/path/to/current/targets/target_001.yaml
 
 ## 7. 何时建立 target record
 
-只要当前 Skill / 当前工作项把对象明确表示为 `target`，就为每个 local target 建立当前 target record。
+建立 target record 的前提是：当前 execution scope 已经按 `references/task_execution_rules.md` 唯一明确，并且当前 Skill / 当前工作项已经实例化一个**实际要执行的 local target**。
+
+因此：
+
+- execution-scope confirmation 阶段可以只读检查候选对象，但不得为多个可能范围预建候选 / 占位 target records；
+- 用户范围尚未明确时，不通过“先创建 target 再让用户选”物化 Agent 自己的范围假设；
+- 范围明确后，只要当前 Skill / 当前工作项把实际对象表示为 `target`，就为每个 actual local target 建立 current target record。
 
 这与是否发生“科学分支”是两件事：
 
 - 一对一推进仍建立当前 Step 自己的 target record；
-- 一个 source target 产生多个 current targets 时自然形成分支；
-- 多个 source targets 汇成一个 current target 时自然形成合流。
+- 一个 source target 产生多个 actual current targets 时自然形成分支；
+- 多个 source targets 汇成一个 actual current target 时自然形成合流。
 
 以下情况本身不构成 target lineage：
 
 - 仅建立新的 Task Sheet；
 - 仅复制文件或改变目录；
 - 仅因为 `target_id` 编号发生变化；
+- 仍处于用户执行范围确认阶段的候选对象；
 - Stage 4 formal run unit、Stage 5 analysis plan item 等已经由其 owner 定义了其它正式 execution identity，且对应 Skill 并未使用 `target` 作为执行对象。
 
 ## 8. Target lineage validation
 
 正式使用当前 target record 前至少确认：
 
+- 当前 execution scope 已经明确，target record 对应 actual local target 而不是候选范围；
 - `target_id` 在当前 Skill / 当前工作项 sibling targets 中唯一；
 - `source_target_records` 中每个路径均为实际可定位的 target record；
 - 当前 target 与每个 source target 的关系符合当前 Skill / Task Sheet 的实际对象演化；
