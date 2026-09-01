@@ -27,6 +27,12 @@ Stage 4 的三个执行层为：
 
 本 Skill 拥有 Stage 4 公共的 run-unit、绑定、复用、续跑、目录与结果登记规则；具体 `.mdp`、`grompp`、`mdrun` 和 run-specific validation 由相应子 Skill 拥有。
 
+本地计算资源与命令执行倾向统一读取：
+
+`references/execution_preferences.md`
+
+该 reference 记录用户长期执行偏好，不是 scientific simulation parameter authority；当前任务 / 当前环境的实际要求可以覆盖其中的资源倾向。
+
 ## Object requirements
 
 开始处理当前 planned run entry 前，至少需要：
@@ -35,8 +41,21 @@ Stage 4 的三个执行层为：
 - 当前 entry 的 run class 与关键科学要求；
 - 实际前序状态；
 - 与当前体系匹配的 topology / parameter package；
-- 项目级 `04_md_simulation/run_unit.yaml`；
 - 判断候选 run unit 是否可复用时所需的实际 run files。
+
+项目级 run-unit index 为：
+
+```text
+04_md_simulation/run_unit.yaml
+```
+
+如果当前项目第一次进入 Stage 4、该文件尚不存在，由本 Stage 4 main Skill 在第一次需要实例化 formal run unit 前创建，并初始化为 YAML 空 list：
+
+```yaml
+[]
+```
+
+已有该文件时直接读取和维护，不重新初始化或覆盖历史记录。
 
 Task Sheet 是 Stage 4 唯一的 simulation plan source。不得另外创建 `simulation_plan.yaml` 或恢复历史 `expected_route.yaml`。
 
@@ -71,7 +90,7 @@ run class 已由 prefix 表达，不另设 `run_unit_type`。
 
 新 run unit 的编号规则：
 
-1. 读取项目级 `run_unit.yaml`；
+1. 确认项目级 `run_unit.yaml` 已存在；首次不存在时按本 Skill 初始化为空 list；
 2. 按对应 prefix 查已有正式编号；
 3. 分配下一个新编号；
 4. 不回收历史编号空缺；
@@ -133,7 +152,7 @@ YAML root 直接为 list，不增加 `run_units:` wrapper。
 read planned entry
 → identify run class + requirement
 → determine actual predecessor state
-→ read run_unit.yaml
+→ ensure/read run_unit.yaml
 → locate candidate instantiated units
 → inspect actual run files as needed
   ├─ reusable completed unit → bind
@@ -201,26 +220,23 @@ current state + topology package + run requirement
 
 只在 `grompp` 成功并确认目标 `.tpr` 正常生成后创建。
 
-脚本只保存实际 `gmx mdrun` 命令，不写 metadata、status、time prose，也不加 shebang。格式固定为：
+脚本只保存实际 `gmx mdrun` 命令，不写 metadata、status、time prose，也不加 shebang。格式固定为 shell continuation 形式，例如：
 
 ```bash
 gmx mdrun \
-    -deffnm md.1 \
-    -nt 12 \
-    -update gpu \
-    -pin on
+    -deffnm md.1
 ```
 
 规则：
 
-- 第一行固定采用上方示例所示的 `gmx mdrun` shell continuation 形式；
-- 每个 option/value 单独一行；
+- 第一行使用 `gmx mdrun` shell continuation 形式；
+- 每个实际 option/value 单独一行；
 - 后续行缩进 4 spaces；
 - 除最后一行外，每个 command line 都使用 shell line continuation；
 - 使用 `bash gmx_mdrun.sh` 执行；
 - `grompp` 失败时不得生成该脚本。
 
-具体 option tendency 由 4.1/4.2/4.3 子 Skill 定义。
+生成实际 `gmx_mdrun.sh` 前读取 `references/execution_preferences.md`，并结合当前任务和当前运行环境确定资源 / offload / tmux / wall-clock 等执行倾向。实际命令可以因当前环境调整；最终脚本记录本次真实执行命令。
 
 ## Common bonded-geometry screening
 
@@ -280,4 +296,5 @@ Stage 4 在 `project_result_index.md` 中登记：
 - 把详细 `.mdp` 参数复制到 `run_unit.yaml`；
 - 把 `.top` / `.itp` 内容复制到 `run_unit.yaml`；
 - 因为一次失败就创建 `*.failed` run unit；
-- 为 validation 额外拆出 Stage 4 Validator layer。
+- 为 validation 额外拆出 Stage 4 Validator layer；
+- 把 `references/execution_preferences.md` 中的资源执行倾向解释成 scientific simulation requirement。
