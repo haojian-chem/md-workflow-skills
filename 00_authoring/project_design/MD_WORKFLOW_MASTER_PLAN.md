@@ -152,6 +152,8 @@ Detailed result interface 与 ion-addition reference：
 03_md_preparation/references/genion.mdp
 ```
 
+Stage 3 Task Sheet 可以直接消费当前体系对应的既有 `topology_integration_result.yaml`；该结果可以来自同一科研任务的前序 Task Sheet，不要求为了执行 Stage 3 把 Stage 2 步骤复制到当前 Task Sheet。
+
 Stage 3 保持轻量体系构建职责。当前操作主要由 GROMACS 组件完成，检查范围按 current Skill 已定义的操作成功、关键输出和必要一致性检查执行，不为同一职责重复增加重型检查。
 
 Stage 3 旧 step-level freeze 与已实现的 Stage-level architecture freeze 均已退出 current authoring path，历史记录位于：
@@ -178,11 +180,13 @@ Current execution-layer entries：
 
 Stage 4 main Skill 当前拥有 planned run route、formal run-unit identity、binding / reuse / continuation、project-level `run_unit.yaml` 与 4.1–4.3 execution-layer 调度；具体 run-specific execution 与 validation 由对应 4.x Skill 拥有。
 
+同一科研任务的不同模拟区段可以拆到不同 Task Sheet；当前 Task Sheet 只维护自己执行范围内的 planned run route，已实例化历史由项目级 `run_unit.yaml` 与实际 run files 持续定位，不要求复制前序 Task Sheet 的 planned run route。
+
 Stage 4 本地计算资源与运行方式的用户倾向统一维护于：
 
 `04_md_simulation/references/execution_preferences.md`
 
-该 reference 对每项倾向明确适用 run class：`-nt 12` 适用于 EM/NVT/NPT/production；foreground 与短 `-maxh 0.08` 仅为 EM 倾向；`tmux`、`-update gpu`、`-pin on` 默认适用于 NVT/NPT/production，并受当前运行环境约束。
+该 reference 对每项倾向明确适用 run class：`-nt 12` 适用于 EM/NVT/NPT/Production MD；前台运行与短 `-maxh 0.08` 仅适用于 EM；`tmux`、`-update gpu`、`-pin on` 默认适用于 NVT/NPT/Production MD，并受当前运行环境约束。
 
 项目首次进入 Stage 4 且 `04_md_simulation/run_unit.yaml` 尚不存在时，由 Stage 4 main 在第一次实例化 formal run unit 前初始化为空 list。
 
@@ -211,6 +215,8 @@ make_ndx → 05_analysis/make_ndx/SKILL.md
 ```
 
 Stage 5 main runtime architecture 已经可用，但 Stage 5 整体 authoring / capability implementation 仍未完成。Capability inventory 按实际分析需求持续维护；未实际生成 entry 的 capability 不作为 active capability，也不因为当前 main Skill 已生成就把整个 Stage 5 标记为完成。
+
+一张 Stage 5 Task Sheet 只需要展开当前分析执行范围；同一科研任务前序 Task Sheet 已完成的分析结果、processed trajectory 或 prepared inputs 直接作为已有输入使用，不复制成当前 plan items。
 
 Stage 5 当前仍保留 current authoring freeze records：
 
@@ -262,9 +268,9 @@ Historical authoring / architecture Markdown：
 
 - Stage 1：1.1–1.9 active Skills 已生成；当前不设置 Stage main Skill；Task Sheet 可以只覆盖局部 Step，但真实 prerequisite 必须已经满足；current atom-map contract 由 `references/atom_mapping_rules.md` 拥有；已撤回的 Stage 1 main Skill 与既有 freezes 已归档。
 - Stage 2：2.1–2.6 active Skills 已生成；当前不设置 Stage main Skill；2.1 是 2.2–2.5 的拆分 / setup prerequisite，可由前序 Task Sheet 提供而不必在每张后续 Task Sheet 重复；2.6 为可选独立 topology validation；2.1–2.5 reuse 当前停用并留作后续更新；既有 Stage 2 freezes 已归档。
-- Stage 3：Stage-level main Skill 已正式生成；不设置编号化 sub-stage；保持轻量 GROMACS system-construction 职责；历史 Stage 3 freezes 已归档；代表性实际执行验证仍待后续 milestone。
-- Stage 4：Stage-level main Skill 与 4.1–4.3 active Skills 已生成；Stage 4 main 当前拥有 run-unit / route 等 Stage-wide 规则；本地执行倾向集中到 `references/execution_preferences.md` 并按 run class 明确适用范围；`run_unit.yaml` 首次初始化规则已明确；既有 Stage 4 freeze 已归档。
-- Stage 5：**整体未完成 / 持续建设中**；Stage-level main Skill 已生成；当前 capability inventory 已登记 `trjconv`、`trjcat`、`make_ndx`；Stage 5 current authoring freezes 继续保留于 `architecture_freezes/`，不因部分 runtime 已实现而归档。
+- Stage 3：Stage-level main Skill 已正式生成；不设置编号化 sub-stage；当前 Task Sheet 可直接消费前序 Task Sheet 的 topology integration 正式结果；保持轻量 GROMACS system-construction 职责；历史 Stage 3 freezes 已归档；代表性实际执行验证仍待后续 milestone。
+- Stage 4：Stage-level main Skill 与 4.1–4.3 active Skills 已生成；Stage 4 main 当前拥有 run-unit / route 等 Stage-wide 规则；不同模拟区段可跨 Task Sheet 继续；本地执行倾向集中到 `references/execution_preferences.md` 并按 run class 明确适用范围；`run_unit.yaml` 首次初始化规则已明确；既有 Stage 4 freeze 已归档。
+- Stage 5：**整体未完成 / 持续建设中**；Stage-level main Skill 已生成；当前 capability inventory 已登记 `trjconv`、`trjcat`、`make_ndx`；Stage 5 Task Sheet 只展开当前分析范围并可消费前序 Task Sheet 已有产物；Stage 5 current authoring freezes 继续保留于 `architecture_freezes/`，不因部分 runtime 已实现而归档。
 - Infrastructure：跨 Skill Task Execution、result generation、canonical terminology 与 atom mapping 均由对应 current shared references 拥有；Task Execution 已统一普通任务项状态为 `未完成 / 已完成 / 已终止`，并明确区分科研任务与 Task Sheet；后续按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
