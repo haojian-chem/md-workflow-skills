@@ -21,11 +21,13 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 # Object requirements
 
-当前任务需要明确提供：
+当前 1.3 工作项开始前需要能够定位：
 
 - 当前 model 的 1.2 正式 `classification_result.yaml`；
 - 与该结果对应、由 1.2 实际检查的当前结构；
 - 用户对保留研究对象的要求。
+
+这些正式输入可以由当前 Task Sheet 提供，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；是否可执行以这些实际输入是否已经闭合为准，不要求来源识别或分类工作必须出现在当前 Task Sheet。
 
 1.2 结果应已完成当前 model 的分类、component / residue 层级和稳定身份物化。1.3 直接使用其中已经存在的 `component_id`、component 一级 `chain_index` 与 `residue_id`；`residue_id` 只在所属 `component_id` 内定位，因此任何正式 selection / mapping 都使用 `component_id + residue_id`。
 
@@ -74,7 +76,7 @@ description: 根据用户要求确定结构准备 1.3 中保留的 chain / resid
 
 ## 2. 记录 selection
 
-当前任务目录使用：
+当前 Task Sheet 的 1.3 工作目录使用：
 
 ```text
 selection_index.yaml
@@ -245,13 +247,15 @@ maps/target_xxx.atom_mapping.yaml
 01_structure_preparation/03_chain_and_residue_selection/
 ```
 
-当前任务实际执行目录：
+当前 Task Sheet 实际执行目录：
 
 ```text
 01_structure_preparation/03_chain_and_residue_selection/<task_id>/
 ```
 
-先完成 reuse 判断；只有确实需要本地执行时才创建当前任务目录。
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+
+先完成 reuse 判断；只有确实需要本地执行时才创建当前 Task Sheet 的工作目录。
 
 # Preflight
 
@@ -261,4 +265,4 @@ maps/target_xxx.atom_mapping.yaml
 - 当前结构中的 atom serial 能够作为本次 1.3 `original_atom_serial` 唯一定位原子；
 - 当前用户 selection 已能唯一 grounding，或需要的用户确认已经完成；
 - 所有 selected `component_id + residue_id` 组合均来自当前 1.2 结果；
-- 输出位于当前任务目录且不会覆盖其他任务正式结果。
+- 输出位于当前 Task Sheet 的 1.3 工作目录且不会覆盖其它 Task Sheet 或其它科研任务的正式结果。
