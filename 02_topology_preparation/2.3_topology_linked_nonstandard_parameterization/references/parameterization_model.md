@@ -5,10 +5,13 @@
 建立参数化模型时使用：
 
 - 当前 Task Sheet 中本次 2.3 工作项确定的 `TOPOLOGY_LINKED_NONSTANDARD` 残基组合；
+- 当前 2.3 local target record；
 - `classification_result.yaml` 中与这些残基相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`，包括 `relation_id`、连接端点的 `component_id + residue_id` 与 atom name；
 - `stage1_final_map.yaml`，用于读取稳定的 `component_id + residue_id`、原子映射与既有 `operations`；
 - `stage1_final.pdb`，用于读取 `TOPOLOGY_LINKED_NONSTANDARD` 残基当前重原子坐标；
 - 当前 2.2 正式结果中的全原子标准残基结构与对应 map，用于提取标准残基片段及 2.2 新增 H。
+
+当前 2.3 target record 的 `source_target_records` 必须能够覆盖实际形成当前参数化模型的 target-scoped inputs；它可以同时指向 Stage 1 target 和 2.2 target，不通过 `target_id` 推断。
 
 ## 参数化模型范围
 
@@ -41,7 +44,32 @@
 
 ## `parameterization_model.map`
 
-`parameterization_model.map` 以 `stage1_final_map.yaml` 为稳定身份与逐原子历史的主基线，不把 2.2 map 作为整体父级。
+`parameterization_model.map` 以 `stage1_final_map.yaml` 为重原子稳定身份与逐原子历史的主基线；对 2.2 新增 H 再从实际使用的 2.2 map 取得对应 provenance。它不把任何一个 source map 单独解释成 current target identity。
+
+文件级至少记录：
+
+```yaml
+target_record: /absolute/path/to/current/2.3/targets/target_001.yaml
+source_maps:
+  stage1:
+    - /absolute/path/to/stage1_final_map.yaml
+  standard:
+    - /absolute/path/to/standard.map
+
+atoms:
+  - output_atom_index: 1
+    original_atom_serial: 125
+    component_id: component_001
+    residue_id: residue_001
+    operations: [1.3ADD, ...]
+```
+
+其中：
+
+- `target_record` 指向当前 2.3 local target record；
+- `source_maps.stage1` 逐项记录本次模型实际使用的 Stage 1 map；
+- `source_maps.standard` 只记录本次实际使用的 2.2 maps；没有使用时为空列表或省略该类别；
+- target ancestry 由 current target record 的 `source_target_records` 负责，`source_maps` 只记录 atom provenance 的实际输入文件，不替代 target lineage。
 
 参数化模型中各类原子按以下方式维护：
 
@@ -72,3 +100,5 @@ parameterization_model.map
 ```
 
 三者使用同一套已确定的原子顺序；后续量化计算、电荷拟合和 Sobtop 参数化沿用该原子对应关系。
+
+生成后确认 `parameterization_model.map.target_record` 指向当前 2.3 target record，且 target record 的 `source_target_records` 能解释 `source_maps` 所属 target-scoped inputs 的实际来源关系。
