@@ -189,7 +189,7 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 
 # Official results
 
-当前任务实际完成 1.4 后，正式业务结果包括：
+当前 Task Sheet 实际完成 1.4 后，正式业务结果包括：
 
 ```text
 01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/
@@ -203,6 +203,8 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
     ├── target_002.atom_mapping.yaml
     └── ...
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
 每个输入 target 对应一个处理后的单一构象结构和一份与该结构一一对应的 atom map；输出文件继续使用对应 `target_id` 作为文件名，避免多个 target 之间发生文件名冲突。
 
@@ -269,8 +271,10 @@ targets:
 
 # Working directory
 
-当前任务工作目录：
+当前 Task Sheet 工作目录：
 
 ```text
 <project_root>/01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
