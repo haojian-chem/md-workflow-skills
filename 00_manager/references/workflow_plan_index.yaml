@@ -1,4 +1,4 @@
-schema_version: 5
+schema_version: 6
 status: active
 purpose: lightweight_manager_initial_planning_and_runtime_entry_index
 
@@ -39,9 +39,9 @@ workflows:
     workflow_id: "1"
     name: structure_preparation
     project_directory: 01_structure_preparation
-    stage_runtime_entry: 01_structure_preparation/SKILL.md
-    runtime_structure: stage_main_with_numbered_steps
-    runtime_handoff: stage_runtime_entry
+    stage_runtime_entry: null
+    runtime_structure: numbered_steps_without_stage_main
+    runtime_handoff: current_step_entry
     step_catalog_status: defined
     steps:
       - id: "1.1"
@@ -171,7 +171,7 @@ planning_rules:
   - defined_step_order_is_the_default_planning_order_not_a_one-instance_only_constraint
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
   - runtime_entry_fields_define_current_handoff_navigation_but_do_not_expand_manager_scientific_reads
-  - structure_preparation_handoff_enters_the_stage1_main_skill_before_stage_specific_execution
+  - structure_preparation_has_no_stage_main_skill_and_handoff_enters_the_current_planned_step_entry
   - topology_preparation_has_no_stage_main_skill_and_handoff_enters_the_current_planned_step_entry
   - topology_preparation_2_1_through_2_5_are_the_default_initial_planning_sequence_for_full_stage2_preparation_scope
   - topology_validation_2_6_is_not_automatically_added_and_is_planned_only_when_validation_is_explicitly_within_user_scope
