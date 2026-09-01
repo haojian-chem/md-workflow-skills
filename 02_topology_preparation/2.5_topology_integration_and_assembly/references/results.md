@@ -2,7 +2,7 @@
 
 ## 正式结果入口
 
-当前工作项生成：
+当前 2.5 local target 生成：
 
 `topology_integration_result.yaml`
 
@@ -10,7 +10,8 @@
 
 该记录保存：
 
-- 当前 `target_id`；
+- 当前 local `target_id`；
+- 当前 `target_record` 完整绝对路径；
 - 本次实际使用的上游 / 外部文件引用；
 - 整合后的 `moleculetype` 组成及本次生成 `moleculetype` 实际采用的 `nrexcl`；
 - 体系整合 `.gro`；
@@ -22,18 +23,30 @@
 
 ## `references`
 
-`references` 记录本次拓扑整合实际使用的上游 / 外部正式文件，并作为当前结果记录内部的文件引用。
+`references` 首先记录 current 2.5 target record，再记录本次拓扑整合实际使用的上游 / 外部正式文件。
 
 当前 2.5 工作项消费的前置正式结果可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确允许使用的正式结果；是否属于本次整合输入由适用的 2.1 拆分方案和当前 2.5 工作项确定，不以这些前置工作项是否出现在当前 Task Sheet 为判据。
 
-基础文件使用：
+基础形式：
 
 ```yaml
+target_id: target_001
+
 references:
+  target_record: /absolute/path/to/current/2.5/targets/target_001.yaml
   BASIS_1: /absolute/path/to/classification_result.yaml
   STRUCTURE_1: /absolute/path/to/stage1_final.pdb
   MAP_1: /absolute/path/to/stage1_final_map.yaml
 ```
+
+字段语义：
+
+- `target_id` 只在当前 2.5 工作项 / 当前结果内部解释；
+- `references.target_record` 指向 current 2.5 integration target record；
+- current target record 的 `source_target_records` 是本次 integration target 直接 source targets 的正式集合；
+- 上游 target ancestry 不在当前 result `references` 中递归复制；需要时读取 current target record；
+- `STRUCTURE_1 / MAP_1` 只在本次整合确实直接使用对应 Stage 1 structure/map 时记录，不因为需要 lineage 就机械建立；
+- `MAP_1.target_record` 指向其 own upstream target，不改写为 current 2.5 target。
 
 当前 2.5 工作项指定并消费的每个标准残基拓扑生成正式结果使用一组 `STD_n_*`：
 
@@ -79,9 +92,11 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 DIRECT_1_TOPOLOGY: /absolute/path/to/direct_solvent_or_ion_topology
 ```
 
+直接采用 solvent / ion 时，其实际 source Stage 1 target 由 current 2.5 target record 的 `source_target_records` 表示；对应 Stage 1 structure / map 如果被当前整合直接读取，则按上述 `STRUCTURE_n / MAP_n` 记录实际文件。
+
 同一实际文件只建立一个 reference key。实际不存在的输入正式结果、文件或直接拓扑定义不建立占位条目。
 
-`references` 只展开到当前拓扑整合实际使用的正式文件；不因为引用某个上游正式结果而递归复制其完整上游依赖记录。
+`references` 只展开到当前拓扑整合实际使用的正式文件；不因为引用某个上游正式结果而递归复制其完整上游依赖记录，也不为了 target lineage 重复一份 `source_target_records`。
 
 ## `moleculetypes`
 
@@ -114,7 +129,7 @@ moleculetypes:
 
 ## `results`
 
-当前工作项实际生成的结构、map、主 topology 与全部 `.itp` 统一登记在 `results`：
+当前 target 实际生成的结构、map、主 topology 与全部 `.itp` 统一登记在 `results`：
 
 ```yaml
 results:
@@ -130,6 +145,13 @@ results:
 ```
 
 `results.structure` 记录本次实际生成的体系整合 `.gro`；其默认 basename 为 `sys.gro`。
+
+`results.map` 的 `integrated.map` 必须满足：
+
+- `target_record == references.target_record`；
+- 使用 multi-source assembly 时记录实际 `input_maps` 与 `input_structures`；
+- upstream maps 保持各自 own target record；
+- current target 的 target merge 关系只由 current target record `source_target_records` 定义。
 
 `results.itp` 只列出本次拓扑整合实际生成的 `.itp`。不存在的文件不建立占位条目；若本次没有生成 `parameters.itp`，列表中不写该路径。
 
@@ -154,6 +176,7 @@ parameters.itp            # 仅在本次实际生成时存在
 target_id: target_001
 
 references:
+  target_record: /absolute/path/to/current/2.5/targets/target_001.yaml
   BASIS_1: /absolute/path/to/classification_result.yaml
   STRUCTURE_1: /absolute/path/to/stage1_final.pdb
   MAP_1: /absolute/path/to/stage1_final_map.yaml
@@ -191,7 +214,19 @@ results:
     - /absolute/path/to/posre_molecule_1.itp
 ```
 
-`target_id` 使用当前 2.5 工作项处理对象的正式 `target_id`；该值可以由当前 Task Sheet 直接记录，也可以从当前工作项明确引用的 2.1 拆分方案 / 上游正式结果定位，不要求其原始定义与 2.5 位于同一 Task Sheet。
+当前 2.5 `target_id` 由本工作项自己分配，只是 local identifier。不得从 2.1、Stage 1 或某个上游 result 继承同名 `target_id` 作为体系 identity。
+
+## 内部一致性
+
+正式结果可用前确认：
+
+- `references.target_record` 能定位 current 2.5 local target；
+- current target record 的 `source_target_records` 与当前直接消费的 target-scoped upstream results 一致；
+- 每个 `STD_n_RESULT`、`LINKED_n_RESULT`、`IND_n_RESULT` 能通过其 own result interface 定位其 source target record，并与 current target record 的 source set 对应；
+- 直接采用 Stage 1 solvent / ion object 时，其实际 source target record 同样存在于 current source set；
+- `results.map.target_record == references.target_record`；
+- `results.map.input_maps` 与当前 `sys.gro` 实际 atom provenance sources 一致；
+- 不通过 `target_id` 编号相同判断 branch membership。
 
 ## 项目结果索引登记
 
@@ -202,5 +237,7 @@ results:
 - `integrated.map`；
 - 实际生成的体系主 `.top`；
 - 本次实际生成的全部 `.itp`。
+
+Current target record 是 lineage support record，不因为创建而单独登记。
 
 上游正式结果、基础力场文件、直接采用的 solvent / ion topology 和其它外部参数定义不作为当前工作项生成的正式结果重复登记。
