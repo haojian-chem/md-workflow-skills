@@ -77,15 +77,17 @@ gmx trjcat -f part1.xtc part2.xtc -o joined.xtc -settime
 
 执行后检查输出 trajectory 是否与当前 item 要求一致。重点确认预期输入片段已经进入输出，并检查时间顺序、时间范围、重叠处理和实际 frame spacing 是否符合本次拼接要求；输出还应能作为一个一致的 trajectory 正常读取和使用。
 
-检查保持任务导向，不建立独立 Validator、固定检查表或额外 validation metadata。
+检查只围绕当前 item 的实际拼接要求，不建立独立 Validator、固定检查表或额外 validation metadata。
 
 # Reusable trajectory management
 
-当前 item 的工作记录仍位于：
+当前 item 的工作记录位于：
 
 ```text
 <project_root>/05_analysis/<task_id>/<编号>.trjcat/
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
 当输出 trajectory 确实具有后续复用价值时，将正式 reusable trajectory 集中存放于：
 
@@ -153,7 +155,7 @@ multi.traj.N
 - `source_run_units`：所有底层 Stage 4 run-unit lineage；
 - `output_selection`：拼接后 trajectory 实际共有的 atom set / output group；
 - `dt`：当前 trajectory 的实际 frame spacing，带单位；
-- `producer_path`：本次 `trjcat` item 的完整工作目录，用于后续二次核查。
+- `producer_path`：生成该 trajectory 的 Stage 5 plan item 完整工作目录，其中路径中的 `Txxxx` 是 producer Task Sheet ID，用于后续二次核查。
 
 `source_run_units` 应追溯输入 trajectory 的底层 lineage 后汇总，不把 `multi` 当作 run-unit id 写入该字段。
 
@@ -175,6 +177,6 @@ multi.traj.N
 
 # Result update
 
-完成当前 item 后，按 Stage 5 main Skill 的 plan-item 规则更新 Task Sheet。需要供后续 item 直接消费的有效 trajectory 可写入当前 item 的 `results`；若输出已集中登记，`results` 应定位实际 reusable trajectory，而不是复制一份文件。
+完成当前 item 后，按 Stage 5 main Skill 的 plan-item 规则更新当前 Task Sheet。需要供后续 item 直接消费的有效 trajectory 可写入当前 item 的 `results`；若输出已集中登记，`results` 应定位实际 reusable trajectory，而不是复制一份文件。
 
 本 Skill 不为结果增加独立 handoff 文件。
