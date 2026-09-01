@@ -24,12 +24,13 @@ references:
 
 - `INTEGRATION` 记录本次实际采用的 `topology_integration_result.yaml`；
 - `VALIDATION` 只在本次体系构建实际读取并分析了对应 `topology_validation_result.yaml` 时记录；
+- 上游正式结果可以来自当前 Task Sheet、同一科研任务的前序 Task Sheet或其它明确可用的正式结果；这里只记录本次实际采用的完整路径；
 - 实际不存在的引用不建立占位；
 - `references` 不递归复制上游正式结果自己的完整依赖链。
 
 ## `results.operations`
 
-`results.operations` 按当前 Task 中的实际执行顺序记录已执行、且结果需要由当前正式结果继续定位的操作。
+`results.operations` 按当前 Task Sheet 中 Stage 3 操作的实际执行顺序记录已执行、且结果需要由当前正式结果继续定位的操作。
 
 每项只记录实际存在的字段：
 
