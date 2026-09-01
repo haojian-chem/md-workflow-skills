@@ -57,6 +57,6 @@
 
 ## Result
 
-在当前任务目录写入 `selection_validation.md`。存在多个 target 时逐个记录检查结果。
+在当前 Task Sheet 的 1.3 工作目录写入 `selection_validation.md`。存在多个 target 时逐个记录检查结果。
 
 任一检查项为 `FAIL` 时，当前 1.3 保持未完成；修正后重新验证。
