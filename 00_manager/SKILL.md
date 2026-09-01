@@ -5,6 +5,10 @@ description: MD Workflow 的项目管理入口。负责 Task Sheet 自动定位�
 
 # Purpose
 
+Task Sheet resolution 与执行范围确认的共用规则读取：
+
+`../references/task_execution_rules.md`
+
 Manager 只负责：
 
 - 科研执行入口的 Task Sheet resolution；
@@ -148,7 +152,7 @@ Task Sheet 状态固定为：
 
 不要求用户再次确认“是否创建任务单”。
 
-如果新 Task Sheet 的实际执行范围仍有用户意图歧义，则遵守 `../../references/task_execution_rules.md` 中的“执行范围确认”：只做必要的只读核对并向用户确认；范围明确后再创建 Task Sheet，不把 Agent 猜测写成正式计划。
+如果新 Task Sheet 的实际执行范围仍有用户意图歧义，则遵守 `../references/task_execution_rules.md` 中的“执行范围确认”：只做必要的只读核对并向用户确认；范围明确后再创建 Task Sheet，不把 Agent 猜测写成正式计划。
 
 如果 `00_project_records/` / `task_index.md` 尚不存在，则先完成最小 Project initialization，再创建首张 Task Sheet。
 
