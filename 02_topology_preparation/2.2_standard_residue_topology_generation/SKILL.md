@@ -1,6 +1,6 @@
 ---
 name: standard-residue-topology-generation
-description: 为 2.1 已拆分确定的当前标准残基处理对象生成 GROMACS 全原子结构、拓扑及对应原子映射，并形成正式结果记录。
+description: 为 2.1 已拆分确定的当前标准残基处理对象建立 2.2 local target，生成 GROMACS 全原子结构、拓扑及对应原子映射，并形成正式结果记录与 target lineage。
 ---
 
 # 2.2 Standard residue topology generation
@@ -15,16 +15,27 @@ description: 为 2.1 已拆分确定的当前标准残基处理对象生成 GROM
 
 该 2.1 可以记录在当前 Task Sheet，也可以记录在同一科研任务的前序 Task Sheet；当前工作开始前必须能够定位对应 2.1 工作项及其标准残基处理对象。
 
+真正执行当前 2.2 processing object 时，为它建立当前 2.2 local target 及：
+
+```text
+targets/target_xxx.yaml
+```
+
+其 `source_target_records` 记录当前标准残基处理对象实际来自的 upstream target record(s)。正常情况下是 `stage1_final_map.yaml.target_record` 所指向的 Stage 1 final target；如果 2.1 方案明确该 processing object 来自多个实际 upstream targets，则逐项记录真实 source targets。
+
 执行时至少读取：
 
 - 当前 Task Sheet；
 - 适用于当前处理对象的已完成 2.1 拆分方案；
+- 当前 2.2 target record；
 - 当前处理对象对应的正式 `stage1_final.pdb`；
 - 与该结构对应的 `stage1_final_map.yaml`；
 - 当前处理对象对应的 `classification_result.yaml`；
 - 当前实际采用的力场及其它参数定义来源。
 
 `classification_result.yaml` 用于定位当前处理范围内的 `STANDARD_RESIDUE` 及其既有身份信息，不重新进行残基分类。
+
+`stage1_final_map.yaml.target_record` 必须能够与当前 2.2 target record 的实际 `source_target_records` 对应；不得通过上游 / 当前 `target_id` 是否相同建立关系。
 
 力场及其它参数定义来源以 2.1 方案记录为当前基线，并结合当前 Task Sheet、相关前序 Task Sheet、正式记录 / 日志、当前对话和用户已明确决定再次核对。信息能够唯一确定时直接使用；当前工作需要而仍不能唯一确定时向用户确认。
 
@@ -34,7 +45,9 @@ description: 为 2.1 已拆分确定的当前标准残基处理对象生成 GROM
 
 当前 2.2 不设置 reuse。
 
-在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都基于当前 `stage1_final.pdb`、当前处理范围和当前力场 / 参数定义来源重新生成标准残基全原子结构与拓扑。
+在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都基于当前 `stage1_final.pdb`、当前处理范围和当前力场 / 参数定义来源重新生成标准残基全原子结构与拓扑，并形成当前 2.2 local target record。
+
+如果未来 reuse 机制允许直接消费既有 2.2 target 结果，仍不得把当前 local `target_id` 与旧 target 编号合并；target lineage 按届时正式 reuse 规则处理。
 
 ## 构造标准残基输入结构
 
@@ -49,6 +62,8 @@ description: 为 2.1 已拆分确定的当前标准残基处理对象生成 GROM
 默认使用 `-ignh`，忽略输入 PDB 中已有的氢原子，由 pdb2gmx 根据当前采用的残基定义重新生成氢原子。
 
 pdb2gmx 的实际 chain 处理、交互选择和其它会影响输出组织的设置由执行 Agent 根据当前输入、目标力场和实际 GROMACS 行为确定；本 Skill 不额外固定 `-chainsep`、`-merge` 或把一次工作强制拆成多次 pdb2gmx 调用。实际采用的完整命令和选择必须进入正式结果记录。
+
+如果当前科研设计明确要求对同一个 upstream target 使用多个不同且需要并行保留的标准残基 topology strategy，应由适用的 2.1 方案分别定义对应 processing objects；每个实际 2.2 execution object 建立独立 current target record，共同引用实际相同的 source target record。普通执行不自动展开多个策略。
 
 ## 核验并整理 pdb2gmx 输出
 
@@ -71,9 +86,15 @@ pdb2gmx 完成后至少检查：
 
 `standard.map`
 
-`stage1_final_map.yaml` 中与当前处理范围对应的已有 atom record 保留 `original_atom_serial`、`component_id + residue_id` 和 `operations`，并按 `standard.gro` 更新 `current_atom_serial`。
+文件级：
 
-pdb2gmx 新增、且输入结构中不存在对应 atom 的原子建立新记录，`original_atom_serial: null`，并使用 `2.2ADD` 记录新增操作。
+- `standard.map.target_record` 指向当前 2.2 local target record；
+- `input_map` 指向本次实际使用的 `stage1_final_map.yaml`。
+
+逐原子：
+
+- `stage1_final_map.yaml` 中与当前处理范围对应的已有 atom record 保留 `original_atom_serial`、`component_id + residue_id` 和 `operations`，并按 `standard.gro` 更新 `current_atom_serial`；
+- pdb2gmx 新增、且输入结构中不存在对应 atom 的原子建立新记录，`original_atom_serial: null`，并使用 `2.2ADD` 记录新增操作。
 
 ## 正式结果
 
@@ -91,6 +112,12 @@ standard.top
 pdb2gmx 实际形成的各 moleculetype 对应独立 .itp
 ```
 
-`standard_residue_topology_result.yaml` 记录本次实际依赖的上游文件、实际使用的力场及其它参数定义来源、pdb2gmx 输入 PDB、实际命令、交互选择以及正式结果文件完整路径。
+`standard_residue_topology_result.yaml` 记录当前 local target、实际依赖的上游文件、实际使用的力场及其它参数定义来源、pdb2gmx 输入 PDB、实际命令、交互选择以及正式结果文件完整路径。
 
-完成后按仓库级 Task Execution 规则更新当前工作项状态，并按 `references/results.md` 登记正式结果。
+完成前确认：
+
+- current target record 的 `source_target_records` 与当前 2.2 实际上游 target(s) 一致；
+- `standard.map.target_record` 指向 current 2.2 target record；
+- 正式结果记录 `references.target_record` 与 `standard.map.target_record` 一致。
+
+随后按仓库级 Task Execution 规则更新当前工作项状态，并按 `references/results.md` 登记正式结果。Target record 不因为创建而单独登记到项目结果索引。
