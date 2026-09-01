@@ -2,23 +2,25 @@
 
 ## 正式结果入口
 
-当前工作项只生成：
+当前 2.6 local target 只生成：
 
 `topology_validation_result.yaml`
 
 作为本次拓扑终检的正式结果记录。
 
-该 YAML 保存实际文件引用和全部检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、`result_status`、
-整体结论或阻断性结论。
+该 YAML 保存 current target reference、实际文件引用和全部检查结果。它不保存 `PASS`、`FAIL`、`COMPLETE`、`result_status`、整体结论或阻断性结论。
 
 结果文件和依赖文件路径遵守仓库级结果生成规则的完整绝对路径语义。
 
 ## `references`
 
-`references` 同时记录两个直接正式依赖，并为结果中反复引用的当前结构文件和拓扑文件提供公共路径引用：
+`references` 记录 current 2.6 target record、两个直接正式依赖，并为结果中反复引用的当前结构文件和拓扑文件提供公共路径引用：
 
 ```yaml
+target_id: target_001
+
 references:
+  target_record: /absolute/path/to/current/2.6/targets/target_001.yaml
   CLASSIFICATION_RESULT: /absolute/path/to/classification_result.yaml
   TOPOLOGY_INTEGRATION_RESULT: /absolute/path/to/topology_integration_result.yaml
   STRUCTURE: /absolute/path/to/actual_structure_file.gro
@@ -30,19 +32,24 @@ references:
 
 规则：
 
-- `STRUCTURE`、`MAP` 和 `TOP` 分别使用 `topology_integration_result.yaml` 中实际记录的结构文件、map 和
-  体系 `.top` 路径；
+- `target_id` 只在当前 2.6 工作项 / 当前结果内部定位 local validation target；
+- `references.target_record` 指向 current 2.6 target record；
+- current target record 的 `source_target_records` 必须包含当前实际检查的 2.5 integration target record；
+- `TOPOLOGY_INTEGRATION_RESULT.references.target_record` 和 `${MAP}.target_record` 指向的是 source 2.5 target，不改写为 current 2.6 target；
+- `STRUCTURE`、`MAP` 和 `TOP` 分别使用 `topology_integration_result.yaml` 中实际记录的结构文件、map 和体系 `.top` 路径；
 - `ITP_n` 按 `topology_integration_result.yaml.results.itp` 中的实际顺序逐项记录；
 - 实际不存在的可选 `.itp` 不建立占位 key；
 - 不根据任何默认 basename 推断实际文件名；
-- `${PATH_KEY}` 展开后必须具有完整绝对路径语义。
+- `${PATH_KEY}` 展开后必须具有完整绝对路径语义；
+- 不通过 2.5 / 2.6 `target_id` 是否相同判断对象关系。
 
-当前工作项的处理对象由 Task Sheet 确定；本 YAML 不另建 `target_id` 或平行对象记录。当前检查使用的两个直接正式
-依赖和具体结构、map、`.top`、`.itp` 均已由本节的完整绝对路径记录。
+当前检查的 source topology branch 如需追溯更早 2.2 / 2.3 / 2.4 target ancestry，沿 source 2.5 target record 的 `source_target_records` 继续读取，不在 2.6 result 重复整条 lineage。
 
 ## 顶层结构
 
 ```yaml
+target_id: target_001
+
 references:
   # 按上一节记录
 
@@ -55,8 +62,7 @@ check_results:
   grompp: {}
 ```
 
-六个 `check_results` 字段均保留。当前工作项只有完成全部规定检查后才生成正式结果，因此各空数组表示已经完成
-对应检查但没有发现该类记录或差异，不表示该检查尚未执行。
+六个 `check_results` 字段均保留。当前工作项只有完成全部规定检查后才生成正式结果，因此各空数组表示已经完成对应检查但没有发现该类记录或差异，不表示该检查尚未执行。
 
 ## `top_includes`
 
@@ -86,8 +92,7 @@ top_includes:
 
 ## `structure_topology`
 
-本项记录当前结构文件的 residue / atom 数量，以及按体系 `.top [ molecules ]` 和对应
-`moleculetype [ atoms ]` 展开的拓扑规模；同时记录对 position restraint `.itp` 的检查结果：
+本项记录当前结构文件的 residue / atom 数量，以及按体系 `.top [ molecules ]` 和对应 `moleculetype [ atoms ]` 展开的拓扑规模；同时记录对 position restraint `.itp` 的检查结果：
 
 ```yaml
 structure_topology:
@@ -114,8 +119,7 @@ structure_topology:
       restrained_hydrogen_atom_nrs: []
 ```
 
-`topology_molecule_count` 是体系 `.top [ molecules ]` 按数量展开后的分子实例总数；
-`topology_residue_count` 和 `topology_atom_count` 是全部分子实例展开后的总数。
+`topology_molecule_count` 是体系 `.top [ molecules ]` 按数量展开后的分子实例总数；`topology_residue_count` 和 `topology_atom_count` 是全部分子实例展开后的总数。
 
 不为没有差异的普通 molecule、residue 或 atom 逐项生成记录。每个实际差异按所在数组记录能够定位问题的字段：
 
@@ -151,8 +155,7 @@ atom_name_differences:
 
 其它差异数组只记录与该差异类型相关的位置和值；不适用的定位字段省略。
 
-`position_restraints` 是本项对 `.itp` 的检查记录，不是独立检查项。对体系 `.top` 或最终
-`moleculetype` `.itp` 通过条件 `#include` 引用的每个 position restraint `.itp` 建立一条记录：
+`position_restraints` 是本项对 `.itp` 的检查记录，不是独立检查项。对体系 `.top` 或最终 `moleculetype` `.itp` 通过条件 `#include` 引用的每个 position restraint `.itp` 建立一条记录：
 
 - `file`：实际 position restraint `.itp`；
 - `moleculetype`：该 restraint 文件对应的 `moleculetype`；
@@ -165,8 +168,7 @@ atom_name_differences:
 
 ## `topology_linked_relations`
 
-从依赖文件 `${CLASSIFICATION_RESULT}` 的 `topology_linked_checks` 中，对属于当前 Task Sheet 工作项指定的处理对象、
-且同时满足以下条件的每条关系建立一条记录：
+从依赖文件 `${CLASSIFICATION_RESULT}` 的 `topology_linked_checks` 中，对属于当前 source 2.5 integration object、且同时满足以下条件的每条关系建立一条记录：
 
 ```text
 judgment = CONFIRMED
@@ -237,15 +239,13 @@ topology_linked_relations:
         entry: "1860 1198 1 ..."
 ```
 
-`topology_entries` 记录最终 `moleculetype` `.itp` 的 `[ bonds ]` 中直接连接关系两端 atom 的实际条目。
-两端 atom 已经定位、但 `[ bonds ]` 中没有对应直接连接时记录：
+`topology_entries` 记录最终 `moleculetype` `.itp` 的 `[ bonds ]` 中直接连接关系两端 atom 的实际条目。两端 atom 已经定位、但 `[ bonds ]` 中没有对应直接连接时记录：
 
 ```yaml
 topology_entries: []
 ```
 
-该空数组表示依赖文件中规定两端应形成 topology-linked 关系，但检查对象文件中没有相应 `[ bonds ]` 条目；
-不表示未执行检查。
+该空数组表示依赖文件中规定两端应形成 topology-linked 关系，但检查对象文件中没有相应 `[ bonds ]` 条目；不表示未执行检查。
 
 ## `standard_atom_deletions`
 
@@ -351,18 +351,28 @@ grompp:
 
 没有相应输出时保留空数组。不记录 `preprocessing_succeeded`、`status` 或其它二次结论字段。
 
+## Target-lineage consistency
+
+正式结果生成前确认：
+
+- `references.target_record` 能定位 current 2.6 local target；
+- current target record 的 `source_target_records` 包含 `TOPOLOGY_INTEGRATION_RESULT.references.target_record`；
+- `${MAP}.target_record` 与 source 2.5 target record 一致，而不是与 current 2.6 target record 强行相同；
+- 2.6 未修改 source target record 或 source map；
+- 不通过 `target_id` 编号相同建立 2.5 → 2.6 关系。
+
 ## 项目结果索引登记
 
 项目结果索引只登记：
 
 `topology_validation_result.yaml`
 
-当前结构文件、map、体系 `.top`、`.itp`、检查用 `.mdp`、临时 `.tpr`、debug、scratch 和 cache 均不作为
-当前职责的新结果重复登记。
+Current 2.6 target record 是 lineage support record，不因为创建而单独登记。
+
+当前结构文件、map、体系 `.top`、`.itp`、检查用 `.mdp`、临时 `.tpr`、debug、scratch 和 cache 均不作为当前职责的新结果重复登记。
 
 ## 工作项完成条件
 
 完成全部六项检查并生成 `topology_validation_result.yaml` 后，当前工作项完成。
 
-检查中发现的问题继续保留在正式结果中；问题是否要求重新进入其它拓扑准备工作项，不改变当前工作项已经完成检查
-并生成正式结果这一事实。
+检查中发现的问题继续保留在正式结果中；问题是否要求重新进入其它拓扑准备工作项，不改变当前工作项已经完成检查并生成正式结果这一事实。
