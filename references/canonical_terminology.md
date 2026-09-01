@@ -75,8 +75,8 @@ Scope / distinction
 
 **Canonical term:** `project result index`  
 **Preferred expression:** 项目结果索引  
-**Definition:** 真实项目中用于跨 Task Sheet、跨对话定位正式结果的检索入口；当前文件形式为 `00_project_records/project_result_index.md`。  
-**Scope / distinction:** 只承担正式结果检索，不维护当前 Task Sheet 状态，也不是所有工作文件的平铺 artifact inventory。
+**Definition:** 真实项目中用于跨 Task Sheet、跨科研任务、跨对话定位正式结果的检索入口；当前文件形式为 `00_project_records/project_result_index.md`。  
+**Scope / distinction:** 只承担正式结果检索，不维护当前 Task Sheet 状态，也不是所有工作文件的平铺 artifact inventory。它可以定位同一科研任务前序 Task Sheet 的正式结果，也可以定位项目中其它科研任务已经形成且当前工作明确允许消费的正式结果。
 
 ### target
 
