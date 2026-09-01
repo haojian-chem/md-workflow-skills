@@ -33,13 +33,13 @@ periodic_box_construction
 → ion_addition
 ```
 
-实际操作计划由当前结构—拓扑状态和体系构建目标决定，可按当前任务需要省略、重复或调整顺序。
+实际操作计划由当前结构—拓扑状态和体系构建目标决定，可按当前 Task Sheet 的执行范围省略、重复或调整顺序。
 
 ## 输入与依据
 
 当前 Task Sheet 提供本次体系构建的处理对象和需要完成的体系构建工作。
 
-Task Execution Agent 以当前处理对象为准，结合当前任务上下文和：
+Task Execution Agent 以当前处理对象为准，结合当前 Task Sheet、必要的前序 Task Sheet 引用和：
 
 `<project_root>/00_project_records/project_result_index.md`
 
@@ -47,13 +47,15 @@ Task Execution Agent 以当前处理对象为准，结合当前任务上下文�
 
 `topology_integration_result.yaml`
 
+该正式结果可以由当前 Task Sheet 产生，也可以来自同一科研任务的前序 Task Sheet或其它已有正式结果；当前 Task Sheet 不要求重复包含 topology integration 的执行步骤。
+
 需要解释该正式结果的文件定位和字段语义时读取：
 
 `../02_topology_preparation/2.5_topology_integration_and_assembly/references/results.md`
 
 从该正式结果定位当前结构文件、体系主 `.top`、本次拓扑整合生成的 `.itp`，以及当前体系主 `.top` 已经引用的其它拓扑 / 参数定义。
 
-若结合当前任务上下文和项目结果索引能够定位与当前拓扑整合对象对应的：
+若结合当前 Task Sheet、必要的前序 Task Sheet 引用和项目结果索引能够定位与当前拓扑整合对象对应的：
 
 `topology_validation_result.yaml`
 
@@ -85,7 +87,9 @@ Task Execution Agent 以当前处理对象为准，结合当前任务上下文�
 
 `<project_root>/03_md_preparation/<task_id>/`
 
-每次实际操作建立独立目录，并以两位数字表示当前 Task 内的实际执行顺序：
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+
+每次实际操作建立独立目录，并以两位数字表示当前 Task Sheet 内的实际执行顺序：
 
 ```text
 01_periodic_box_construction/
@@ -93,7 +97,7 @@ Task Execution Agent 以当前处理对象为准，结合当前任务上下文�
 03_ion_addition/
 ```
 
-重复或重排时继续使用下一个顺序号。该数字只表示当前 Task 内的操作顺序。
+重复或重排时继续使用下一个顺序号。该数字只表示当前 Task Sheet 内的操作顺序。
 
 不原地覆盖上游正式结构文件、体系主 `.top` 或 `.itp`。
 
@@ -113,12 +117,12 @@ Task Execution Agent 以当前处理对象为准，结合当前任务上下文�
 -f     当前结构文件
 -o     当前操作的输出结构文件
 -c     显式保留，表达构盒 / 调整后的居中意图
--box   当前任务给出明确盒尺寸时使用
--d     当前任务给出溶质到盒边界距离时使用
--bt    按当前任务要求确定盒类型
+-box   当前 Task Sheet 给出明确盒尺寸时使用
+-d     当前 Task Sheet 给出溶质到盒边界距离时使用
+-bt    按当前 Task Sheet 要求确定盒类型
 ```
 
-`-box` 与 `-d` 按当前任务要求选择。GROMACS 中二者本身会隐含居中，本 Skill 仍保留 `-c` 作为显式命令习惯。
+`-box` 与 `-d` 按当前 Task Sheet 要求选择。GROMACS 中二者本身会隐含居中，本 Skill 仍保留 `-c` 作为显式命令习惯。
 
 完成当前操作前检查：
 
@@ -149,7 +153,7 @@ Task Execution Agent 以当前处理对象为准，结合当前任务上下文�
 -radius 0.105 nm
 ```
 
-命令可以依赖软件默认值；当前任务或实际 GROMACS 版本需要其它值时使用相应设置。
+命令可以依赖软件默认值；当前 Task Sheet 的要求或实际 GROMACS 版本需要其它值时使用相应设置。
 
 完成当前操作前检查：
 
@@ -190,7 +194,7 @@ genion.mdp
 `gmx genion` 参数习惯：
 
 ```text
--neutral        当前任务要求中和时使用
+-neutral        当前 Task Sheet 要求中和时使用
 -conc 0.154     生物体系在用户和 Task Sheet 未指定其它盐浓度或离子组成时使用
 -pname/-nname   按本次实际采用的离子定义确定
 ```
