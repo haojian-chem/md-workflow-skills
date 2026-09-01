@@ -1,6 +1,6 @@
 ---
 name: <manager-skill-name>
-description: <任务定位、任务创建、初始规划和项目级任务管理用途及触发边界>。
+description: <Task Sheet 定位、创建、初始规划和项目级 Task Sheet 管理用途及触发边界>。
 ---
 
 # Purpose
@@ -11,7 +11,9 @@ description: <任务定位、任务创建、初始规划和项目级任务管理
 
 `00_authoring/references/skill_boundaries.md`
 
-Manager 只承担项目级任务管理，不执行具体科研工作，也不替科研 main Skill 做方法选择、reuse 或 validation。
+Manager 只承担项目级 Task Sheet 管理，不执行具体科研工作，也不替科研 main Skill 做方法选择、reuse 或 validation。
+
+一个科研任务可以由多张 Task Sheet 共同承载；创建新的 `Txxxx.md` 不自动表示创建新的科研任务。
 
 # Default records
 
@@ -34,7 +36,9 @@ task_index.md
 → 目标 Txxxx.md
 ```
 
-创建或显式重新规划任务时再读取 planning index。
+当前 Task Sheet 明确依赖同一科研任务的前序 Task Sheet 时，可以按明确引用读取该前序记录；不得因此扫描全部 Task Sheets。
+
+创建或显式重新规划 Task Sheet 时再读取 planning index。
 
 Manager 不为了“全面了解”预读科研 Skills、结果索引、Legacy records 或全项目目录。
 
@@ -45,20 +49,26 @@ Manager 不为了“全面了解”预读科研 Skills、结果索引、Legacy r
 - 不建立 `<base_work_directory>/<task_id>/`；
 - 不建立 Legacy project_state / Workstream / route / event / runtime task-result。
 
-# Task location
+# Task Sheet location
 
 说明：
 
-- 明确 Task ID；
+- 明确 Task Sheet ID；
 - 明确可唯一匹配名称；
-- 当前 Manager 对话已绑定任务；
+- 当前 Manager 对话已绑定 Task Sheet；
 - 无法唯一确定时询问用户。
 
-不得遍历所有 Task Sheet 猜测当前任务。
+不得遍历所有 Task Sheet 猜测当前对象。
 
-# New-task boundary
+# New Task Sheet boundary
 
-说明哪些操作继续已有任务，哪些情况才创建新的独立 Task。
+说明：
+
+- 哪些情况继续当前 Task Sheet；
+- 哪些情况为了控制上下文规模、隔离废弃/错误方案或进入新的有界执行段而在**同一科研任务**中建立后续 Task Sheet；
+- 哪些情况属于新的独立科研任务。
+
+不要把“新 Task Sheet”和“新科研任务”写成同义概念。
 
 # Initial planning
 
@@ -71,24 +81,29 @@ Manager 不为了“全面了解”预读科研 Skills、结果索引、Legacy r
 - Stage/Step 顺序；
 - Step 名称；
 - 基础目录；
-- stage-specific planning mode。
+- stage-specific planning mode；
+- 明确的结构性 prerequisite。
 
-Task Sheet 只覆盖用户当前任务实际范围，不要求完整 Workflow 或完整 Stage。局部任务可以从中间 Step 开始，也可以直接消费其它任务已经形成的正式结果。
+Task Sheet 只覆盖当前执行范围，不要求完整 Workflow 或完整 Stage。局部 Task Sheet 可以从中间 Step 开始，但 current Step 明确定义的 prerequisite 必须已经由当前或前序 Task Sheet 满足。
 
-不得加入 `conditional` / scientific applicability；不得预读具体科研 Skill、预先执行科学判断或查询全部 reuse。只有用户明确要求完整 Stage 范围时，才按 planning index 的完整 Stage planning 规则展开。
+不得加入 `conditional` / scientific applicability；不得预读具体科研 Skill、预先执行科学判断或查询全部 reuse。只有当前执行范围确实覆盖完整 Stage 时，才按 planning index 的完整 Stage planning 规则展开。
 
 # Task Sheet
 
 示例：
 
 ```markdown
-# T001 — <任务名称>
+# T001 — <Task Sheet 名称>
 
 状态：未完成
 
-## 任务目标
+## 当前执行目标
 
 <目标>
+
+## 最小恢复上下文
+
+<如适用，记录同一科研任务的前序 Task Sheet / prerequisite 来源>
 
 ## 计划与进度
 
@@ -111,7 +126,7 @@ Task Sheet 只覆盖用户当前任务实际范围，不要求完整 Workflow �
 已终止
 ```
 
-Manager 写入任务专属目录路径，但不创建该目录。
+Manager 写入 Task Sheet 对应工作目录路径，但不创建该目录。
 
 Stage 3/Stage 4/Stage 5 等具有特殊 Task Sheet 内部结构时，按 planning index / current Stage architecture 记录相应轻量入口，不由 Manager 展开科学细节。
 
@@ -119,32 +134,34 @@ Stage 3/Stage 4/Stage 5 等具有特殊 Task Sheet 内部结构时，按 plannin
 
 ```text
 Manager
-→ 定位 / 创建任务
+→ 定位 / 创建 Task Sheet
 → 初始规划
 → 写入 Txxxx.md
 → 一次性交接
-→ Task Execution Agent 连续执行
+→ Task Execution Agent 连续执行当前 Task Sheet
 ```
 
-普通科研步骤之间不回 Manager。
+普通科研步骤之间不回 Manager；需要建立后续 Task Sheet 时再进入 Manager。
 
 # Replanning / project management
 
 说明：
 
 - 用户明确要求重新规划；
-- 创建另一任务；
-- 多任务项目级整理；
+- 为同一科研任务创建后续 Task Sheet；
+- 创建新的科研任务对应 Task Sheet；
+- 多 Task Sheet 项目级整理；
 - 用户主动返回 Manager 对话。
 
 # User-visible output
 
-创建/重新规划后只展示必要任务信息：
+创建/重新规划后只展示必要信息：
 
-- Task ID / 名称；
-- Task 状态；
+- Task Sheet ID / 名称；
+- Task Sheet 状态；
 - 当前计划；
-- Task Sheet 路径。
+- Task Sheet 路径；
+- 必要时注明前序 Task Sheet。
 
 不展示 Legacy route / transaction / event。
 
@@ -158,6 +175,7 @@ Manager
 - [ ] 未创建 Workstream / route / event / runtime task-result；
 - [ ] 未预读全部科研 Skills；
 - [ ] planning index 未包含 scientific applicability；
-- [ ] 没有为了流程完整把局部任务扩展成完整 Stage；
+- [ ] 没有把一张 Task Sheet 等同于整个科研任务；
+- [ ] 局部 Task Sheet 没有绕过已定义 prerequisite；
 - [ ] 普通任务项状态只使用 `未完成 / 已完成 / 已终止`；
 - [ ] 已完成一次性交接所需 Task Sheet。
