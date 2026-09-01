@@ -9,12 +9,13 @@ description: 设计、编写、冻结、审查或重构本项目科研 Skill 时
 
 Skill 的目标是指导 Agent 处理科研任务，而不是把 Agent 锁进固定 parser、schema、wrapper、dispatcher 或人为 workflow engine。
 
-真实任务的默认关系为：
+一个科研任务可以由一张或多张 Task Sheet 共同承载；每张 Task Sheet 只保存一个有界执行范围。单张 Task Sheet 的默认执行关系为：
 
 ```text
-Manager
-→ Task Sheet
-→ Task Execution Agent
+科研任务
+└─ 当前 Task Sheet
+   ↓
+Task Execution Agent
 → 当前科研 main Skill
    ├─ repository shared task-execution reference
    ├─ repository shared result-generation reference（按需）
@@ -23,6 +24,8 @@ Manager
    ├─ 必要时 supporting Skill
    └─ 必要时 deterministic Tool
 ```
+
+Task Sheet 的定位、创建和初始规划由 Manager 负责；同一科研任务建立后续 Task Sheet 不等于创建新的科研任务。
 
 科研执行 Skill 共用的 Task Execution 规则统一读取：
 
@@ -44,14 +47,14 @@ Manager
 
 ```text
 00_authoring/SKILL.md
-→ 当前 authoring task
+→ 当前 authoring 工作
 → authoring references
 → target Skill / freeze / directly related files
 ```
 
 测试或运行环境中的 `AGENTS.md` 只用于在 Skill 体系外帮助 Agent 定位需要加载的 Skill；它不属于 Skill package、authoring chain、execution chain 或 reference dependency，也不能作为任何 Skill 规则已经被正式引用或可达的依据。
 
-之后只按任务需要读取：
+之后只按当前 authoring 工作需要读取：
 
 - 构筑、设计、审查、重构科研执行 Skill 或编写对应 freeze 时必须读取 `../references/task_execution_rules.md` 和 `../references/canonical_terminology.md`；
 - 当前 authoring 涉及 validation、results、`references/results.md`、结果文件 / 字段语义或 project-result registration 时，读取 `../references/result_generation_rules.md`；
@@ -121,6 +124,8 @@ Scientific roots 按 MD Workflow Stage 固定为：
 `references/task_execution_rules.md`
 
 引用只建立通用 Task Execution 规则的可达性；Stage/Step/capability 自己的科学规则仍由其自身拥有。`task_execution_rules.md` 提供执行阶段按需读取 `canonical_terminology.md` 和 `result_generation_rules.md` 的入口，因此现有科研执行 Skill 不需要为了这两类 shared rule 再逐一建立平行 glossary 或重复的直接 result-generation 引用。
+
+Skill 的输入 / prerequisite contract 必须按真实上游方案、正式结果、对象状态或决策定义，而不是按更早编号 Step 是否出现在当前 Task Sheet 定义。详细规则读取 `references/skill_generation_rules.md` 的 `Task Sheet 与 scientific prerequisite`。
 
 **Architecture freeze 完成不等于 Skill generation 已获许可。** 只有用户明确要求生成/实现某个 Skill 时，才把对应 freeze 转写为 active `SKILL.md`。
 
@@ -221,17 +226,17 @@ results
 
 在判断一条规则归谁拥有之前，先判断它**是否有必要成为 Skill 的固定规则**。
 
-Skill 优先固定需要跨任务保持一致、且对当前职责正确性有实际价值的内容，例如：稳定科学/技术判据、输入/输出接口、reuse 与 validation 语义、安全或数据完整性边界、正式结果生命周期，以及不固定就会高概率造成越界或歧义的约束。
+Skill 优先固定需要跨 Task Sheet / 跨科研任务保持一致、且对当前职责正确性有实际价值的内容，例如：稳定科学/技术判据、输入/输出接口、reuse 与 validation 语义、安全或数据完整性边界、正式结果生命周期，以及不固定就会高概率造成越界或歧义的约束。
 
-如果某项决定可以由 Task Execution Agent 或用户根据当前任务上下文可靠判断，且不需要形成跨任务稳定语义、接口约束、科学判据或结果生命周期，则保留为运行时裁量；**不要因为“运行时可能遇到这种情况”就继续把它固化成统一决策树、状态转换规则、fallback 链或完整工作流。**
+如果某项决定可以由 Task Execution Agent 或用户根据当前执行上下文可靠判断，且不需要形成跨 Task Sheet / 跨科研任务稳定语义、接口约束、科学判据或结果生命周期，则保留为运行时裁量；**不要因为“运行时可能遇到这种情况”就继续把它固化成统一决策树、状态转换规则、fallback 链或完整工作流。**
 
 前置 gate：
 
 ```text
 这件事必须写成 Skill 固定规则吗？
-├─ 是：缺少固定规则会影响跨任务一致性、科学/技术正确性、接口/结果语义、安全或高概率边界执行
+├─ 是：缺少固定规则会影响跨 Task Sheet / 跨科研任务一致性、科学/技术正确性、接口/结果语义、安全或高概率边界执行
 │  → 继续 rule-ownership gate
-└─ 否：Agent / 用户可基于当前任务可靠判断
+└─ 否：Agent / 用户可基于当前执行上下文可靠判断
    → 保留运行时裁量，不继续下钻为 Skill 规则
 ```
 
@@ -276,7 +281,7 @@ Supporting Skill 只有在内容复杂、可独立加载、边界稳定且独立
 
 # Tool boundary
 
-Tool 是确定性能力组件，不是 Agent 理解任务的许可层。
+Tool 是确定性能力组件，不是 Agent 理解科研任务或 Task Sheet 的许可层。
 
 适合 Tool：精确 parsing、hash/mapping、批量结构化提取、稳定文件变换、格式校验和高重复度确定性计算。
 
@@ -323,7 +328,11 @@ Legacy executable/runtime material：`../legacy/`。
 - [ ] 科学/技术判断没有用未定义的抽象词代替实际判据；需要时已写明检查对象、属性、reference / criterion 和判断关系；
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] 未把 shared Task Execution / result-generation reference 误建成独立 runtime Skill / dispatcher；
-- [ ] 未把可由 Agent / 用户按当前任务可靠判断的策略，无必要地固化成决策树、状态机、fallback 链或完整工作流；
+- [ ] 未把可由 Agent / 用户按当前执行上下文可靠判断的策略，无必要地固化成决策树、状态机、fallback 链或完整工作流；
+- [ ] 没有把一张 Task Sheet 等同于整个科研任务、完整 Stage 或完整 Workflow；
+- [ ] 当前 Skill 的 prerequisite 按真实上游方案 / 结果 / 状态 / 决策定义，而不是按更早编号 Step 是否出现在当前 Task Sheet 定义；
+- [ ] 前序 Task Sheet 已满足仍适用 prerequisite 时，没有为了流程完整在当前 Task Sheet 机械复制前序 Step；
+- [ ] 当前 Task Sheet 只覆盖局部执行范围时，没有因此忽略真实 prerequisite，也没有补入与当前目标无关的步骤；
 - [ ] 长/条件性细节没有在 main Skill 与 reference 重复；
 - [ ] supporting Skill 拆分有真实复杂度和边界价值；
 - [ ] 未建立不必要 parser/wrapper/dispatcher；
