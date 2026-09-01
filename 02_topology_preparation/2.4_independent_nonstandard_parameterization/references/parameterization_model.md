@@ -2,13 +2,13 @@
 
 ## 当前工作项与实例集合
 
-2.4 直接处理当前 Task Sheet 由 2.1 建立的一个工作项，不在本环节重新分类或重新分组。
+当前工作项直接处理 Task Sheet 已明确的一个独立非标准参数化对象，不在本环节重新分类或重新分组，也不要求同一 Task Sheet 中必须存在 topology-preparation setup。
 
-根据当前工作项的残基名，从 1.2 正式 `classification_result.yaml` 与 `stage1_final_map.yaml` 中定位当前工作项覆盖的全部实例，并持续使用各实例既有的 `component_id + residue_id`。
+根据当前工作项的残基名，从正式 `classification_result.yaml` 与 `stage1_final_map.yaml` 中定位当前工作项覆盖的全部实例，并持续使用各实例既有的 `component_id + residue_id`。
 
 ## 同名实例参数定义一致性检查
 
-无论当前工作项执行新的参数化还是复用 2.1 已判定适用的已有参数化结果，都先检查当前工作项中的同名实例是否存在会导致其不应共用同一套参数定义的差异，至少关注：
+对当前工作项中的全部同名实例检查是否存在会导致它们不应共用同一套参数定义的差异，至少关注：
 
 - 质子化状态；
 - 立体构型；
@@ -16,32 +16,30 @@
 
 普通空间构象差异本身不构成拆分参数定义的理由。
 
-若发现同名实例实际需要不同参数定义，不在 2.4 内静默拆分或为同一残基名生成多套参数；提醒用户为需要不同参数定义的对象设置不同残基名后再继续。
+若发现同名实例实际需要不同参数定义，不在当前工作项内静默拆分或为同一残基名生成多套参数；提醒用户为需要不同参数定义的对象设置不同残基名后再继续。
 
 ## 代表实例
 
-需要执行新的参数化时，通过上述检查后，从当前工作项对应的同名实例中选择一个实例作为代表实例，用于建立参数化模型并完成后续量化计算、电荷拟合和 Sobtop 参数化。
+完成上述一致性检查后，从当前工作项对应的同名实例中选择一个实例作为代表实例，用于建立参数化模型并完成后续量化计算、电荷拟合和 Sobtop 参数化。
 
 代表实例的选择属于当前任务上下文中的执行判断；不建立固定评分体系或额外分组规则。
 
-若复用已有参数化结果，不重新选择新的参数化代表实例；当前参数化模型及其代表实例沿用被引用正式结果中已经成功参数化的对象。当前工作项中的实际实例仍按本 Skill 的规则生成自己的 `parameterized_structure.gro` 与 `parameterized_structure.map`。
-
 ## 提取重原子结构
 
-执行新的参数化时，从 `stage1_final.pdb` 提取代表实例的当前重原子坐标，并使用 `stage1_final_map.yaml` 中已有的 `component_id + residue_id` 与逐原子记录建立对应关系。
+从 `stage1_final.pdb` 提取代表实例的当前重原子坐标，并使用 `stage1_final_map.yaml` 中已有的 `component_id + residue_id` 与逐原子记录建立对应关系。
 
 不得仅根据残基名、chain、resid 或原子顺序重新推断原子身份。
 
 ## 补氢
 
-执行新的参数化时，按照当前已经确定的化学状态建立代表实例的全原子结构：
+按照当前已经确定的化学状态建立代表实例的全原子结构：
 
 - 存在适用 CCD 时，以 CCD 中的原子、键连接和 H 定义作为补氢依据；
 - 不存在适用 CCD 时，根据当前结构的成键关系、价态和局部化学环境判断补氢方式；
 - 当前任务或用户已经明确指定的质子化状态、总电荷或其它化学状态必须与补氢结果保持一致；
 - 仍不能唯一确定补氢方式时，向用户确认后再继续。
 
-2.4 处理完整独立参数化对象，不引入 topology-linked 参数化中的标准残基片段、截断或 CAP。
+当前工作处理完整独立参数化对象，不引入 topology-linked 参数化中的标准残基片段、截断或 CAP。
 
 ## 原子集合与原子顺序
 
@@ -58,7 +56,7 @@ parameterization_model.map
 
 ## `parameterization_model.map`
 
-`parameterization_model.map` 只描述实际完成参数化的代表实例。
+`parameterization_model.map` 只描述本次实际完成参数化的代表实例。
 
 来自该代表实例对应 `stage1_final.pdb` 的原子：
 
@@ -67,7 +65,7 @@ parameterization_model.map
 - 保留已有 `operations`；
 - 只更新为 `parameterization_model.mol2` 中对应的 `output_atom_index`。
 
-2.4 新增 H：
+当前工作项新增 H：
 
 ```text
 original_atom_serial = null
@@ -84,7 +82,5 @@ component_id:
 residue_id:
 operations:
 ```
-
-复用已有参数化结果时，`parameterization_model.map` 沿用被引用正式结果中的原文件，不把其代表实例身份改写成当前体系实例身份。
 
 `parameterization_model.map` 不描述当前工作项中其它同名实例；当前工作项全部实例的结构映射由 `parameterized_structure.map` 记录。
