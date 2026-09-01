@@ -93,17 +93,21 @@ Manager 规划只回答：
 
 > 为覆盖用户当前提出的工作范围，初始 Task Sheet 需要列出哪些已定义 Step 或 stage-specific plan structure？
 
+Task Sheet 不要求覆盖完整 Workflow 或完整 Stage。用户当前任务可以只对应一个 Stage 的局部范围、从中间 Step 开始，或只使用其它任务已经形成的正式结果完成当前工作。
+
 Manager：
 
+- 只围绕用户当前提出的工作范围规划，不为了流程完整补入整个 Stage；
 - 使用 planning index 的顺序、名称、基础目录和明确的 planning mode；
+- 当用户明确请求完整 Stage 范围时，按 planning index 的完整 Stage planning 规则展开；
 - 遵守 planning index 中显式的 initial-planning 范围，例如仅在用户范围明确包含 topology validation 时规划 2.6；
 - 不读取全部科研 Skills；
 - 不提前查 `project_result_index.md`；
 - 不做科学 applicability / reuse 判断；
-- 不根据体系特征提前删减普通 Step；
+- 不根据体系特征提前删减**已经属于当前用户范围**的普通 Step；
 - 对未定义 catalog 的 Stage 不编造内部步骤。
 
-Task Sheet 是可动态维护的计划，不是科学适用性判决。
+Task Sheet 是可动态维护的计划，不是科学适用性判决，也不是完整 Workflow 的强制投影。
 
 ### Ordinary Stage planning
 
@@ -114,12 +118,16 @@ Stages 1–2 使用普通 sub-stage Task Sheet planning。
 普通 sub-stage 状态：
 
 ```text
-待执行
 未完成
 已完成
+已终止
 ```
 
-Stage 1 与 Stage 2 当前都不设置 stage main Skill。Task Sheet 直接使用 1.1–1.9 与 2.1–2.6 Step 身份；执行期由 Task Execution Agent 直接进入当前 Task Sheet 所对应的 1.x / 2.x current Skill。2.6 是否进入初始计划按 planning index 的显式范围处理。
+Stage 1 与 Stage 2 当前都不设置 stage main Skill。Task Sheet 只列出当前任务范围实际需要的 1.x / 2.x Step；执行期由 Task Execution Agent 直接进入当前 Task Sheet 所对应的 current Skill。
+
+因此，一个 Task Sheet 可以只包含例如 1.7、1.8–1.9、2.3、2.4 或其它局部范围；不要求同一任务中补齐更早或更晚的编号 Step。当前 Step 的真实输入依赖由其 current Skill 在执行时解释，可以消费其它任务已经形成的正式结果。
+
+2.6 是否进入初始计划按 planning index 的显式范围处理。
 
 ### Stage 3 planning
 
