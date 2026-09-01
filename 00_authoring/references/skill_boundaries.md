@@ -15,6 +15,8 @@ main Skill first
 
 一个 main Skill 对应一个可由 Task Execution Agent 直接理解和推进的科研职责，并拥有自己的输入、reuse、核心科学/技术规则、validation 与 results。
 
+这里的 main Skill 是**一个 Skill package 的正式入口**，不等于每个 MD Workflow Stage 都必须存在 Stage-level main Skill。编号 Step 自己的 `SKILL.md` 也是其 package 的 main Skill。
+
 ## 2. Stage-oriented active layout
 
 Current scientific Skill roots：
@@ -29,7 +31,15 @@ Current scientific Skill roots：
 
 这些编号对应 MD Workflow Stage 1–5。
 
-Stage root 可以拥有一个 main `SKILL.md`，并按实际复杂度包含 1.x / 2.x / 3.x / 4.x / 5.x Step 或 supporting Skills。
+Stage root 可以根据真实职责采用不同结构：
+
+```text
+无 Stage main + numbered Step Skills
+Stage main only
+Stage main + execution-layer / capability Skills
+```
+
+是否设置 Stage main 只取决于是否存在真实、不可合理下放的 Stage-wide orchestration / shared object / lifecycle；不得为了目录对称、Step 数量多或表达相邻流程而自动创建 Stage main。
 
 Stage 编号和 Task Sheet step 是科学流程语义，不等于必须建立额外角色层。
 
@@ -101,8 +111,16 @@ main Skill 只保留正式结果摘要、结果入口和必要完成条件；科
 
 ```text
 main Skill 产生 / 判断结果
-→ main Skill 定义该结果如何验证
+→ main Skill 定义该结果需要哪些检查才能完成当前职责
 ```
+
+这里的 ownership 不等于“每个结果 owner 都必须再执行一次穷尽式独立终检”。Validation 强度必须与当前职责、操作风险和结果声明相匹配：
+
+- 当前操作主要由成熟软件组件直接完成，且可由退出状态、关键输出和少量一致性检查可靠确认时，保持轻量；
+- 不为已经在当前执行过程中自然完成的检查再复制第二套同义检查；
+- 如果另有可选的独立深度 validation Skill，当前结果 owner 不需要复制该 Skill 的完整检查范围；
+- 当前结果 owner 仍应检查足以确认“自己的操作按预期完成、当前正式结果没有明显不一致”的必要内容；
+- 只有当前结果本身的正确性确实依赖更深入检查时，才把这些检查纳入当前 Skill。
 
 科研执行 Skill 共用的 validation ownership 与正式结果生成机制由 `../../references/result_generation_rules.md` 统一定义；本文件只固定 Skill ownership 边界。
 
@@ -135,7 +153,13 @@ consume: 当前职责实际消费哪个正式结果 / 接口
 require: 当前职责依赖哪项已冻结能力
 ```
 
-不要因为存在相邻或后续 Step，就在当前 Skill 中自动增加“如何交给下一环节”的 handoff 章节、handoff 文件或下游处理规则。普通相邻 Step 的流程关系由 Stage main Skill 表达；下游需要什么输入，由下游自己的 Object requirements / input contract 定义。
+不要因为存在相邻或后续 Step，就在当前 Skill 中自动增加“如何交给下一环节”的 handoff 章节、handoff 文件或下游处理规则。下游需要什么输入，由下游自己的 Object requirements / input contract 定义。
+
+跨 Step 推进按实际 Stage 架构处理：
+
+- 当前 Stage 存在真正拥有 Stage-wide orchestration 的 main Skill 时，Stage-specific route / shared-object relationship 可以由该 Stage main 拥有；
+- 当前 Stage 不设置 Stage main Skill 时，Task Execution Agent 根据 Task Sheet、当前 Step 的正式结果 / input contract 和实际执行证据推进，不为表达相邻关系另建 synthetic Stage owner；
+- 一个 Task Sheet 可以只覆盖某个 Stage 的局部范围，当前 Step 可以直接消费其它任务已经形成的正式结果，不要求全部相邻 Step 出现在同一 Task Sheet。
 
 不得重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results 或文件生命周期。
 
@@ -156,7 +180,7 @@ require: 当前职责依赖哪项已冻结能力
 - 下游根据该字段应执行什么操作、判断或转换；
 - 其它 Skill 的 handoff、input interpretation、validation 或 official-result lifecycle。
 
-确有跨 Step 的流程关系时，由拥有该关系的 Stage main Skill 表达；某个下游 Skill 对输入结果有具体要求时，由该下游 Skill 自己的 Object requirements / input contract 定义。当前结果 owner 只需把当前结果及其字段语义定义清楚。
+某个下游 Skill 对输入结果有具体要求时，由该下游 Skill 自己的 Object requirements / input contract 定义。跨 Step 路由若属于实际存在的 Stage-wide orchestration，则由该 Stage main Skill 拥有；没有 Stage main 的 Stage 不因此新增一个 owner。当前结果 owner 只需把当前结果及其字段语义定义清楚。
 
 ## 9. Negative scope / 禁止项
 
@@ -175,9 +199,10 @@ Negative scope 只在边界本身需要被明确执行时出现，不要求列�
 
 一个 Stage 可以采用：
 
-- 一个 main Skill；
-- main Skill + references；
-- main Skill + 少量 Step/supporting Skills；
+- 无 Stage main，Task Execution Agent 直接进入 numbered Step Skills；
+- 一个 Stage main Skill；
+- Stage main Skill + references；
+- Stage main Skill + 少量 execution-layer / capability Skills；
 - Stage-specific execution object 结构，例如 Stage 4 run units。
 
 物理布局服从科研职责。没有 current Skill 的 Step 不为目录对称创建空 package；已有内容迁移也不保留 role-based compatibility copy。
