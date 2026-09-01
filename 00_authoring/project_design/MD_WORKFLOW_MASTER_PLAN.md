@@ -2,7 +2,7 @@
 
 Status: ACTIVE CURRENT BASELINE
 
-本文件只保存 MD Workflow 的顶层阶段编号、Stage catalog、当前建设状态和 current authority 入口。具体科学规则、执行规则、validation、target lineage 细节和文件生命周期由对应 current `SKILL.md` / shared references / local references 或仍处于 current authoring authority 的 architecture freeze 拥有。
+本文件只保存 MD Workflow 的顶层阶段编号、Stage catalog、当前建设状态和 current authority 入口。具体科学规则、执行规则、validation、Task Sheet resolution、target lineage 细节和文件生命周期由对应 current `SKILL.md` / shared references / local references 或仍处于 current authoring authority 的 architecture freeze 拥有。
 
 ## 1. Top-level numbering
 
@@ -17,6 +17,38 @@ Status: ACTIVE CURRENT BASELINE
 编号语义：`1.3` 表示整个 MD Workflow 的第 1.3 阶段；`2.4`、`4.1` 同理。Stage 3 与 Stage 5 当前均不设置编号化 sub-stage，因此不存在 current `3.1`–`3.3` 或 `5.1` catalog identity。
 
 一张 Task Sheet 不要求覆盖完整 Workflow、完整 Stage 或整个科研任务；同一科研任务可以由多张 Task Sheet 共同承载。局部 Task Sheet 可以消费前序 Task Sheet 已经形成且仍适用的 prerequisite、正式结果和决策。
+
+### Task Sheet resolution baseline
+
+真实项目科研执行不假设用户已经手动指定 Task Sheet。当前入口关系为：
+
+```text
+用户发出真实项目科研执行 / 继续执行指令
+→ Task Sheet resolution
+  ├─ 唯一相关 `未完成` Task Sheet → 自动绑定
+  ├─ 多个合理相关 `未完成` Task Sheets → 用户确认
+  └─ 无相关 `未完成` Task Sheet → Manager 创建新 Task Sheet
+→ 执行范围确认
+→ Task Execution Agent
+→ current Scientific Skill
+```
+
+其中：
+
+- `未完成` 是 automatic resolution 时默认可恢复的 active Task Sheet 状态；不另建 `active` 枚举；
+- `已完成` / `已终止` Task Sheet 默认作为历史，不自动重新激活；
+- unique active candidate 必须与用户当前科研指令 / 科研任务明确相关，不能按最近更新时间、最大编号或文件顺序选择；
+- 没有相关 active Task Sheet 且用户目标已经足以形成新的有界执行范围时，Manager 直接创建 Task Sheet，不要求用户额外说“建立任务单”；
+- 新 Task Sheet 的执行范围本身仍有用户意图歧义时，先确认范围，再创建正式 Task Sheet；
+- 已经绑定同一张 `未完成` Task Sheet 连续执行普通 Step 时，不在每个 Step 之间重复进入 Manager 或扫描 `task_index.md`；
+- 纯解释、方法讨论和概念问答不因为这套入口规则自动创建 Task Sheet。
+
+Current authority：
+
+```text
+references/task_execution_rules.md
+00_manager/SKILL.md
+```
 
 ## 2. Scientific Stage roots and cross-Skill object lineage
 
@@ -274,7 +306,7 @@ Stage 4 本地计算资源与运行方式的用户倾向统一维护于：
 该 reference 对每项倾向明确适用 run class：
 
 - `-nt 12`：EM / NVT / NPT / Production MD；
-- foreground execution：仅 EM；
+- 前台运行：仅 EM；
 - `-maxh 0.08`：仅 EM；
 - `tmux`：NVT / NPT / Production MD；
 - `-update gpu`：EM 默认不主动加入；NVT / NPT / Production MD 在环境适合时使用；
@@ -325,6 +357,18 @@ Stage 5 当前仍保留 current authoring freeze records：
 
 ## 8. Task execution and infrastructure
 
+真实项目科研执行入口：
+
+```text
+用户科研执行指令
+→ Task Sheet resolution
+  → `task_index.md`
+  → unique relevant `未完成` Task Sheet OR Manager create
+→ 执行范围确认
+→ Task Execution Agent
+→ current Scientific Skill
+```
+
 Cross-Stage Task Execution shared rules：
 
 `references/task_execution_rules.md`
@@ -348,7 +392,7 @@ Shared atom-mapping runtime authority：
 Unnumbered active package：
 
 ```text
-00_manager/   project Task Sheet management / initial planning
+00_manager/   Task Sheet resolution / management / initial planning
 ```
 
 Unnumbered infrastructure：
@@ -371,7 +415,7 @@ Historical authoring / architecture Markdown：
 - Stage 3：Stage-level main Skill 已正式生成；不设置编号化 sub-stage；当前 Task Sheet 可直接消费前序 Task Sheet 的 topology integration 正式结果；Stage 3 system-construction strategies 可以形成独立 target branches；保持轻量 GROMACS system-construction 职责；历史 Stage 3 freezes 已归档；代表性实际执行验证仍待后续 milestone。
 - Stage 4：Stage-level main Skill 与 4.1–4.3 active Skills 已生成；Stage 4 main 当前拥有 run-unit / route 等 Stage-wide 规则；不同模拟区段可跨 Task Sheet 继续；不强制 target 化；本地执行倾向集中到 `references/execution_preferences.md` 并按 run class 明确适用范围；`run_unit.yaml` 首次初始化规则已明确；既有 Stage 4 freeze 已归档。
 - Stage 5：**整体未完成 / 持续建设中**；Stage-level main Skill 已生成；当前 capability inventory 已登记 `trjconv`、`trjcat`、`make_ndx`；Stage 5 Task Sheet 只展开当前分析范围并可消费前序 Task Sheet 已有产物；不强制 target 化；Stage 5 current authoring freezes 继续保留于 `architecture_freezes/`，不因部分 runtime 已实现而归档。
-- Infrastructure：跨 Skill Task Execution、target lineage、result generation、canonical terminology 与 atom mapping 均由对应 current shared references 拥有；Task Execution 已统一普通任务项状态为 `未完成 / 已完成 / 已终止`，并明确区分科研任务与 Task Sheet；后续按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
+- Infrastructure：科研执行入口先执行 Task Sheet resolution；唯一相关 `未完成` Task Sheet 自动绑定，多候选时确认，无相关 active Task Sheet 且目标明确时由 Manager 自动创建；随后才进入执行范围确认与 Task Execution。跨 Skill Task Execution、target lineage、result generation、canonical terminology 与 atom mapping 均由对应 current shared references 拥有；后续按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
 
