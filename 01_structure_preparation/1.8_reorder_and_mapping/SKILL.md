@@ -43,6 +43,8 @@ Stage 1 原子映射维护规则读取：
 - 1.3 对应 `targets/target_xxx.yaml`；
 - 与该 target 对应的 1.2 正式 `classification_result.yaml`，当前要求 `schema_version: "4.0"` 且 `result_status: COMPLETE`。
 
+这些正式输入只需要共同对应当前 target，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 selection、结构修复、质子化处理与最终重排必须写在同一 Task Sheet。
+
 当前原子映射文件是 1.8 追踪现有原子身份的直接依据。不得跳过该文件，再根据当前 PDB 的 chain、`resid`、residue name、atom name 或 atom order 重新猜测原子来源。
 
 1.8 从 1.2 正式结果读取当前组织所需的信息，包括：
@@ -61,7 +63,7 @@ topology_linked_checks[]
 
 1.3 target 记录用于确认当前 target 的 selection 以及其中已经建立的中间 residue mapping；最终 chain / `resid` 由本步骤重新组织后，以 `stage1_final.pdb` 与最终原子映射共同确定。
 
-进入实质重排前，上述当前 PDB、匹配原子映射、1.3 target 记录和 1.2 正式结果必须能够唯一组成同一个 target 的输入集合。若存在多个合理候选且正式 Stage 1 handoff、Task Sheet 或已有项目记录不能唯一确定，不按“最新文件”、目录顺序、文件名相似度或 Agent 经验自行选择，先向用户确认。
+进入实质重排前，上述当前 PDB、匹配原子映射、1.3 target 记录和 1.2 正式结果必须能够唯一组成同一个 target 的输入集合。若存在多个合理候选且当前 Task Sheet、明确引用的前序 Task Sheet或已有项目记录不能唯一确定，不按“最新文件”、目录顺序、文件名相似度或 Agent 经验自行选择，先向用户确认。
 
 最终 chain 组织按本 Skill 的明确规则由 Agent 判断。若现有正式分类、topology-linked 关系、residue 顺序和聚合物链证据仍留下多个实质不同且都合理的最终组织方案，并且不同方案会改变 final chain、`resid`、`TER` 或 `stage1_final_map.yaml` 对应关系，则向用户说明歧义后确认；不得仅根据空间接近、当前 PDB chain ID 外观或整理便利性自行决定。已有正式信息和本 Skill 规则能够唯一闭合时直接执行，不重复询问。
 
@@ -88,6 +90,8 @@ topology_linked_checks[]
 ├── stage1_final.pdb
 └── stage1_final_map.yaml
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
 1.8 不改变 target 数量。
 
