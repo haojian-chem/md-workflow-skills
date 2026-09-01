@@ -13,6 +13,18 @@ Status: ARCHIVE / NOT CURRENT AUTHORITY
 - Git history 仍是完整版本历史来源；
 - 归档依据是 authority 已明确被取代，而不是文件年龄。
 
+Stage-specific architecture history：
+
+```text
+stage1_history/   Stage 1 已实现并退出 current authority 的 architecture freezes
+stage2_history/   Stage 2 已实现、被后续设计取代或退出 current authority 的 architecture freezes
+stage3_history/   Stage 3 旧 step-level 与已实现 Stage-level architecture freezes
+stage4_history/   Stage 4 已实现并退出 current authority 的 architecture freezes
+stage5_history/   Stage 5 已退出 current authority 的历史设计
+```
+
+其它 `legacy_*`、`root_history/` 等目录按其既有语义保存历史材料。
+
 当前归档规则见：
 
 `00_authoring/references/skill_generation_rules.md`
