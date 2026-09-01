@@ -159,7 +159,7 @@ index: 使用第 2 项生成的 ndx 文件
 
 不要求额外的 `from_item` / `output_role` schema。
 
-## Task Sheet-local directory layout
+## Task Sheet 工作目录
 
 Stage 5 不建立 Stage 4 式 project-level run-unit identity 或 `run_unit.yaml`。
 
@@ -268,11 +268,11 @@ Direct reuse item 不标记 `已完成`，因为当前 Task Sheet 没有执行�
 
 `trajectory_index.yaml` 是 `trjconv` 与 `trjcat` 共用的集中 trajectory 索引。两者拥有同等维护职责，各自只登记或更新自己生成并通过 validation、且满足自身登记条件的 trajectory；集中存放、可登记文件、命名和详细登记规则由对应 producer capability owner 定义。
 
-## External index (`.ndx`)
+## 外部 `.ndx`
 
 Stage 5 不建立 project-level `ndx_index.yaml`，也不做跨 Task Sheet `.ndx` 自动复用扫描。
 
-判断当前分析是否需要额外 index 时，读取 consuming capability 的 entry：
+判断当前分析是否需要额外 `.ndx` 时，读取 consuming capability 的 entry：
 
 ```text
 capability 所需 selections / groups
@@ -282,9 +282,11 @@ capability 所需 selections / groups
       → 在当前 plan 中使用已登记的 index-generation capability
 ```
 
-同一 Task Sheet 中前置 item 生成且满足后续需求的 `.ndx` 可以通过显式依赖共享。
+当前 Task Sheet 中前置 item 生成且满足后续需求的 `.ndx` 可以通过显式依赖共享。
 
-用户提供的 `.ndx` 可以作为候选输入；是否包含所需 group、是否与当前分析输入兼容，由对应 consuming capability 核验。
+同一科研任务的前序 Task Sheet 已明确生成、仍可定位的 `.ndx` 也可以作为当前 item 的候选 prepared input；不因为换了一张 Task Sheet 就要求重新生成。当前 Task Sheet 必须通过完整路径或明确的前序 Task Sheet / plan item 来源定位该文件，并由 consuming capability 核验其中所需 group 与当前分析输入的结构 / 原子顺序是否兼容。
+
+用户另外提供的 `.ndx` 同样可以作为候选输入；是否包含所需 group、是否与当前分析输入兼容，由对应 consuming capability 核验。
 
 ## Capability execution and validation
 
