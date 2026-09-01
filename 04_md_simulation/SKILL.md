@@ -15,7 +15,7 @@ description: Stage 4 分子动力学模拟总 Skill。管理 planned run route�
 
 负责 Stage 4 的总体执行规则。
 
-Stage 4 不把任务表示为固定的 `4.1 → 4.2 → 4.3` 串行步骤，而是执行 Task Sheet 中由 run-plan entries 组成的 planned run route。每个 entry 在真正开始时绑定一个 formal run unit，再由对应子 Skill 执行。
+Stage 4 不把任务表示为固定的 `4.1 → 4.2 → 4.3` 串行步骤，而是执行当前 Task Sheet 中由 run-plan entries 组成的 planned run route。每个 entry 在真正开始时绑定一个 formal run unit，再由对应子 Skill 执行。
 
 Stage 4 的三个执行层为：
 
@@ -31,7 +31,7 @@ Stage 4 的三个执行层为：
 
 `references/execution_preferences.md`
 
-该 reference 记录用户长期执行偏好，不是 scientific simulation parameter authority；当前任务 / 当前环境的实际要求可以覆盖其中的资源倾向。
+该 reference 记录用户长期执行偏好，不是模拟科学参数规范；当前 Task Sheet / 当前运行环境的实际要求可以覆盖其中的资源倾向。
 
 ## Object requirements
 
@@ -57,7 +57,9 @@ Stage 4 的三个执行层为：
 
 已有该文件时直接读取和维护，不重新初始化或覆盖历史记录。
 
-Task Sheet 是 Stage 4 唯一的 simulation plan source。不得另外创建 `simulation_plan.yaml` 或恢复历史 `expected_route.yaml`。
+当前 Task Sheet 的 planned run route 是**当前执行范围**的唯一模拟计划来源。不得另外创建 `simulation_plan.yaml` 或恢复历史 `expected_route.yaml`。
+
+同一科研任务可以把不同模拟区段拆到不同 Task Sheet。后续 Task Sheet 不需要复制前序 Task Sheet 的完整 planned run route；需要继承的已实例化模拟历史通过项目级 `run_unit.yaml`、实际 run files 和必要的前序 Task Sheet 引用定位。当前 Task Sheet 只记录自己需要执行或继续的 planned run entries。
 
 ## Planned run route
 
@@ -179,7 +181,7 @@ read planned entry
 用户明确要求重做 / 对照 → 跳过自动复用
 ```
 
-一个 run unit 可以被多个 Task Sheet 合法复用，不因为新任务而复制一份新的 formal unit。
+一个 run unit 可以被多个 Task Sheet 合法复用，不因为进入新的 Task Sheet 而复制一份新的 formal unit。
 
 ## Continuation versus new run unit
 
@@ -236,7 +238,7 @@ gmx mdrun \
 - 使用 `bash gmx_mdrun.sh` 执行；
 - `grompp` 失败时不得生成该脚本。
 
-生成实际 `gmx_mdrun.sh` 前读取 `references/execution_preferences.md`，并结合当前任务和当前运行环境确定资源 / offload / tmux / wall-clock 等执行倾向。实际命令可以因当前环境调整；最终脚本记录本次真实执行命令。
+生成实际 `gmx_mdrun.sh` 前读取 `references/execution_preferences.md`，并结合当前 Task Sheet 和当前运行环境确定线程、GPU 卸载、`tmux`、最长运行时间等执行倾向。实际命令可以因当前环境调整；最终脚本记录本次真实执行命令。
 
 ## Common bonded-geometry screening
 
