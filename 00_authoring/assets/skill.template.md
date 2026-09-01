@@ -23,11 +23,13 @@ description: <何时使用；当前 Skill 指导 Agent 解决什么问题；必�
 
 说明 Agent 需要理解的实际输入、对象和证据。
 
-不要因为编号上存在更早 Step 就要求这些 Step 必须出现在同一 Task Sheet。当前输入可以来自其它任务已经形成的正式结果、已有项目记录、当前对话上下文或用户明确提供的信息。
+Task Sheet 是有界执行记录，不等同于整个科研任务。不要因为编号上存在更早 Step，就要求这些 Step 必须出现在当前 Task Sheet；也不要因为某个更早 Step 不在当前 Task Sheet，就默认其科学前置条件可以忽略。
+
+如果当前 Skill 确实存在 prerequisite，应直接定义**必须已经存在什么上游方案、正式结果、对象状态或决策**。该 prerequisite 可以由当前 Task Sheet 提供，也可以由同一科研任务的前序 Task Sheet、项目正式结果或其它可追溯记录提供；是否满足以前置对象本身为准，不以是否出现在当前 Task Sheet 为准。
 
 不要仅为了形式化强制把输入先转换成 parser/schema 结果。若 deterministic Tool 确有价值，说明其用途和 required / preferred / optional 定位。
 
-对于会被多个环节消费的任务级科学信息，例如力场、参数来源、pH 或方法选择，当前 Skill 真正需要时先使用已有明确决定；仍不能唯一确定时再向用户确认，不为“首次确认”人为指定唯一 Step owner。
+对于会被多个环节消费的科学信息，例如力场、参数来源、pH 或方法选择，当前 Skill 真正需要时先使用已有明确决定；仍不能唯一确定时再向用户确认，不为“首次确认”人为指定唯一 Step owner。
 
 # Reuse / execution assessment
 
@@ -113,5 +115,7 @@ legacy/  # Legacy executable/runtime material
 - [ ] 复杂结果接口已经评估是否需要 `references/results.md`；
 - [ ] results 说明没有重新写成下游 handoff 规则；
 - [ ] 科研执行 Skill 共用的 Task Execution / result-generation 规则没有在当前 Skill 重复定义；
-- [ ] 当前 Skill 不要求无关的前序 Step 必须出现在同一 Task Sheet；
+- [ ] 没有把 Task Sheet 等同于整个科研任务；
+- [ ] 当前 Skill 的 prerequisite 按真实上游对象 / 状态定义，而不是按“必须出现在当前 Task Sheet 的更早编号 Step”定义；
+- [ ] 当前 Task Sheet 只覆盖局部流程时，没有因此忽略真实 prerequisite，也没有为了流程完整补入无关 Step；
 - [ ] 没有把 `evals/`、`tools/` 或 `legacy/` 当成 MD Workflow Stage Skill root。
