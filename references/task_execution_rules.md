@@ -47,11 +47,107 @@ Task Sheet 状态：
 
 语义：
 
-- `未完成`：当前 Task Sheet 仍保留该任务项，且其当前职责尚未闭合；
+- `未完成`：当前 Task Sheet 仍保留该任务项，且其当前职责尚未闭合；同时是 Task Sheet resolution 时默认可自动恢复的 active 状态；
 - `已完成`：当前 Task Sheet 中的该任务项已经按其 current Skill 完成；
 - `已终止`：该任务项已经进入执行历史，但当前 Task Sheet 不再继续执行它；必须能够追溯终止原因。具体何种情形可终止，由当前 Skill、Stage-specific 规则或当前执行情况决定。
 
 Stage-specific 内部对象如有不同状态模型，以对应 current owner 为准。
+
+## Task Sheet resolution
+
+当用户要求在真实项目中执行、继续、修改或正式记录 MD Workflow 科研工作，而当前还没有一个已经明确绑定并可继续使用的 Task Sheet 时，**必须先完成 Task Sheet resolution，再进入科研执行 Skill**。
+
+纯解释、方法讨论、概念问答或不要求写入/推进真实项目执行状态的咨询，不因为存在本规则就自动创建 Task Sheet。
+
+Task Sheet resolution 的目标是回答：
+
+> 当前科研执行应落在哪一张 Task Sheet；如果没有适用的现有 Task Sheet，是否需要创建新的 Task Sheet？
+
+### 1. 已明确指定或已经绑定 Task Sheet
+
+如果用户明确给出 Task Sheet ID / 名称，或当前执行上下文已经明确绑定某张 Task Sheet：
+
+1. 读取 `task_index.md` 核对该 Task Sheet 的存在与当前状态；
+2. 状态为 `未完成` 且与用户当前执行指令仍一致时，直接读取并继续该 Task Sheet；
+3. 状态为 `已完成` / `已终止` 时，除非用户明确要求重新打开、重新规划或继续该历史执行范围，否则不静默把它当作 active Task Sheet 使用；需要继续同一科研任务时进入 Manager 判断是否建立后续 Task Sheet；
+4. 用户当前指令与已绑定 Task Sheet 的执行范围明显冲突时，不静默沿用旧绑定；先按下面的候选定位 / 新 Task Sheet 规则处理。
+
+### 2. 当前没有明确绑定 Task Sheet
+
+先读取：
+
+```text
+<project_root>/00_project_records/task_index.md
+```
+
+默认只把状态为：
+
+```text
+未完成
+```
+
+的 Task Sheet 作为 active candidates。
+
+优先使用 `task_index.md` 已有的 ID、名称、状态、路径和其它现有导航信息判断哪些 candidate 与用户当前科研指令 / 科研任务相关。不得仅因为某张 Task Sheet：
+
+- 最近更新；
+- 编号最大；
+- 文件顺序靠后；
+- 是项目中唯一一个 `未完成` 但与当前科研指令无关；
+
+就自动绑定。
+
+如果索引信息不足以判断，而只存在少数合理的 `未完成` candidates，可以只读取这些候选 Task Sheet 做最小必要的只读核对；**不得为定位当前 Task Sheet 无边界遍历全部历史 Task Sheets**。
+
+候选处理：
+
+```text
+唯一相关的未完成 Task Sheet
+→ 自动绑定并读取
+
+多个合理相关的未完成 Task Sheet
+→ 向用户说明候选并确认使用哪一张
+
+没有相关的未完成 Task Sheet
+→ 进入 Manager 的 new-Task-Sheet responsibility
+```
+
+这里的“唯一相关”要求当前用户指令 / 科研任务与该 Task Sheet 的已有目标、范围或最小恢复上下文能够明确对应；不是“项目中只有一个未完成 Task Sheet”的机械判断。
+
+### 3. 没有相关 active Task Sheet 时
+
+Manager current entry：
+
+```text
+00_manager/SKILL.md
+```
+
+如果用户当前指令已经足以确定一个新的有界执行目标，Manager **直接创建新 Task Sheet、完成初始规划并交给 Task Execution Agent**；不要求用户额外再说一次“建立任务单”。
+
+如果新 Task Sheet 本身的执行范围仍不清晰，则 Manager 可以读取 `task_index.md` 和必要的最小项目导航信息做只读核对，并按本文件的“执行范围确认”原则向用户确认；范围确认前不创建带有猜测性执行范围的新 Task Sheet。
+
+如果项目尚未建立 `00_project_records/task_index.md` / `tasks/` 等基础记录，则由 Manager 先完成当前项目最小初始化，再按上述规则创建首张 Task Sheet。
+
+`已完成` / `已终止` Task Sheet 默认不作为 active candidate。它们可以作为同一科研任务的前序历史、prerequisite 或结果来源被后续 Task Sheet 显式引用，但不因为内容相关就自动重新变成 `未完成`。
+
+### 4. Resolution gate 的执行边界
+
+在 Task Sheet 尚未完成 resolution 前，允许：
+
+- 读取 `task_index.md`；
+- 读取用户明确指定或少数合理 active candidates；
+- 判断是否需要 Manager 创建新的 Task Sheet；
+- 向用户提出定位 / 执行范围确认问题。
+
+不得：
+
+- 直接进入某个科研 Step 并修改科研对象；
+- 为未绑定的执行创建 target / target record；
+- 写入正式结果；
+- 把某张历史 Task Sheet 静默改成 `未完成`；
+- 因为发现一个可复用科研结果而跳过 Task Sheet resolution。
+
+Task Sheet resolution 只在**执行入口尚未绑定 Task Sheet、当前绑定失效、或确实需要建立后续 Task Sheet**时触发。一个已经绑定且仍为 `未完成` 的 Task Sheet 在普通 Step 之间连续执行时，不为每个 Step 重复进入 Manager 或重复扫描 `task_index.md`。
 
 ## Task Sheet scope
 
@@ -188,12 +284,17 @@ Target record 只在当前执行范围已经明确后建立。不能为了“先
 
 ## Task execution loop
 
-Task Execution Agent 持续持有当前 Task Sheet，并按当前实际对象推进。
+科研执行入口先完成 Task Sheet resolution，再由 Task Execution Agent 持有已绑定的当前 Task Sheet 并按当前实际对象推进。
 
-普通执行主线：
+普通入口与执行主线：
 
 ```text
-读取目标 Task Sheet
+收到真实项目科研执行指令
+→ Task Sheet resolution
+  ├─ 已有唯一相关未完成 Task Sheet → 自动绑定
+  ├─ 多个相关未完成 Task Sheet → 用户确认
+  └─ 无相关未完成 Task Sheet → Manager 创建新 Task Sheet
+→ 读取已绑定 Task Sheet
 → 确定当前任务项
 → 读取当前需要的 Stage / Step / capability Skill
 → 结合用户当前指令 + 当前 Task Sheet + 明确前序决定解析执行范围
@@ -212,7 +313,12 @@ Task Execution Agent 持续持有当前 Task Sheet，并按当前实际对象推
 → 继续下一任务项
 ```
 
-普通子环节之间不返回 Manager 调度。只有用户明确要求 Manager 重新规划或需要建立新的 Task Sheet 时，才重新进入 Manager 的对应职责。
+普通子环节之间不返回 Manager 调度。以下情况才重新进入 Manager：
+
+- 用户明确要求 Manager 重新规划；
+- 当前科研执行入口尚未解决 Task Sheet；
+- 当前绑定 Task Sheet 已完成 / 已终止 / 不再适用于当前执行指令；
+- 当前执行确实需要建立新的后续 Task Sheet。
 
 如果计划中的 Stage / Step 只有 architecture freeze、尚无获批生成的 current execution Skill，不得把 freeze 当作执行指南自行运行。
 
@@ -238,7 +344,9 @@ Manager current entry：
 00_manager/SKILL.md
 ```
 
-Manager 负责 Task Sheet 定位 / 创建、初始规划、用户明确要求时的重新规划，以及项目级 Task Sheet 导航整理。一个更大的科研任务是否继续使用原 Task Sheet 或拆成新的 Task Sheet，属于 Task Sheet 管理决策，不改变对应 scientific Skill 的科学职责。
+Manager 负责 Task Sheet 定位 / 创建、初始规划、用户明确要求时的重新规划，以及项目级 Task Sheet 导航整理。**科研执行入口没有已解析 Task Sheet 时，Task Sheet resolution 也自动进入 Manager 的定位 / 创建职责，不要求用户显式点名 Manager。**
+
+一个更大的科研任务是否继续使用原 Task Sheet 或拆成新的 Task Sheet，属于 Task Sheet 管理决策，不改变对应 scientific Skill 的科学职责。
 
 科研执行阶段由当前 scientific Skill 推进；Manager 不执行具体科研 Step，也不替当前结果 owner 判断具体 Step 的 reuse、scientific applicability、validation 或结果正确性。
 
@@ -257,7 +365,8 @@ Manager 可以在 Task Sheet 中记录未来路径，但不提前创建 task-spe
 真正进入当前工作时：
 
 ```text
-先确认当前执行范围
+先完成 Task Sheet resolution
+→ 再确认当前执行范围
 → 再按当前 Skill 的 reuse 规则判断
    ├─ 可直接复用 → 不创建无用空目录
    └─ 需要本地执行 → 创建当前 task-specific directory
@@ -278,7 +387,7 @@ Stage-specific directory / index 组织以实际拥有该职责的 current Stage
 用户明确要求重做 / 对照 → 跳过自动复用
 ```
 
-Reuse assessment 发生在当前执行范围已经明确之后。不得用“发现了一个可复用结果”反向替用户决定当前究竟要处理哪个对象或范围。
+Reuse assessment 发生在 Task Sheet resolution 与当前执行范围都已经明确之后。不得用“发现了一个可复用结果”反向替用户决定当前究竟要处理哪个对象或范围，也不得用 reuse 结果绕过 Task Sheet resolution。
 
 不得仅根据目录存在、文件名相同或 Task Sheet 名称相似自动复用。
 
@@ -310,6 +419,8 @@ Task Execution Agent 不默认：
 - 加载 Legacy route / state / event / runtime records；
 - 为了寻找潜在 reuse 而无边界遍历项目。
 
+Task Sheet resolution 允许先读取 `task_index.md`，并在索引不足以判断时读取用户明确指定或少数合理的 `未完成` candidates；这属于受限入口解析，不等于扫描全部 Task Sheets。
+
 当前 Step 明确依赖某张前序 Task Sheet 或某个 prerequisite 时，可以直接读取该相关记录；这不等于扫描全部历史 Task Sheets。
 
 为了确认执行范围，可以对当前 Task Sheet、被明确引用的前序 Task Sheet以及当前候选对象做最小必要的只读检查；不得把“范围确认”当作理由无边界扫描项目。
@@ -321,8 +432,11 @@ Task Execution Agent 不默认：
 职责关系为：
 
 ```text
+00_manager/SKILL.md
+→ Task Sheet resolution / creation / initial planning / explicit replanning
+
 references/task_execution_rules.md
-→ 科研执行 Skill 共用的 Task Execution 规则
+→ 科研执行 Skill 共用的 Task Execution 规则与科研执行入口 gate
 
 references/target_lineage_rules.md
 → 使用 target 的科研执行 Skill 共用的 local target / target record / lineage 机制
