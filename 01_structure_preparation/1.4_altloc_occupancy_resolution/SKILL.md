@@ -1,6 +1,6 @@
 ---
 name: altloc_occupancy_resolution
-description: 结构准备 1.4。对当前待处理结构中的 alternate conformation / altLoc 进行有依据的构象选择，删除未选构象并生成单一构象结构，同时记录选择及证据。
+description: 结构准备 1.4。对当前待处理结构中的 alternate conformation / altLoc 进行有依据的构象选择，生成当前 1.4 local target 结构并记录构象决策与 target lineage。
 ---
 
 # Purpose
@@ -25,9 +25,25 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 
 # Object requirements
 
-当前对象是前序流程交给 1.4 的待处理结构。正常预期为 PDB，并以 PDB `altLoc` 作为主要 alternate-conformation 表示。
+当前 1.4 工作项中的每个对象都是 **1.4 自己的 local target**。
 
-同时必须提供与该输入结构对应的正式 atom map。正常主路径为 1.3 当前 target 的 `maps/target_xxx.atom_mapping.yaml`；若前序结构来源不同，则使用与当前输入结构实际对应的最近正式 map。
+每个 current target 至少需要：
+
+- 一个实际输入结构，正常预期为 PDB，并以 PDB `altLoc` 作为主要 alternate-conformation 表示；
+- 与该输入结构对应的正式 atom map；
+- 一个或多个实际形成当前 1.4 target 的上游 target records。
+
+正常主路径中，上游 target record 通常来自 1.3；如果当前输入来自其它已经形成的结构分支，则使用实际对应的上游 target record，不固定要求来源为 1.3。
+
+当前 1.4 local target 按 `../../references/target_lineage_rules.md` 建立自己的：
+
+```text
+targets/target_xxx.yaml
+```
+
+并在 `source_target_records` 中记录直接来源 target record 的完整绝对路径。
+
+因此，当前 1.4 的 `target_001` 与上游任何 `target_001` 都不是同一个 execution object；对应关系只由 target record 路径确定。
 
 如果实际输入格式与预期不同：
 
@@ -35,7 +51,9 @@ description: 结构准备 1.4。对当前待处理结构中的 alternate conform
 - 若能够可靠识别并映射与 `altLoc` 等价的 alternate-conformation 语义，可以继续使用本 Skill 的选择原则；
 - 若无法可靠解释候选构象及其关系，不自行猜测，应向用户说明歧义并请求决定。
 
-多个 target 分别处理；1.4 不自行把一个 target 拆成多个输出结构，也不重新合并已有 target。
+当前 Task Sheet / 用户要求可以让一个 source target 形成一个或多个 1.4 local targets。例如为了保留不同 alternate-conformation 处理策略进行后续对照时，多个 current target records 可以共同引用同一个 source target record，从而形成明确分支。
+
+1.4 不在没有实际研究需求时为了“完整”自动生成所有候选构象分支，也不把多个独立 source targets 静默合并；若当前对象确实需要合流，按 shared target-lineage 规则在 current target record 中显式记录多个 `source_target_records`。
 
 # Execution rules
 
@@ -93,6 +111,8 @@ occupancy 是重要证据，但不是唯一自动判据。不得仅按“字母 
 
 不得仅因为某个候选 atom set 更完整、后续 repair 工作更少，就优先选择该构象。所选构象本身存在 missing atom 不阻止本步骤完成构象选择；缺失问题由其真正 owner 处理。
 
+当当前 Task Sheet 明确要求保留多个具有实际研究价值的 alternative strategies 时，分别为这些策略建立独立 1.4 local targets，并分别完成上述选择与结果记录；不把多个 mutually exclusive choices 塞进一个 target。
+
 ## 4. 用户确认
 
 只有在现有证据不足以形成可靠选择时才请求用户确认，例如：
@@ -134,8 +154,9 @@ occupancy 是重要证据，但不是唯一自动判据。不得仅按“字母 
 
 ## 6. 维护 atom map
 
-对每个 target，把输入结构对应的正式 atom map 完整复制为当前输出 map，再按 `../../references/atom_mapping_rules.md` 更新：
+对每个 current 1.4 target，把实际输入结构对应的正式 atom map 作为 `input_map`，再按 `../../references/atom_mapping_rules.md` 更新：
 
+- map 文件级 `target_record` 改为当前 1.4 target record 的完整绝对路径；
 - 删除 unselected-conformer atom 对应的 map record；
 - shared atoms 保留原 operation history；
 - surviving selected-conformer atoms 保留 `original_atom_serial`、`component_id + residue_id`，按输出 PDB 更新 `current_atom_serial`；
@@ -152,7 +173,17 @@ maps/target_xxx.atom_mapping.yaml
 
 Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独立 Validator。
 
-## 1. 决策与实际结构一致
+## 1. Target lineage
+
+确认：
+
+- 每个 current 1.4 target 都有独立 target record；
+- target record `target_id` 与当前 1.4 local target 一致；
+- `source_target_records` 与当前实际输入 target 来源一致；
+- 多分支情况下，各 child targets 分别具有自己的 target record，不通过相同/不同 `target_id` 猜测关系；
+- 当前 output map 的 `target_record` 与当前 target record 一致。
+
+## 2. 决策与实际结构一致
 
 根据本次构象选择记录逐项确认：
 
@@ -162,7 +193,7 @@ Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独
 - 没有混合保留互斥候选而形成 hybrid conformer；
 - 已处理位置不再残留未解决的 alternate conformer / altLoc。
 
-## 2. 没有非预期结构修改
+## 3. 没有非预期结构修改
 
 允许的主动修改仅包括：
 
@@ -172,7 +203,7 @@ Validation 跟随 1.4 的正式结果，在同一 Skill 内完成，不另设独
 
 除这些允许变化外，检查 surviving structure 未发生非预期的 identity、coordinate 或 relative-order 变化，也没有误删 shared / unrelated atoms。
 
-## 3. 输出结构与 map 有效
+## 4. 输出结构与 map 有效
 
 确认：
 
@@ -194,6 +225,10 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 ```text
 01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/
 ├── altloc_resolution_report.yaml
+├── targets/
+│   ├── target_001.yaml
+│   ├── target_002.yaml
+│   └── ...
 ├── structures/
 │   ├── target_001.pdb
 │   ├── target_002.pdb
@@ -206,13 +241,14 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 
 这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
-每个输入 target 对应一个处理后的单一构象结构和一份与该结构一一对应的 atom map；输出文件继续使用对应 `target_id` 作为文件名，避免多个 target 之间发生文件名冲突。
+当前 1.4 的 `target_id` 只用于本工作项内部命名和目录内区分对象，不与上游 target 编号建立 identity。
 
 ## `altloc_resolution_report.yaml`
 
-该文件是 1.4 的正式构象决策记录。至少记录：
+该文件是 1.4 的正式构象决策记录。每个 current target 至少记录：
 
-- 当前 target identity；
+- 当前 1.4 local `target_id`；
+- 当前 `references.target_record`；
 - source PDB；
 - source atom map；
 - generated PDB；
@@ -226,13 +262,15 @@ Validation 不重新检查 missing residue、missing heavy atom、force-field at
 
 对普通 residue-local altLoc，不要求复制完整 atom list。只有 partial-residue、跨 residue / ligand / metal-center 或 candidate atom set 明显不一致等复杂情况，才按实际需要补充 affected residues / atoms。
 
-`source_pdb`、`source_atom_mapping`、`generated_pdb` 与 `generated_atom_mapping` 必须记录**完整绝对路径**。例如：
+`references.target_record`、`source_pdb`、`source_atom_mapping`、`generated_pdb` 与 `generated_atom_mapping` 必须记录完整绝对路径。例如：
 
 ```yaml
 targets:
   - target_id: target_001
-    source_pdb: /absolute/path/to/project/01_structure_preparation/03_chain_and_residue_selection/<source_task_id>/structures/target_001.pdb
-    source_atom_mapping: /absolute/path/to/project/01_structure_preparation/03_chain_and_residue_selection/<source_task_id>/maps/target_001.atom_mapping.yaml
+    references:
+      target_record: /absolute/path/to/project/01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/targets/target_001.yaml
+    source_pdb: /absolute/path/to/source_structure.pdb
+    source_atom_mapping: /absolute/path/to/source_atom_mapping.yaml
     generated_pdb: /absolute/path/to/project/01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/structures/target_001.pdb
     generated_atom_mapping: /absolute/path/to/project/01_structure_preparation/04_altloc_occupancy_resolution/<task_id>/maps/target_001.atom_mapping.yaml
     resolved_groups:
@@ -254,6 +292,8 @@ targets:
 
 这里的 YAML 结构用于说明最低信息要求，不建立额外 rigid schema；实际记录可按当前 case 的复杂度增加必要字段。
 
+上游 target lineage 不在报告中展开复制。需要追溯当前 1.4 target 是从哪个 1.3 / 其它 source target 形成时，读取 `references.target_record` 中的 `source_target_records`。
+
 # Project result registration
 
 完成正式结果后，在项目级正式结果检索文件：
@@ -265,9 +305,9 @@ targets:
 登记本次 `altloc_resolution_report.yaml`，至少写入：
 
 - 该报告的完整绝对路径；
-- 简明说明：该文件是 Stage 1.4 的正式 altLoc / alternate-conformation 决策记录，包含各 target 的源/生成结构、源/生成 atom map、候选构象、最终选择及主要证据。
+- 简明说明：该文件是 Stage 1.4 的正式 altLoc / alternate-conformation 决策记录，包含各 current targets 的 `target_record`、源/生成结构、源/生成 atom map、候选构象、最终选择及主要证据。
 
-只登记路径与说明；`project_result_index.md` 的具体组织格式由项目级数据管理规则拥有，本 Skill 不复制或重定义其内部格式。
+只登记路径与说明；target records 不因创建而单独进入 project result index。`project_result_index.md` 的具体组织格式由项目级数据管理规则拥有，本 Skill 不复制或重定义其内部格式。
 
 # Working directory
 
