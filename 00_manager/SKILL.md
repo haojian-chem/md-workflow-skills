@@ -119,9 +119,7 @@ Stages 1–2 使用普通 sub-stage Task Sheet planning。
 已完成
 ```
 
-Stage 1 虽具有 stage main Skill，但 Task Sheet 仍按 1.1–1.9 表示科学步骤；stage main Skill 负责执行期 Stage 1-specific handoff 与动态计划维护，不替代这些 Step 条目。
-
-Stage 2 当前没有 stage main Skill。Task Sheet 直接使用 2.1–2.6 Step 身份；2.6 是否进入初始计划按 planning index 的显式范围处理。
+Stage 1 与 Stage 2 当前都不设置 stage main Skill。Task Sheet 直接使用 1.1–1.9 与 2.1–2.6 Step 身份；执行期由 Task Execution Agent 直接进入当前 Task Sheet 所对应的 1.x / 2.x current Skill。2.6 是否进入初始计划按 planning index 的显式范围处理。
 
 ### Stage 3 planning
 
@@ -171,8 +169,8 @@ Manager 不创建 `5.1 Analysis planning and orchestration`，也不自行把高
 
 ```text
 Stage 1
-→ 01_structure_preparation/SKILL.md
-→ 由 Stage 1 main Skill 维护 1.1–1.9 执行关系并加载当前 1.x entry
+→ 无 stage main Skill
+→ 直接进入当前 Task Sheet 所对应的 1.x entry
 
 Stage 2
 → 无 stage main Skill
@@ -188,7 +186,7 @@ Stage 4
 
 Stage 5
 → 05_analysis/SKILL.md
-→ 由 Stage 5 main Skill读取 current capability inventory 并调度 capability entries
+→ 由 Stage 5 main Skill 读取 current capability inventory 并调度 capability entries
 ```
 
 Manager 初始规划时不需要因此读取上述 Skill；Task Execution Agent 在实际进入对应 Stage / Step 时读取 planning index 指向的 current runtime entry。
@@ -201,7 +199,7 @@ Manager 在普通 Step 的 Task Sheet 条目中记录 `<base_work_directory>/<ta
 
 Task Execution Agent 真正进入某普通 Step 后，按该 current Skill 判断当前工作如何执行。只有 current Skill 实际定义 reuse 机制时才按其规则处理；没有 reuse 机制的 Step 不由 Manager 或 Task Execution Agent 额外补设 reuse。只有需要本地执行时才创建当前 task-specific directory。
 
-Stage-specific project-level directories / indexes 或 stage-level planning structure 由对应 Stage current Skill 管理，不由 Manager 发明额外 runtime state。
+Stage-specific project-level directories / indexes 或 stage-level planning structure 由实际拥有该职责的 current Stage / Step Skill 管理，不由 Manager 发明额外 runtime state。
 
 ## Dynamic plan and handoff
 
@@ -223,7 +221,7 @@ Task Sheet 创建或定位完成后，科研执行按照 `workflow_plan_index.ya
 
 用户明确要求重新规划时，Manager 可以读取 current Task Sheet + `workflow_plan_index.yaml`，整理尚未完成的计划。
 
-Stage-specific plan structures 遵守对应 current Stage Skill；Manager 不在本文件复制其内部规则。
+Stage-specific plan structures 遵守对应 current owner；Manager 不在本文件复制其内部规则。
 
 ## Safety
 
