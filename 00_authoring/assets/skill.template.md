@@ -27,6 +27,29 @@ Task Sheet 是有界执行记录，不等同于整个科研任务。不要因为
 
 如果当前 Skill 确实存在 prerequisite，应直接定义**必须已经存在什么上游方案、正式结果、对象状态或决策**。该 prerequisite 可以由当前 Task Sheet 提供，也可以由同一科研任务的前序 Task Sheet、项目正式结果或其它可追溯记录提供；是否满足以前置对象本身为准，不以是否出现在当前 Task Sheet 为准。
 
+如果当前 Skill / 当前工作项实际使用 `target` 作为 execution object，则必须遵守：
+
+`<relative-path>/references/target_lineage_rules.md`
+
+并明确：
+
+```text
+current local target_id
+→ 只在当前 Skill / 当前工作项内解释
+
+current target_record
+→ 当前 local target 的正式跨 Skill 引用
+
+source_target_records
+→ 实际形成当前 target 的直接上游 target records
+```
+
+不要通过上下游 `target_id` 编号相同推断同一对象，也不要把 target lineage 固定写成从某个特定 Step（例如 1.3）开始的单链。一个 source target 可以派生多个 current targets；一个 current target 也可以由多个 source targets 合流形成。
+
+只有真正参与 current execution object 形成的上游 target 才进入 `source_target_records`。普通 evidence、validation report、force-field / CCD reference、参数库或仅被读取的文件不因“被读取”自动成为 source target。
+
+如果当前 Skill 已有其它正式 execution identity，例如 Stage 4 formal run unit 或 Stage 5 analysis plan item，并且该 Skill 不使用 `target` 作为对象，则不要为了形式统一强制建立 target record。
+
 不要仅为了形式化强制把输入先转换成 parser/schema 结果。若 deterministic Tool 确有价值，说明其用途和 required / preferred / optional 定位。
 
 对于会被多个环节消费的科学信息，例如力场、参数来源、pH 或方法选择，当前 Skill 真正需要时先使用已有明确决定；仍不能唯一确定时再向用户确认，不为“首次确认”人为指定唯一 Step owner。
@@ -46,6 +69,8 @@ Task Sheet 是有界执行记录，不等同于整个科研任务。不要因为
 
 如果当前 Skill 明确不设置 reuse，直接写明 current no-reuse 语义，不增加虚构复用分支。
 
+如果 reuse 后当前工作项仍实例化自己的 local target，不把旧结果中的 `target_id` 当作当前 target identity；按 target-lineage 规则记录实际 source target record。若当前职责在 reuse assessment 后直接终止、没有实例化新的 execution target，则不要制造空 target record。
+
 # Execution guidance
 
 说明必须遵守的科学/技术规则、必要先后关系、可替代实现和明确禁止的做法。
@@ -54,6 +79,8 @@ Task Sheet 是有界执行记录，不等同于整个科研任务。不要因为
 
 用户长期执行资源倾向、机器相关参数或本地运行习惯如果需要跨多个 execution Skill 复用，应评估是否集中到明确的 preference / execution reference，而不是分别硬编码进多个 scientific Skill。
 
+如果当前科学 / 技术 strategy 会让同一个 source object 产生多个需要后续独立保留的结果，说明何时建立多个 local target branches；不要自动枚举所有理论组合。若当前对象由多个 upstream target-scoped results 共同形成，说明真实 merge sources；不要仅按 Step 顺序把对象强行串成一条链。
+
 # Validation
 
 说明完成当前职责所需的必要检查。
@@ -61,6 +88,8 @@ Task Sheet 是有界执行记录，不等同于整个科研任务。不要因为
 Validation 默认由当前结果 owner 定义，但强度应与实际操作、风险和结果声明匹配；不要因为“owner 必须 validation”重复成熟软件已经自然完成的检查，也不要复制另一个可选独立 validation Skill 的完整检查范围。
 
 只有 validation 本身复杂、独立且拆分有明确维护价值时才拆 supporting validation Skill。
+
+Target-scoped result 的 validation 应确认 current formal result 指向正确的 current `target_record`，且 target record 的 `source_target_records` 与实际对象来源一致。只读 validation Skill 如果自己建立 validation target，不应改写被检查 source map / source result 的 target identity；current validation target 通过 `source_target_records` 指向被检查 target。
 
 # Results
 
@@ -73,6 +102,20 @@ Validation 默认由当前结果 owner 定义，但强度应与实际操作、�
 main Skill 只保留摘要和读取入口；`references/results.md` 只定义当前结果本身，不规定下游 Skill 应如何执行。
 
 当前 Skill 只定义自己的结果集合、字段语义、Skill-specific validation requirement 与 project-result registration 白名单；科研执行 Skill 共用的结果生成与记录规则不在当前 Skill 重复定义。
+
+Target-scoped formal result 在自己的 `references` / dependency 区域记录**当前 local target 的 `target_record` 完整绝对路径**。不要固定保存某个更早 Step 的 target path 作为所有后续结果的统一 lineage 字段；更早 ancestry 通过 current target record 的 `source_target_records` 逐级恢复。
+
+例如：
+
+```yaml
+target_id: target_001
+references:
+  target_record: /absolute/path/to/current/targets/target_001.yaml
+```
+
+`target_id` 可以留在当前 result 内用于局部阅读，但不能作为跨 Skill identity。
+
+Target record 是 lineage support record，不因为创建就自动成为 project-result-index entry；除非当前结果 owner 有特殊理由明确登记。
 
 正式结果已经保存实际文件完整路径时，可以沿这些路径恢复对应工作目录和实际执行文件；不为了“结果自包含”把低价值、容易从实际文件恢复的信息全部复制进结果记录。
 
@@ -100,6 +143,8 @@ legacy/  # Legacy executable/runtime material
 
 说明无法自动判断且会影响科学正确性的歧义，以及确认前禁止进行的动作。
 
+如果用户明确要求保留多个合理 strategy 作为后续独立比较，不强行压成一个 target；按实际科学对象关系建立多个 branches。不要因为存在多个理论候选就默认自动 branch。
+
 # Self-check
 
 - [ ] 当前 Skill 是 Agent guide，不是 parser/workflow gate；
@@ -118,4 +163,10 @@ legacy/  # Legacy executable/runtime material
 - [ ] 没有把 Task Sheet 等同于整个科研任务；
 - [ ] 当前 Skill 的 prerequisite 按真实上游对象 / 状态定义，而不是按“必须出现在当前 Task Sheet 的更早编号 Step”定义；
 - [ ] 当前 Task Sheet 只覆盖局部流程时，没有因此忽略真实 prerequisite，也没有为了流程完整补入无关 Step；
+- [ ] 当前 Skill 如使用 `target`，每个 actual local target 都有 current target record；
+- [ ] local `target_id` 没有被当作跨 Skill identity；
+- [ ] `source_target_records` 只记录真实形成 current object 的直接 source targets，支持 branch / merge，没有固定回指某个 Step；
+- [ ] target-scoped formal result 的 `references` / dependency 区域记录 current `target_record` 完整路径；
+- [ ] validation-only target 没有改写被检查 source target / source map identity；
+- [ ] 不使用 target 的 Stage 4 run unit / Stage 5 plan item 等对象没有被强制 target 化；
 - [ ] 没有把 `evals/`、`tools/` 或 `legacy/` 当成 MD Workflow Stage Skill root。
