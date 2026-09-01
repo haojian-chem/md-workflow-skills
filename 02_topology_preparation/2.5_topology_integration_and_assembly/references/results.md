@@ -24,6 +24,8 @@
 
 `references` 记录本次拓扑整合实际使用的上游 / 外部正式文件，并作为当前结果记录内部的文件引用。
 
+当前 2.5 工作项消费的前置正式结果可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确允许使用的正式结果；是否属于本次整合输入由适用的 2.1 拆分方案和当前 2.5 工作项确定，不以这些前置工作项是否出现在当前 Task Sheet 为判据。
+
 基础文件使用：
 
 ```yaml
@@ -33,7 +35,7 @@ references:
   MAP_1: /absolute/path/to/stage1_final_map.yaml
 ```
 
-每个 Task Sheet 指定的标准残基拓扑生成工作项使用一组 `STD_n_*`：
+当前 2.5 工作项指定并消费的每个标准残基拓扑生成正式结果使用一组 `STD_n_*`：
 
 ```yaml
 STD_1_RESULT: /absolute/path/to/standard_residue_topology_result.yaml
@@ -44,9 +46,9 @@ STD_1_ITP_1: /absolute/path/to/molecule_1.itp
 STD_1_ITP_2: /absolute/path/to/molecule_2.itp
 ```
 
-其中 `n` 是当前类别中的前置工作项序号；同一正式结果包含多个 `.itp` 时，以 `STD_n_ITP_m` 逐项记录，`m` 是该正式结果中的 `.itp` 序号。
+其中 `n` 是当前类别中的输入正式结果序号；同一正式结果包含多个 `.itp` 时，以 `STD_n_ITP_m` 逐项记录，`m` 是该正式结果中的 `.itp` 序号。
 
-每个 Task Sheet 指定的 topology-linked 非标准残基参数化工作项使用一组 `LINKED_n_*`：
+当前 2.5 工作项指定并消费的每个 topology-linked 非标准残基参数化正式结果使用一组 `LINKED_n_*`：
 
 ```yaml
 LINKED_1_RESULT: /absolute/path/to/topology_linked_parameterization_result.yaml
@@ -58,7 +60,7 @@ LINKED_1_STRUCTURE: /absolute/path/to/parameterized_structure.gro
 LINKED_1_TOPO: /absolute/path/to/parameterized_topology.itp
 ```
 
-每个 Task Sheet 指定的独立非标准参数化工作项使用一组 `IND_n_*`：
+当前 2.5 工作项指定并消费的每个独立非标准参数化正式结果使用一组 `IND_n_*`：
 
 ```yaml
 IND_1_RESULT: /absolute/path/to/independent_nonstandard_parameterization_result.yaml
@@ -77,7 +79,7 @@ IND_1_STRUCTURE_MAP: /absolute/path/to/parameterized_structure.map
 DIRECT_1_TOPOLOGY: /absolute/path/to/direct_solvent_or_ion_topology
 ```
 
-同一实际文件只建立一个 reference key。实际不存在的工作项、文件或直接拓扑定义不建立占位条目。
+同一实际文件只建立一个 reference key。实际不存在的输入正式结果、文件或直接拓扑定义不建立占位条目。
 
 `references` 只展开到当前拓扑整合实际使用的正式文件；不因为引用某个上游正式结果而递归复制其完整上游依赖记录。
 
@@ -189,7 +191,7 @@ results:
     - /absolute/path/to/posre_molecule_1.itp
 ```
 
-`target_id` 直接使用当前 Task Sheet 中的 `target_id`。
+`target_id` 使用当前 2.5 工作项处理对象的正式 `target_id`；该值可以由当前 Task Sheet 直接记录，也可以从当前工作项明确引用的 2.1 拆分方案 / 上游正式结果定位，不要求其原始定义与 2.5 位于同一 Task Sheet。
 
 ## 项目结果索引登记
 
