@@ -40,7 +40,7 @@ Manager 不为了“全面了解”预读科研 Skills、结果索引、Legacy r
 
 # Project initialization
 
-- 建立 Lightweight records；
+- 建立当前项目记录；
 - 可以建立 planning index 已定义的稳定 Stage/Step 基础目录；
 - 不建立 `<base_work_directory>/<task_id>/`；
 - 不建立 Legacy project_state / Workstream / route / event / runtime task-result。
@@ -73,7 +73,9 @@ Manager 不为了“全面了解”预读科研 Skills、结果索引、Legacy r
 - 基础目录；
 - stage-specific planning mode。
 
-不得加入 `conditional` / scientific applicability；不得预读具体科研 Skill、预先执行科学判断或查询全部 reuse。
+Task Sheet 只覆盖用户当前任务实际范围，不要求完整 Workflow 或完整 Stage。局部任务可以从中间 Step 开始，也可以直接消费其它任务已经形成的正式结果。
+
+不得加入 `conditional` / scientific applicability；不得预读具体科研 Skill、预先执行科学判断或查询全部 reuse。只有用户明确要求完整 Stage 范围时，才按 planning index 的完整 Stage planning 规则展开。
 
 # Task Sheet
 
@@ -92,18 +94,26 @@ Manager 不为了“全面了解”预读科研 Skills、结果索引、Legacy r
 
 ### 1.x <Step 名称>
 
-状态：待执行
+状态：未完成
 
 对象：
-<已知对象或“待前序环节确定”>
+<已知对象或当前仍需确定的对象>
 
 工作目录：
 `<project_root>/<base_work_directory>/T001/`
 ```
 
+普通任务项状态统一使用：
+
+```text
+未完成
+已完成
+已终止
+```
+
 Manager 写入任务专属目录路径，但不创建该目录。
 
-Stage 4/Stage 5 等已经冻结特殊 Task Sheet 内部结构时，按 planning index / Stage architecture 记录相应轻量入口，不由 Manager 展开科学细节。
+Stage 3/Stage 4/Stage 5 等具有特殊 Task Sheet 内部结构时，按 planning index / current Stage architecture 记录相应轻量入口，不由 Manager 展开科学细节。
 
 # Handoff to Task Execution Agent
 
@@ -148,4 +158,6 @@ Manager
 - [ ] 未创建 Workstream / route / event / runtime task-result；
 - [ ] 未预读全部科研 Skills；
 - [ ] planning index 未包含 scientific applicability；
+- [ ] 没有为了流程完整把局部任务扩展成完整 Stage；
+- [ ] 普通任务项状态只使用 `未完成 / 已完成 / 已终止`；
 - [ ] 已完成一次性交接所需 Task Sheet。
