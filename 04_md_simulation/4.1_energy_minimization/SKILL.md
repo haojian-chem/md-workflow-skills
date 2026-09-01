@@ -97,7 +97,7 @@ em.N.tpr
 -deffnm em.N
 ```
 
-其余线程数、wall-clock cap、CPU/GPU 资源选项和执行方式不在本 Skill 中固定。生成脚本时由父级 Stage 4 读取 `references/execution_preferences.md`，并结合当前硬件、GROMACS build、当前 Task / 用户明确要求确定实际命令。
+其余线程数、wall-clock cap、CPU/GPU 资源选项和执行方式不在本 Skill 中固定。生成脚本时由父级 Stage 4 读取 `references/execution_preferences.md`，并结合当前硬件、GROMACS build、当前 Task Sheet / 用户明确要求确定实际命令。
 
 如果实际使用 `-maxh`，它只限制本次 `mdrun` 的 wall-clock，不是 scientific completion criterion；是否完成仍由实际 EM convergence 与 validation 判断。
 
