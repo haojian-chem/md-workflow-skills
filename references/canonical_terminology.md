@@ -90,14 +90,14 @@ Scope / distinction
 **Canonical term:** `target_record`  
 **Preferred expression:** `target_record`  
 **Definition:** 为某个 local target 建立的独立 YAML 记录；其完整绝对路径是跨 Skill 引用该 target 的正式接口。target record 至少记录当前 local `target_id`、直接上游 `source_target_records` 和简明 `description`。  
-**Scope / distinction:** 每个使用 `target` 的 Skill / 当前工作项都为自己的 local target 建立 target record。一个 target record 可以有 0、1 或多个 `source_target_records`，因此 target lineage 可以表示初始对象、一对一演化、分支与合流。target record 只记录 target identity / lineage，不替代当前 Skill 的正式科学结果；详细共享规则见 `references/target_lineage_rules.md`。
+**Scope / distinction:** 每个使用 `target` 的 Skill / 当前工作项都为自己的 local target 建立 target record。一个 target record 可以有 0、1 或多个 `source_target_records`，因此 target 演化关系可以表示初始对象、一对一演化、分支与合流。target record 只记录 target identity / lineage，不替代当前 Skill 的正式科学结果；详细共享规则见 `references/target_lineage_rules.md`。
 
 ### target lineage
 
 **Canonical term:** `target lineage`  
-**Preferred expression:** target lineage  
+**Preferred expression:** target 演化关系  
 **Definition:** 由 target records 及其 `source_target_records` 关系形成的有向无环对象演化图，用于恢复不同 Skill 中 local targets 的直接来源、分支与合流关系。  
-**Scope / distinction:** target lineage 不要求是一条从 1.3 开始的单链，也不把任何固定 Step 当成所有后续 target 的唯一根引用。一个后续 target 可以由多个 source targets 合流形成；同一个 source target 也可以因不同策略产生多个后续 targets。Stage 4 formal run unit、Stage 5 analysis plan item 等已有独立 execution identity 且未使用 `target` 的对象，不强制纳入 target lineage。
+**Scope / distinction:** target 演化关系不要求是一条从 1.3 开始的单链，也不把任何固定 Step 当成所有后续 target 的唯一根引用。一个后续 target 可以由多个 source targets 合流形成；同一个 source target 也可以因不同策略产生多个后续 targets。Stage 4 formal run unit、Stage 5 analysis plan item 等已有独立 execution identity 且未使用 `target` 的对象，不强制纳入 target 演化关系。
 
 ### main Skill
 
@@ -140,6 +140,13 @@ Scope / distinction
 **Preferred expression:** `component_id`  
 **Definition:** 结构准备 1.2 在一个 model 的正式 `classification_result.yaml` 中为最终 component 物化的稳定、不透明身份标识。该 component 作为直接父级拥有其 `residues`，并使 component 与成员 residue 能在后续选择、结构映射和 topology preparation 中持续引用。  
 **Scope / distinction:** `component_id` 在当前 model 的正式结果中唯一；它不是 CCD component ID、residue name、PDB `chain_id` 或其它运行时 chain 编号。下游 Skill 应直接消费正式结果或 mapping 中已有的 `component_id`，不得根据 residue name、chain 组织或当前空间关系自行重建其值。
+
+### source residue label
+
+**Canonical term:** `source residue label`  
+**Preferred expression:** 原始结构残基标签  
+**Definition:** 执行智能体与用户沟通时，用于把内部稳定 residue identity 映射回用户熟悉的原始结构表示；默认由 1.2 正式 `classification_result.yaml` 中对应 residue 保存的 `source_chain_id + source_resid + source_residue_name` 形成。  
+**Scope / distinction:** 原始结构残基标签是用户可见展示层概念，不是新的稳定 identity，也不替代内部 `component_id + residue_id`。后续结构发生 chain / resid 重编号或 residue name 改名时，用户沟通仍默认使用原始结构残基标签作为主称呼；当前结构标签只在有解释价值时补充。原始标签不能唯一定位时，再增加 model / source structure 等上下文，必要时最后补内部 ID。详细用户沟通规则见 `references/user_communication_rules.md`。
 
 ### topology-linked
 
