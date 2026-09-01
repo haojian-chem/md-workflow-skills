@@ -71,6 +71,64 @@ Stage-specific 内部对象如有不同状态模型，以对应 current owner �
 
 同样，不得因为当前 Task Sheet 没有包含某个后续 Step，就为“流程完整”自动补入与当前执行范围无关的工作。
 
+## 执行范围确认
+
+执行 Agent 必须区分：
+
+```text
+用户要执行什么
+→ 执行范围
+
+在已确认范围内具体怎样实现
+→ scientific / technical execution detail
+```
+
+执行范围至少包括当前工作实际涉及的：
+
+- Task Sheet / 当前任务项 / Step / capability；
+- 需要处理的具体对象、source target、residue / component / trajectory 等对象集合与范围；
+- 当存在多个候选对象时，是处理其中哪一个、哪些或全部；
+- 用户是否要求把当前工作扩展到额外对象、额外 Step 或额外分析范围；
+- 用户明确要求保留多个 alternative treatment / strategy 作为独立后续对象时，需要保留哪些分支。
+
+执行范围可以由以下信息共同明确：
+
+1. 用户当前明确指令；
+2. 当前 Task Sheet 已经明确记录且仍有效的工作范围；
+3. 当前科研任务中被当前 Task Sheet 明确引用、已经确认且仍适用的前序决定。
+
+如果这些信息能够把当前执行范围唯一确定，直接使用，不为已经明确的范围重复询问。
+
+如果用户当前指令本身不完整、含糊，且结合当前 Task Sheet / 明确前序决定后仍存在两个或以上**实质不同的执行范围**，必须先向用户确认，不得根据“更常见”“更合理”“离当前对象更近”“默认通常这样做”或 Agent 自己的科研偏好选择其中一个范围。
+
+范围未确认前允许做只读核对，以便：
+
+- 定位当前 Task Sheet 和候选对象；
+- 列出可能的处理范围；
+- 找出导致歧义的具体信息；
+- 向用户提出清楚、尽量一次性的确认问题。
+
+范围未确认前不得：
+
+- 创建新的正式 target / target record；
+- 修改当前 Task Sheet 的执行范围或状态；
+- 修改结构、topology、trajectory、参数文件或其它科研对象；
+- 启动依赖该范围决定的实质计算 / 模拟 / 分析；
+- 选择并物化会排除其它合理范围的 strategy branch；
+- 发布正式结果。
+
+**身份 grounding 与执行范围决定不得混淆。** 如果用户已经明确了要处理的对象范围，只是省略了可以从正式结果唯一补足的 identity 信息，例如一个 residue 描述只能唯一映射到一个既有 `component_id + residue_id`，Agent 可以直接完成 grounding，不需要再次询问。反之，如果省略的信息会改变“处理哪些对象 / 处理多少对象 / 是否扩展范围”，即使 Agent 认为某个选择最合理，也必须先确认。
+
+同样，执行范围确认不意味着所有技术细节都必须询问用户。范围明确后：
+
+- current Skill 已定义科学 / 技术判据且现有 evidence 能唯一支持处理方式 → Agent 按 Skill 直接判断；
+- 当前 Skill 允许 Agent 根据实际环境选择实现方式，且这些选择不改变已确认执行范围或科学含义 → Agent 自主处理；
+- 只有剩余歧义会改变科学含义、结果解释或 current Skill 明确要求用户决定时，才再次向用户确认。
+
+用户明确说“按当前 Task Sheet 执行”“继续当前已规划工作”等，且当前 Task Sheet 自身的对象和范围已经唯一闭合时，视为已确认当前范围；不得机械再次询问。如果 Task Sheet 中仍存在 placeholder、多个未区分候选对象或其它范围歧义，则仍须先确认。
+
+用户最新明确指令如果与已有 Task Sheet 范围冲突，不静默选择其中一方。能够唯一理解为用户明确修改范围时按最新指令维护计划；仍有歧义时先确认，再改变 Task Sheet 或执行对象。
+
 ## 科研任务级科学上下文
 
 用户已经明确给出的科学选择和科研任务级设置，在当前 Skill 真正需要时直接使用，并允许后续真正需要该信息的 Skill 再次核对。
@@ -126,6 +184,8 @@ source_target_records
 
 Stage 4 formal run unit、Stage 5 analysis plan item 等已经由对应 owner 定义其它 execution identity、且 current Skill 并未使用 `target` 的对象，不因为全局统一而强制建立 target record。
 
+Target record 只在当前执行范围已经明确后建立。不能为了“先占位”而在范围仍有用户意图歧义时创建多个候选 target records。
+
 ## Task execution loop
 
 Task Execution Agent 持续持有当前 Task Sheet，并按当前实际对象推进。
@@ -134,8 +194,12 @@ Task Execution Agent 持续持有当前 Task Sheet，并按当前实际对象推
 
 ```text
 读取目标 Task Sheet
-→ 确定当前任务项 / 对象
+→ 确定当前任务项
 → 读取当前需要的 Stage / Step / capability Skill
+→ 结合用户当前指令 + 当前 Task Sheet + 明确前序决定解析执行范围
+  ├─ 范围有歧义 → 只读核对 → 向用户确认 → 回到范围解析
+  └─ 范围唯一明确 → 继续
+→ 确定当前实际对象
 → 当前对象为 target 时建立 / 定位 current target_record 与 source_target_records
 → 定位当前 Step 明确要求的 prerequisite / 上游正式输入
 → 按当前 Skill / Stage 规则判断 reuse
@@ -164,6 +228,8 @@ Task Execution Agent 可以根据实际结果或用户要求维护尚未完成�
 
 已经实际执行并形成有意义执行历史的内容不得为了整理计划而静默删除。
 
+执行范围尚未确认时，不把 Agent 自己的范围推断写入 Task Sheet 当作既成计划。只有用户范围已经明确，或用户明确授权按当前 Task Sheet 的既有范围执行时，才据实际结果维护尚未完成计划。
+
 ## Manager boundary
 
 Manager current entry：
@@ -191,9 +257,10 @@ Manager 可以在 Task Sheet 中记录未来路径，但不提前创建 task-spe
 真正进入当前工作时：
 
 ```text
-先按当前 Skill 的 reuse 规则判断
-├─ 可直接复用 → 不创建无用空目录
-└─ 需要本地执行 → 创建当前 task-specific directory
+先确认当前执行范围
+→ 再按当前 Skill 的 reuse 规则判断
+   ├─ 可直接复用 → 不创建无用空目录
+   └─ 需要本地执行 → 创建当前 task-specific directory
 ```
 
 Stage-specific directory / index 组织以实际拥有该职责的 current Stage / Step / capability owner 为准。
@@ -210,6 +277,8 @@ Stage-specific directory / index 组织以实际拥有该职责的 current Stage
 信息不足 → 当前用户可见 Agent 向用户确认
 用户明确要求重做 / 对照 → 跳过自动复用
 ```
+
+Reuse assessment 发生在当前执行范围已经明确之后。不得用“发现了一个可复用结果”反向替用户决定当前究竟要处理哪个对象或范围。
 
 不得仅根据目录存在、文件名相同或 Task Sheet 名称相似自动复用。
 
@@ -242,6 +311,8 @@ Task Execution Agent 不默认：
 - 为了寻找潜在 reuse 而无边界遍历项目。
 
 当前 Step 明确依赖某张前序 Task Sheet 或某个 prerequisite 时，可以直接读取该相关记录；这不等于扫描全部历史 Task Sheets。
+
+为了确认执行范围，可以对当前 Task Sheet、被明确引用的前序 Task Sheet以及当前候选对象做最小必要的只读检查；不得把“范围确认”当作理由无边界扫描项目。
 
 需要理解当前接口时，可以读取直接相关的外部 Skill；读取不改变其内容 owner。
 
