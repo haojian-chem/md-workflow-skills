@@ -25,9 +25,9 @@ Stage-specific 的科学规则、计划调整方式、execution object、validat
 
 - `task_index.md`：Task Sheet 导航和状态；
 - `tasks/Txxxx.md`：一个有界执行范围的 Task Sheet，保存当前目标、计划、进度和最小恢复上下文；
-- `project_result_index.md`：跨 Task Sheet / 跨对话的正式结果检索入口，不保存当前执行状态。
+- `project_result_index.md`：跨 Task Sheet / 跨科研任务 / 跨对话的正式结果检索入口，不保存当前执行状态。
 
-一个科研任务可以由多张 Task Sheet 共同承载。`Txxxx` 标识当前 Task Sheet，不等同于“整个科研任务”的永久身份。为了控制单张任务单的上下文规模、隔离已经废弃或错误的方案、或按用户要求拆分执行，可以在同一科研任务内建立新的 Task Sheet 继续后续工作。
+一个科研任务可以由多张 Task Sheet 共同承载。`Txxxx` 标识当前 Task Sheet，不等同于“整个科研任务”的永久身份。为了控制单张 Task Sheet 的上下文规模、隔离已经废弃或错误的方案、或按用户要求拆分执行，可以在同一科研任务内建立新的 Task Sheet 继续后续工作。
 
 Task Sheet 状态：
 
@@ -49,7 +49,7 @@ Task Sheet 状态：
 
 - `未完成`：当前 Task Sheet 仍保留该任务项，且其当前职责尚未闭合；
 - `已完成`：当前 Task Sheet 中的该任务项已经按其 current Skill 完成；
-- `已终止`：该任务项已经进入执行历史，但当前 Task Sheet 不再继续执行它；必须能够追溯终止原因。具体何种情形可终止，由当前 Skill、Stage-specific 规则或实际任务决定。
+- `已终止`：该任务项已经进入执行历史，但当前 Task Sheet 不再继续执行它；必须能够追溯终止原因。具体何种情形可终止，由当前 Skill、Stage-specific 规则或当前执行情况决定。
 
 Stage-specific 内部对象如有不同状态模型，以对应 current owner 为准。
 
@@ -71,11 +71,11 @@ Stage-specific 内部对象如有不同状态模型，以对应 current owner �
 
 同样，不得因为当前 Task Sheet 没有包含某个后续 Step，就为“流程完整”自动补入与当前执行范围无关的工作。
 
-## User decisions and task-level scientific context
+## 科研任务级科学上下文
 
-用户已经明确给出的科学选择和任务级设置，在当前 Skill 真正需要时直接使用，并允许后续真正需要该信息的 Skill 再次核对。
+用户已经明确给出的科学选择和科研任务级设置，在当前 Skill 真正需要时直接使用，并允许后续真正需要该信息的 Skill 再次核对。
 
-例如力场、参数定义来源、pH、方法选择或其它会被多个环节消费的任务级信息：
+例如力场、参数定义来源、pH、方法选择或其它会被多个环节消费的科研任务级信息：
 
 1. 当前 Skill 先从当前 Task Sheet、相关前序 Task Sheet、已有正式项目记录、可追溯执行记录 / 日志、当前对话上下文和用户明确决定中确认实际采用值；
 2. 已有信息能够唯一确定时直接使用，不重复询问；
@@ -95,7 +95,7 @@ Stage-specific 内部对象如有不同状态模型，以对应 current owner �
 
 Task Execution Agent 不需要每次执行都预读该文件；当用户表述、Task Sheet、上下游 Skill 或结果记录中的称呼可能导致 execution object、artifact、state 或科学判断对象混淆时，按需读取并以其中的 canonical terminology 解释当前对象。
 
-用户的简称、口语和临时称呼只作为当前上下文输入，由 Agent 结合实际任务理解；不要为这些表达建立固定 alias 映射。正式 Task Sheet、报告和结果记录在涉及已登记的跨 Skill 概念时，采用该 reference 的 `Preferred expression`。
+用户的简称、口语和临时称呼只作为当前上下文输入，由 Agent 结合实际科研任务理解；不要为这些表达建立固定 alias 映射。正式 Task Sheet、报告和结果记录在涉及已登记的跨 Skill 概念时，采用该 reference 的 `Preferred expression`。
 
 只属于单个 Stage / Step / capability 的局部术语仍由对应 Skill 定义；仓库级 terminology reference 不接管具体科学规则或局部命名。
 
@@ -134,7 +134,7 @@ Task Execution Agent 可以根据实际结果或用户要求维护尚未完成�
 
 如果当前 Stage 不设置 Stage main Skill，则不为跨 Step 推进额外制造 synthetic Stage owner。Task Execution Agent 根据当前 Task Sheet、当前 Step 的正式结果 / input contract、明确 prerequisite、用户要求和实际执行证据维护尚未完成的后续计划；各 Step 仍只定义自己的科学职责和输入输出接口。
 
-已经实际执行并形成有意义任务历史的内容不得为了整理计划而静默删除。
+已经实际执行并形成有意义执行历史的内容不得为了整理计划而静默删除。
 
 ## Manager boundary
 
@@ -144,7 +144,7 @@ Manager current entry：
 00_manager/SKILL.md
 ```
 
-Manager 负责 Task Sheet 定位 / 创建、初始规划、用户明确要求时的重新规划，以及项目级 Task Sheet 导航整理。一个更大的科研任务是否继续使用原 Task Sheet 或拆成新的 Task Sheet，属于任务管理决策，不改变对应 scientific Skill 的科学职责。
+Manager 负责 Task Sheet 定位 / 创建、初始规划、用户明确要求时的重新规划，以及项目级 Task Sheet 导航整理。一个更大的科研任务是否继续使用原 Task Sheet 或拆成新的 Task Sheet，属于 Task Sheet 管理决策，不改变对应 scientific Skill 的科学职责。
 
 科研执行阶段由当前 scientific Skill 推进；Manager 不执行具体科研 Step，也不替当前结果 owner 判断具体 Step 的 reuse、scientific applicability、validation 或结果正确性。
 
@@ -181,9 +181,9 @@ Stage-specific directory / index 组织以实际拥有该职责的 current Stage
 用户明确要求重做 / 对照 → 跳过自动复用
 ```
 
-不得仅根据目录存在、文件名相同或任务名称相似自动复用。
+不得仅根据目录存在、文件名相同或 Task Sheet 名称相似自动复用。
 
-跨 Task Sheet 复用已有正式结果时直接引用原结果，不为了当前 Task Sheet 复制无意义副本。
+跨 Task Sheet 或跨科研任务复用已有正式结果时直接引用原结果，不为了当前 Task Sheet 复制无意义副本。
 
 如果某个 Skill 明确不设置 reuse，或某 Stage 定义了不同的 reuse 组织方式，以该 current Skill / Stage Skill 为准。
 
