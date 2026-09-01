@@ -253,6 +253,27 @@ Task Execution Agent 不需要每次执行都预读该文件；当用户表述�
 
 只属于单个 Stage / Step / capability 的局部术语仍由对应 Skill 定义；仓库级 terminology reference 不接管具体科学规则或局部命名。
 
+## 用户可见沟通
+
+真实项目科研执行中，执行智能体的确认问题、进度说明、异常说明、对象解释和结果摘要统一读取：
+
+`references/user_communication_rules.md`
+
+该 shared reference 对所有执行智能体的**用户可见沟通**生效，不只约束 authoring discussion。
+
+核心边界：
+
+- 用户沟通以规范中文技术表达为主体；普通技术概念可以准确用中文表达时，不无必要中英文混排；
+- 软件、方法、力场、命令、选项、文件名、路径、字段名、enum、identifier 以及项目明确保留的 canonical term 按原文使用；
+- 内部处理、mapping、结果关联继续使用稳定 `component_id + residue_id`，用户可见残基主称呼默认使用 1.2 正式结果保存的原始结构字段 `source_chain_id + source_resid + source_residue_name`；
+- 当前结构中的 chain / resid / residue name 只有在解释当前文件状态确有价值时才作为补充，不替代原始结构残基标签作为默认主称呼；
+- 原始标签不足以唯一定位时，先增加 model / source structure 等上下文，仍不足时再补内部 ID；
+- 用户明确要求查看当前编号、最终结构编号或内部 ID 时按用户要求展示。
+
+这只是用户可见展示规则，不改变内部稳定 identity、target lineage、atom mapping 或正式结果 schema。
+
+科研执行进入当前对话 / 会话后，在第一次发送与真实项目执行有关的用户可见消息前读取该 reference；后续只要规则未变化且当前上下文仍保持，可以沿用，不要求每条消息重复读取。
+
 ## Target lineage
 
 当前 Skill / 当前工作项如果使用 `target` 作为 execution object，必须读取：
@@ -427,6 +448,8 @@ Task Sheet resolution 允许先读取 `task_index.md`，并在索引不足以判
 
 需要理解当前接口时，可以读取直接相关的外部 Skill；读取不改变其内容 owner。
 
+用户可见沟通属于执行期必要共享规则。首次需要向用户发送执行相关确认、进度、异常或结果摘要时读取 `references/user_communication_rules.md`；这不要求为每个科研 Step 重复加载，也不授权读取与当前对象无关的项目文件。
+
 ## Stage / Step ownership boundary
 
 职责关系为：
@@ -437,6 +460,9 @@ Task Sheet resolution 允许先读取 `task_index.md`，并在索引不足以判
 
 references/task_execution_rules.md
 → 科研执行 Skill 共用的 Task Execution 规则与科研执行入口 gate
+
+references/user_communication_rules.md
+→ 执行智能体用户可见沟通、中文技术表达与内部 residue identity → 原始结构残基标签的展示规则
 
 references/target_lineage_rules.md
 → 使用 target 的科研执行 Skill 共用的 local target / target record / lineage 机制
