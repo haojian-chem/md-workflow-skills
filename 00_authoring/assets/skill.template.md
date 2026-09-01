@@ -27,6 +27,10 @@ Task Sheet 是有界执行记录，不等同于整个科研任务。不要因为
 
 如果当前 Skill 确实存在 prerequisite，应直接定义**必须已经存在什么上游方案、正式结果、对象状态或决策**。该 prerequisite 可以由当前 Task Sheet 提供，也可以由同一科研任务的前序 Task Sheet、项目正式结果或其它可追溯记录提供；是否满足以前置对象本身为准，不以是否出现在当前 Task Sheet 为准。
 
+执行范围确认遵守 shared `task_execution_rules.md`。当前 Skill 可以定义自己如何 grounding 对象、如何判断技术实现或如何解决科学歧义，但不得把“Agent 可以判断”扩张成“Agent 可以替用户决定尚未明确的执行范围”。
+
+如果用户已经明确对象集合 / 范围，只是缺少能够从正式结果唯一补足的 identity 信息，可以直接 grounding；如果省略的信息会改变处理哪些对象、处理多少对象、是否扩展 Step / analysis scope 或是否保留多个 alternative branches，则当前 Skill 必须让 shared execution-scope confirmation gate 先闭合。
+
 如果当前 Skill / 当前工作项实际使用 `target` 作为 execution object，则必须遵守：
 
 `<relative-path>/references/target_lineage_rules.md`
@@ -69,6 +73,8 @@ source_target_records
 
 如果当前 Skill 明确不设置 reuse，直接写明 current no-reuse 语义，不增加虚构复用分支。
 
+Reuse assessment 只在当前执行范围已经明确后进行；不得因为找到某个可复用结果，反向替用户决定当前应该处理哪个对象或范围。
+
 如果 reuse 后当前工作项仍实例化自己的 local target，不把旧结果中的 `target_id` 当作当前 target identity；按 target-lineage 规则记录实际 source target record。若当前职责在 reuse assessment 后直接终止、没有实例化新的 execution target，则不要制造空 target record。
 
 # Execution guidance
@@ -80,6 +86,8 @@ source_target_records
 用户长期执行资源倾向、机器相关参数或本地运行习惯如果需要跨多个 execution Skill 复用，应评估是否集中到明确的 preference / execution reference，而不是分别硬编码进多个 scientific Skill。
 
 如果当前科学 / 技术 strategy 会让同一个 source object 产生多个需要后续独立保留的结果，说明何时建立多个 local target branches；不要自动枚举所有理论组合。若当前对象由多个 upstream target-scoped results 共同形成，说明真实 merge sources；不要仅按 Step 顺序把对象强行串成一条链。
+
+如果多个 strategy 只是当前 Skill 范围内需要按明确科学判据选择其一，则按 Skill 判据处理；只有用户意图本身未明确“是否需要保留多个 strategy 作为独立执行范围”时，才属于执行范围确认问题。
 
 # Validation
 
@@ -143,6 +151,8 @@ legacy/  # Legacy executable/runtime material
 
 说明无法自动判断且会影响科学正确性的歧义，以及确认前禁止进行的动作。
 
+不要重复定义 shared execution-scope confirmation gate；只补充当前 Skill 特有的 scope ambiguity 或 scientific ambiguity。范围尚未明确时，仅允许 shared rule 定义的只读核对，不开始依赖该范围的实质执行。
+
 如果用户明确要求保留多个合理 strategy 作为后续独立比较，不强行压成一个 target；按实际科学对象关系建立多个 branches。不要因为存在多个理论候选就默认自动 branch。
 
 # Self-check
@@ -163,6 +173,9 @@ legacy/  # Legacy executable/runtime material
 - [ ] 没有把 Task Sheet 等同于整个科研任务；
 - [ ] 当前 Skill 的 prerequisite 按真实上游对象 / 状态定义，而不是按“必须出现在当前 Task Sheet 的更早编号 Step”定义；
 - [ ] 当前 Task Sheet 只覆盖局部流程时，没有因此忽略真实 prerequisite，也没有为了流程完整补入无关 Step；
+- [ ] Skill 中的“Agent 自主判断”只适用于已确认执行范围内的科学 / 技术实现，没有替用户决定尚未明确的对象集合或执行范围；
+- [ ] 用户指令与 Task Sheet 仍存在实质不同的范围解释时，当前 Skill 会先触发用户确认，而不是采用默认范围；
+- [ ] identity grounding 与 scope selection 已区分：唯一 identity 补足可直接执行，改变对象集合 / 范围的选择必须先确认；
 - [ ] 当前 Skill 如使用 `target`，每个 actual local target 都有 current target record；
 - [ ] local `target_id` 没有被当作跨 Skill identity；
 - [ ] `source_target_records` 只记录真实形成 current object 的直接 source targets，支持 branch / merge，没有固定回指某个 Step；
