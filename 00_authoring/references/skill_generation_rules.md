@@ -98,7 +98,7 @@ references/canonical_terminology.md
 
 在对拟新增内容执行 ownership 判断之前，先判断它是否真的需要成为 Skill 的固定规则。
 
-Skill 应优先固定需要跨任务保持一致、且对职责正确性有实际价值的内容，例如：
+Skill 应优先固定需要跨 Task Sheet / 跨科研任务保持一致、且对职责正确性有实际价值的内容，例如：
 
 - 稳定的科学/技术判据；
 - 输入/输出接口和依赖语义；
@@ -113,17 +113,39 @@ Skill 应优先固定需要跨任务保持一致、且对职责正确性有实�
 - 可以继续细分出更多状态转换；
 - Agent 将来“可能需要知道怎么选”。
 
-如果某项决定可以由 Task Execution Agent 或用户根据当前上下文可靠判断，且不要求形成跨任务稳定语义、接口约束、科学判据或结果生命周期，则保留为运行时裁量，不继续把它展开成统一 decision tree、状态机、fallback 链或完整工作流。
+如果某项决定可以由 Task Execution Agent 或用户根据当前上下文可靠判断，且不要求形成跨 Task Sheet / 跨科研任务稳定语义、接口约束、科学判据或结果生命周期，则保留为运行时裁量，不继续把它展开成统一 decision tree、状态机、fallback 链或完整工作流。
 
 判断顺序：
 
 ```text
 这件事必须成为 Skill 固定规则吗？
-├─ 否 → 留给 Agent / 用户按当前任务判断；停止规则下钻
+├─ 否 → 留给 Agent / 用户按当前执行上下文判断；停止规则下钻
 └─ 是 → 再判断该规则归谁拥有
 ```
 
 因此 **rule-necessity gate 必须先于 rule-ownership gate**。一条内容即使“没有其它 owner”，也不自动意味着当前 Skill 应该把它规则化。
+
+### Task Sheet 与 scientific prerequisite
+
+Task Sheet 是一个有界执行记录，不等同于整个科研任务，也不要求投影完整 Workflow 或完整 Stage。Authoring 输入契约、前置关系和流程边界时必须区分：
+
+```text
+当前 Task Sheet 中列了哪些 Step
+≠
+当前科学 / 技术 prerequisite 是什么
+```
+
+规则：
+
+- 当前 Skill 如果存在真实 prerequisite，直接写明开始当前职责前必须已经存在的**上游方案、正式结果、对象状态、决策或其它实际条件**；
+- 不得仅因为编号上存在更早 Step，就把该 Step 是否出现在当前 Task Sheet 当作 prerequisite 判据；
+- 更早 Step 不在当前 Task Sheet，不代表其 prerequisite 可以忽略。该 prerequisite 可以由当前 Task Sheet、同一科研任务的前序 Task Sheet、项目正式结果或其它可追溯记录满足；
+- 已有前序 Task Sheet 能提供仍适用的 prerequisite 时，不为了形式完整在当前 Task Sheet 机械复制该 Step；
+- 当前执行范围只需要局部流程时，不自动补入与当前目标无关的更早或更晚 Step；
+- 如果前序方案或正式结果因对象、参数定义基础或用户决定变化而失效，应返回真正拥有该 prerequisite 的 owner 更新 / 重新形成，而不是因为换了 Task Sheet 静默绕过；
+- Task Sheet 拆分本身不构成 reuse、重新执行或重新生成上游结果的理由；这些行为仍由对应 Skill 的实际 reuse / prerequisite 规则决定。
+
+Authoring 过程中如果发现现有 Skill 把“同一 Task Sheet 中必须出现某 Step”与“必须先满足某个科学 prerequisite”混为一谈，应修正为实际 prerequisite contract，而不是简单删除前置关系。
 
 ### Terminology and writing precision
 
@@ -230,6 +252,8 @@ heavy-atom name 是否兼容
 对拟新增内容先执行 rule-necessity gate
 ↓
 只对确有必要固定的规则执行 rule-ownership gate
+↓
+检查当前 Skill 的 input / prerequisite contract 是否按真实上游对象或状态定义，而不是按当前 Task Sheet 中是否出现更早编号 Step 定义
 ↓
 先完成 main SKILL.md 主线，并显式引用 references/task_execution_rules.md
 ↓
@@ -434,7 +458,11 @@ Skill 当前是什么状态
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
 - [ ] 没有把 shared Task Execution reference、result-generation reference 或 canonical terminology 误建成独立 Skill / dispatcher；
-- [ ] 没有把可由 Agent / 用户基于当前任务可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
+- [ ] 没有把可由 Agent / 用户基于当前执行上下文可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
+- [ ] 没有把一张 Task Sheet 等同于整个科研任务或完整 Stage / Workflow；
+- [ ] 当前 Skill 的 prerequisite 按真实上游方案 / 结果 / 状态 / 决策定义，而不是按更早编号 Step 是否出现在当前 Task Sheet 定义；
+- [ ] 前序 Task Sheet 已满足仍适用 prerequisite 时，没有为了流程完整在当前 Task Sheet 机械复制前序 Step；
+- [ ] 当前 Task Sheet 只覆盖局部范围时，没有因此忽略真实 prerequisite，也没有补入与当前目标无关的步骤；
 - [ ] 被撤回的伪 Skill 已删除，但正确的 Stage / Step 目录仍保留；
 - [ ] archive 没有被加入默认 startup/read list；
 - [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
@@ -451,7 +479,10 @@ Skill 当前是什么状态
 长而同属当前职责 → reference
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
-可由 Agent / 用户基于当前任务可靠判断、无需跨任务稳定的策略 → 不固化为 Skill 规则
+可由 Agent / 用户基于当前执行上下文可靠判断、无需跨 Task Sheet / 跨科研任务稳定的策略 → 不固化为 Skill 规则
+Task Sheet → 有界执行记录，不等同于整个科研任务、完整 Stage 或完整 Workflow
+scientific prerequisite → 按真实上游方案 / 结果 / 状态 / 决策定义，不按当前 Task Sheet 中是否出现更早编号 Step 定义
+前序 Task Sheet 已满足 prerequisite → 显式消费，不机械复制前序 Step
 跨 Skill 正式术语 → references/canonical_terminology.md
 术语规范从 authoring discussion 开始生效；用户口语只作为输入，Agent 输出回到 canonical terminology
 同一对象 → 一个 canonical term；discussion / freeze / Skill / references 保持一致
