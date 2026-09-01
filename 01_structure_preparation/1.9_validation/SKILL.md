@@ -1,6 +1,6 @@
 ---
 name: structure_preparation_validation
-description: 结构准备 1.9。对每个 target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的逐原子对应与 provenance 连续性，并生成独立验证报告。
+description: 结构准备 1.9。对每个当前 1.9 local target 的 Stage 1 final PDB 进行只读终检，逐项检查 PDB 表示、标准残基在目标力场中的定义与重原子、非标准残基与 CCD 的对应关系，以及 final map 的逐原子对应与 provenance 连续性，并生成独立验证报告。
 ---
 
 # 1.9 Structure preparation validation
@@ -15,43 +15,67 @@ Stage 1 原子映射维护规则读取：
 
 1.9 的 final PDB / final map 逐原子验证必须按该共享规则解释。
 
-本 Skill 只定义 1.9 的最终检查对象、判据、报告和结果边界。
+本 Skill 只定义 1.9 的最终检查对象、判据、target lineage、报告和结果边界。
 
 ## Purpose
 
-对当前 target 的 Stage 1 最终结构独立执行一次只读检查，形成供后续处理审阅的 `structure_preparation_validation.md`。
+对当前 1.9 local target 所检查的 Stage 1 最终结构独立执行一次只读检查，形成供后续处理审阅的 `structure_preparation_validation.md`。
 
 1.9 检查当前最终结果本身，不重新执行 1.4–1.8 的内部处理逻辑，也不在检查过程中修改、补全、删除或改名任何原子或残基。
 
 报告逐项记录实际检查结果和发现的问题。1.9 不为整个 target 生成 `PASS / FAIL`，也不根据问题数量自行决定是否进入后续阶段；是否返回上游处理或继续后续工作，由当前 Task Execution Agent 与用户根据报告中的实际结果决定。
 
-每个 target 独立检查、独立生成报告。
+每个 current 1.9 target 独立检查、独立生成报告。
+
+## Target object and lineage
+
+1.9 虽然只读，但当前工作项仍使用 `target` 作为检查对象，因此每个 actual 1.9 local target 建立自己的：
+
+```text
+targets/target_xxx.yaml
+```
+
+正常情况下，当前 1.9 target record 的 `source_target_records` 包含它实际检查的 1.8 final target record。
+
+注意：
+
+- `stage1_final_map.yaml.target_record` 指向的是生成该 final map 的 **1.8 target record**；
+- `structure_preparation_validation.md` 的 `references.target_record` 指向的是 **当前 1.9 target record**；
+- 1.9 current target record 通过 `source_target_records` 指向对应 1.8 target record。
+
+因此二者不应强行要求相同。1.9 没有修改结构或 map，所以不会把 final map 的 `target_record` 改写成 1.9 target。
+
+当前 1.9 `target_id` 只在当前工作项内解释，不与 1.8 或其它上游 target 编号建立 identity。
 
 ## Object requirements
 
-每个 target 至少需要：
+每个 current 1.9 target 至少需要：
 
 - 1.8 正式 `stage1_final.pdb`；
 - 1.8 正式 `stage1_final_map.yaml`；
+- `stage1_final_map.yaml.target_record` 指向的 1.8 target record；
+- 当前 1.9 target record，且其 `source_target_records` 能正确定位当前被检查的 1.8 target；
 - `stage1_final_map.yaml.original_structure` 指向的原始结构；
-- 与当前 target 对应 model 的 1.2 正式 `classification_result.yaml`；
-- 当前 target 的 1.5 正式 `structure_completeness_report.yaml`；
+- 与当前 final structure 对应 model 的 1.2 正式 `classification_result.yaml`；
+- 当前 lineage 中实际用于 completeness evidence 的 1.5 正式 `structure_completeness_report.yaml`；
 - 当前指定目标力场中用于标准残基检查的实际 `*.rtp` 文件；
 - 当前非标准残基检查实际采用的 CCD 文件。
 
-这些正式输入只需要共同对应当前 target，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 final structure、classification、completeness report 与当前 validation 写在同一 Task Sheet。
+这些正式输入只需要共同对应当前检查对象，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 final structure、classification、completeness report 与当前 validation 写在同一 Task Sheet。
 
 `classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `topology_linked_checks[]`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
 `stage1_final_map.yaml` 用于把 final PDB 中每个实际重原子对应到原始结构中的 atom serial（若存在），并保持 1.2 已物化的 `component_id + residue_id` 与 Stage 1 operation history。1.9 只验证该 final PDB / map 结果，不修改 map。
 
-如果目标力场尚未唯一确定，或当前非标准 residue 的 CCD reference 无法从 1.2 / 1.5 正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
+需要恢复当前 final target 经历过哪个 1.4 / 1.5 / 1.6 / 1.7 branch 时，沿 1.8 target record 的 `source_target_records` 逐级追溯；不得按 `target_id` 编号或固定 Step 路径猜测。
+
+如果目标力场尚未唯一确定，或当前非标准 residue 的 CCD reference 无法从当前 lineage 中适用的 1.2 / 1.5 正式结果中可靠定位，不自行选择新的参考文件。先向用户说明缺失的判据，待检查依据明确后再完成对应检查。
 
 ## No reuse
 
 1.9 **不设置 reuse**。
 
-每次实际进入 1.9，都针对当前 `stage1_final.pdb`、当前 `stage1_final_map.yaml` 和当前指定的参考文件重新执行本次检查；不通过 `project_result_index.md` 查找或复用既有 1.9 报告。
+每次实际进入 1.9，都针对当前 `stage1_final.pdb`、当前 `stage1_final_map.yaml`、当前 1.9 target lineage 和当前指定参考文件重新执行本次检查；不通过 `project_result_index.md` 查找或复用既有 1.9 报告。
 
 ## Work directory and multiple targets
 
@@ -61,16 +85,22 @@ Stage 1 原子映射维护规则读取：
 <project_root>/01_structure_preparation/09_validation/
 ```
 
-当前 Task Sheet 的每个 target 独立生成：
+当前 Task Sheet 使用：
 
 ```text
-<project_root>/01_structure_preparation/09_validation/<task_id>/<target_id>/
-└── structure_preparation_validation.md
+<project_root>/01_structure_preparation/09_validation/<task_id>/
+├── targets/
+│   ├── target_001.yaml
+│   ├── target_002.yaml
+│   └── ...
+├── target_001/
+│   └── structure_preparation_validation.md
+└── ...
 ```
 
 这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
-不建立 Task Sheet 级多-target 汇总报告。
+不建立 Task Sheet 级多-target 汇总报告。当前 Task Sheet 可以只检查上游 final targets 的一个子集；不要求 target 数量或编号与 1.8 相同。
 
 ## Reference basis
 
@@ -82,10 +112,10 @@ Stage 1 原子映射维护规则读取：
 
 ### TOPOLOGY_LINKED_NONSTANDARD / INDEPENDENT_NONSTANDARD
 
-对 `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`，沿用 1.2 / 1.5 已确定的 CCD reference。
+对 `TOPOLOGY_LINKED_NONSTANDARD` 和 `INDEPENDENT_NONSTANDARD`，沿用当前 target lineage 中适用的 1.2 / 1.5 已确定 CCD reference。
 
 - 对未被 1.4 改动、直接沿用 1.2 重原子检查依据的 residue：从 1.2 对应 residue 的 `heavy_atom_check.evidence` 读取 `{CCD_PATH_n}/XXX.cif`，并通过同一 `classification_result.yaml.references` 解析实际路径；
-- 对 1.4 处理后由 1.5 重新执行重原子检查的 residue：使用 1.5 `structure_completeness_report.yaml` 中记录的实际 evidence，并按需要通过 1.2 `classification_result.yaml.references` 解析变量。
+- 对某个 1.4 branch 处理后由对应 1.5 target 重新执行重原子检查的 residue：使用该 lineage 中对应 `structure_completeness_report.yaml` 记录的实际 evidence，并按需要通过 1.2 `classification_result.yaml.references` 解析变量。
 
 1.9 不为非标准残基重新选择 CCD，也不使用 alternate atom name 自动替代 final PDB 中实际原子名。
 
@@ -175,7 +205,8 @@ final PDB 中该残基的重原子名称及出现次数
 - final PDB 中每个 `ATOM / HETATM` serial 恰好对应一条 `current_atom_serial` 相同的 map record；
 - map 不存在 final PDB 中没有的额外 atom record；
 - `current_atom_serial` 在 map 内唯一；
-- map 的 `current_structure` 指向当前 `stage1_final.pdb`。
+- map 的 `current_structure` 指向当前 `stage1_final.pdb`；
+- map 的 `target_record` 能定位到当前 1.9 target record `source_target_records` 中实际被检查的 1.8 target record。
 
 然后逐条检查：
 
@@ -193,28 +224,42 @@ operations
 - `original_atom_serial != null` 时，该 serial 能定位到 `original_structure` 中唯一 atom；
 - `original_atom_serial` 对应原始 atom 与当前 record 的 `component_id + residue_id` 不得冲突；
 - `original_atom_serial == null` 时，`operations` 中必须存在使该 atom 在后续 Stage 1 中进入当前结构的 `ADD` operation；
-- 由 1.3 直接纳入 target 的原始 atoms 应保留 `1.3ADD`，且其 `original_atom_serial` 非空；
+- 由 1.3 直接纳入初始 target 的原始 atoms 应保留 `1.3ADD`，且其 `original_atom_serial` 非空；
 - `operations` 只能使用共享规则已定义的 Step-specific operation code，并保持实际发生顺序；
-- operation history 与能够定位到的 1.3 / 1.4 / 1.6 / 1.7 / 1.8 正式结构处理结果不得矛盾。
+- operation history 与沿当前 target lineage 能够定位到的 1.3 / 1.4 / 1.6 / 1.7 / 1.8 正式结构处理结果不得矛盾。
 
 本项不要求 final map 保留已经从当前结构删除的 atom record；删除历史通过相邻正式 map 与对应 Step 报告追溯。
 
 ## Report organization
 
-每份 `structure_preparation_validation.md` 只描述一个 target，采用固定检查顺序，但不建立额外 schema。
+每份 `structure_preparation_validation.md` 只描述一个 current 1.9 target，采用固定检查顺序，但不建立额外 schema。
 
-报告顶部至少记录本次实际使用的完整路径：
+报告顶部设置：
 
-```text
-target_id
-stage1_final.pdb
-stage1_final_map.yaml
-original_structure
-classification_result.yaml
-structure_completeness_report.yaml
-目标力场参考文件
-本次实际使用的 CCD 文件
+```markdown
+## References
+
+```yaml
+references:
+  target_record: /absolute/path/to/09_validation/T006/targets/target_001.yaml
+  stage1_final_structure: /absolute/path/to/stage1_final.pdb
+  stage1_final_map: /absolute/path/to/stage1_final_map.yaml
+  original_structure: /absolute/path/to/original_structure.pdb
+  classification_result: /absolute/path/to/classification_result.yaml
+  structure_completeness_report: /absolute/path/to/structure_completeness_report.yaml
+  force_field_reference: /absolute/path/to/forcefield.rtp
+  ccd_files:
+    - /absolute/path/to/component_1.cif
+    - /absolute/path/to/component_2.cif
 ```
+```
+
+其中：
+
+- `references.target_record` 指向当前 1.9 local target record；
+- 当前被检查的 1.8 target 由该 target record 的 `source_target_records` 定位；
+- `stage1_final_map.target_record` 仍保持其 1.8 target identity，不由 1.9 改写；
+- 实际不需要的 CCD / completeness reference 不创建占位。
 
 正文按以下章节组织：
 
@@ -251,27 +296,32 @@ chain_id + resid + residue_name
 
 1.9 的完成条件是本次规定检查已经完整执行并形成可追溯报告，而不是得到某个自动通过状态。
 
-正式结束当前 target 的 1.9 前确认：
+正式结束当前 1.9 local target 前确认：
 
+- current 1.9 target record 已唯一确定；
+- current target record 的 `source_target_records` 能定位本次实际检查的 1.8 target record；
+- `stage1_final_map.target_record` 与该实际 source 1.8 target record 一致，而不是与 1.9 current target record 强行相同；
 - 当前 `stage1_final.pdb`、`stage1_final_map.yaml`、`original_structure` 和 `classification_result.yaml` 已唯一确定；
 - `STANDARD_RESIDUE` 检查所需的目标力场参考文件已明确；
-- 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能通过当前 1.2 / 1.5 正式结果定位到实际 CCD；
+- 需要检查的 `TOPOLOGY_LINKED_NONSTANDARD` / `INDEPENDENT_NONSTANDARD` 均能通过当前 lineage 中适用的 1.2 / 1.5 正式结果定位到实际 CCD；
 - 八项检查均已按当前对象实际执行并写入报告；
 - final PDB 与 final map 的每个实际重原子已经完成一一对应及 provenance 核对；
 - 发现的问题能够定位到具体残基，涉及重原子或 mapping 时能够定位到具体原子；
 - 报告记录了本次实际使用的参考文件；
-- 1.9 没有修改 `stage1_final.pdb`、`stage1_final_map.yaml` 或任何上游正式结果；
+- 1.9 没有修改 `stage1_final.pdb`、`stage1_final_map.yaml`、任何 target record 或其它上游正式结果；
 - 报告没有生成整体 `PASS / FAIL` 或自动后续决策。
 
-满足这些结果完整性要求后，当前 1.9 可在当前 Task Sheet 中标记为 `已完成`。如果报告中的问题需要修正，按实际问题返回真正拥有该结构问题的上游步骤处理；修正后的 final result 再次进入 1.9 时重新执行检查。
+满足这些结果完整性要求后，当前 1.9 可在当前 Task Sheet 中标记为 `已完成`。如果报告中的问题需要修正，按实际问题返回真正拥有该结构问题的上游步骤处理；修正后的 final result 会形成相应的新 target lineage，之后再次进入 1.9 时重新建立当前 validation target 并执行检查。
 
 ## Official result
 
-每个 target 的 1.9 结果只有：
+每个 current 1.9 target 的结果只有：
 
 ```text
 structure_preparation_validation.md
 ```
+
+Target record 是当前 1.9 target 的 lineage support record，不自动进入项目结果索引。
 
 1.9 **不把该报告登记到**：
 
@@ -279,4 +329,4 @@ structure_preparation_validation.md
 <project_root>/00_project_records/project_result_index.md
 ```
 
-报告保留在当前 Task Sheet / target 的 1.9 工作目录中，供当前 Task Sheet 审阅和后续处理使用。
+报告保留在当前 Task Sheet / 当前 1.9 target 的工作目录中，供当前 Task Sheet 审阅和后续处理使用；其 `References.target_record` 提供当前 validation target 的正式跨 Skill 引用，进一步 ancestry 沿 `source_target_records` 恢复。
