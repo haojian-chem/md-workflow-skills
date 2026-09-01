@@ -1,6 +1,6 @@
 ---
 name: independent_nonstandard_parameterization
-description: 拓扑准备 2.4。处理 2.1 已拆分确定需要独立参数化的残基名，从同名实例中选择代表实例完成量化计算、电荷拟合与 Sobtop 参数化，并将成功参数化实例的补氢定义应用到当前处理对象全部同名实例，生成正式参数化结果。
+description: 拓扑准备 2.4。处理 2.1 已拆分确定需要独立参数化的残基名，建立当前 2.4 local target，从同名实例中选择代表实例完成量化计算、电荷拟合与 Sobtop 参数化，并将成功参数化实例的补氢定义应用到当前处理对象全部同名实例，生成正式参数化结果与 target lineage。
 ---
 
 # 2.4 Independent nonstandard parameterization
@@ -19,9 +19,17 @@ description: 拓扑准备 2.4。处理 2.1 已拆分确定需要独立参数化�
 
 2.4 直接消费 2.1 已确定的处理对象，不重新分类、重新分组或改变同名残基的参数化归属。
 
+真正执行该 processing object 时，建立当前 2.4 local target 和：
+
+```text
+targets/target_xxx.yaml
+```
+
+当前 target record 的 `source_target_records` 记录实际包含这些同名实例、并用于形成当前参数化对象的 upstream target record(s)。普通单体系路径通常来源于一个 Stage 1 final target；如果当前 2.4 processing object 明确覆盖多个 upstream structure branches，则逐项记录实际 source targets。
+
 ## 目标
 
-对当前工作项完成：
+对当前 2.4 local target 完成：
 
 ```text
 选择代表实例并建立参数化模型
@@ -38,16 +46,20 @@ description: 拓扑准备 2.4。处理 2.1 已拆分确定需要独立参数化�
 
 ## 输入与依据
 
-开始当前工作项时至少读取：
+开始当前 target 时至少读取：
 
 - 当前 Task Sheet；
+- 当前 2.4 target record；
 - 适用于当前处理对象的已完成 2.1 拆分方案；
 - 当前体系对应的正式 `classification_result.yaml`，定位当前工作项覆盖的全部同名实例及其 `component_id + residue_id`；
 - 当前处理对象对应的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
+- 上述 target-scoped Stage 1 输入实际对应的 target record(s)；
 - 当前对象补氢实际使用的 CCD 文件；不存在适用 CCD 时，使用当前结构的成键关系、价态和局部化学环境作为补氢依据；
 - 当前实际采用的力场及其它参数定义来源。
 
 这些正式结构 / 分类结果可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet。
+
+当前 target record 的 `source_target_records` 必须与 `stage1_final_map.yaml.target_record` 等实际 target-scoped 输入一致；不根据 residue name、目录、Task Sheet 或 `target_id` 猜测 source target。
 
 力场及其它参数定义来源以 2.1 方案记录为当前基线，并结合当前 Task Sheet、相关前序 Task Sheet、正式记录 / 日志、当前对话和用户已明确决定再次核对。当前工作需要而仍不能唯一确定时向用户确认。
 
@@ -59,7 +71,13 @@ description: 拓扑准备 2.4。处理 2.1 已拆分确定需要独立参数化�
 
 当前 2.4 不设置 reuse。
 
-在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都从当前体系实例中选择代表实例并完成本 Skill 规定的参数化及当前体系实例结构生成。
+在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都从当前体系实例中选择代表实例并完成本 Skill 规定的参数化及当前体系实例结构生成，同时建立当前 2.4 local target record。
+
+## Alternative parameterization branches
+
+如果 2.1 / 当前 Task Sheet / 用户明确要求对相同 source object 保留多个不同参数化 strategy 作为后续比较分支，则每个 strategy 建立独立 2.4 local target。它们可以具有相同 `source_target_records`，但各自形成独立参数化模型、量化结果、电荷、topology 与结构结果。
+
+普通执行不自动枚举多个方法分支；同一 current target 也不得同时承载 mutually exclusive parameterization strategies。
 
 ## 代表实例与参数化模型
 
@@ -77,6 +95,8 @@ parameterization_model.map
 ```
 
 二者描述同一个代表实例，并使用同一原子集合与原子顺序。
+
+`parameterization_model.map` 必须记录当前 2.4 target record，并保留实际 source map provenance。
 
 ## OPT / FREQ
 
@@ -135,9 +155,9 @@ Sobtop 生成的 `.itp` 中残基名或原子名与用于 Sobtop 的 mol2 中对
 
 ## 当前工作项全部实例的结构与 map
 
-以本次成功完成参数化的代表实例作为补氢模板，对当前工作项中的全部同名实例补氢。
+以本次成功完成参数化的代表实例作为补氢模板，对当前 target 中的全部同名实例补氢。
 
-各实例保留各自在 `stage1_final.pdb` 中的重原子坐标；模板提供已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制模板实例坐标。
+各实例保留各自在 source `stage1_final.pdb` 中的重原子坐标；模板提供已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制模板实例坐标。
 
 全部实例采用与最终 `parameterized_topology.itp` 一致的残基名、原子名和残基内原子顺序，生成：
 
@@ -146,19 +166,24 @@ parameterized_structure.gro
 parameterized_structure.map
 ```
 
-二者覆盖当前工作项中的全部同名实例。
+二者覆盖当前 target 中的全部同名实例。
 
-`parameterized_structure.map` 与代表实例的 `parameterization_model.map` 使用 Stage 2 参数化 map 的核心字段：
+`parameterized_structure.map` 与代表实例的 `parameterization_model.map` 使用 Stage 2 参数化 map 的核心字段，并在文件级记录 current target：
 
 ```yaml
-output_atom_index:
-original_atom_serial:
-component_id:
-residue_id:
-operations:
+target_record: /absolute/path/to/current/2.4/targets/target_001.yaml
+source_maps:
+  - /absolute/path/to/stage1_final_map.yaml
+
+atoms:
+  - output_atom_index:
+    original_atom_serial:
+    component_id:
+    residue_id:
+    operations:
 ```
 
-来自 `stage1_final.pdb` 的原子沿用 `stage1_final_map.yaml` 中对应记录的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新当前 `output_atom_index`。
+来自 `stage1_final.pdb` 的原子沿用对应 source map 中的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新当前 `output_atom_index`。
 
 当前工作项新增 H 建立新记录：
 
@@ -168,17 +193,23 @@ component_id + residue_id = 该 H 所属真实残基的既有身份
 operations = [2.4ADD]
 ```
 
+`source_maps` 记录实际逐原子 provenance 输入，不替代 current target record 的 `source_target_records`。
+
 ## Validation
 
 当前工作项形成正式结果前至少确认：
 
+- current target record 存在，`source_target_records` 与实际 Stage 1 source targets 一致；
 - 当前工作项全部同名实例已完成参数定义一致性检查；不存在需要通过不同残基名区分但仍被静默合并参数化的实例；
 - `parameterization_model.mol2` 与 `parameterization_model.map` 描述同一个本次成功参数化的代表实例，原子集合和原子顺序一致；
+- `parameterization_model.map.target_record` 指向 current 2.4 target record；
 - 最终采纳 OPT、FREQ 和 SP 结果已经完成对应检查，电荷拟合已形成明确选中的 `parameterization.chg`；
 - `parameterization.chg` 与代表实例参数化模型的原子顺序一一对应；
 - `parameterized_topology.itp` 的残基名、原子名、原子顺序和电荷能够与代表实例参数化模型及 `parameterization.chg` 确定对应；
 - `parameterized_structure.gro` 与 `parameterized_structure.map` 覆盖当前工作项全部同名实例，每个实例的残基名、原子名和残基内原子顺序与 `parameterized_topology.itp` 一致；
-- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，当前工作项新增 H 使用 `2.4ADD`。
+- `parameterized_structure.map.target_record` 指向 current 2.4 target record；
+- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，当前工作项新增 H 使用 `2.4ADD`；
+- formal result `references.target_record` 与上述两个 maps 的 current target reference 一致。
 
 ## 正式结果
 
@@ -202,6 +233,6 @@ parameterized_structure.gro
 parameterized_structure.map
 ```
 
-并记录当前处理残基名、本次成功参数化的代表实例、当前工作项全部实例、实际补氢依据、最终采纳的 OPT / FREQ / SP 任务路径和参数生成方法。
+并记录当前 local target、当前处理残基名、本次成功参数化的代表实例、当前工作项全部实例、实际补氢依据、最终采纳的 OPT / FREQ / SP 任务路径和参数生成方法。
 
-完成后按仓库级 Task Execution 规则更新当前 Task Sheet 工作项状态，并将 `independent_nonstandard_parameterization_result.yaml` 的完整路径登记到项目结果索引。上述七个结果文件由该正式结果记录统一定位，不在项目结果索引中分别登记。
+完成后按仓库级 Task Execution 规则更新当前 Task Sheet 工作项状态，并将 `independent_nonstandard_parameterization_result.yaml` 的完整路径登记到项目结果索引。上述七个结果文件由该正式结果记录统一定位，不在项目结果索引中分别登记；target record 不因为创建而单独登记。
