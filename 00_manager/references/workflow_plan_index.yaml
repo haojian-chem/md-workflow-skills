@@ -1,11 +1,11 @@
-schema_version: 6
+schema_version: 7
 status: active
 purpose: lightweight_manager_initial_planning_and_runtime_entry_index
 
 runtime_policy:
   manager_reads_for:
-    - new_task_initial_planning
-    - explicit_task_replanning
+    - new_task_sheet_initial_planning
+    - explicit_task_sheet_replanning
   not_for:
     - scientific_execution
     - reuse_validation
@@ -99,18 +99,26 @@ workflows:
         name: standard_residue_topology_generation
         entry: 02_topology_preparation/2.2_standard_residue_topology_generation/SKILL.md
         base_work_directory: 02_topology_preparation/02_standard_residue_topology_generation
+        prerequisite_step: "2.1"
+        prerequisite_may_be_satisfied_by_prior_related_task_sheet: true
       - id: "2.3"
         name: topology_linked_nonstandard_parameterization
         entry: 02_topology_preparation/2.3_topology_linked_nonstandard_parameterization/SKILL.md
         base_work_directory: 02_topology_preparation/03_topology_linked_nonstandard_parameterization
+        prerequisite_step: "2.1"
+        prerequisite_may_be_satisfied_by_prior_related_task_sheet: true
       - id: "2.4"
         name: independent_nonstandard_parameterization
         entry: 02_topology_preparation/2.4_independent_nonstandard_parameterization/SKILL.md
         base_work_directory: 02_topology_preparation/04_independent_nonstandard_parameterization
+        prerequisite_step: "2.1"
+        prerequisite_may_be_satisfied_by_prior_related_task_sheet: true
       - id: "2.5"
         name: topology_integration_and_assembly
         entry: 02_topology_preparation/2.5_topology_integration_and_assembly/SKILL.md
         base_work_directory: 02_topology_preparation/05_topology_integration_and_assembly
+        prerequisite_step: "2.1"
+        prerequisite_may_be_satisfied_by_prior_related_task_sheet: true
       - id: "2.6"
         name: topology_validation
         entry: 02_topology_preparation/2.6_topology_validation/SKILL.md
@@ -167,13 +175,19 @@ workflows:
     capability_catalog_mode: continuously_maintained_runtime_inventory
 
 planning_rules:
-  - preserve_defined_step_order
+  - a_task_sheet_is_a_bounded_execution_record_and_may_cover_only_part_of_a_broader_scientific_task
+  - multiple_task_sheets_may_continue_the_same_scientific_task
+  - preserve_defined_step_order_within_the_scope_actually_planned_in_the_current_task_sheet
   - defined_step_order_is_the_default_planning_order_not_a_one-instance_only_constraint
   - defined_step_ids_may_appear_multiple_times_in_a_task_sheet_when_explicit_scope_requires_repeated_execution
   - runtime_entry_fields_define_current_handoff_navigation_but_do_not_expand_manager_scientific_reads
   - structure_preparation_has_no_stage_main_skill_and_handoff_enters_the_current_planned_step_entry
   - topology_preparation_has_no_stage_main_skill_and_handoff_enters_the_current_planned_step_entry
-  - topology_preparation_2_1_through_2_5_are_the_default_initial_planning_sequence_for_full_stage2_preparation_scope
+  - topology_preparation_2_2_through_2_5_require_an_applicable_completed_2_1_setup_plan_before_execution
+  - the_required_2_1_setup_plan_may_be_recorded_in_the_current_task_sheet_or_a_prior_related_task_sheet
+  - do_not_repeat_2_1_in_every_followup_task_sheet_when_an_applicable_completed_setup_plan_is_already_explicitly_locatable
+  - if_2_2_through_2_5_are_planned_without_2_1_in_the_current_task_sheet_the_prior_applicable_2_1_setup_source_must_be_locatable
+  - topology_preparation_2_1_through_2_5_are_the_default_initial_planning_sequence_for_fresh_full_stage2_preparation_scope
   - topology_validation_2_6_is_not_automatically_added_and_is_planned_only_when_validation_is_explicitly_within_user_scope
   - md_preparation_task_sheet_uses_stage_level_entry_without_numbered_substages
   - md_preparation_runtime_has_only_the_stage_main_skill_entry
@@ -184,10 +198,10 @@ planning_rules:
   - analysis_runtime_handoff_enters_the_stage5_main_skill
   - analysis_capabilities_are_discovered_and_planned_by_stage5_runtime_not_by_manager
   - analysis_capability_inventory_is_continuously_maintained_and_has_no_fixed_completion_catalog
-  - task_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_task_sheet
-  - manager_lists_defined_steps_needed_to_cover_the_user_requested_workflow_scope
+  - task_sheet_scope_is_the_set_of_steps_or_stage_specific_plan_entries_written_into_the_current_task_sheet
+  - manager_lists_defined_steps_needed_to_cover_the_current_task_sheet_execution_scope
   - manager_does_not_evaluate_scientific_step_applicability
-  - task_execution_agent_may_remove_add_or_reorder_future_steps_or_stage_specific_plan_entries_based_on_execution_evidence_or_explicit_user_scope_change
+  - task_execution_agent_may_remove_add_or_reorder_future_steps_or_stage_specific_plan_entries_based_on_execution_evidence_or_explicit_scope_change
   - do_not_create_start_end_or_route_objects_outside_the_stage4_task_sheet_planned_run_route
   - do_not_invent_steps_for_workflows_with_undefined_step_catalogs
   - task_sheet_work_directory_is_planned_as_base_work_directory_plus_task_id_when_the_workflow_uses_step_directories
