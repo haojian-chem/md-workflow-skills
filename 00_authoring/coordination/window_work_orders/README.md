@@ -12,6 +12,6 @@
 
 ## Current work orders / follow-ups
 
-以下条目用于定位尚待对应 owner window 处理的显式 authoring work order / cross-Skill follow-up；完成后由负责窗口更新其状态，并按实际需要清理本入口。
+当前没有 active authoring work order / cross-Skill follow-up。
 
-- `STAGE1_MAIN_FOLLOWUP_FROM_1.7.md` — BACKLOG；由 1.7 authoring 发现的 Stage 1 main applicability / routing consistency finding，待后续 Stage 1 main owner window 处理。
+新的 work order 只有在确实需要多窗口显式分工时才加入本目录；对应工作完成、目标被取代或原 owner 不再存在后，应从 active 入口移除，并按 authoring archive 规则保存需要保留的历史记录。
