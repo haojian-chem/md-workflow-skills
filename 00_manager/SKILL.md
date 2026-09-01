@@ -1,20 +1,22 @@
 ---
 name: md_workflow_manager
-description: MD Workflow 的项目管理入口。负责任务定位、任务创建、初始规划、显式重新规划和项目级任务整理；通过 Task Sheet 向独立的 Task Execution Agent 交接，不执行具体科研子环节。
+description: MD Workflow 的项目管理入口。负责 Task Sheet 定位、创建、初始规划、显式重新规划和项目级 Task Sheet 整理；通过 Task Sheet 向独立的 Task Execution Agent 交接，不执行具体科研子环节。
 ---
 
 # Purpose
 
 Manager 只负责：
 
-- 定位已有任务；
-- 创建新任务；
-- 生成初始 Task Sheet 计划；
+- 定位已有 Task Sheet；
+- 创建新 Task Sheet；
+- 生成 Task Sheet 初始计划；
 - 用户明确要求时重新规划；
-- 项目级任务导航 / 整理；
-- 维护 `task_index.md` 中的任务级信息。
+- 项目级 Task Sheet 导航 / 整理；
+- 维护 `task_index.md` 中的 Task Sheet 级信息。
 
 Manager 不负责具体科研 Step 的执行、reuse、validation、方法选择或逐步 runtime state。
+
+一个科研任务可以由多张 Task Sheet 共同承载。Manager 不把“创建新的 `Txxxx.md`”自动解释为“建立新的科研任务”。
 
 ## Current runtime records
 
@@ -26,9 +28,9 @@ Manager 不负责具体科研 Step 的执行、reuse、validation、方法选择
     └── Txxxx.md
 ```
 
-- `task_index.md`：任务导航；
-- `tasks/Txxxx.md`：任务目标、动态计划、进度和最小恢复上下文；
-- `project_result_index.md`：正式结果检索入口，不保存当前任务状态。
+- `task_index.md`：Task Sheet 导航；
+- `tasks/Txxxx.md`：当前有界执行范围的目标、动态计划、进度和最小恢复上下文；
+- `project_result_index.md`：正式结果检索入口，不保存当前 Task Sheet 状态。
 
 Workstream、route、event、runtime task/result、transaction 等 Legacy records 不是默认依赖。
 
@@ -37,34 +39,36 @@ Workstream、route、event、runtime task/result、transaction 等 Legacy record
 正常 Manager 启动：
 
 1. 读取 `<project_root>/00_project_records/task_index.md`；
-2. 确定目标任务后读取对应 `tasks/Txxxx.md`。
+2. 确定目标 Task Sheet 后读取对应 `tasks/Txxxx.md`。
 
-只有创建新任务或用户明确要求重新规划时，才读取：
+如果当前 Task Sheet 明确是同一科研任务的后续拆分单，并且需要恢复某个已经完成的 prerequisite 或决策，可以读取被明确引用的前序 Task Sheet；不得因此无边界遍历全部 Task Sheets。
+
+只有创建新 Task Sheet 或用户明确要求重新规划时，才读取：
 
 `references/workflow_plan_index.yaml`
 
 默认不读取：
 
 - `project_result_index.md`；
-- 其他无关 Task Sheets；
+- 与当前工作无直接关系的其它 Task Sheets；
 - 具体科研 Skills；
 - 整个项目目录；
 - Legacy runtime / route / event records。
 
 `workflow_plan_index.yaml` 同时保存 current runtime entry 的轻量导航信息；这些 `stage_runtime_entry` / `entry` 字段用于后续 handoff，不要求 Manager 在初始规划时读取对应科研 Skill。
 
-## Task location
+## Task Sheet location
 
 优先级：
 
-1. 用户明确指定 Task ID；
-2. 用户给出可唯一匹配的任务名称；
-3. 当前 Manager 对话已经明确绑定任务；
+1. 用户明确指定 Task Sheet ID；
+2. 用户给出可唯一匹配的 Task Sheet 名称；
+3. 当前 Manager 对话已经明确绑定 Task Sheet；
 4. 仍无法唯一确定时向用户确认。
 
-不得为了猜测任务而遍历所有 Task Sheets。
+不得为了猜测当前 Task Sheet 而遍历全部历史记录。
 
-任务级状态：
+Task Sheet 状态：
 
 ```text
 未完成
@@ -72,42 +76,54 @@ Workstream、route、event、runtime task/result、transaction 等 Legacy record
 已终止
 ```
 
-## New-task boundary
+## New Task Sheet boundary
 
-检查、解释、排错、重新查看已有结果、继续已有 Step、在已有任务内重做某个 Step 默认不创建新任务。
+以下情况通常继续使用当前 Task Sheet：
 
-只有新的独立工作目标，或用户明确要求另建任务时，才创建新 Task Sheet。
+- 当前执行范围仍然清晰且上下文规模合理；
+- 只是检查、解释、排错或继续当前 Task Sheet 中已经规划的工作；
+- 当前计划没有因为大量废弃/错误方案而失去可恢复性。
 
-新 Task ID 使用当前项目下一个可用 `TNNN`。
+以下情况可以为**同一个科研任务**建立新的 Task Sheet：
+
+- 当前执行范围需要拆分以控制单张任务单的上下文规模；
+- 需要把已经废弃或错误的方案与后续有效执行上下文隔离；
+- 当前科研任务进入新的有界执行段，使用新 Task Sheet 更利于恢复；
+- 用户明确要求新建 Task Sheet。
+
+新的独立科研目标同样可以建立新的 Task Sheet，但“新 Task Sheet”和“新科研任务”不是同义概念。
+
+新 Task Sheet ID 使用当前项目下一个可用 `TNNN`。如果它继续同一科研任务，并且当前执行依赖前序 Task Sheet 的正式结果、prerequisite 或决策，应在新 Task Sheet 的最小恢复上下文中保留可定位的前序来源。
 
 创建时：
 
 1. 在 `task_index.md` 登记；
 2. 创建 `tasks/Txxxx.md`；
-3. 根据用户范围和 `workflow_plan_index.yaml` 写入初始计划；
+3. 根据当前执行范围和 `workflow_plan_index.yaml` 写入初始计划；
 4. 普通 Step 只记录未来 task-specific 工作目录路径，不创建目录。
 
 ## Initial planning
 
 Manager 规划只回答：
 
-> 为覆盖用户当前提出的工作范围，初始 Task Sheet 需要列出哪些已定义 Step 或 stage-specific plan structure？
+> 为覆盖当前这张 Task Sheet 的执行范围，需要列出哪些已定义 Step 或 stage-specific plan structure？
 
-Task Sheet 不要求覆盖完整 Workflow 或完整 Stage。用户当前任务可以只对应一个 Stage 的局部范围、从中间 Step 开始，或只使用其它任务已经形成的正式结果完成当前工作。
+Task Sheet 不要求覆盖完整 Workflow 或完整 Stage。它可以只承载一个科研任务的局部执行段，但不能因为拆单而跳过 scientific Skill 已明确规定的 prerequisite。
 
 Manager：
 
-- 只围绕用户当前提出的工作范围规划，不为了流程完整补入整个 Stage；
+- 只围绕当前 Task Sheet 的执行范围规划，不为了流程完整补入整个 Stage；
 - 使用 planning index 的顺序、名称、基础目录和明确的 planning mode；
+- 当当前 Task Sheet 规划从某个中间 Step 开始时，确认其结构性 prerequisite 已由当前或被明确引用的前序 Task Sheet 提供；
 - 当用户明确请求完整 Stage 范围时，按 planning index 的完整 Stage planning 规则展开；
 - 遵守 planning index 中显式的 initial-planning 范围，例如仅在用户范围明确包含 topology validation 时规划 2.6；
 - 不读取全部科研 Skills；
 - 不提前查 `project_result_index.md`；
 - 不做科学 applicability / reuse 判断；
-- 不根据体系特征提前删减**已经属于当前用户范围**的普通 Step；
+- 不根据体系特征提前删减**已经属于当前执行范围**的普通 Step；
 - 对未定义 catalog 的 Stage 不编造内部步骤。
 
-Task Sheet 是可动态维护的计划，不是科学适用性判决，也不是完整 Workflow 的强制投影。
+Task Sheet 是可动态维护的执行计划，不是完整 Workflow 的强制投影。
 
 ### Ordinary Stage planning
 
@@ -123,19 +139,33 @@ Stages 1–2 使用普通 sub-stage Task Sheet planning。
 已终止
 ```
 
-Stage 1 与 Stage 2 当前都不设置 stage main Skill。Task Sheet 只列出当前任务范围实际需要的 1.x / 2.x Step；执行期由 Task Execution Agent 直接进入当前 Task Sheet 所对应的 current Skill。
+Stage 1 与 Stage 2 当前都不设置 stage main Skill。Task Execution Agent 直接进入当前 Task Sheet 所对应的 current Step Skill。
 
-因此，一个 Task Sheet 可以只包含例如 1.7、1.8–1.9、2.3、2.4 或其它局部范围；不要求同一任务中补齐更早或更晚的编号 Step。当前 Step 的真实输入依赖由其 current Skill 在执行时解释，可以消费其它任务已经形成的正式结果。
+Stage 1 的局部 Task Sheet 可以从中间 Step 开始，只要当前 Step 的真实输入契约已经由前序 Task Sheet或正式结果满足。
+
+Stage 2 额外存在固定 setup prerequisite：
+
+```text
+2.1 Topology preparation setup
+→ 为 2.2–2.5 提供适用于当前体系和处理范围的拆分 / 处理方案
+```
+
+因此：
+
+- 一张 Task Sheet 如果包含 2.1，并继续执行 2.2–2.5，可以直接使用当前 2.1 形成的方案；
+- 一张后续 Task Sheet 可以只包含 2.2、2.3、2.4 或 2.5，但必须能够定位同一科研任务前序 Task Sheet 中适用于当前体系和处理范围的已完成 2.1 方案；
+- 如果没有可定位且仍适用的 2.1 方案，则当前执行范围必须先安排 2.1，不能因为换了 Task Sheet 就绕过 setup；
+- 不要求为了形式在每张后续 Task Sheet 中重复复制 2.1。
 
 2.6 是否进入初始计划按 planning index 的显式范围处理。
 
 ### Stage 3 planning
 
-Stage 3 不设置编号化 sub-stage。任务范围包含体系构建时，Manager 在 Task Sheet 中建立一个 stage-level 条目：
+Stage 3 不设置编号化 sub-stage。当前 Task Sheet 范围包含体系构建时，Manager 建立一个 stage-level 条目：
 
 `3 System construction / solvation`
 
-该条目记录用户提出的体系构建目标、当前处理对象、已经明确的约束，以及：
+该条目记录当前体系构建目标、处理对象、已经明确的约束，以及：
 
 `<project_root>/03_md_preparation/<task_id>/`
 
@@ -143,9 +173,9 @@ Stage 3 不设置编号化 sub-stage。任务范围包含体系构建时，Manag
 
 ### Stage 4 planning exception
 
-Stage 4 不把任务单写成固定 `4.1 → 4.2 → 4.3`。
+Stage 4 不把 Task Sheet 写成固定 `4.1 → 4.2 → 4.3`。
 
-Manager 根据用户明确模拟需求在 Task Sheet 中建立 planned run route，记录计划中的 EM/NVT/NPT/MD segments 和关键要求，但不提前分配 formal `em.N / nvt.N / npt.N / md.N` IDs。
+Manager 根据当前模拟需求建立 planned run route，记录计划中的 EM/NVT/NPT/MD segments 和关键要求，但不提前分配 formal `em.N / nvt.N / npt.N / md.N` IDs。
 
 Formal run-unit identity、reuse / continuation / new-unit 判断由 Stage 4 main Skill：
 
@@ -155,7 +185,7 @@ Formal run-unit identity、reuse / continuation / new-unit 判断由 Stage 4 mai
 
 ### Stage 5 planning
 
-Stage 5 不设置编号化 sub-stage。如果用户任务范围包含 Analysis，Manager 只建立一个 stage-level 条目：
+Stage 5 不设置编号化 sub-stage。如果当前 Task Sheet 范围包含 Analysis，Manager 只建立一个 stage-level 条目：
 
 `5 Analysis`
 
@@ -182,6 +212,7 @@ Stage 1
 
 Stage 2
 → 无 stage main Skill
+→ 2.1 setup prerequisite 可来自当前或明确关联的前序 Task Sheet
 → 直接进入当前 Task Sheet 所对应的 2.x entry
 
 Stage 3
@@ -197,7 +228,7 @@ Stage 5
 → 由 Stage 5 main Skill 读取 current capability inventory 并调度 capability entries
 ```
 
-Manager 初始规划时不需要因此读取上述 Skill；Task Execution Agent 在实际进入对应 Stage / Step 时读取 planning index 指向的 current runtime entry。
+Manager 初始规划时不需要因此读取上述科研 Skill；Task Execution Agent 在实际进入对应 Stage / Step 时读取 planning index 指向的 current runtime entry。
 
 ## Project initialization
 
@@ -215,13 +246,13 @@ Stage-specific project-level directories / indexes 或 stage-level planning stru
 
 ```text
 Manager
-→ locate/create task
+→ locate/create Task Sheet
 → initial planning
 → write Txxxx.md
-→ Task Execution Agent continuously executes and maintains the task
+→ Task Execution Agent continuously executes and maintains the current Task Sheet
 ```
 
-Task Sheet 创建或定位完成后，科研执行按照 `workflow_plan_index.yaml` 的 current runtime entry 导航进入当前实际负责的 scientific Skill。跨 Stage 通用 Task Execution 规则由各 scientific `SKILL.md` 显式引用的仓库级 shared reference 提供；Manager 不在本文件复制这些执行规则。
+需要拆分新的 Task Sheet 时，可以再次进入 Manager 创建后续执行单；这不代表对应科研任务重新开始，也不使已经满足的 prerequisite 失效。
 
 普通 Step 之间不回 Manager 调度。
 
@@ -243,9 +274,10 @@ Stage-specific plan structures 遵守对应 current owner；Manager 不在本文
 
 创建或重新规划后，只需向用户简要说明：
 
-- Task ID / name；
-- task status；
-- 已写入的初始 / 修订计划；
-- Task Sheet path。
+- Task Sheet ID / 名称；
+- Task Sheet 状态；
+- 当前计划；
+- Task Sheet 路径；
+- 若为同一科研任务的后续拆分单，必要时注明其前序 Task Sheet。
 
 不展示 Legacy route、Workstream、transaction、event 或内部 orchestration state。
