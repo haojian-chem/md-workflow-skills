@@ -83,7 +83,21 @@ Scope / distinction
 **Canonical term:** `target`  
 **Preferred expression:** `target`  
 **Definition:** 当前 Stage / Step / capability 中由对应 Skill 独立处理的目标对象。  
-**Scope / distinction:** `target` 是处理对象身份，不等同于某一个 structure 文件。不同处理环节形成的 target 即使来源相关或编号相似，也不自动视为同一个 execution object；它们之间的继承、映射或分支关系应由对应 Skill 的正式结果和接口明确。
+**Scope / distinction:** `target` 是当前职责内的局部 execution object，不等同于某一个 structure 文件，也不是跨环节永久身份。不同处理环节形成的 target 即使来源相关或编号相似，也不自动视为同一个 execution object；`target_id` 只在创建它的当前 Skill / 当前工作项内解释。跨环节继承、分支与合流通过 target record 路径明确记录，不通过比较 `target_id` 是否相同推断。
+
+### target record
+
+**Canonical term:** `target_record`  
+**Preferred expression:** `target_record`  
+**Definition:** 为某个 local target 建立的独立 YAML 记录；其完整绝对路径是跨 Skill 引用该 target 的正式接口。target record 至少记录当前 local `target_id`、直接上游 `source_target_records` 和简明 `description`。  
+**Scope / distinction:** 每个使用 `target` 的 Skill / 当前工作项都为自己的 local target 建立 target record。一个 target record 可以有 0、1 或多个 `source_target_records`，因此 target lineage 可以表示初始对象、一对一演化、分支与合流。target record 只记录 target identity / lineage，不替代当前 Skill 的正式科学结果；详细共享规则见 `references/target_lineage_rules.md`。
+
+### target lineage
+
+**Canonical term:** `target lineage`  
+**Preferred expression:** target lineage  
+**Definition:** 由 target records 及其 `source_target_records` 关系形成的有向无环对象演化图，用于恢复不同 Skill 中 local targets 的直接来源、分支与合流关系。  
+**Scope / distinction:** target lineage 不要求是一条从 1.3 开始的单链，也不把任何固定 Step 当成所有后续 target 的唯一根引用。一个后续 target 可以由多个 source targets 合流形成；同一个 source target 也可以因不同策略产生多个后续 targets。Stage 4 formal run unit、Stage 5 analysis plan item 等已有独立 execution identity 且未使用 `target` 的对象，不强制纳入 target lineage。
 
 ### main Skill
 
