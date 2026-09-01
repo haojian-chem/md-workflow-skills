@@ -32,11 +32,7 @@ Status: ACTIVE CURRENT BASELINE
 
 ## 3. Stage 1 — Structure preparation
 
-Status: ACTIVE SKILL GENERATION COMPLETED.
-
-Current Stage-level runtime entry：
-
-`01_structure_preparation/SKILL.md`
+Status: 1.1–1.9 ACTIVE; CURRENT RUNTIME HAS NO STAGE MAIN SKILL.
 
 Current catalog：
 
@@ -66,13 +62,15 @@ Current Step entries：
 01_structure_preparation/1.9_validation/SKILL.md
 ```
 
+当前 Stage 1 直接由 Task Execution Agent 按 Task Sheet 进入实际 1.x Step；不设置 `01_structure_preparation/SKILL.md` runtime entry。各 Step 自己定义实际输入、处理、validation 与正式结果；跨 Step 共用的 Task Execution 与 atom mapping 规则由 shared references 提供。
+
 Stage 1 的 current atom-mapping runtime authority 为：
 
 `references/atom_mapping_rules.md`
 
 当前由 1.3 初始化 target atom map，1.4 / 1.6 / 1.7 / 1.8 按实际结构修改维护，1.8 写出 `stage1_final_map.yaml`，1.9 对 final map 做只读验证；2.2 也沿用该 shared reference 维护标准残基全原子结构的 map。
 
-Stage 1 既有 architecture freezes 已由 current Skills / references 接管有效规则并退出 current authoring path，历史记录位于：
+已撤回的 Stage 1 main Skill 与既有 architecture freezes 均退出 current path，历史记录位于：
 
 `00_authoring/archive/stage1_history/`
 
@@ -235,7 +233,7 @@ Historical authoring / architecture Markdown：
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.9 active Skills 已生成；current atom-map contract 由 `references/atom_mapping_rules.md` 拥有；既有 Stage 1 freezes 已归档。
+- Stage 1：1.1–1.9 active Skills 已生成；当前不设置 Stage main Skill；current atom-map contract 由 `references/atom_mapping_rules.md` 拥有；已撤回的 Stage 1 main Skill 与既有 freezes 已归档。
 - Stage 2：2.1–2.6 active Skills 已生成；当前不设置 Stage main Skill；2.6 为可选独立 topology validation；2.1–2.5 reuse 当前停用并留作后续更新；既有 Stage 2 freezes 已归档。
 - Stage 3：Stage-level main Skill 已正式生成；不设置编号化 sub-stage；历史 Stage 3 freezes 已归档；代表性实际执行验证仍待后续 milestone。
 - Stage 4：Stage-level main Skill 与 4.1–4.3 active Skills 已生成；Stage 4 main 当前拥有 run-unit / route 等 Stage-wide 规则；既有 Stage 4 freeze 已归档。
@@ -257,4 +255,4 @@ validation milestone changed
 superseded / retired
 ```
 
-Skill authoring 窗口不得因为本文件是共享文件而静默跳过状态同步；具体多窗口写入规则见 `00_authoring/references/multi_window_authoring_protocol.md`。
+Skill authoring窗口不得因为本文件是共享文件而静默跳过状态同步；具体多窗口写入规则见 `00_authoring/references/multi_window_authoring_protocol.md`。
