@@ -84,6 +84,45 @@ structure: ${RESULT_DIR}/structure.pdb
 
 reference key 只在当前结果记录的作用域内解释，不是项目级永久 identity，也不要求建立全局 registry。
 
+## 4A. Target-scoped result references
+
+当前 Skill / 当前工作项如果使用 `target`，正式结果必须遵守：
+
+`references/target_lineage_rules.md`
+
+并在结果自己的 `references` / dependency 区域记录**当前 local target 的 `target_record` 完整绝对路径**。
+
+例如单 target 结果：
+
+```yaml
+target_id: target_001
+references:
+  target_record: /absolute/path/to/current/targets/target_001.yaml
+```
+
+如果一个聚合结果包含多个 local targets：
+
+```yaml
+targets:
+  - target_id: target_001
+    references:
+      target_record: /absolute/path/to/current/targets/target_001.yaml
+  - target_id: target_002
+    references:
+      target_record: /absolute/path/to/current/targets/target_002.yaml
+```
+
+规则：
+
+- `target_id` 只用于当前 Skill / 当前结果内部定位 local target；
+- `target_record` 路径必须指向**当前环节当前 local target**，不是固定回指某个较早 Step；
+- 上游 target 演化、分支与合流通过当前 target record 中的 `source_target_records` 逐级恢复；
+- 不要求结果直接重复保存整条 ancestry，也不要求所有结果固定回指 1.3；
+- 不通过比较不同结果中的 `target_id` 是否相同判断 target 对应关系；
+- 当前正式结果如还依赖其它上游文件，继续在 `references` / dependency 中按实际需要记录，这些依赖与 target lineage 是不同维度，不相互替代。
+
+Target record 是 lineage support record，不因为被引用就自动成为项目结果索引中的独立 result entry；其登记规则由 `references/target_lineage_rules.md` 与当前结果 owner 共同约束。
+
 ## 5. Markdown 正式结果中的 `References`
 
 如果当前 Skill 生成的正式结果本身是 Markdown，并且需要重复引用多个实际文件或公共绝对路径，可以在 Markdown 前部设置清楚的 `References` section，例如：
@@ -102,6 +141,8 @@ references:
 正文或结构化片段随后可以使用 `${FINAL_STRUCTURE}`、`${CLASSIFICATION_RESULT}` 或 `${RESULT_DIR}/filename`。
 
 如果 Markdown 只引用少量路径且不存在重复，直接写完整绝对路径即可，不强制增加 `References` section。
+
+Target-scoped Markdown result 同样在其 `References` section 或其它清楚 dependency 区域记录当前 `target_record` 完整绝对路径。
 
 ## 6. main `SKILL.md` 与详细结果接口
 
@@ -195,6 +236,8 @@ schema
 
 读取外部 `results.md` 只获得解释该正式结果的能力，不获得修改结果 owner 的科学规则、validation 或文件生命周期的 authority。
 
+Target-scoped 下游如果需要恢复对象来源，先读取当前结果的 `target_record`，再按 `source_target_records` 逐级追溯，不通过裸 `target_id` 或固定 Step 路径猜测 lineage。
+
 ## 10. 两种 `references` 不得混淆
 
 必须区分：
@@ -235,6 +278,8 @@ schema
 - [ ] 当前环节自己生成的结果文件被明确记录为结果，而不是只隐藏在 `references` 中；
 - [ ] 已有结果路径足以恢复的信息没有为了自包含被无必要复制进结果记录；
 - [ ] Markdown result 如使用 `References` section，其 keys 只在当前结果文档内解释；
+- [ ] target-scoped result 已记录当前 local target 的 `target_record` 完整路径，并未用 local `target_id` 代替跨 Skill identity；
+- [ ] target lineage 如需追溯，通过 target record 的 `source_target_records` 恢复，没有固定回指某个 Step；
 - [ ] `references/results.md` 与结果记录内部 `references` 没有混淆；
 - [ ] schema 与自然语言结果语义没有维护两套重复规范；
 - [ ] project-result registration 白名单清楚，未把 debug / scratch / cache 当正式索引项；
