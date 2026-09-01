@@ -140,7 +140,7 @@ Tool 是确定性能力组件：
 
 Current shared Tool root：`tools/`。
 
-Tool 不负责开放式用户意图、科研目标选择、任务规划或其它 Skill 的内部决策。
+Tool 不负责开放式用户意图、科研目标选择、Task Sheet 规划或其它 Skill 的内部决策。
 
 Legacy runtime-dependent tools 位于 `legacy/tools/`，不能因为历史状态自动作为 current implementation。
 
@@ -159,7 +159,8 @@ require: 当前职责依赖哪项已冻结能力
 
 - 当前 Stage 存在真正拥有 Stage-wide orchestration 的 main Skill 时，Stage-specific route / shared-object relationship 可以由该 Stage main 拥有；
 - 当前 Stage 不设置 Stage main Skill 时，Task Execution Agent 根据 Task Sheet、当前 Step 的正式结果 / input contract 和实际执行证据推进，不为表达相邻关系另建 synthetic Stage owner；
-- 一个 Task Sheet 可以只覆盖某个 Stage 的局部范围，当前 Step 可以直接消费其它任务已经形成的正式结果，不要求全部相邻 Step 出现在同一 Task Sheet。
+- 一张 Task Sheet 可以只覆盖某个 Stage 的局部范围。当前 Step 如果存在真实 prerequisite，必须先满足该 prerequisite；上游方案、正式结果或状态可以来自当前 Task Sheet、同一科研任务的前序 Task Sheet，或其它科研任务中明确可用的正式结果，不要求全部相邻 Step 出现在同一 Task Sheet；
+- 不得把“某个更早编号 Step 没有出现在当前 Task Sheet”解释成其真实 prerequisite 自动失效，也不得为了形式完整把已经由前序 Task Sheet 满足的 Step 机械复制进当前 Task Sheet。
 
 不得重新定义外部 Skill 的内部步骤、默认参数、方法选择、validation、official results 或文件生命周期。
 
