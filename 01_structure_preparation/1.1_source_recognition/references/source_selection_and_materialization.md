@@ -26,7 +26,7 @@ Status: CURRENT
 
 ## Candidate discovery
 
-优先使用 Task Sheet `对象` 中明确列出的文件。
+优先使用当前 Task Sheet `对象` 中明确列出的文件。
 
 如果对象是一个有界目录，默认只检查该目录顶层：
 
@@ -87,13 +87,15 @@ source label 只是来源描述，不代表结构科学质量。
 <project_root>/01_structure_preparation/01_source_recognition/
 ```
 
-当前 Task 实际执行目录：
+当前 Task Sheet 实际执行目录：
 
 ```text
 <project_root>/01_structure_preparation/01_source_recognition/<task_id>/
 ```
 
-Manager 只记录该未来路径，不创建 `<task_id>/`。Task Execution Agent 先完成 reuse 判断；只有确实需要新的 1.1 执行时才创建当前 Task 目录。
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+
+Manager 只记录该未来路径，不创建 `<task_id>/`。Task Execution Agent 先完成 reuse 判断；只有确实需要新的 1.1 执行时才创建当前 Task Sheet 的工作目录。
 
 ## Default materialization: copy
 
@@ -115,7 +117,7 @@ Manager 只记录该未来路径，不创建 `<task_id>/`。Task Execution Agent
 
 ## Existing destination
 
-当前 Task 目录中目标文件已存在时：
+当前 Task Sheet 工作目录中目标文件已存在时：
 
 - SHA-256 与源相同：直接使用已有目标，不重复复制；
 - SHA-256 与源不同：不覆盖，向用户说明冲突并确认后续处理；
@@ -123,11 +125,11 @@ Manager 只记录该未来路径，不创建 `<task_id>/`。Task Execution Agent
 
 不能为了绕开冲突自动追加后缀生成新的正式文件名。
 
-其他 Task 目录中的同名文件通过跨任务 reuse 判断，不属于当前 Task 的 destination collision。
+其它 Task Sheet 工作目录中的同名文件不属于当前 Task Sheet 的 destination collision；若其中已有正式结果可能满足当前需求，按当前 1.1 reuse 规则判断，而不是按文件名直接复用。
 
 ## Controlled move
 
-只有用户在当前任务中明确要求移动某个具体源文件时才考虑 move，并且同时确认：
+只有用户明确要求移动某个具体源文件时才考虑 move，并且同时确认：
 
 - 用户明确授权移动该具体文件；
 - 源目录允许写入；
@@ -139,7 +141,7 @@ Manager 只记录该未来路径，不创建 `<task_id>/`。Task Execution Agent
 
 ## Source-recognition report
 
-当前任务实际执行时正式报告路径：
+当前 Task Sheet 实际执行时正式报告路径：
 
 ```text
 <project_root>/01_structure_preparation/01_source_recognition/<task_id>/source_recognition_report.yaml
@@ -167,6 +169,6 @@ warnings
 - destination collision：不覆盖，等待用户处理；
 - 多候选歧义：不生成正式复制结果，等待用户选择；
 - 全部候选无效：保留排除理由并保持 `未完成`；
-- 旧结果 reuse 核验失败：旧结果不能作为当前 Task 完成依据，重新执行或在信息不足时确认。
+- 旧结果 reuse 核验失败：旧结果不能作为当前 Task Sheet 的完成依据，重新执行或在信息不足时确认。
 
-技术恢复继续使用同一 Task Sheet 1.1 项和同一 task-specific 工作目录，不建立 attempt task 或 Legacy recovery state。
+技术恢复继续使用同一 Task Sheet 的 1.1 项和同一 Task Sheet 工作目录，不建立 attempt Task Sheet 或 Legacy recovery state。
