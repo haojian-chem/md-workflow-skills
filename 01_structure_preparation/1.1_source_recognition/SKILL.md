@@ -1,6 +1,6 @@
 ---
 name: source_recognition
-description: Stage 1.1 Structure source recognition。对当前任务中明确且有界的本地 PDB/mmCIF/CIF 候选确定一个正式结构来源，安全归位并校验 SHA-256；不下载结构、不修改结构内容、不进行结构科学质量判断。
+description: Stage 1.1 Structure source recognition。对当前 Task Sheet 中明确且有界的本地 PDB/mmCIF/CIF 候选确定一个正式结构来源，安全归位并校验 SHA-256；不下载结构、不修改结构内容、不进行结构科学质量判断。
 ---
 
 # 1.1 Structure source recognition
@@ -13,13 +13,13 @@ description: Stage 1.1 Structure source recognition。对当前任务中明确�
 
 ## Purpose
 
-为当前任务建立后续 Stage 1 可直接消费的明确结构来源：
+为当前 Task Sheet 的结构来源识别工作建立后续结构准备可直接消费的明确正式来源：
 
 ```text
 有界本地候选
 → 基础格式 / identity 检查
 → 唯一选择来源
-→ 默认安全复制到当前 Task 1.1 目录
+→ 默认安全复制到当前 Task Sheet 的 1.1 工作目录
 → source / destination SHA-256 核验
 → 写正式来源识别报告
 ```
@@ -52,7 +52,7 @@ description: Stage 1.1 Structure source recognition。对当前任务中明确�
 
 明确不等价时重新执行；缺少判断等价所需的信息时向用户确认。
 
-确认复用时直接引用原正式结构和报告，不复制副本，也不创建当前 Task 空的 1.1 目录。
+确认复用时直接引用原正式结构和报告，不复制副本，也不创建当前 Task Sheet 的空 1.1 工作目录。
 
 ## Execution guidance
 
@@ -66,11 +66,11 @@ description: Stage 1.1 Structure source recognition。对当前任务中明确�
 2. 先做 reuse 判断；
 3. 需要新执行时，检查当前有界候选的基础格式并计算 SHA-256；
 4. 无歧义时唯一选择来源；存在多个合理选择时向用户确认；
-5. 创建当前 Task 专属 1.1 工作目录；
+5. 创建当前 Task Sheet 专属的 1.1 工作目录；
 6. 默认 copy，只有用户明确授权具体 move 时才移动；
 7. 校验 source / destination SHA-256；
 8. 写 `source_recognition_report.yaml`；
-9. validation 通过后更新 Task Sheet 与 `project_result_index.md`。
+9. validation 通过后更新当前 Task Sheet 与 `project_result_index.md`。
 
 确定性 shell / Python 文件操作可用于 copy/hash/report writing；不需要为了这些动作构造 Legacy task/result/route/event 对象。
 
@@ -88,7 +88,9 @@ description: Stage 1.1 Structure source recognition。对当前任务中明确�
 <project_root>/01_structure_preparation/01_source_recognition/<task_id>/
 ```
 
-只有 reuse 判断确认需要执行新的 1.1 时才创建 task-specific directory。
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+
+只有 reuse 判断确认需要执行新的 1.1 时才创建当前 Task Sheet 的工作目录。
 
 ## Validation requirements
 
@@ -113,9 +115,9 @@ Validation 不做结构科学质量判定。
 <task_work_directory>/source_recognition_report.yaml
 ```
 
-两者记录到 Task Sheet `主要结果`，并登记到 `project_result_index.md` 的 1.1 部分。
+两者记录到当前 Task Sheet `主要结果`，并登记到 `project_result_index.md` 的 1.1 部分。
 
-跨任务直接复用时，当前任务直接指向已有正式结果，不生成副本。
+跨 Task Sheet 或跨科研任务直接复用时，当前 Task Sheet 直接指向已有正式结果，不生成副本。
 
 普通 debug log、临时文件和 shell 输出不是 official results。
 
