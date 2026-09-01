@@ -23,7 +23,7 @@ Stage 1 原子映射维护规则读取：
 
 1.9 检查当前最终结果本身，不重新执行 1.4–1.8 的内部处理逻辑，也不在检查过程中修改、补全、删除或改名任何原子或残基。
 
-报告逐项记录实际检查结果和发现的问题。1.9 不为整个 target 生成 `PASS / FAIL`，也不根据问题数量自行决定是否进入后续阶段；是否返回上游处理或继续后续任务，由当前 Task Execution Agent 与用户根据报告中的实际结果决定。
+报告逐项记录实际检查结果和发现的问题。1.9 不为整个 target 生成 `PASS / FAIL`，也不根据问题数量自行决定是否进入后续阶段；是否返回上游处理或继续后续工作，由当前 Task Execution Agent 与用户根据报告中的实际结果决定。
 
 每个 target 独立检查、独立生成报告。
 
@@ -38,6 +38,8 @@ Stage 1 原子映射维护规则读取：
 - 当前 target 的 1.5 正式 `structure_completeness_report.yaml`；
 - 当前指定目标力场中用于标准残基检查的实际 `*.rtp` 文件；
 - 当前非标准残基检查实际采用的 CCD 文件。
+
+这些正式输入只需要共同对应当前 target，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 final structure、classification、completeness report 与当前 validation 写在同一 Task Sheet。
 
 `classification_result.yaml` 用于按 `component_id + residue_id` 读取对应 residue 的正式 `topology_class.value`、文件级 `references` 和 `topology_linked_checks[]`。不得根据残基名、`ATOM / HETATM` record 或当前空间位置重新分类。
 
@@ -59,14 +61,16 @@ Stage 1 原子映射维护规则读取：
 <project_root>/01_structure_preparation/09_validation/
 ```
 
-当前 Task 的每个 target 独立生成：
+当前 Task Sheet 的每个 target 独立生成：
 
 ```text
 <project_root>/01_structure_preparation/09_validation/<task_id>/<target_id>/
 └── structure_preparation_validation.md
 ```
 
-不建立 task 级多-target 汇总报告。
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+
+不建立 Task Sheet 级多-target 汇总报告。
 
 ## Reference basis
 
@@ -259,7 +263,7 @@ chain_id + resid + residue_name
 - 1.9 没有修改 `stage1_final.pdb`、`stage1_final_map.yaml` 或任何上游正式结果；
 - 报告没有生成整体 `PASS / FAIL` 或自动后续决策。
 
-满足这些结果完整性要求后，当前 1.9 可在 Task Sheet 中标记为 `已完成`。如果报告中的问题需要修正，按实际问题返回真正拥有该结构问题的上游步骤处理；修正后的 final result 再次进入 1.9 时重新执行检查。
+满足这些结果完整性要求后，当前 1.9 可在当前 Task Sheet 中标记为 `已完成`。如果报告中的问题需要修正，按实际问题返回真正拥有该结构问题的上游步骤处理；修正后的 final result 再次进入 1.9 时重新执行检查。
 
 ## Official result
 
@@ -275,4 +279,4 @@ structure_preparation_validation.md
 <project_root>/00_project_records/project_result_index.md
 ```
 
-报告保留在当前 Task / target 的 1.9 工作目录中，供当前任务审阅和后续处理使用。
+报告保留在当前 Task Sheet / target 的 1.9 工作目录中，供当前 Task Sheet 审阅和后续处理使用。
