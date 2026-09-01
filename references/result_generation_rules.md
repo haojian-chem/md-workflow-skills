@@ -47,7 +47,7 @@ Skill-specific project-result registration 白名单由对应结果 owner 定义
 - 哪些正式结果由已登记的主结果继续定位；
 - 哪些文件明确不进入项目结果索引。
 
-`project_result_index.md` 是跨任务 / 跨对话的正式结果检索入口，不是当前结果内容的第二份副本。
+`project_result_index.md` 是跨 Task Sheet、跨科研任务、跨对话的正式结果检索入口，不是当前结果内容的第二份副本。
 
 ## 3. 结果文件与路径语义
 
@@ -57,7 +57,7 @@ Skill-specific project-result registration 白名单由对应结果 owner 定义
 
 如果路径直接写入字段，则写实际完整绝对路径。
 
-正式结果已经记录实际文件完整路径时，后续核查可以沿该路径读取对应工作目录和实际执行文件；不为了“结果自包含”把可从真实文件恢复的信息全部复制进 YAML / Markdown。只有对理解结果语义、reuse、恢复或跨任务检索真正有价值的信息才需要进入正式结果本身。
+正式结果已经记录实际文件完整路径时，后续核查可以沿该路径读取对应工作目录和实际执行文件；不为了“结果自包含”把可从真实文件恢复的信息全部复制进 YAML / Markdown。只有对理解结果语义、reuse、恢复或跨 Task Sheet / 跨科研任务检索真正有价值的信息才需要进入正式结果本身。
 
 ## 4. 结果记录内部 `references`
 
@@ -149,7 +149,7 @@ references/results.md
 不要求固定 section schema，但应按当前结果复杂度覆盖实际需要的信息。常见内容包括：
 
 - 正式结果集合与各文件用途；
-- task / target / run-unit 等结果目录组织；
+- Task Sheet / target / run-unit 等结果目录组织；
 - 主结果与辅助结果之间的定位关系；
 - 结构化结果的关键字段语义；
 - identifier、枚举、`null`、路径、数组顺序等解释规则；
