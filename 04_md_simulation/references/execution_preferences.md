@@ -6,19 +6,41 @@ Status: CURRENT USER EXECUTION PREFERENCES
 
 Stage 4 main Skill 在需要生成 / 执行 `gmx_mdrun.sh` 时读取本文件。实际执行时：
 
-1. 先采用当前 Task / 用户本轮明确指定的执行要求；
-2. 没有新的明确要求时，采用本文件记录的用户倾向；
+1. 先采用当前 Task Sheet / 用户本轮明确指定的执行要求；
+2. 没有新的明确要求时，采用本文件中**适用于当前 run class** 的用户倾向；
 3. 当前硬件、GROMACS build、体系或作业环境与某项倾向不兼容时，由执行 Agent 按实际环境调整，不为了机械保持倾向而执行无效命令；
 4. 如果调整只影响计算资源和运行方式、不改变科学模拟条件，可以直接调整并记录实际命令；
 5. 如果调整会改变 scientific run definition，则回到对应 Stage 4 / run-specific Skill 的科学规则处理。
 
 最终实际 `gmx mdrun` 命令始终以当前 run unit 中保存的 `gmx_mdrun.sh` 为准。
 
-## Current local execution tendencies
+## Applicability summary
 
-### Common
+当前倾向的适用范围固定为：
 
-本地 GROMACS 任务默认倾向：
+| 倾向 | EM | NVT | NPT | Production MD |
+|---|---:|---:|---:|---:|
+| `-nt 12` | 是 | 是 | 是 | 是 |
+| foreground execution | 是 | 否 | 否 | 否 |
+| `-maxh 0.08` | 是 | 否 | 否 | 否 |
+| `tmux` | 否 | 是 | 是 | 是 |
+| `-update gpu` | 默认不加 | 是，环境适合时 | 是，环境适合时 | 是，环境适合时 |
+| `-pin on` | 默认不加 | 是，环境适合时 | 是，环境适合时 | 是，环境适合时 |
+
+这里的“是”表示当前用户倾向的适用范围，不表示当前环境必须机械使用该选项。
+
+## All Stage 4 `mdrun` classes
+
+以下倾向适用于当前 Stage 4 的全部 `mdrun` run classes：
+
+```text
+EM
+NVT
+NPT
+Production MD
+```
+
+默认线程倾向：
 
 ```text
 -nt 12
@@ -26,9 +48,9 @@ Stage 4 main Skill 在需要生成 / 执行 `gmx_mdrun.sh` 时读取本文件。
 
 若当前资源分配、硬件拓扑或运行环境不适合 12 threads，按实际资源调整。
 
-### Energy minimization
+## Energy minimization only
 
-EM 本地执行倾向：
+以下倾向**只适用于 EM**：
 
 ```text
 foreground execution
@@ -46,27 +68,29 @@ EM 默认不主动加入：
 
 除非当前 GROMACS / GPU 环境实际需要且支持。
 
-### NVT / NPT / production MD
+## NVT / NPT / production MD only
 
-较长的 NVT / NPT / production MD 本地任务倾向使用：
+以下倾向适用于 NVT、NPT 和 production MD，不适用于普通 EM：
+
+较长任务倾向使用：
 
 ```text
 tmux
 ```
 
-并在当前 GPU / GROMACS build 支持且适合时倾向使用：
+在当前 GPU / GROMACS build 支持且适合时倾向使用：
 
 ```text
 -update gpu
 -pin on
 ```
 
-这些选项是执行资源倾向，不是 NVT / NPT / production scientific requirement。若当前环境不支持、CPU-only、更适合其它 offload 方式或调度系统已经管理 pinning / resources，则按实际环境调整。
+这些选项是执行资源倾向，不是 scientific requirement。若当前环境不支持、CPU-only、更适合其它 offload 方式或调度系统已经管理 pinning / resources，则按实际环境调整。
 
-NVT / NPT / production MD 不默认继承 EM 的短 `-maxh 0.08` 倾向。
+NVT / NPT / production MD 不继承 EM-only 的短 `-maxh 0.08` 倾向。
 
 ## Maintenance
 
-用户后续明确改变本地执行偏好时更新本文件，而不是把同一偏好分别复制到 4.1 / 4.2 / 4.3。
+用户后续明确改变长期本地执行偏好时更新本文件，而不是把同一偏好分别复制到 4.1 / 4.2 / 4.3。
 
-临时只针对某个 run unit 的资源要求记录在当前任务 / 实际执行命令中，不因为一次例外修改本文件的长期倾向。
+临时只针对某个 run unit 的资源要求记录在当前 Task Sheet / 实际执行命令中，不因为一次例外修改本文件的长期倾向。
