@@ -1,6 +1,6 @@
 ---
 name: protein_protonation_assignment
-description: Structure preparation 1.7。针对当前蛋白重原子结构，在明确 target pH 与目标 protein force field / protonation naming convention 后，使用 PROPKA predicted pKa 与局部化学环境两类平级证据，对 Asp、Glu、His 完成 protonation assignment，并将结果落实为对应 residue naming。
+description: Structure preparation 1.7。针对当前蛋白重原子结构，在明确 target pH 与目标 protein force field / protonation naming convention 后，使用 PROPKA predicted pKa 与局部化学环境两类平级证据完成 Asp、Glu、His protonation assignment；每个 1.7 local target 独立记录 target lineage，并允许明确的 alternative protonation strategy 形成独立分支。
 ---
 
 # Purpose
@@ -24,20 +24,38 @@ description: Structure preparation 1.7。针对当前蛋白重原子结构，在
 - 独立完成 local chemical environment assessment；
 - 综合两类平级证据，对 Asp / Glu / His 完成 protonation assignment；
 - 将最终 assignment 映射为目标 protein force field / protonation naming convention 对应的 residue name；
-- 生成 protonation-assigned heavy-atom structure、assignment report、与输出结构对应的 atom map 和 validation result。
+- 生成 protonation-assigned heavy-atom structure、assignment report、与输出结构对应的 atom map 和 validation result；
+- 为每个 actual 1.7 local target 建立独立 target record。
+
+# Target object and lineage
+
+每个 actual 1.7 execution object 都是当前 1.7 自己的 local target，并按 shared target-lineage 规则建立：
+
+```text
+targets/target_xxx.yaml
+```
+
+`source_target_records` 指向实际形成当前 1.7 target 的上游 target record。正常路径通常来自 1.6；如果 1.6 因无 repair 等原因未形成 execution target，则使用实际提供当前 heavy-atom structure / object state 的上游 target record，例如对应 1.5 / 1.4 target。
+
+当前 1.7 `target_id` 不继承上游编号。
+
+如果同一个 source target 在当前科学问题中需要保留多个 alternative protonation assignments 作为后续独立比较对象，则为每个 alternative 建立独立 1.7 target record；多个 current targets 可以共同引用同一个 source target record，从而形成 branch。
+
+不因为某 residue 有多个理论 protonation state 就自动展开所有组合。只有当前 Task Sheet / 用户明确要求保留 alternatives，或当前科学设计本身要求并行比较时才建立多分支。
 
 # Inputs / evidence
 
-对每个 target，执行 1.7 时至少需要：
+对每个 actual 1.7 target，至少需要：
 
 - 当前 1.7 工作项实际采用的有效 heavy-atom structure；
 - 与该输入结构对应的最近正式 atom map；
+- 当前 1.7 target record；
 - 明确的 `target_pH`；
 - 当前使用的 protein force field，或明确的 protonation-state residue naming convention；
 - 可执行 PROPKA；
 - 当前科研任务中与 protonation 判断有关、已经确认且可追溯的 chemical relation / structural evidence。
 
-当前结构只需要是当前科研任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step，也不要求对应结构处理必须出现在当前 Task Sheet，但 atom map 必须与该输入结构实际对应。
+当前结构只需要是当前科研任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step，也不要求对应结构处理必须出现在当前 Task Sheet，但 atom map 必须与该输入结构实际对应，target record 必须能沿 `source_target_records` 追溯实际 source target(s)。
 
 如果 `target_pH` 或 protein force field / protonation naming convention 尚未明确：
 
@@ -62,7 +80,7 @@ His 分别判断 `ND1` 与 `NE2` 两个位点的 protonation state，再由两�
 
 # Execution guidance
 
-进入当前 target 后，直接基于当前输入重新执行 1.7；每次重新运行 PROPKA 并重新完成 protonation assignment，不进行既有 1.7 结果的 reuse assessment。
+进入当前 actual 1.7 target 后，直接基于当前输入重新执行 1.7；每次重新运行 PROPKA 并重新完成 protonation assignment，不进行既有 1.7 结果的 reuse assessment。
 
 ## 1. Run PROPKA
 
@@ -96,13 +114,20 @@ predicted pKa evidence
 - 不用默认溶液 pKa 补值；
 - local chemical environment assessment 仍独立进行。
 
-## 3. Resolve scientific ambiguity
+## 3. Resolve scientific ambiguity / branch when explicitly required
 
 如果两类证据都不足以形成可靠结论，或两类明确 evidence 相互冲突且 Agent 复核实际 evidence 后仍不能可靠解决，则向用户确认。
 
 确认时说明当前 residue identity、predicted pKa / target pH、两类 assessment 及具体冲突或不确定性。
 
-assignment 未闭合时不发布该 target 的完成结果。
+默认目标仍是为当前 1.7 target 形成一个明确 assignment；assignment 未闭合时不发布该 target 的完成结果。
+
+如果用户决定将多个可行 assignment 作为不同后续研究策略保留，而不是只选一个，则：
+
+- 当前 source target 派生多个 1.7 local targets；
+- 各 target record 的 `source_target_records` 指向同一 source target record；
+- 每个 target 分别生成独立 structure / map / assignment report / validation；
+- 不在一个 target report 中把 mutually exclusive final assignments 同时当成完成结果。
 
 ## 4. Map assignment to residue naming
 
@@ -128,11 +153,16 @@ assignment 未闭合时不发布该 target 的完成结果。
 
 ## 6. 维护 atom map
 
-完整复制与输入 heavy-atom structure 对应的正式 atom map，并按 `../../references/atom_mapping_rules.md` 更新，生成：
+以输入 heavy-atom structure 对应的正式 atom map 为基础，按 `../../references/atom_mapping_rules.md` copy-and-update，生成：
 
 `atom_mapping.yaml`
 
-规则：
+文件级：
+
+- `target_record` 指向当前 1.7 target record；
+- `input_map` 指向实际使用的上游 map。
+
+逐原子：
 
 - 所有 atom records 保留；
 - `original_atom_serial`、`component_id + residue_id` 和既有 `operations` 不改写；
@@ -142,7 +172,7 @@ assignment 未闭合时不发布该 target 的完成结果。
 
 # Protonation assignment report
 
-每个 target 生成固定格式的：
+每个 actual 1.7 target 生成固定格式的：
 
 `protonation_assignment_report.yaml`
 
@@ -150,6 +180,10 @@ assignment 未闭合时不发布该 target 的完成结果。
 
 ```yaml
 target_id: target_001
+
+references:
+  target_record: /absolute/path/to/07_protein_protonation_assignment/T005/targets/target_001.yaml
+
 input_structure: /absolute/path/to/input.pdb
 input_atom_mapping: /absolute/path/to/input_atom_mapping.yaml
 output_structure: /absolute/path/to/protonation_assigned_structure.pdb
@@ -220,6 +254,8 @@ residues:
 
 固定字段语义：
 
+- `target_id` 只在当前 1.7 工作项内定位 local target；
+- `references.target_record` 记录当前 1.7 target record 完整绝对路径；上游分支沿其 `source_target_records` 追溯；
 - `input_structure`、`input_atom_mapping`、`output_structure`、`output_atom_mapping` 均记录完整绝对路径；
 - `protein_force_field` 记录当前实际使用的 protein force field；如果当前科研任务只明确提供独立 protonation naming convention、并未确定具体 protein force field，则写 `null`；
 - `protonation_naming_convention` 记录最终 residue-name mapping 的实际依据；如果直接使用已命名 protein force field 的默认命名规则，则写 `force_field_default`，否则记录实际 convention / reference；
@@ -259,22 +295,27 @@ POSITIVELY_CHARGED
 
 Validation 属于 1.7 result owner，并在 assignment 已经闭合、结构、map 与 report 已写出后执行。
 
-只检查以下四类结果属性：
+只检查以下五类结果属性：
 
-1. **结果完整性**
+1. **Target lineage**
+   - current target record 存在且 `target_id` 与当前 1.7 local target 一致；
+   - `source_target_records` 与实际 source target(s) 一致；
+   - report `references.target_record` 与 output map `target_record` 指向同一 current target record。
+
+2. **结果完整性**
    - 当前处理范围内的全部 Asp / Glu / His 都有 assignment record；
    - report 中的 residue identity 与输出结构可逐 residue 对应。
 
-2. **改名正确性**
+3. **改名正确性**
    - `final_residue_name` 与 final protonation assignment 一致；
    - `final_residue_name` 符合当前 protein force field / protonation naming convention；
    - `protonation_assigned_structure.pdb` 中的实际 residue name 与 report 一致。
 
-3. **结构未被意外修改**
+4. **结构未被意外修改**
    - 除 residue-name modification 外，输入与输出的 heavy-atom set、atom names、coordinates、residue / atom order 均一致；
    - 未加入 final H。
 
-4. **atom map 正确维护**
+5. **atom map 正确维护**
    - 输出 PDB 每个 `ATOM / HETATM` 恰有一条 map record，map 无额外 atom record；
    - `original_atom_serial`、`component_id + residue_id` 和既有 operation history 与 input map 一致；
    - 只有 residue name 实际变化的 residue atoms 新增 `1.7RENAME`；
@@ -291,23 +332,29 @@ FAIL
 
 `protonation_validation.md`
 
-Validation 不修改结构、atom map 或 assignment report。
+Validation 不修改结构、atom map、target record 或 assignment report。
 
 # Official results
 
-每个 target 独立形成正式结果：
+当前 Task Sheet 的 1.7 工作目录使用：
 
 ```text
-<project_root>/01_structure_preparation/07_protein_protonation_assignment/<task_id>/<target_id>/
-├── protonation_assigned_structure.pdb
-├── atom_mapping.yaml
-├── protonation_assignment_report.yaml
-└── protonation_validation.md
+<project_root>/01_structure_preparation/07_protein_protonation_assignment/<task_id>/
+├── targets/
+│   ├── target_001.yaml
+│   ├── target_002.yaml
+│   └── ...
+├── target_001/
+│   ├── protonation_assigned_structure.pdb
+│   ├── atom_mapping.yaml
+│   ├── protonation_assignment_report.yaml
+│   └── protonation_validation.md
+└── ...
 ```
 
 这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
-只有 validation 为 `PASS` 时，当前 target 的 1.7 正式结果才完成。
+只有 validation 为 `PASS` 时，当前 1.7 local target 的正式结果才完成。
 
 # Project result registration
 
@@ -322,7 +369,9 @@ protonation_assigned_structure.pdb
 protonation_assignment_report.yaml
 ```
 
-`atom_mapping.yaml` 不单独登记，由 `protonation_assignment_report.yaml.output_atom_mapping` 定位；`protonation_validation.md` 保留为当前 target 的正式结果，但不单独登记为 project-level result entry。
+`atom_mapping.yaml` 不单独登记，由 `protonation_assignment_report.yaml.output_atom_mapping` 定位；`protonation_validation.md` 保留为当前 target 的正式结果，但不单独登记为 project-level result entry；target record 不因为创建而单独登记。
+
+`protonation_assignment_report.yaml.references.target_record` 提供当前 1.7 local target 的正式跨 Skill引用，后续需要 ancestry 时沿 target record 的 `source_target_records` 追溯。
 
 `project_result_index.md` 的内部组织格式由项目级 record owner 管理，本 Skill 不重新定义。
 
