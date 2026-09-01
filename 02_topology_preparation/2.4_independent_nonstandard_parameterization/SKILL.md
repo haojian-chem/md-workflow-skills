@@ -1,6 +1,6 @@
 ---
 name: independent_nonstandard_parameterization
-description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独立参数化的残基名，从同名实例中选择代表实例完成量化计算、电荷拟合与 Sobtop 参数化，并将成功参数化实例的补氢定义应用到当前工作项全部同名实例，生成正式参数化结果。
+description: 拓扑准备 2.4。处理当前 Task Sheet 已明确需要独立参数化的残基名，从同名实例中选择代表实例完成量化计算、电荷拟合与 Sobtop 参数化，并将成功参数化实例的补氢定义应用到当前工作项全部同名实例，生成正式参数化结果。
 ---
 
 # 2.4 Independent nonstandard parameterization
@@ -9,13 +9,13 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 
 `../../references/task_execution_rules.md`
 
-本 Skill 处理当前 Task Sheet 已由 2.1 建立的一个 2.4 工作项。2.4 直接消费 2.1 已确定的处理对象，不重新分类、重新分组或改变同名残基的参数化归属。
+本 Skill 处理当前 Task Sheet 中一个已经明确处理对象的独立非标准参数化工作项。当前工作项通常来自 `INDEPENDENT_NONSTANDARD`；当某个 `SOLVENT_COMPONENT` 或 `ION_COMPONENT` 缺少可直接用于后续拓扑整合的完整分子拓扑定义，且当前任务要求为其建立参数时，也可以由对应残基名建立当前工作项。
 
-当前工作项通常来自 `INDEPENDENT_NONSTANDARD`；当 2.1 已确认某个 `SOLVENT_COMPONENT` 或 `ION_COMPONENT` 缺少可直接用于后续拓扑整合的完整分子拓扑定义时，也由对应残基名建立 2.4 工作项。
+该工作项可以由 topology-preparation setup 在同一任务中建立，也可以由当前任务直接指定，或基于其它任务已经形成的正式结构 / 分类 / 参数来源结果建立；不要求当前 Task Sheet 必须包含 topology-preparation setup。
 
 ## 目标
 
-对当前 2.4 工作项完成：
+对当前工作项完成：
 
 ```text
 选择代表实例并建立参数化模型
@@ -32,18 +32,23 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 由 2.1 确定需要独�
 
 ## 输入与依据
 
-开始当前 2.4 工作项时读取：
+开始当前工作项时至少读取：
 
-- 当前 Task Sheet，确定本次处理的残基名以及 2.1 已确认的力场 / 参数定义来源；
-- 当前体系对应的 1.2 正式 `classification_result.yaml`，定位当前工作项所覆盖的全部同名实例及其 `component_id + residue_id`；
-- 当前体系的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
-- 当前对象补氢实际使用的 CCD 文件；不存在适用 CCD 时，使用当前结构的成键关系、价态和局部化学环境作为补氢依据。
+- 当前 Task Sheet，确定本次处理的残基名及工作项覆盖范围；
+- 当前体系对应的正式 `classification_result.yaml`，定位当前工作项所覆盖的全部同名实例及其 `component_id + residue_id`；
+- 当前处理对象对应的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
+- 当前对象补氢实际使用的 CCD 文件；不存在适用 CCD 时，使用当前结构的成键关系、价态和局部化学环境作为补氢依据；
+- 当前实际采用的力场及其它参数定义来源。
 
-2.4 沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据残基名、chain、resid 或空间位置重新建立身份。
+这些正式结构 / 分类结果可以来自当前任务，也可以来自其它已经完成的任务。
+
+力场及其它参数定义来源先从当前 Task Sheet、已有正式项目记录、可追溯执行记录 / 日志、当前对话上下文和用户已明确决定中确认；当前工作需要而仍不能唯一确定时，向用户确认。
+
+当前工作沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据残基名、chain、resid 或空间位置重新建立身份。
 
 ## Reuse
 
-当前 2.4 不设置 reuse。
+当前独立非标准参数化不设置 reuse。
 
 在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都从当前体系实例中选择代表实例并完成本 Skill 规定的参数化及当前体系实例结构生成。
 
@@ -89,7 +94,7 @@ parameterization.chg
 
 `parameterization.chg` 与 `parameterization_model.mol2` 的原子顺序保持可确定的一一对应，并作为 Sobtop 参数化使用的最终电荷文件。
 
-2.4 的电荷拟合对象就是完整的代表实例参数化模型；不采用 2.3 针对 `charge_modification_scope` 建立的无约束 / 有约束并行拟合机制。
+当前工作项的电荷拟合对象就是完整的代表实例参数化模型；不采用 topology-linked 参数化针对 `charge_modification_scope` 建立的无约束 / 有约束并行拟合机制。
 
 最终实际采纳的 SP 任务路径保留用于正式结果记录。
 
@@ -141,7 +146,7 @@ operations:
 
 来自 `stage1_final.pdb` 的原子沿用 `stage1_final_map.yaml` 中对应记录的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`，只更新当前 `output_atom_index`。
 
-2.4 新增 H 建立新记录：
+当前工作项新增 H 建立新记录：
 
 ```text
 original_atom_serial = null
@@ -149,7 +154,7 @@ component_id + residue_id = 该 H 所属真实残基的既有身份
 operations = [2.4ADD]
 ```
 
-2.4 的 Stage 2 operation code 只有：
+当前工作项的 Stage 2 operation code 只有：
 
 ```text
 2.4ADD
@@ -157,7 +162,7 @@ operations = [2.4ADD]
 
 ## Validation
 
-当前 2.4 工作项形成正式结果前至少确认：
+当前工作项形成正式结果前至少确认：
 
 - 当前工作项全部同名实例已完成参数定义一致性检查；不存在需要通过不同残基名区分但仍被静默合并参数化的实例；
 - `parameterization_model.mol2` 与 `parameterization_model.map` 描述同一个本次成功参数化的代表实例，原子集合和原子顺序一致；
@@ -165,7 +170,7 @@ operations = [2.4ADD]
 - `parameterization.chg` 与代表实例参数化模型的原子顺序一一对应；
 - `parameterized_topology.itp` 的残基名、原子名、原子顺序和电荷能够与代表实例参数化模型及 `parameterization.chg` 确定对应；
 - `parameterized_structure.gro` 与 `parameterized_structure.map` 覆盖当前工作项全部同名实例，每个实例的残基名、原子名和残基内原子顺序与 `parameterized_topology.itp` 一致；
-- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，2.4 新增 H 使用 `2.4ADD`。
+- `parameterized_structure.map` 中各实例继续使用自身的 `component_id + residue_id`，Stage 1 来源原子保留既有 `operations` 历史，当前工作项新增 H 使用 `2.4ADD`。
 
 ## 正式结果
 
@@ -193,4 +198,4 @@ parameterized_structure.map
 
 并记录当前处理残基名、本次成功参数化的代表实例、当前工作项全部实例、实际补氢依据、最终采纳的 OPT / FREQ / SP 任务路径和参数生成方法。
 
-完成后按仓库级 Task Execution 规则更新当前 Task Sheet 的 2.4 工作项状态，并将 `independent_nonstandard_parameterization_result.yaml` 的完整路径登记到项目结果索引。上述七个结果文件由该正式结果记录统一定位，不在项目结果索引中分别登记。
+完成后按仓库级 Task Execution 规则更新当前 Task Sheet 工作项状态，并将 `independent_nonstandard_parameterization_result.yaml` 的完整路径登记到项目结果索引。上述七个结果文件由该正式结果记录统一定位，不在项目结果索引中分别登记。
