@@ -42,6 +42,8 @@ description: 结构准备 1.5。对每个当前 target 独立执行结构完整�
 - 如果该 target 实际执行过 1.4：1.4 正式 `altloc_resolution_report.yaml`；
 - 当前重新检查实际需要的 force-field residue definition 或 CCD component file。
 
+这些正式上游结果只需要与当前 target / 当前结构实际对应，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 classification、selection、alternate-conformation 处理与当前 1.5 写在同一 Task Sheet。
+
 当前 PDB 通常为 1.4 输出结构；如果当前 target 没有执行 1.4，则使用当前最新的 1.3 target PDB。
 
 1.2 本次实际使用的 RTP / CCD reference 由 `classification_result.yaml` 文件级 `references` 及各 residue 检查项的 `evidence` 直接定位；1.5 不读取或要求 `reference_manifest.yaml`。
@@ -136,6 +138,8 @@ element_mismatches
 ```text
 <project_root>/01_structure_preparation/05_completeness_check/<task_id>/<target_id>/structure_completeness_report.yaml
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
 1.5 不生成新的 PDB。报告中的 `structure` 直接指向本次实际检查的当前 PDB。
 
