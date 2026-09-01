@@ -57,19 +57,26 @@ Scope / distinction
 
 ## Current terminology
 
+### scientific task
+
+**Canonical term:** `scientific task`  
+**Preferred expression:** 科研任务  
+**Definition:** 用户希望持续推进的较大科研工作目标或问题域；它可以跨多个执行对话、多个 Task Sheet 和多个 MD Workflow Stage。  
+**Scope / distinction:** 科研任务是工作目标层概念，不等同于某个 `Txxxx` 文件。为了控制上下文规模、隔离废弃/错误方案或按执行阶段拆分，同一个科研任务可以使用多张 Task Sheet；建立新的 Task Sheet 不自动意味着建立新的科研任务。
+
 ### Task Sheet
 
 **Canonical term:** `Task Sheet`  
 **Preferred expression:** `Task Sheet`  
-**Definition:** 真实项目中保存任务目标、当前计划、执行进度和最小恢复上下文的任务记录；当前文件形式为 `00_project_records/tasks/Txxxx.md`。  
-**Scope / distinction:** 任务级导航与状态由 Task Sheet / task index 体系维护；不要把 Task Sheet 与项目结果索引混为同一记录。
+**Definition:** 真实项目中用于承载一个有界执行范围的任务记录，保存当前目标、计划、执行进度和最小恢复上下文；当前文件形式为 `00_project_records/tasks/Txxxx.md`。  
+**Scope / distinction:** 一张 Task Sheet 可以只覆盖某个科研任务的一部分。`Txxxx` 是当前 Task Sheet 的标识，不是整个科研任务的永久身份；同一科研任务的后续 Task Sheet 可以显式引用前序 Task Sheet 中已经完成的 prerequisite、正式结果和决策。项目级正式结果检索由项目结果索引负责，不与 Task Sheet 混为同一记录。
 
 ### project result index
 
 **Canonical term:** `project result index`  
 **Preferred expression:** 项目结果索引  
-**Definition:** 真实项目中用于跨任务、跨对话定位正式结果的检索入口；当前文件形式为 `00_project_records/project_result_index.md`。  
-**Scope / distinction:** 只承担正式结果检索，不维护当前任务状态，也不是所有工作文件的平铺 artifact inventory。
+**Definition:** 真实项目中用于跨 Task Sheet、跨对话定位正式结果的检索入口；当前文件形式为 `00_project_records/project_result_index.md`。  
+**Scope / distinction:** 只承担正式结果检索，不维护当前 Task Sheet 状态，也不是所有工作文件的平铺 artifact inventory。
 
 ### target
 
