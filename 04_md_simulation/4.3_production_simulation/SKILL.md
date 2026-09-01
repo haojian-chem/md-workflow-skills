@@ -15,11 +15,15 @@ description: Stage 4.3 Production simulation Skill。负责 md.* run unit 的 MD
 
 执行当前 planned run entry 中属于 `MD` 的 production scientific segment，并完成对应 `md.N` formal run unit。
 
-formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式和 bonded-geometry screening 使用父级：
+formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式、bonded-geometry screening 与本地执行倾向使用父级：
 
 ```text
 04_md_simulation/SKILL.md
 ```
+
+其中资源 / offload / tmux 等用户执行倾向由父级按需读取：
+
+`04_md_simulation/references/execution_preferences.md`
 
 ## Object requirements
 
@@ -34,7 +38,7 @@ formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式�
 - 当前 run-unit directory；
 - 可用于生成或调整 production `.mdp` 的模板或上下文（如存在）。
 
-如果 reuse 已由父级规则判定成立，则不重复执行该 production segment。
+如果 reuse 已由父级 Stage 4 规则判定成立，则不重复执行该 production segment。
 
 ## Reuse conditions
 
@@ -105,40 +109,23 @@ md.N.tpr
 
 按父级 Stage 4 统一格式生成。
 
-Production MD 默认 argument tendency：
+当前 formal run-unit identity 决定：
 
 ```text
 -deffnm md.N
--nt 12
--update gpu
--pin on
 ```
 
-例如：
-
-```bash
-gmx mdrun \
-    -deffnm md.1 \
-    -nt 12 \
-    -update gpu \
-    -pin on
-```
-
-Production MD 不默认继承 EM 的：
-
-```text
--maxh 0.08
-```
+线程数、CPU/GPU offload、pinning、tmux 与其它执行资源倾向不在本 Skill 中固定。生成脚本和实际运行时，由父级 Stage 4 读取 `references/execution_preferences.md`，并结合当前硬件、GROMACS build、当前 Task / 用户明确要求确定实际命令和运行方式。
 
 ### 4. Execute production MD
 
-本地由 Agent 执行 production MD 时默认使用 `tmux`，在对应 run-unit directory 中通过：
+按父级 Stage 4 已解析的当前执行偏好和实际运行环境执行：
 
 ```bash
 bash gmx_mdrun.sh
 ```
 
-执行。
+是否使用 `tmux` 或其它任务保持方式属于执行倾向，不改变 production scientific segment 的定义。
 
 checkpoint continuation 如果只是完成原 planned scientific segment，保持同一个 `md.N`。已经完成原 segment 后增加新的 production segment，则由父级 Stage 4 创建 / 绑定新的 planned entry 与 formal run unit。
 
@@ -176,4 +163,4 @@ Production run 完成前至少检查：
 - `grompp` warning 涉及无法可靠自动判断的实质性科学取舍；
 - validation 结果使继续、延长、修改条件或新建 segment 之间存在真正的科学选择。
 
-可由实际文件、既定 protocol 和 GROMACS 输出可靠判断的事项不应逐项交给用户。
+可由实际文件、既定 protocol 和 GROMACS 输出可靠判断的事项不应逐项交给用户。纯计算资源 / 执行方式调整按父级 Stage 4 execution preference 规则处理。
