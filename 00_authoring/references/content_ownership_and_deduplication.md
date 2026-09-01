@@ -10,9 +10,10 @@ Status: CURRENT
 
 | 内容 | 权威位置 |
 |---|---|
-| Lightweight Runtime 总体架构 | `00_authoring/project_design/lightweight_runtime_v2_spec.md` |
 | Stage catalog / 建设状态 / current entry | `00_authoring/project_design/MD_WORKFLOW_MASTER_PLAN.md` |
 | Skill 组织与职责边界 | `00_authoring/references/skill_boundaries.md` |
+| 科研执行共用机制 | `references/task_execution_rules.md` |
+| 科研结果生成与记录共用机制 | `references/result_generation_rules.md` |
 | Manager 任务管理与初始规划 | `00_manager/SKILL.md` |
 | Manager planning catalog | `00_manager/references/workflow_plan_index.yaml` |
 | 当前科研职责主线 | 当前 main `SKILL.md` |
@@ -27,6 +28,8 @@ Status: CURRENT
 | 当前任务计划与恢复上下文 | 项目 `tasks/Txxxx.md` |
 
 `legacy/contracts/**`、`legacy/runtime/**`、`legacy/tools/**` 只在明确 Legacy 维护/迁移时拥有其历史接口，不是新 Skill 的共享运行时 owner。
+
+Stage main 不是每个 Stage 的必需 authority。只有确有 Stage-wide orchestration / shared object / lifecycle 时才设置 Stage main；没有 Stage main 的 Stage 由 Task Execution Agent 根据 Task Sheet 与 current Step interfaces 推进，不为表达流程关系创建 synthetic owner。
 
 ## 2. Rule ownership gate
 
@@ -105,8 +108,10 @@ legacy/  historical executable/runtime/contracts/tools
 
 ```text
 结果 owner
-→ 同时拥有该结果的 validation requirement
+→ 拥有该结果完成当前职责所需的 validation requirement
 ```
+
+这不要求每个结果 owner 建立重复的穷尽式终检。Validation 的范围与强度按当前职责和实际风险决定；已有可选独立 validation Skill 时，不在上游结果 owner 中复制同一整套检查。
 
 Tool 负责自己 deterministic 输出的机械/格式有效性；main Skill 负责科研有效性。
 
@@ -120,6 +125,8 @@ Tool 负责自己 deterministic 输出的机械/格式有效性；main Skill 负
 5. 是否为了“范围完整”罗列了无实际必要的“不做”事项？
 6. 是否又建立 metadata/index 来重复 Skill 本身？
 7. 是否误把 evals/tools/legacy 当成 Stage Skill root？
+8. 是否为了表达跨 Step 关系而人为创建了没有真实 Stage-wide 职责的 Stage main？
+9. 是否为了“结果 owner 应 validation”而重复了已有软件检查或可选独立终检？
 ```
 
 任一答案为“是”时先处理 ownership / layout 问题。
