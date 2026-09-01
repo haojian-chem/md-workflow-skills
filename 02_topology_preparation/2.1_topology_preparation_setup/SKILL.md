@@ -1,6 +1,6 @@
 ---
 name: topology_preparation_setup
-description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数定义来源，并把当前对象落实为实际的 2.2–2.5 Task Sheet 工作项。
+description: 拓扑准备 2.1。当前任务需要进行拓扑准备 setup / routing 时，确认或补充当前体系使用的力场及其它参数定义来源，并把当前任务范围内需要展开的拓扑准备对象落实到 Task Sheet。
 ---
 
 # 2.1 Topology preparation setup
@@ -9,106 +9,122 @@ description: 拓扑准备 2.1。确定当前体系使用的力场及其它参数
 
 `../../references/task_execution_rules.md`
 
-本 Skill 只定义 2.1 的力场 / 参数来源确定、处理对象划分以及 Task Sheet 更新规则。
+本 Skill 只定义当前 topology-preparation setup 工作项的参数来源核对、处理对象划分以及 Task Sheet 更新规则。
 
 ## 目标
 
-根据 Stage 1 已确定的当前体系及对象分类，明确 Stage 2 后续实际使用的力场和其它参数定义来源，并把当前体系需要执行的 2.2–2.5 工作落实到当前 Task Sheet。
+当当前任务确实需要进行 topology-preparation setup / routing 时：
 
-2.1 的规划信息直接写入当前 Task Sheet；后续工作项不依赖额外的 2.1 报告或独立规划文件。
+- 根据当前体系的正式结构、分类与已确认关系，核对当前拓扑准备实际需要的处理对象；
+- 使用当前任务已经明确的力场及其它参数定义来源，或在尚未明确时触发确认；
+- 只在当前任务范围内，把需要执行的标准残基拓扑生成、topology-linked 非标准残基参数化、独立非标准参数化和拓扑整合工作落实到 Task Sheet。
+
+本 Skill 不是其它拓扑准备 Step 的强制同任务前置。当前 Task Sheet 如果只覆盖拓扑准备的局部范围，并且对应 Step 已经能够从其它任务的正式结果、当前项目记录、当前对话上下文或用户明确决定获得所需输入，可以直接进入对应 Step，不要求为了形式完整补做 topology-preparation setup。
+
+本 Skill 的规划信息直接写入当前 Task Sheet；不生成额外 setup report 或独立 route 文件。
 
 ## 输入与依据
 
-2.1 至少读取：
+执行当前 setup 工作时至少读取：
 
 - 当前 Task Sheet；
-- 当前体系所对应 Stage 1 target 的正式 `stage1_final.pdb`；
-- 与该结构对应的 `stage1_final_map.yaml`，用于保持当前残基 / component 身份；
-- 与当前体系对应的 1.2 正式 `classification_result.yaml`，用于读取 `STANDARD_RESIDUE`、`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 分类及已确认 topology-linked 关系；
-- 当前任务或用户已经指定的力场及其它参数定义来源。
+- 当前体系实际使用的正式结构；通常为对应 target 的 `stage1_final.pdb`，也可以是当前任务明确接受的其它正式等价入口；
+- 与该结构对应的正式 atom map；
+- 当前体系对应的正式 `classification_result.yaml`，用于读取 `STANDARD_RESIDUE`、`TOPOLOGY_LINKED_NONSTANDARD`、`INDEPENDENT_NONSTANDARD`、`SOLVENT_COMPONENT`、`ION_COMPONENT` 及已确认 topology-linked 关系；
+- 当前任务、已有项目记录、可追溯执行记录 / 日志、当前对话上下文或用户已经指定的力场及其它参数定义来源。
 
-2.1 沿用 1.2 已确认分类，不根据残基名、文件记录类型或当前空间位置重新分类对象。
+上述结构、map 和 classification result 可以来自当前 Task Sheet 更早的任务项，也可以来自其它已经完成的任务；本 Skill 不要求这些来源工作必须出现在同一 Task Sheet。
 
-若当前任务尚不能唯一确定应使用的力场或其它参数定义来源，先向用户确认；不自行选择新的力场组合。
+本 Skill沿用已有正式分类，不根据残基名、文件记录类型或当前空间位置重新分类对象。
+
+## 力场与参数定义来源
+
+力场及其它参数定义来源应尽早确认，但“确认当前采用什么”不是本 Skill 的唯一所有权职责。
+
+当前 setup 工作：
+
+1. 先读取当前任务上下文中已经明确的用户决定和正式记录；
+2. 已经能够唯一确定当前采用来源时直接使用，不重复询问；
+3. 当前 topology-preparation setup 需要这些信息而仍不能唯一确定时，向用户确认；
+4. 把本次实际采用、且当前任务范围内需要使用的定义来源路径记录到当前 setup 工作项；
+5. 后续具体 Step 在真正需要时仍可按仓库级 Task Execution 规则再次核对，尤其当处理对象、任务范围或用户要求已经变化。
+
+一个体系可以同时使用多个来源。存在多个来源时，对当前任务实际涉及的 `STANDARD_RESIDUE` 检查是否在多个已选来源中重复定义。
+
+若同一 `STANDARD_RESIDUE` 在多个已选来源中都有定义，必须明确当前体系对该残基名实际采用哪个定义来源，并把选择结果与对应路径写入当前 setup 工作项。不存在重复定义时记录已完成检查即可。
+
+`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 是否已有可直接使用的分子拓扑定义，也按本次已经确认的实际参数定义来源判断。
 
 ## Reuse
 
-当前 2.1 不设置 reuse，也不检索已有 Stage 2 正式结果来决定跳过 2.2–2.5 工作。
+当前 topology-preparation setup 不设置 reuse，也不检索已有 Stage 2 正式结果来决定跳过其它工作项。
 
-当前 Stage 2 的 reuse 机制尚未启用；在后续专门完成 reuse 设计与接口更新前，各 Stage 2 工作项按当前任务实际执行。
+当前 Stage 2 的 2.2–2.5 reuse 机制尚未启用；后续 reuse 作为独立更新计划重新设计。
 
-## 确定力场及参数定义来源
+## 确定当前任务范围内的处理对象
 
-确认当前体系后续实际使用的力场及其它参数定义来源，并把能够定位这些定义的实际路径记录在 Task Sheet 的 2.1 工作项中。
+只展开**当前 Task Sheet 的任务目标实际覆盖**的拓扑准备工作；不因为当前执行了 setup 就自动把完整 Stage 2 填入 Task Sheet。
 
-一个体系可以同时使用多个来源。存在多个来源时，对当前体系全部 `STANDARD_RESIDUE` 的残基名检查是否在多个已选来源中重复定义。
-
-若同一 `STANDARD_RESIDUE` 在多个已选来源中都有定义，必须明确当前体系对该残基名实际采用哪个定义来源，并把选择结果与对应路径写入 2.1 工作项。不存在重复定义时，记录已完成检查即可。
-
-`SOLVENT_COMPONENT` 和 `ION_COMPONENT` 是否能够直接进入 2.5，也以这里已经确认的实际参数定义来源为依据。
-
-## 确定 2.2–2.5 处理对象
+当用户要求完整 topology preparation 时，可以按下述分类展开完整所需工作；当当前任务只覆盖其中一部分时，只建立该部分真实需要的工作项和依赖。
 
 ### `STANDARD_RESIDUE`
 
-当前体系存在 `STANDARD_RESIDUE` 时，全部标准残基共同对应一个 2.2 工作项。
+当前任务范围需要生成标准残基 topology，且当前体系存在 `STANDARD_RESIDUE` 时，全部当前处理范围内标准残基共同对应一个标准残基拓扑生成工作项。
 
-2.1 只确定这个 2.2 工作项覆盖当前体系全部 `STANDARD_RESIDUE`；2.2 内部如何组织具体拓扑生成属于 2.2 自身职责。
+本 Skill 只确定该工作项覆盖范围；pdb2gmx 的实际组织与执行属于标准残基拓扑生成 Skill 自身职责。
 
 ### `TOPOLOGY_LINKED_NONSTANDARD`
 
-根据当前已确认 topology-linked 关系，判断哪些非标准残基需要在同一次参数化处理中共同处理。
+当前任务范围需要 topology-linked 参数化时，根据当前已确认 topology-linked 关系判断哪些非标准残基需要在同一次参数化处理中共同处理。
 
-一个 2.3 工作项可以覆盖一个或多个 `TOPOLOGY_LINKED_NONSTANDARD` 残基。残基之间存在需要共同处理的拓扑连接，或多个非标准残基与同一标准残基形成需要联合处理的拓扑关系时，可以归入同一个 2.3 工作项。
+一个工作项可以覆盖一个或多个 `TOPOLOGY_LINKED_NONSTANDARD` 残基。残基之间存在需要共同处理的拓扑连接，或多个非标准残基与同一标准残基形成需要联合处理的拓扑关系时，可以归入同一个工作项。
 
-除这些稳定关系外，不把“一个非标准残基对应一个 2.3 工作项”固化为规则；具体组合由执行 Agent 根据当前已确认 topology-linked 关系和实际参数化对象判断。
+除这些稳定关系外，不把“一个非标准残基对应一个工作项”固化为规则；具体组合由执行 Agent 根据当前已确认 topology-linked 关系和实际参数化对象判断。
 
 ### `INDEPENDENT_NONSTANDARD`
 
-按残基名建立 2.4 工作项。同一残基名在当前 Stage 2 中使用同一套参数定义，因此同名 `INDEPENDENT_NONSTANDARD` 只建立一个 2.4 工作项。
+当前任务范围需要独立非标准参数化时，按残基名建立工作项。同一残基名在当前参数定义语义下使用同一套参数定义，因此同名 `INDEPENDENT_NONSTANDARD` 只建立一个工作项。
 
-若同名残基实际需要不同参数定义，不能在同一残基名下静默建立多套参数；先向用户确认是否需要区分残基名，再继续规划。
+若同名残基实际需要不同参数定义，不能在同一残基名下静默建立多套参数；先向用户确认是否需要区分残基名，再继续。
 
 ### `SOLVENT_COMPONENT` / `ION_COMPONENT`
 
-检查当前已经确认的力场 / 参数定义来源是否为该 component 提供可直接用于 2.5 的完整分子拓扑定义。
+当当前任务需要处理这些对象时，检查已经确认的力场 / 参数定义来源是否提供可直接使用的完整分子拓扑定义。
 
-- 已有完整定义：作为 2.5 的直接输入，不建立对应 2.4 参数化工作项；
-- 缺少完整定义：按实际 component / 残基名建立对应 2.4 工作项。
+- 已有完整定义：可作为后续拓扑整合的直接输入；
+- 缺少完整定义，且当前任务范围包含为其建立参数：按实际 component / 残基名建立独立参数化工作项。
 
-### 2.5
+### 拓扑整合
 
-Stage 2 当前体系保留一个 2.5 工作项，用于汇合当前体系实际需要的 2.2、2.3、2.4 正式结果，以及能够直接使用的 `SOLVENT_COMPONENT` / `ION_COMPONENT` 拓扑定义。
+只有当前任务范围包含 topology integration 时才建立或维护拓扑整合工作项。
 
-当前拓扑整合工作项必须显式记录本次整合所依赖的全部标准残基拓扑生成、topology-linked 非标准残基参数化和独立非标准参数化前置工作项。同一类前置任务存在多个工作项时逐项记录，不得仅以任务类型代替具体工作项引用。对于无需独立参数化、可直接参与整合的 `SOLVENT_COMPONENT` / `ION_COMPONENT`，逐项记录其 `component_id + residue_id` 及实际采用的拓扑定义来源。
+该工作项显式记录本次整合实际依赖的标准残基拓扑生成、topology-linked 非标准参数化、独立非标准参数化正式结果或工作项，以及能够直接采用的 solvent / ion 拓扑定义。同一类前置结果存在多个时逐项记录，不用任务类型代替具体依赖。
 
-2.1 只确定这些输入来源和工作对象，不定义 2.5 的内部整合规则。
+当前任务如果只负责参数化、不负责整合，不因为执行了 topology-preparation setup 自动新增 topology integration。
 
 ## 更新 Task Sheet
 
-完成上述判断后，直接维护当前 Task Sheet：
+完成当前 setup 后，只维护当前任务范围实际涉及的内容：
 
-- 在 2.1 工作项中记录本次实际使用的力场及其它参数定义来源路径；
-- 存在多个来源时，记录 `STANDARD_RESIDUE` 重复定义检查，以及发生重复时实际采用的定义来源；
-- 当前体系存在 `STANDARD_RESIDUE` 时，建立或保留一个覆盖全部标准残基的 2.2 工作项；
-- 为每个实际需要共同参数化的非标准残基组合建立一个 2.3 工作项，并使工作项能够定位对应残基及其已确认 topology-linked 关系；
-- 为每个需要独立参数化的残基名建立一个 2.4 工作项；
-- 建立或保留一个拓扑整合工作项，逐项记录本次整合所依赖的全部标准残基拓扑生成、topology-linked 非标准残基参数化和独立非标准参数化前置工作项；同一类前置任务存在多个工作项时分别记录；对于无需独立参数化、可直接参与整合的 `SOLVENT_COMPONENT` / `ION_COMPONENT`，逐项记录其 `component_id + residue_id` 及实际采用的参数定义来源。
+- 在当前 setup 工作项中记录本次实际确认 / 使用的力场及其它参数定义来源；
+- 存在多个来源时，记录当前处理范围内 `STANDARD_RESIDUE` 重复定义检查及实际采用来源；
+- 为当前任务实际需要的标准残基 topology、topology-linked 参数化、独立非标准参数化或 topology integration 建立 / 调整工作项；
+- 工作项的对象和依赖必须能够由当前 Task Sheet 或所引用的既有正式结果唯一定位。
 
-初始 Task Sheet 中仅用于规划占位、但当前体系没有实际处理对象的 2.2–2.4 项，可以在规划更新时删除；已经形成有意义执行历史的任务项按仓库级 Task Execution 规则保留。
+初始 Task Sheet 中仅用于规划占位、但已确认不属于当前任务实际范围的项目，可以在计划更新时删除；已经形成有意义执行历史的任务项按仓库级 Task Execution 规则保留。
 
-2.1 只展开和调整 2.2–2.5 的实际处理对象。Topology validation 不是 Stage 2 的必需环节；是否在当前 Task Sheet 中安排 2.6，由当前任务范围和用户要求决定，不由 2.1 强制保留。
+Topology validation 不是 Stage 2 的必需环节；是否在当前 Task Sheet 中安排 topology validation，由当前任务范围和用户要求决定，不由本 Skill 强制增加。
 
-完成 Task Sheet 更新后，按仓库级 Task Execution 规则更新当前 2.1 工作项状态。
+完成 Task Sheet 更新后，按仓库级 Task Execution 规则更新当前 setup 工作项状态。
 
 ## 结果边界
 
-2.1 本身不生成独立报告，也不向 `project_result_index.md` 登记新的正式结果。
+本 Skill 不生成独立报告，也不向 `project_result_index.md` 登记新的正式结果。
 
-2.1 的当前工作结果体现在 Task Sheet 中的：
+当前工作结果只体现在 Task Sheet 中实际需要保存的：
 
-- 力场及其它参数定义来源路径；
-- 多来源时的 `STANDARD_RESIDUE` 重复定义检查与实际来源选择；
-- 当前体系实际的 2.2–2.5 工作项及其处理对象。
+- 本次核对 / 使用的力场及其它参数定义来源；
+- 多来源时的重复定义检查与实际来源选择；
+- 当前任务范围内实际展开或调整的拓扑准备工作项、对象和依赖。
 
-2.2–2.5 的正式结果及其登记语义由对应处理环节定义，2.1 不复制这些规则。
+后续具体处理的正式结果与登记语义由对应 Skill 自己定义，本 Skill 不复制这些规则。
