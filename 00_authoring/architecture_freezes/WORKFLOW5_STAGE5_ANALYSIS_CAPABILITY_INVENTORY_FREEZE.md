@@ -1,32 +1,47 @@
 # Workflow 5 / Stage 5 analysis capability inventory freeze
 
-Status: **FROZEN AUTHORING REFERENCE — NOT AN ACTIVE INVENTORY**
+Status: **FROZEN AUTHORING REFERENCE — STAGE 5 IMPLEMENTATION IN PROGRESS**
 
-本文件保留 Stage 5 在正式 Skill generation 获批前已经敲定的 analysis capability inventory 设计。它不是 runtime inventory；正式 inventory 只在 Stage 5 Skill generation 获批后创建/启用。
-
-未来正式文件名固定为：
+本文件保留 Stage 5 analysis capability inventory 的 authoring baseline。Stage 5 当前已经存在正式 runtime inventory：
 
 `05_analysis/references/analysis_capability_inventory.yaml`
 
+但 Stage 5 整体 authoring / capability implementation 尚未完成，因此本 freeze 继续保留在 current `architecture_freezes/`，不归档。
+
+已实现部分始终以 current runtime inventory 与对应 capability entry 为准；本 freeze 不覆盖 current implementation。
+
 这里统一使用 **capability**，因为 Stage 5 可发现和调度的能力可以由科研/技术 Skill、确定性 Tool 或其它已登记能力 owner 提供；不能把所有 capability 都抽象成 Skill 或 Tool。
 
-首批 Stage 5 capability 的 authoring / implementation 集合固定为：
+## Current implementation status
+
+当前已经进入正式 inventory 的 capability：
 
 ```text
 trjconv
 trjcat
 make_ndx
+```
+
+这些条目的 current entry 由正式 runtime inventory 定位。
+
+当前已知仍待后续 authoring / implementation 的分析能力方向包括：
+
+```text
 rmsd
 rmsf
 hbond
 rdf
 ```
 
-其中 `trjconv` 与 `trjcat` 是独立 capability：`trjconv` 负责单轨迹转换/处理，`trjcat` 负责多轨迹拼接；不把 `trjcat` 作为 `trjconv` 的内部命令步骤隐藏。
+这些名称表示当前已知的后续建设方向，不构成 Stage 5 的固定 completion catalog，也不限制未来增加其它分析 capability。Stage 5 是否整体完成由实际建设状态决定，不以完成某一固定列表自动判定。
 
-这些名称定义首批需要为 Stage 5 准备的能力集合，但并不因为写入本 freeze 就自动成为 active inventory entry。只有对应 capability 的实际 `entry` 已形成并可引用时，才能把该条目加入正式 inventory。
+`trjconv` 与 `trjcat` 保持独立 capability：`trjconv` 负责单轨迹转换/处理，`trjcat` 负责多轨迹拼接；不把 `trjcat` 作为 `trjconv` 的内部命令步骤隐藏。
 
-冻结的 inventory 结构：
+只有对应 capability 的实际 `entry` 已形成并可引用时，才能把该条目加入正式 runtime inventory；不得为计划中的 capability 建 placeholder entry。
+
+## Inventory structure baseline
+
+正式 runtime inventory 保持轻量 discovery interface：
 
 ```yaml
 # Stage 5 analysis capability inventory.
@@ -60,10 +75,18 @@ Inventory 只做 capability discovery，不复制具体 capability owner 的方�
 
 各 capability 哪些正式结果文件允许登记到 `project_result_index.md`，由对应 capability owner 在自己的 Skill / README 中定义；inventory 不新增 `registered_files`、`result_whitelist` 等集中字段，也不复制这些文件清单。
 
-`trjconv` / `trjcat` 产生的正式 processed/concatenated trajectory 共享同一套集中 trajectory 管理接口。两者拥有同等的 `trajectory_index.yaml` 维护职责：各自只对自己生成并通过 validation、且满足其登记条件的 trajectory 进行登记或更新，不建立独立的 `trjconv` / `trjcat` trajectory indexes。具体产物、命名、登记前提和写入规则由对应 capability owner 的 Skill / README 定义；Stage 5 inventory 只负责发现 capability entry。
+## Shared trajectory-management baseline
 
-如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。具体缺失方法如何完成由用户与 Agent 在 Stage 5 Skill 责任之外处理；相关未覆盖需求可按 Stage 5 architecture freeze 的边界保留在 Task Sheet 的 Stage 5 plan items 区域之外。
+`trjconv` / `trjcat` 产生的正式 processed / concatenated trajectory 共享同一套集中 trajectory 管理接口。两者拥有同等的 `trajectory_index.yaml` 维护职责：各自只对自己生成并通过 validation、且满足其登记条件的 trajectory 进行登记或更新，不建立独立的 `trjconv` / `trjcat` trajectory indexes。
 
-“从已完成的 capability gap 流程中记录/学习经验，并据此补充 capability”保留为未来更新方向；**本次 Stage 5 设计不实现该学习/补充机制**。当前只有在另行完成 capability authoring、形成实际可引用的 `entry` 后，才可把该 capability 加入 inventory。
+具体产物、命名、登记前提和写入规则由对应 capability owner 的 current Skill 拥有；Stage 5 inventory 只负责发现 capability entry。
+
+## Capability gap
+
+如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。
+
+缺失 capability 的具体方法设计、实现和 validation 不由 Stage 5 main Skill 临时伪造。相关需求可以保留在当前任务上下文中，待后续 capability authoring 完成后再登记实际 entry。
+
+从实际分析工作中发现新的稳定 capability 需求，可以作为后续 Stage 5 authoring 输入；只有在完成相应 capability authoring、形成真实可引用 entry 后，才更新正式 inventory。
 
 Source pre-authorization blob: `12749eadc032daba95685c3fd450af0633613371`.
