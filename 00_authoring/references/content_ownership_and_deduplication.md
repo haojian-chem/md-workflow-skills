@@ -14,7 +14,7 @@ Status: CURRENT
 | Skill 组织与职责边界 | `00_authoring/references/skill_boundaries.md` |
 | 科研执行共用机制 | `references/task_execution_rules.md` |
 | 科研结果生成与记录共用机制 | `references/result_generation_rules.md` |
-| Manager 任务管理与初始规划 | `00_manager/SKILL.md` |
+| Manager Task Sheet 管理与初始规划 | `00_manager/SKILL.md` |
 | Manager planning catalog | `00_manager/references/workflow_plan_index.yaml` |
 | 当前科研职责主线 | 当前 main `SKILL.md` |
 | 当前职责的长规则 / registry | 当前 `references/` |
@@ -24,8 +24,8 @@ Status: CURRENT
 | evaluation / fixtures / benchmark | `evals/` |
 | Legacy contracts / runtime / tools | `legacy/` |
 | 历史 authoring/design material | `00_authoring/archive/` |
-| 跨任务正式结果检索 | 项目 `project_result_index.md` |
-| 当前任务计划与恢复上下文 | 项目 `tasks/Txxxx.md` |
+| 跨 Task Sheet / 跨科研任务正式结果检索 | 项目 `project_result_index.md` |
+| 当前 Task Sheet 计划与恢复上下文 | 项目 `tasks/Txxxx.md` |
 
 `legacy/contracts/**`、`legacy/runtime/**`、`legacy/tools/**` 只在明确 Legacy 维护/迁移时拥有其历史接口，不是新 Skill 的共享运行时 owner。
 
