@@ -31,9 +31,11 @@ Target lineage 规则由通用 Task Execution 入口按需引入；涉及 target
 
 1.2 结果应已完成当前 model 的分类、component / residue 层级和稳定身份物化。1.3 直接使用其中已经存在的 `component_id`、component 一级 `chain_index` 与 `residue_id`；`residue_id` 只在所属 `component_id` 内定位，因此任何正式 selection / mapping 都使用 `component_id + residue_id`。
 
+当前 1.3 的 execution scope 至少必须明确：实际保留哪些 research objects，以及这些 objects 应组成一个还是多个 local targets。范围确认遵守共享 `task_execution_rules.md`；范围仍有用户意图歧义时，只做只读 grounding / 候选整理，不进入 reuse、target record 建立或结构生成。
+
 # Reuse conditions
 
-开始本步骤时先在 `project_result_index.md` 中检查已有 1.3 正式结果。
+当前 1.3 execution scope 已经明确后，再在 `project_result_index.md` 中检查已有 1.3 正式结果。
 
 以下内容均等价且已有结果通过本步骤 validation 时，可以直接复用：
 
@@ -46,7 +48,7 @@ Target lineage 规则由通用 Task Execution 入口按需引入；涉及 target
 
 复用已有 1.3 科学结果时，当前 Task Sheet 如仍建立自己的 1.3 local targets，按共享 target-lineage 规则创建当前 target records，并将被复用的旧 1.3 target records 记录为对应 `source_target_records`；不得因为 selection 等价就把当前 local `target_id` 与旧 target 合并成同一个对象。
 
-信息不足无法判断时向用户确认；用户明确要求重新选择或重新生成时不复用。
+信息不足无法判断 reuse 时向用户确认；用户明确要求重新选择或重新生成时不复用。不得因为发现某个既有 1.3 结果可复用，就反向采用它的 selection / target grouping 作为当前用户尚未明确的执行范围。
 
 # Execution rules
 
@@ -58,25 +60,29 @@ Target lineage 规则由通用 Task Execution 入口按需引入；涉及 target
 
 用户可以按完整 chain、单个 residue、residue range、不连续 residues 或其组合指定保留范围。
 
-如果省略的信息能够依据当前上下文和 1.2 结果唯一确定，可以直接补足。例如用户写 `HEM 401`，且只有一个匹配 residue，则无需再次确认 chain。
+如果用户已经明确了要处理的对象范围，只是省略了能够依据当前上下文和 1.2 结果**唯一补足、且不会改变 selection membership / target grouping** 的 identity 信息，可以直接 grounding。例如用户写 `HEM 401`，且只有一个匹配 residue，则无需再次确认 chain。
 
 以下情况需要向用户确认：
 
+- 当前要保留哪些对象仍存在多个实质不同解释；
 - 存在多个合理匹配对象；
 - 用户给出的身份与 1.2 结果冲突；
 - residue range 缺少 chain 且不能唯一确定；
 - 指定对象不存在；
-- 科学描述不能唯一映射到结构对象。
+- 科学描述不能唯一映射到结构对象；
+- 多个 chain / residue 已被提及，但它们应组成一个 target 还是多个 targets 不能从用户指令、当前 Task Sheet或明确前序决定中唯一确定。
 
-存在多个合理候选时不得静默替用户选择。
+存在多个合理候选时不得静默替用户选择，也不得因为某种 grouping 更常见或更方便后续执行就自行采用。
 
 如果 selected research-object 范围包含 1.2 中 `missing_residue_check.status: ISSUE` 的 residue，该 residue 仍属于 selection，并保留对应 `component_id + residue_id`。
 
-默认建立一个 local target。一句话中出现多个 chain / residue 不自动拆分 target；只有用户明确要求分别生成多个结构时，才建立多个 1.3 targets。
+用户明确把多个 chain / residue 表述为同一个研究对象组合时，建立一个 local target；用户明确要求分别处理或分别生成结构时，建立多个 local targets。如果 grouping 本身不清晰，先确认，不设置“默认一个 target”或“默认逐对象拆分”的隐式规则。
 
 同一 target 中重复或被更大 selection 包含的 residue 去重；同一个 `component_id` 只记录一次。
 
 ## 2. 建立 1.3 target records
+
+只有 execution scope 已经明确后，才开始建立 current local targets 和 target records。
 
 当前 Task Sheet 的 1.3 工作目录使用：
 
@@ -271,14 +277,15 @@ maps/target_xxx.atom_mapping.yaml
 
 这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
-先完成 reuse 判断；只有确实需要本地执行时才创建当前 Task Sheet 的工作目录。
+先确认当前 execution scope，再进行 reuse assessment；只有范围明确且确实需要本地执行时才创建当前 Task Sheet 的工作目录。
 
 # Preflight
 
 执行前确认：
 
+- 当前 1.3 execution scope 已由用户当前指令、当前 Task Sheet 或明确前序决定唯一闭合；
 - 当前对象能够定位到一个确定 model 的 1.2 正式分类结果和对应结构；
 - 当前结构中的 atom serial 能够作为本次 1.3 `original_atom_serial` 唯一定位原子；
-- 当前用户 selection 已能唯一 grounding，或需要的用户确认已经完成；
+- 当前用户 selection 与 target grouping 已能唯一 grounding，或需要的用户确认已经完成；
 - 所有 selected `component_id + residue_id` 组合均来自当前 1.2 结果；
 - 输出位于当前 Task Sheet 的 1.3 工作目录且不会覆盖其它 Task Sheet 或其它科研任务的正式结果。
