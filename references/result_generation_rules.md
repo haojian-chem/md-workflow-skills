@@ -20,8 +20,18 @@ Validation 默认跟随当前结果 owner：
 
 ```text
 谁产生 / 判定结果
-→ 谁拥有该结果的 validation requirement
+→ 谁定义该结果完成当前职责所需的 validation requirement
 ```
+
+这条 ownership 规则只回答“谁负责定义必要检查”，**不要求每个结果 owner 都执行一套穷尽式、独立、重复的终检**。
+
+Validation 应与当前操作和结果声明相匹配：
+
+- 成熟软件组件已经直接完成主要变换时，可以用正常结束、关键输出存在及少量必要一致性检查确认当前操作；
+- 当前执行过程中已经完成的检查不为了形式完整再重复一次；
+- 如果项目另有可选独立 validation Skill，当前结果 owner 不复制其完整检查范围；
+- 只有当前结果的正确使用确实依赖某项检查时，才把该检查纳入当前结果的完成条件；
+- 避免把低成本但没有新增判别价值的检查机械堆叠成重复 validation pipeline。
 
 Tool 可以负责自己确定性输出的机械 / 格式有效性；科研 Skill 仍负责判断该输出是否满足当前科研目标。
 
@@ -46,6 +56,8 @@ Skill-specific project-result registration 白名单由对应结果 owner 定义
 由当前环节产生的结果文件应记录在对应结果字段或正式结果列表中；不得只把当前结果文件隐藏在 `references` 中而不形成明确结果字段 / 正式结果入口。
 
 如果路径直接写入字段，则写实际完整绝对路径。
+
+正式结果已经记录实际文件完整路径时，后续核查可以沿该路径读取对应工作目录和实际执行文件；不为了“结果自包含”把可从真实文件恢复的信息全部复制进 YAML / Markdown。只有对理解结果语义、reuse、恢复或跨任务检索真正有价值的信息才需要进入正式结果本身。
 
 ## 4. 结果记录内部 `references`
 
@@ -208,16 +220,20 @@ schema
 - 下游 Skill 的方法选择或 validation；
 - 为相邻 Step 交接额外生成 handoff package / handoff YAML。
 
-普通相邻 Step 的流程关系由拥有该关系的 Stage main Skill 表达；下游如何消费上游结果，由下游 Skill 自己的输入 / 对象规则定义。
+下游如何消费上游结果，由下游 Skill 自己的输入 / 对象规则定义。
+
+如果当前 Stage 存在真正拥有 Stage-wide orchestration 的 main Skill，Stage-specific route / shared-object relationship 可以由该 Stage main 拥有；如果当前 Stage 不设置 Stage main Skill，则由 Task Execution Agent 根据 Task Sheet、当前 Step 的正式结果 / input contract 和实际执行证据推进，不为普通相邻关系制造 synthetic Stage owner。
 
 ## 12. 结果规则检查
 
-- [ ] 当前结果 owner 与 validation ownership 清楚；
+- [ ] 当前结果 owner 与 validation ownership 清楚，且 validation 强度与实际职责匹配；
+- [ ] 没有为了“结果 owner 必须 validation”而复制可选独立终检或重复已有软件/过程检查；
 - [ ] main `SKILL.md` 保留足够的正式结果摘要与详细结果说明入口；
 - [ ] 非简单结果接口已经评估是否需要 `references/results.md`；
 - [ ] 如果存在 `results.md`，详细结果格式没有在 main Skill 再复制一份；
 - [ ] 正式结果文件、依赖文件和 result-internal reference 展开后均具有完整绝对路径语义；
 - [ ] 当前环节自己生成的结果文件被明确记录为结果，而不是只隐藏在 `references` 中；
+- [ ] 已有结果路径足以恢复的信息没有为了自包含被无必要复制进结果记录；
 - [ ] Markdown result 如使用 `References` section，其 keys 只在当前结果文档内解释；
 - [ ] `references/results.md` 与结果记录内部 `references` 没有混淆；
 - [ ] schema 与自然语言结果语义没有维护两套重复规范；
