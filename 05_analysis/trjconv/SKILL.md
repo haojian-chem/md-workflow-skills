@@ -77,15 +77,17 @@ gmx trjconv -s md.tpr -f md.xtc -o traj.xtc -center
 
 执行后检查输出 trajectory 是否与当前 item 要求一致。尤其当本次实际涉及时间范围/采样、output selection、PBC、centering 或 fit 时，应查看相应处理效果，而不是仅依据命令退出状态判断结果可用。
 
-检查保持任务导向，不建立独立 Validator、固定检查表或额外 validation metadata。
+检查只围绕当前 item 的实际处理要求，不建立独立 Validator、固定检查表或额外 validation metadata。
 
 # Reusable trajectory management
 
-当前 item 的工作记录仍位于：
+当前 item 的工作记录位于：
 
 ```text
 <project_root>/05_analysis/<task_id>/<编号>.trjconv/
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
 当输出 trajectory 确实具有后续复用价值时，将正式 reusable trajectory 集中存放于：
 
@@ -153,7 +155,7 @@ multi.traj.N
 - `source_run_units`：底层 Stage 4 run-unit lineage；
 - `output_selection`：当前 trajectory 实际保留的 output group / atom set；
 - `dt`：当前 trajectory 的实际 frame spacing，带单位；
-- `producer_path`：本次 `trjconv` item 的完整工作目录，用于后续二次核查。
+- `producer_path`：生成该 trajectory 的 Stage 5 plan item 完整工作目录，其中路径中的 `Txxxx` 是 producer Task Sheet ID，用于后续二次核查。
 
 更详细的 time range、PBC、centering、fit、reference、处理顺序等不复制进索引。后续需要二次 reuse 核验时，沿 `producer_path` 查看 `trjconv_record.md` 中的实际 `gmx trjconv` command(s) 与 stdin，并按需检查实际文件。
 
@@ -173,6 +175,6 @@ multi.traj.N
 
 # Result update
 
-完成当前 item 后，按 Stage 5 main Skill 的 plan-item 规则更新 Task Sheet。需要供后续 item 直接消费的有效 trajectory 可写入当前 item 的 `results`；若输出已集中登记，`results` 应定位实际 reusable trajectory，而不是复制一份文件。
+完成当前 item 后，按 Stage 5 main Skill 的 plan-item 规则更新当前 Task Sheet。需要供后续 item 直接消费的有效 trajectory 可写入当前 item 的 `results`；若输出已集中登记，`results` 应定位实际 reusable trajectory，而不是复制一份文件。
 
 本 Skill 不为结果增加独立 handoff 文件。
