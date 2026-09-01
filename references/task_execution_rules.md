@@ -35,15 +35,50 @@ Stage-specific 的科学规则、计划调整方式、execution object、validat
 已终止
 ```
 
-普通 Task Sheet 子环节状态默认：
+普通 Task Sheet 子环节状态同样使用：
 
 ```text
-待执行
 未完成
 已完成
+已终止
 ```
 
-Stage-specific 内部对象如有不同状态模型，以对应 current Stage Skill 为准。
+语义：
+
+- `未完成`：当前任务仍保留该任务项，且其当前职责尚未闭合；
+- `已完成`：当前任务中的该任务项已经按其 current Skill 完成；
+- `已终止`：该任务项已经进入任务历史，但当前任务不再继续执行它；必须能够追溯终止原因。具体何种情形可终止，由当前 Skill、Stage-specific 规则或实际任务决定。
+
+Stage-specific 内部对象如有不同状态模型，以对应 current owner 为准。
+
+## Task scope
+
+一个 Task Sheet 只覆盖用户当前任务实际需要的工作范围，不要求包含完整 MD Workflow、完整 Stage，或某个 Stage 从第一项到最后一项的全部 Step。
+
+因此 Task Sheet 可以：
+
+- 只包含一个 Stage 的局部范围；
+- 从某个 Stage 的中间 Step 开始；
+- 使用其它任务已经形成的正式结果作为当前输入；
+- 在当前任务目标完成后结束，而不继续加入同一 Stage 或后续 Stage 的其它工作。
+
+当前 Skill 只要求其自身真实输入契约得到满足，不因为编号上存在更早 Step 就要求这些 Step 必须出现在同一 Task Sheet。已有正式结果、当前项目记录、当前对话上下文或用户明确提供的信息能够满足当前输入时，可以直接使用。
+
+同样，不得因为 Task Sheet 没有包含某个后续 Step，就为“流程完整”自动补入与当前任务目标无关的工作。
+
+## User decisions and task-level scientific context
+
+用户已经明确给出的科学选择和任务级设置，应尽早被当前需要它们的 Skill 使用，并在后续真正需要时允许再次核对。
+
+例如力场、参数定义来源、pH、方法选择或其它会被多个环节消费的任务级信息：
+
+1. 当前 Skill 先从当前 Task Sheet、已有正式项目记录、可追溯执行记录 / 日志、当前对话上下文和用户明确决定中确认实际采用值；
+2. 已有信息能够唯一确定时直接使用，不重复询问；
+3. 当前职责需要该信息而仍不能唯一确定时，由当前用户可见 Agent 向用户确认；
+4. 后续 Skill 在自己真正需要该信息时可以再次核对，尤其当任务范围、体系对象或用户要求已经变化；
+5. 不因为某个较早或较晚 Step 也会使用同一信息，就把“确认该信息”强制设为某一个 Step 的唯一入口。
+
+某个 Skill 仍可以拥有自己特有的参数来源整理、冲突检查或结果记录职责；这不等于它垄断该科学选择第一次被确认的时点。
 
 ## Canonical terminology
 
@@ -87,7 +122,9 @@ Task Sheet 是可动态维护的计划，不是不可变 route。
 
 Task Execution Agent 可以根据实际结果或用户要求维护尚未完成的后续计划。这里规定的是**计划能够被更新这一通用机制**。
 
-某个 Stage 内应当如何根据具体科研结果增加、删除、替换、重排或重新进入后续环节，以及某类 failure 应返回哪个真正拥有问题的上游 owner，属于 Stage-specific orchestration；如果对应 Stage main Skill定义了这些关系，则按该 Stage main Skill执行，本文件不复制或改写这些科学调整规则。
+如果当前 Stage 存在真正拥有 Stage-wide orchestration 的 main Skill，则按该 Stage main Skill 维护其专属 plan adjustment / shared Stage object 规则。
+
+如果当前 Stage 不设置 Stage main Skill，则不为跨 Step 推进额外制造 synthetic Stage owner。Task Execution Agent 根据当前 Task Sheet、当前 Step 的正式结果 / input contract、用户要求和实际执行证据维护尚未完成的后续计划；各 Step 仍只定义自己的科学职责和输入输出接口。
 
 已经实际执行并形成有意义任务历史的内容不得为了整理计划而静默删除。
 
@@ -101,7 +138,7 @@ Manager current entry：
 
 Manager 负责任务定位 / 创建、初始 Task Sheet planning、用户明确要求时的重新规划和项目级任务导航整理。
 
-科研执行阶段由当前 scientific Skill推进；Manager 不执行具体科研 Step，也不替当前结果 owner 判断具体 Step 的 reuse、scientific applicability、validation 或结果正确性。
+科研执行阶段由当前 scientific Skill 推进；Manager 不执行具体科研 Step，也不替当前结果 owner 判断具体 Step 的 reuse、scientific applicability、validation 或结果正确性。
 
 ## Directory model
 
@@ -116,12 +153,12 @@ Manager 可以在 Task Sheet 中记录未来路径，但不提前创建 task-spe
 真正进入当前工作时：
 
 ```text
-先检查 reuse
+先按当前 Skill 的 reuse 规则判断
 ├─ 可直接复用 → 不创建无用空目录
 └─ 需要本地执行 → 创建当前 task-specific directory
 ```
 
-Stage-specific directory / index 组织以对应 current Stage Skill 为准。
+Stage-specific directory / index 组织以实际拥有该职责的 current Stage / Step / capability owner 为准。
 
 ## Reuse
 
@@ -175,14 +212,18 @@ references/task_execution_rules.md
 references/result_generation_rules.md
 → 科研执行 Skill 共用的 validation / result generation / result-recording 机制
 
-Stage main Skill（存在且确有 Stage-wide 职责时）
+Stage main Skill（仅在存在且确有 Stage-wide 职责时）
 → Stage-specific orchestration / plan adjustment / shared Stage objects
 
 Step / capability Skill
 → 具体科研处理、判断、Skill-specific validation 与 results
+
+没有 Stage main Skill 的 Stage
+→ Task Execution Agent 依据 Task Sheet + current Step interfaces 推进
+→ 不为架构对称额外创建 Stage dispatcher
 ```
 
-共享规则被多个 Skill引用不改变具体科学规则的 owner，也不意味着必须为 Task Execution 新建独立 Skill 或 dispatcher。
+共享规则被多个 Skill 引用不改变具体科学规则的 owner，也不意味着必须为 Task Execution 新建独立 Skill 或 dispatcher。
 
 ## Legacy rule
 
