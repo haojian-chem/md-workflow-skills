@@ -65,7 +65,7 @@ Manager：
 └── md-workflow-tool-authoring/
 ```
 
-Stage / Step / Workflow freeze 位于 `architecture_freezes/`；跨 Stage runtime 与 Master Plan 位于 `project_design/`；历史材料位于 `archive/`。
+仍承担 current authoring authority 的 freeze 位于 `architecture_freezes/`；Stage / Step 建设状态与 current entry 位于 `project_design/`；历史材料位于 `archive/`。
 
 科研执行 Skill 共用的 validation、正式结果生成、结果记录与结果接口规则位于仓库级 shared reference：
 
@@ -87,6 +87,8 @@ main Skill
 
 不恢复 Workflow / Operation / Validator role-based roots，也不为目录对称创建伪 Skill package。已确定的未来 Step 目录可以只用 `.gitkeep` 保留，直到正式 Skill generation 获批。
 
+Stage-level main Skill 不是每个 Stage 的必需层。只有确有 Stage-wide orchestration / shared object / lifecycle 时才设置；没有 Stage main 的 Stage 由 Task Execution Agent 根据 Task Sheet 与 current Step interfaces 推进。
+
 ## Status maintenance
 
 `project_design/MD_WORKFLOW_MASTER_PLAN.md` 是 Stage / Step 建设状态和 current entry 的唯一 project-level owner。
@@ -99,10 +101,11 @@ main Skill
 具体业务规则 → current Skill / local reference
 科研执行 Skill 共用的 Task Execution 规则 → ../references/task_execution_rules.md
 科研执行 Skill 共用的 validation / result generation / result-recording 规则 → ../references/result_generation_rules.md
-尚未生成 Skill 的已冻结规则 → architecture_freezes/
-跨 Stage runtime → project_design/lightweight_runtime_v2_spec.md
+仍有未完成 authoring / implementation 内容的 current freeze → architecture_freezes/
 Stage catalog / 建设状态 / current entry → project_design/MD_WORKFLOW_MASTER_PLAN.md
 current shared Tool → ../tools/
 historical design → archive/
 legacy executable/runtime material → ../legacy/
 ```
+
+如果某个 Stage 已部分实现但整体 authoring / implementation 仍未完成，可以同时存在 current runtime Skill 与 current freeze：已实现部分以 current Skill / reference 为准，freeze 只继续拥有尚未被 runtime package 接管的设计内容，不得覆盖 current implementation。
