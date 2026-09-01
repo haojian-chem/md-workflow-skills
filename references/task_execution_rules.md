@@ -99,6 +99,33 @@ Task Execution Agent 不需要每次执行都预读该文件；当用户表述�
 
 只属于单个 Stage / Step / capability 的局部术语仍由对应 Skill 定义；仓库级 terminology reference 不接管具体科学规则或局部命名。
 
+## Target lineage
+
+当前 Skill / 当前工作项如果使用 `target` 作为 execution object，必须读取：
+
+`references/target_lineage_rules.md`
+
+并按其中规则为每个 local target 建立当前 target record。
+
+核心语义：
+
+```text
+local target_id
+→ 只在当前 Skill / 当前工作项内解释
+
+current target_record
+→ 当前 local target 的跨 Skill 正式引用路径
+
+source_target_records
+→ 当前 target 的直接上游 target records
+```
+
+一个 source target 产生多个 current targets 时形成分支；多个 source targets 共同形成一个 current target 时形成合流。不得把 target lineage 固定解释成从 1.3 开始的单链，也不得通过 `target_id` 编号相同推断上下游对象关系。
+
+当前 Task Sheet 新建、工作目录变化、普通文件复制或局部 target 重新编号本身不构成 target lineage 关系。source target 必须是实际参与当前 execution object 形成的上游 target。
+
+Stage 4 formal run unit、Stage 5 analysis plan item 等已经由对应 owner 定义其它 execution identity、且 current Skill 并未使用 `target` 的对象，不因为全局统一而强制建立 target record。
+
 ## Task execution loop
 
 Task Execution Agent 持续持有当前 Task Sheet，并按当前实际对象推进。
@@ -109,6 +136,7 @@ Task Execution Agent 持续持有当前 Task Sheet，并按当前实际对象推
 读取目标 Task Sheet
 → 确定当前任务项 / 对象
 → 读取当前需要的 Stage / Step / capability Skill
+→ 当前对象为 target 时建立 / 定位 current target_record 与 source_target_records
 → 定位当前 Step 明确要求的 prerequisite / 上游正式输入
 → 按当前 Skill / Stage 规则判断 reuse
 → 按需读取实际对象、候选结果、reference / supporting Skill / Tool guide
@@ -170,6 +198,8 @@ Manager 可以在 Task Sheet 中记录未来路径，但不提前创建 task-spe
 
 Stage-specific directory / index 组织以实际拥有该职责的 current Stage / Step / capability owner 为准。
 
+如果当前 Skill 使用 target，实际执行目录建立后按 `references/target_lineage_rules.md` 在当前 task-specific directory 内维护 `targets/<target_id>.yaml`。
+
 ## Reuse
 
 除当前 Skill 明确采用其它规则外，普通工作在真正开始时按以下默认语义判断 reuse：
@@ -186,6 +216,8 @@ Stage-specific directory / index 组织以实际拥有该职责的 current Stage
 跨 Task Sheet 或跨科研任务复用已有正式结果时直接引用原结果，不为了当前 Task Sheet 复制无意义副本。
 
 如果某个 Skill 明确不设置 reuse，或某 Stage 定义了不同的 reuse 组织方式，以该 current Skill / Stage Skill 为准。
+
+复用已有结果不把当前 local target 与旧结果中的 local `target_id` 合并成同一 target；如果当前工作项仍使用 target，应按 target-lineage 规则建立当前 target record，并把实际复用的上游 target record 作为 source target 之一。
 
 ## Validation and results
 
@@ -220,6 +252,9 @@ Task Execution Agent 不默认：
 ```text
 references/task_execution_rules.md
 → 科研执行 Skill 共用的 Task Execution 规则
+
+references/target_lineage_rules.md
+→ 使用 target 的科研执行 Skill 共用的 local target / target record / lineage 机制
 
 references/result_generation_rules.md
 → 科研执行 Skill 共用的 validation / result generation / result-recording 机制
