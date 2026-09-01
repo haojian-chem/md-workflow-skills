@@ -16,7 +16,7 @@ Status: ACTIVE CURRENT BASELINE
 
 编号语义：`1.3` 表示整个 MD Workflow 的第 1.3 阶段；`2.4`、`4.1` 同理。Stage 3 与 Stage 5 当前均不设置编号化 sub-stage，因此不存在 current `3.1`–`3.3` 或 `5.1` catalog identity。
 
-Task Sheet 不要求覆盖完整 Workflow 或完整 Stage；一个任务可以只覆盖某个 Stage 的局部范围，并直接消费其它任务已经形成的正式结果。
+一张 Task Sheet 不要求覆盖完整 Workflow、完整 Stage 或整个科研任务；同一科研任务可以由多张 Task Sheet 共同承载。局部 Task Sheet 可以消费前序 Task Sheet 已经形成且仍适用的 prerequisite、正式结果和决策。
 
 ## 2. Scientific Stage roots
 
@@ -72,7 +72,7 @@ Stage 1 的 current atom-mapping runtime authority 为：
 
 当前由 1.3 初始化 target atom map，1.4 / 1.6 / 1.7 / 1.8 按实际结构修改维护，1.8 写出 `stage1_final_map.yaml`，1.9 对 final map 做只读验证；2.2 也沿用该 shared reference 维护标准残基全原子结构的 map。
 
-力场、参数定义来源等会被多个环节消费的任务级科学信息按 `references/task_execution_rules.md` 尽早确认，并允许后续实际需要时再次核对；不为这些信息设置唯一的 Stage/Step 首次确认入口。
+力场、参数定义来源等会被多个环节消费的科学信息，在当前 Skill 真正需要时从 Task Sheet、前序 Task Sheet、正式记录 / 日志、当前上下文和用户决定中确认；信息已经明确时直接使用，仍不明确时由当前需要该信息的 Skill 触发用户确认。后续实际需要时允许再次核对。
 
 已撤回的 Stage 1 main Skill 与既有 architecture freezes 均退出 current path，历史记录位于：
 
@@ -104,13 +104,20 @@ Current entries：
 02_topology_preparation/2.6_topology_validation/SKILL.md
 ```
 
-当前 Stage 2 直接由 Task Execution Agent 按 Task Sheet 进入实际 2.x Step；不设置 `02_topology_preparation/SKILL.md` runtime entry。
+当前 Stage 2 不设置 `02_topology_preparation/SKILL.md` runtime entry。
 
-2.1 是当前任务需要 topology-preparation setup / routing 时使用的普通 Step，不是 2.2–2.5 的强制同任务前置。它负责在当前任务范围内核对 / 补充力场及其它参数定义来源、整理处理对象，并按需要展开当前 Task Sheet；如果当前任务只执行 2.2、2.3、2.4、2.5 或其它局部范围，且所需正式输入和用户决定已经可定位，可以直接进入对应 Skill。
+2.1 是 2.2–2.5 的 topology-preparation setup prerequisite。它负责：
 
-力场及其它参数定义来源应尽早确认，但确认行为可以由任何真正需要该信息的 current Skill 触发；2.1 不拥有“第一次且唯一确定力场”的专属职责。
+- 确认并记录当前拆分方案采用的力场及其它参数定义来源；
+- 拆分标准残基、topology-linked 非标准、独立非标准以及 solvent / ion 的处理对象；
+- 确定 2.3 的联合参数化分组；
+- 确定 2.5 需要汇合的前置输入集合。
 
-2.2–2.5 分别拥有自身具体科学处理与必要检查。2.6 是独立、只读的 topology validation Skill，不作为 Stage 2 的必需 completion gate；需要更完整的 topology 终检时由任务范围或用户要求显式启用，不要求 2.5 复制 2.6 的检查范围。
+2.2–2.5 开始前必须已经存在一个适用于当前体系、处理范围和参数定义基础的已完成 2.1 方案。该方案可以位于当前 Task Sheet，也可以位于同一科研任务的前序 Task Sheet；因此不要求每张后续 Task Sheet 都机械重复 2.1，但不能绕过 2.1 本身。
+
+力场及其它参数定义来源可以在多个真正需要它们的环节被确认或再次核对；2.1 的特有职责是把当前 topology-preparation **拆分方案采用的来源**与对象拆分一起闭合。后续确认若改变了拆分方案基础，应先更新 / 重新形成适用的 2.1 方案。
+
+2.2–2.5 分别拥有自身具体科学处理与必要检查。2.6 是独立、只读的 topology validation Skill，不作为 Stage 2 的必需 completion gate；是否执行由对应 Task Sheet 的实际范围决定。
 
 Stage 2 当前暂不启用 2.1–2.5 reuse 机制；后续 reuse 作为独立更新计划重新设计。2.2–2.4 current main Skills 与 active references 已清理旧 reuse 执行分支。
 
@@ -145,7 +152,7 @@ Detailed result interface 与 ion-addition reference：
 03_md_preparation/references/genion.mdp
 ```
 
-Stage 3 保持轻量体系构建职责。当前操作主要由 GROMACS 组件完成，检查范围按当前 Skill 已定义的操作成功、关键输出和必要一致性检查执行；不为了结果 owner 身份重复引入 topology validation 级别的重型终检。需要深入 topology 检查时使用独立 topology validation 工作项。
+Stage 3 保持轻量体系构建职责。当前操作主要由 GROMACS 组件完成，检查范围按 current Skill 已定义的操作成功、关键输出和必要一致性检查执行，不为同一职责重复增加重型检查。
 
 Stage 3 旧 step-level freeze 与已实现的 Stage-level architecture freeze 均已退出 current authoring path，历史记录位于：
 
@@ -175,7 +182,7 @@ Stage 4 本地计算资源与运行方式的用户倾向统一维护于：
 
 `04_md_simulation/references/execution_preferences.md`
 
-4.1–4.3 不再分别硬编码线程数、GPU offload、pinning、tmux 或 wall-clock 倾向；Stage 4 main 在实际生成 / 执行 `gmx_mdrun.sh` 时读取该 reference，并允许根据当前硬件、GROMACS build 和任务环境调整。
+该 reference 对每项倾向明确适用 run class：`-nt 12` 适用于 EM/NVT/NPT/production；foreground 与短 `-maxh 0.08` 仅为 EM 倾向；`tmux`、`-update gpu`、`-pin on` 默认适用于 NVT/NPT/production，并受当前运行环境约束。
 
 项目首次进入 Stage 4 且 `04_md_simulation/run_unit.yaml` 尚不存在时，由 Stage 4 main 在第一次实例化 formal run unit 前初始化为空 list。
 
@@ -235,7 +242,7 @@ Shared atom-mapping runtime authority：
 Unnumbered active package：
 
 ```text
-00_manager/   project task management / initial planning
+00_manager/   project Task Sheet management / initial planning
 ```
 
 Unnumbered infrastructure：
@@ -253,12 +260,12 @@ Historical authoring / architecture Markdown：
 
 ## 9. Current work status
 
-- Stage 1：1.1–1.9 active Skills 已生成；当前不设置 Stage main Skill；Task Sheet 可以只覆盖局部 Step；current atom-map contract 由 `references/atom_mapping_rules.md` 拥有；已撤回的 Stage 1 main Skill 与既有 freezes 已归档。
-- Stage 2：2.1–2.6 active Skills 已生成；当前不设置 Stage main Skill；2.1 是可选 setup / routing Step，不是其它 Stage 2 Step 的强制同任务前置；力场 / 参数来源可以由当前真正需要的 Skill 触发确认；2.6 为可选独立 topology validation；2.1–2.5 reuse 当前停用并留作后续更新；既有 Stage 2 freezes 已归档。
+- Stage 1：1.1–1.9 active Skills 已生成；当前不设置 Stage main Skill；Task Sheet 可以只覆盖局部 Step，但真实 prerequisite 必须已经满足；current atom-map contract 由 `references/atom_mapping_rules.md` 拥有；已撤回的 Stage 1 main Skill 与既有 freezes 已归档。
+- Stage 2：2.1–2.6 active Skills 已生成；当前不设置 Stage main Skill；2.1 是 2.2–2.5 的拆分 / setup prerequisite，可由前序 Task Sheet 提供而不必在每张后续 Task Sheet 重复；2.6 为可选独立 topology validation；2.1–2.5 reuse 当前停用并留作后续更新；既有 Stage 2 freezes 已归档。
 - Stage 3：Stage-level main Skill 已正式生成；不设置编号化 sub-stage；保持轻量 GROMACS system-construction 职责；历史 Stage 3 freezes 已归档；代表性实际执行验证仍待后续 milestone。
-- Stage 4：Stage-level main Skill 与 4.1–4.3 active Skills 已生成；Stage 4 main 当前拥有 run-unit / route 等 Stage-wide 规则；本地执行倾向集中到 `references/execution_preferences.md`；`run_unit.yaml` 首次初始化规则已明确；既有 Stage 4 freeze 已归档。
+- Stage 4：Stage-level main Skill 与 4.1–4.3 active Skills 已生成；Stage 4 main 当前拥有 run-unit / route 等 Stage-wide 规则；本地执行倾向集中到 `references/execution_preferences.md` 并按 run class 明确适用范围；`run_unit.yaml` 首次初始化规则已明确；既有 Stage 4 freeze 已归档。
 - Stage 5：**整体未完成 / 持续建设中**；Stage-level main Skill 已生成；当前 capability inventory 已登记 `trjconv`、`trjcat`、`make_ndx`；Stage 5 current authoring freezes 继续保留于 `architecture_freezes/`，不因部分 runtime 已实现而归档。
-- Infrastructure：跨 Skill Task Execution、result generation、canonical terminology 与 atom mapping 均由对应 current shared references 拥有；Task Execution 已统一普通任务项状态为 `未完成 / 已完成 / 已终止`，并明确允许局部 Stage Task Sheet；后续按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
+- Infrastructure：跨 Skill Task Execution、result generation、canonical terminology 与 atom mapping 均由对应 current shared references 拥有；Task Execution 已统一普通任务项状态为 `未完成 / 已完成 / 已终止`，并明确区分科研任务与 Task Sheet；后续按 current interface 逐项重建 `evals/` 和显式 re-activate `tools/`。
 
 ## 10. Status maintenance rule
 
