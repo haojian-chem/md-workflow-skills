@@ -15,11 +15,15 @@ description: Stage 4.1 Energy minimization Skill。负责 em.* run unit 的 MDP 
 
 执行当前 planned run entry 中属于 `EM` 的 scientific segment，并完成对应 `em.N` formal run unit。
 
-本 Skill 只拥有 EM-specific 执行与检查。formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式和 bonded-geometry screening 使用父级：
+本 Skill 只拥有 EM-specific 执行与检查。formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式、bonded-geometry screening 与本地执行倾向使用父级：
 
 ```text
 04_md_simulation/SKILL.md
 ```
+
+其中资源 / offload / wall-clock 等用户执行倾向由父级按需读取：
+
+`04_md_simulation/references/execution_preferences.md`
 
 ## Object requirements
 
@@ -87,43 +91,25 @@ em.N.tpr
 
 按父级 Stage 4 统一格式生成。
 
-EM 默认 argument tendency：
+当前 formal run-unit identity 决定：
 
 ```text
 -deffnm em.N
--nt 12
--maxh 0.08
 ```
 
-例如：
+其余线程数、wall-clock cap、CPU/GPU 资源选项和执行方式不在本 Skill 中固定。生成脚本时由父级 Stage 4 读取 `references/execution_preferences.md`，并结合当前硬件、GROMACS build、当前 Task / 用户明确要求确定实际命令。
 
-```bash
-gmx mdrun \
-    -deffnm em.1 \
-    -nt 12 \
-    -maxh 0.08
-```
-
-`-maxh 0.08` 是本地 Agent 执行 EM 时约 4.8 min 的 wall-clock cap，不是 scientific completion criterion，也不是期望 EM 必须运行到该时间。
-
-EM 默认不加入：
-
-```text
--update gpu
--pin on
-```
-
-除非当前环境/用户要求明确需要，否则不要把 NVT/NPT/MD 的这些 tendency 自动复制到 EM。
+如果实际使用 `-maxh`，它只限制本次 `mdrun` 的 wall-clock，不是 scientific completion criterion；是否完成仍由实际 EM convergence 与 validation 判断。
 
 ### 4. Execute EM
 
-本地由 Agent 执行时默认前台运行：
+按父级 Stage 4 已解析的当前执行偏好和实际运行环境执行：
 
 ```bash
 bash gmx_mdrun.sh
 ```
 
-是否完成由实际 EM convergence 与 validation 判断，不由 `-maxh` 本身判断。
+当前环境不适合 preference reference 中某项资源倾向时，按父级规则调整并以实际脚本为准。
 
 ## Validation requirements
 
@@ -170,4 +156,4 @@ EM 完成前至少检查：
 - `grompp` warning 涉及实质性科学取舍，无法依据当前体系可靠判断；
 - validation 出现异常且继续、修改设置或重新运行之间存在真正的科学选择。
 
-普通可诊断的软件信息、文件定位或可由已有 protocol 明确推断的设置不应转给用户逐项决定。
+普通可诊断的软件信息、文件定位或可由已有 protocol 明确推断的设置不应转给用户逐项决定。纯计算资源 / 执行方式调整按父级 Stage 4 execution preference 规则处理。
