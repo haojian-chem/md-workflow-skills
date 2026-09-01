@@ -7,7 +7,7 @@ Status: CURRENT USER EXECUTION PREFERENCES
 Stage 4 main Skill 在需要生成 / 执行 `gmx_mdrun.sh` 时读取本文件。实际执行时：
 
 1. 先采用当前 Task Sheet / 用户本轮明确指定的执行要求；
-2. 没有新的明确要求时，采用本文件中**适用于当前 run class** 的用户倾向；
+2. 没有新的明确要求时，采用本文件中适用于当前 run class 的用户倾向；
 3. 当前硬件、GROMACS build、体系或作业环境与某项倾向不兼容时，由执行 Agent 按实际环境调整，不为了机械保持倾向而执行无效命令；
 4. 如果调整只影响计算资源和运行方式、不改变科学模拟条件，可以直接调整并记录实际命令；
 5. 如果调整会改变 scientific run definition，则回到对应 Stage 4 / run-specific Skill 的科学规则处理。
@@ -20,10 +20,9 @@ Stage 4 main Skill 在需要生成 / 执行 `gmx_mdrun.sh` 时读取本文件。
 
 | 执行倾向 | EM | NVT | NPT | Production MD |
 |---|---:|---:|---:|---:|
+| 运行方式 | 前台运行 | `tmux` 会话 | `tmux` 会话 | `tmux` 会话 |
 | `-nt 12` | 是 | 是 | 是 | 是 |
-| 前台运行 | 是 | 否 | 否 | 否 |
 | `-maxh 0.08` | 是 | 否 | 否 | 否 |
-| 在 `tmux` 会话中运行 | 否 | 是 | 是 | 是 |
 | `-update gpu` | 默认不加 | 是，环境适合时 | 是，环境适合时 | 是，环境适合时 |
 | `-pin on` | 默认不加 | 是，环境适合时 | 是，环境适合时 | 是，环境适合时 |
 
@@ -48,16 +47,22 @@ Production MD
 
 若当前资源分配、硬件拓扑或运行环境不适合 12 threads，按实际资源调整。
 
+## 运行方式
+
+运行方式按 run class 区分：
+
+- EM：前台运行；
+- NVT / NPT / Production MD：在 `tmux` 会话中运行。
+
+当前作业环境已经由其它调度系统负责作业保持时，可以按实际环境调整运行方式。
+
 ## 仅适用于 EM
 
 以下倾向只适用于 EM：
 
 ```text
-前台运行
 -maxh 0.08
 ```
-
-这里的“前台运行”指直接在当前终端执行 `gmx mdrun`；进程结束前当前终端不会返回 shell 提示符。
 
 `-maxh 0.08` 只用于限制一次本地 Agent 调用的 wall-clock 占用，不是 EM convergence criterion。若当前任务需要持续运行到收敛、采用外部作业环境，或该限制会妨碍实际完成，则不使用或调整该值。
 
@@ -72,17 +77,7 @@ EM 默认不主动加入：
 
 ## 仅适用于 NVT / NPT / Production MD
 
-以下倾向适用于 NVT、NPT 和 Production MD，不适用于普通 EM。
-
-较长任务倾向在：
-
-```text
-`tmux` 会话
-```
-
-中运行，以便终端断开后仍可继续保持任务并重新连接查看。
-
-在当前 GPU / GROMACS build 支持且适合时倾向使用：
+在当前 GPU / GROMACS build 支持且适合时，NVT、NPT 和 Production MD 倾向使用：
 
 ```text
 -update gpu
