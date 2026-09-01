@@ -123,7 +123,7 @@ npt.N.tpr
 -deffnm npt.N
 ```
 
-线程数、CPU/GPU offload、pinning、tmux 与其它执行资源倾向不在本 Skill 中固定。生成脚本和实际运行时，由父级 Stage 4 读取 `references/execution_preferences.md`，并结合当前硬件、GROMACS build、当前 Task / 用户明确要求确定实际命令和运行方式。
+线程数、CPU/GPU offload、pinning、tmux 与其它执行资源倾向不在本 Skill 中固定。生成脚本和实际运行时，由父级 Stage 4 读取 `references/execution_preferences.md`，并结合当前硬件、GROMACS build、当前 Task Sheet / 用户明确要求确定实际命令和运行方式。
 
 ### 4. Execute equilibration
 
