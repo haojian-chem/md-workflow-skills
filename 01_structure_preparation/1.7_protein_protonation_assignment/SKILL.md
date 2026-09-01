@@ -30,22 +30,23 @@ description: Structure preparation 1.7。针对当前蛋白重原子结构，在
 
 对每个 target，执行 1.7 时至少需要：
 
-- 当前任务认可的有效 heavy-atom structure；
+- 当前 1.7 工作项实际采用的有效 heavy-atom structure；
 - 与该输入结构对应的最近正式 atom map；
 - 明确的 `target_pH`；
 - 当前使用的 protein force field，或明确的 protonation-state residue naming convention；
 - 可执行 PROPKA；
-- 当前任务中与 protonation 判断有关的已确认 chemical relation / structural evidence。
+- 当前科研任务中与 protonation 判断有关、已经确认且可追溯的 chemical relation / structural evidence。
 
-当前结构只需要是当前任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step，但 atom map 必须与该输入结构实际对应。
+当前结构只需要是当前科研任务已经认可、足以支持 protonation assignment 的 heavy-atom structure；本 Skill 不要求它必须来自某一个固定的上游 Step，也不要求对应结构处理必须出现在当前 Task Sheet，但 atom map 必须与该输入结构实际对应。
 
-如果 `target_pH` 或 protein force field / protonation naming convention 在当前任务上下文中尚未明确：
+如果 `target_pH` 或 protein force field / protonation naming convention 尚未明确：
 
-- 当前 Agent 先使用已有正式项目信息确定；
+- 当前 Agent 先从当前 Task Sheet、同一科研任务明确引用的前序 Task Sheet、已有正式项目记录 / 日志、当前对话上下文和用户既有决定中确认；
+- 已有信息能够唯一确定时直接使用，不重复询问；
 - 仍不能确定时向用户确认；
 - 不自行假设默认 pH 或默认 protein force field。
 
-需要 coordination、bonding 或其他 relation evidence 时，消费当前项目已经确认的正式信息，不在 1.7 重新建立外部分类或 relation 规则。
+需要 coordination、bonding 或其他 relation evidence 时，消费当前科研任务已经确认的正式信息，不在 1.7 重新建立外部分类或 relation 规则。
 
 # Processing scope
 
@@ -220,7 +221,7 @@ residues:
 固定字段语义：
 
 - `input_structure`、`input_atom_mapping`、`output_structure`、`output_atom_mapping` 均记录完整绝对路径；
-- `protein_force_field` 记录当前实际使用的 protein force field；如果任务只明确提供独立 protonation naming convention、并未确定具体 protein force field，则写 `null`；
+- `protein_force_field` 记录当前实际使用的 protein force field；如果当前科研任务只明确提供独立 protonation naming convention、并未确定具体 protein force field，则写 `null`；
 - `protonation_naming_convention` 记录最终 residue-name mapping 的实际依据；如果直接使用已命名 protein force field 的默认命名规则，则写 `force_field_default`，否则记录实际 convention / reference；
 - `residue_type` 使用 `ASP | GLU | HIS` 表示当前 scientific object class；
 - `propka_pka` 为 PROPKA predicted pKa；没有可用值时写 `null`；
@@ -303,6 +304,8 @@ Validation 不修改结构、atom map 或 assignment report。
 ├── protonation_assignment_report.yaml
 └── protonation_validation.md
 ```
+
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
 
 只有 validation 为 `PASS` 时，当前 target 的 1.7 正式结果才完成。
 
