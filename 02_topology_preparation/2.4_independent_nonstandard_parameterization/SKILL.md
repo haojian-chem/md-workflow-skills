@@ -1,6 +1,6 @@
 ---
 name: independent_nonstandard_parameterization
-description: 拓扑准备 2.4。处理当前 Task Sheet 已明确需要独立参数化的残基名，从同名实例中选择代表实例完成量化计算、电荷拟合与 Sobtop 参数化，并将成功参数化实例的补氢定义应用到当前工作项全部同名实例，生成正式参数化结果。
+description: 拓扑准备 2.4。处理 2.1 已拆分确定需要独立参数化的残基名，从同名实例中选择代表实例完成量化计算、电荷拟合与 Sobtop 参数化，并将成功参数化实例的补氢定义应用到当前处理对象全部同名实例，生成正式参数化结果。
 ---
 
 # 2.4 Independent nonstandard parameterization
@@ -9,9 +9,15 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 已明确需要独立参
 
 `../../references/task_execution_rules.md`
 
-本 Skill 处理当前 Task Sheet 中一个已经明确处理对象的独立非标准参数化工作项。当前工作项通常来自 `INDEPENDENT_NONSTANDARD`；当某个 `SOLVENT_COMPONENT` 或 `ION_COMPONENT` 缺少可直接用于后续拓扑整合的完整分子拓扑定义，且当前任务要求为其建立参数时，也可以由对应残基名建立当前工作项。
+## 处理对象与前置条件
 
-该工作项可以由 topology-preparation setup 在同一任务中建立，也可以由当前任务直接指定，或基于其它任务已经形成的正式结构 / 分类 / 参数来源结果建立；不要求当前 Task Sheet 必须包含 topology-preparation setup。
+当前 2.4 工作项必须来自一个已经完成且仍适用的 2.1 topology-preparation setup 拆分方案。
+
+该 2.1 可以记录在当前 Task Sheet，也可以记录在同一科研任务的前序 Task Sheet；当前工作开始前必须能够定位对应 2.1 工作项以及其中确定的独立参数化对象。
+
+当前工作项通常来自 `INDEPENDENT_NONSTANDARD`；当 2.1 已确认某个 `SOLVENT_COMPONENT` 或 `ION_COMPONENT` 缺少可直接用于拓扑整合的完整分子 topology 定义时，也可由对应残基名建立 2.4 处理对象。
+
+2.4 直接消费 2.1 已确定的处理对象，不重新分类、重新分组或改变同名残基的参数化归属。
 
 ## 目标
 
@@ -26,7 +32,7 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 已明确需要独立参
 → 生成 parameterized_structure.gro 与 parameterized_structure.map
 ```
 
-形成当前工作项的正式结果记录：
+形成正式结果记录：
 
 `independent_nonstandard_parameterization_result.yaml`
 
@@ -34,21 +40,24 @@ description: 拓扑准备 2.4。处理当前 Task Sheet 已明确需要独立参
 
 开始当前工作项时至少读取：
 
-- 当前 Task Sheet，确定本次处理的残基名及工作项覆盖范围；
-- 当前体系对应的正式 `classification_result.yaml`，定位当前工作项所覆盖的全部同名实例及其 `component_id + residue_id`；
+- 当前 Task Sheet；
+- 适用于当前处理对象的已完成 2.1 拆分方案；
+- 当前体系对应的正式 `classification_result.yaml`，定位当前工作项覆盖的全部同名实例及其 `component_id + residue_id`；
 - 当前处理对象对应的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
 - 当前对象补氢实际使用的 CCD 文件；不存在适用 CCD 时，使用当前结构的成键关系、价态和局部化学环境作为补氢依据；
 - 当前实际采用的力场及其它参数定义来源。
 
-这些正式结构 / 分类结果可以来自当前任务，也可以来自其它已经完成的任务。
+这些正式结构 / 分类结果可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet。
 
-力场及其它参数定义来源先从当前 Task Sheet、已有正式项目记录、可追溯执行记录 / 日志、当前对话上下文和用户已明确决定中确认；当前工作需要而仍不能唯一确定时，向用户确认。
+力场及其它参数定义来源以 2.1 方案记录为当前基线，并结合当前 Task Sheet、相关前序 Task Sheet、正式记录 / 日志、当前对话和用户已明确决定再次核对。当前工作需要而仍不能唯一确定时向用户确认。
 
-当前工作沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据残基名、chain、resid 或空间位置重新建立身份。
+如果新的确认结果会使 2.1 中的独立参数化对象划分或参数来源基础失效，先更新 / 重新形成适用的 2.1 方案，再继续 2.4。
+
+当前工作沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据 residue name、chain、resid 或空间位置重新建立身份。
 
 ## Reuse
 
-当前独立非标准参数化不设置 reuse。
+当前 2.4 不设置 reuse。
 
 在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都从当前体系实例中选择代表实例并完成本 Skill 规定的参数化及当前体系实例结构生成。
 
@@ -109,13 +118,18 @@ ORCA     → *.hess
 Gaussian → *.fch / *.fchk
 ```
 
-使用 Sobtop 参数化时，若当前体系所需的 LJ 参数缺失，根据当前实际体系从 `02_topology_preparation/references/12-6.itp` 或 `02_topology_preparation/references/12-6-4.itp` 中提取适用参数补充。
+使用 Sobtop 参数化时，若当前体系所需的 LJ 参数缺失，根据当前实际体系从：
+
+```text
+02_topology_preparation/references/12-6.itp
+02_topology_preparation/references/12-6-4.itp
+```
+
+中提取适用参数补充。
 
 Sobtop 生成的 `.itp` 中残基名或原子名与用于 Sobtop 的 mol2 中对应原子不一致时，按该 mol2 中对应原子的残基名和原子名修正后，再形成正式：
 
-```text
-parameterized_topology.itp
-```
+`parameterized_topology.itp`
 
 最终 `parameterized_topology.itp` 的原子名、原子顺序和电荷必须能够与代表实例参数化模型及 `parameterization.chg` 建立确定的一一对应关系。
 
@@ -123,7 +137,7 @@ parameterized_topology.itp
 
 以本次成功完成参数化的代表实例作为补氢模板，对当前工作项中的全部同名实例补氢。
 
-各实例保留各自在 `stage1_final.pdb` 中的重原子坐标；模板提供已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制模板实例的坐标。
+各实例保留各自在 `stage1_final.pdb` 中的重原子坐标；模板提供已经确定的补氢方式与原子定义，新增 H 的坐标根据各实例自身重原子几何建立，不复制模板实例坐标。
 
 全部实例采用与最终 `parameterized_topology.itp` 一致的残基名、原子名和残基内原子顺序，生成：
 
@@ -134,7 +148,7 @@ parameterized_structure.map
 
 二者覆盖当前工作项中的全部同名实例。
 
-`parameterized_structure.map` 以及代表实例的 `parameterization_model.map` 均沿用 Stage 2 map 共享核心字段：
+`parameterized_structure.map` 与代表实例的 `parameterization_model.map` 使用 Stage 2 参数化 map 的核心字段：
 
 ```yaml
 output_atom_index:
@@ -152,12 +166,6 @@ operations:
 original_atom_serial = null
 component_id + residue_id = 该 H 所属真实残基的既有身份
 operations = [2.4ADD]
-```
-
-当前工作项的 Stage 2 operation code 只有：
-
-```text
-2.4ADD
 ```
 
 ## Validation
@@ -180,9 +188,7 @@ operations = [2.4ADD]
 
 按其中定义生成：
 
-```text
-independent_nonstandard_parameterization_result.yaml
-```
+`independent_nonstandard_parameterization_result.yaml`
 
 该正式结果记录统一定位：
 
