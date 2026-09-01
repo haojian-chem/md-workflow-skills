@@ -1,6 +1,6 @@
 ---
 name: topology_linked_nonstandard_parameterization
-description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理的 topology-linked 非标准残基组合建立参数化模型，完成量化计算、电荷拟合与 Sobtop 参数化，并生成正式参数化结果。
+description: 拓扑准备 2.3。对当前 Task Sheet 已明确需要共同处理的 topology-linked 非标准残基组合建立参数化模型，完成量化计算、电荷拟合与 Sobtop 参数化，并生成正式参数化结果。
 ---
 
 # 2.3 Topology-linked nonstandard parameterization
@@ -9,7 +9,9 @@ description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理
 
 `../../references/task_execution_rules.md`
 
-本 Skill 处理当前 Task Sheet 已由 2.1 确定的一个 2.3 工作项。一个工作项可以包含一个或多个需要共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基。
+本 Skill 处理当前 Task Sheet 中一个已经明确处理对象的 topology-linked 参数化工作项。一个工作项可以包含一个或多个需要共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基。
+
+该工作项可以由 topology-preparation setup 在同一任务中建立，也可以由当前任务直接指定，或基于其它任务已经形成的正式结构 / 分类 / 参数来源结果建立；不要求当前 Task Sheet 必须包含 topology-preparation setup。
 
 ## 目标
 
@@ -22,23 +24,26 @@ description: 拓扑准备 2.3。对当前 Task Sheet 已确定需要共同处理
 → Sobtop 参数化并生成 parameterized_topology.itp
 ```
 
-形成当前 2.3 工作项的正式结果记录 `topology_linked_parameterization_result.yaml`。
+形成当前工作项的正式结果记录 `topology_linked_parameterization_result.yaml`。
 
 ## 输入与依据
 
-开始当前 2.3 工作项时读取：
+开始当前工作项时至少读取：
 
-- 当前 Task Sheet，确定本次共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基组合，以及 2.1 已确认的力场 / 参数定义来源；
-- 当前体系对应的 1.2 正式 `classification_result.yaml`，读取与当前处理对象相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`；
-- 当前体系的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
-- 当前 Task Sheet 中本体系标准残基拓扑生成工作项产生的正式结果，从中定位标准残基全原子结构及对应 map；
-- 非标准残基补氢实际使用的 CCD 文件。
+- 当前 Task Sheet，确定本次共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基组合；
+- 当前体系对应的正式 `classification_result.yaml`，读取与当前处理对象相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`；
+- 当前处理对象对应的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
+- 当前对象需要标准残基全原子片段时，能够定位相应标准残基拓扑生成正式结果及其全原子结构 / map；该结果可以来自当前任务，也可以来自其它已完成任务；
+- 非标准残基补氢实际使用的 CCD 文件；
+- 当前实际采用的力场及其它参数定义来源。
 
-当前 2.3 沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据 residue name、chain、resid 或当前空间位置重新建立。
+力场及其它参数定义来源先从当前 Task Sheet、已有正式项目记录、可追溯执行记录 / 日志、当前对话上下文和用户已明确决定中确认；当前工作需要而仍不能唯一确定时，向用户确认。
+
+当前工作沿用正式结果中已有的 `component_id + residue_id` 作为残基身份，不根据 residue name、chain、resid 或当前空间位置重新建立。
 
 ## Reuse
 
-当前 2.3 不设置 reuse。
+当前 topology-linked 参数化不设置 reuse。
 
 在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都对当前 Task Sheet 指定的 topology-linked 参数化对象重新建立参数化模型并完成本 Skill 规定的参数化流程。
 
@@ -63,7 +68,7 @@ parameterization_model.map
 同时确定并保留两类正式结果信息：
 
 1. `standard_atom_deletions`：标准残基一侧因已确认拓扑连接而需要从最终结构 / 拓扑中删除的原子；
-2. `charge_modification_scope`：最终拓扑中需要采用本次 2.3 新电荷的全部真实残基，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 残基。仅作为参数化模型外围环境或封端环境保留的部分不列入该范围。
+2. `charge_modification_scope`：最终拓扑中需要采用本次新电荷的全部真实残基，包括相关 `STANDARD_RESIDUE` 与 `TOPOLOGY_LINKED_NONSTANDARD` 残基。仅作为参数化模型外围环境或封端环境保留的部分不列入该范围。
 
 `charge_modification_scope` 中每个残基使用 `component_id + residue_id` 定位，并保留 `topology_class` 供检查。
 
@@ -127,6 +132,6 @@ topology_linked_parameterization_result.yaml
 
 该 reference 统一定义正式结果记录中的上游依赖、六个核心结果、最终采纳的 OPT / FREQ / SP 任务路径、`standard_atom_deletions`、`charge_modification_scope` 及项目结果索引登记语义。
 
-随后按仓库级 Task Execution 规则更新当前 Task Sheet 的 2.3 工作项状态，并记录当前正式结果路径。
+随后按仓库级 Task Execution 规则更新当前 Task Sheet 工作项状态，并记录当前正式结果路径。
 
-2.3 不直接修改 2.2 基线结构 / 拓扑。
+当前工作不直接修改标准残基拓扑生成的基线结构 / 拓扑。
