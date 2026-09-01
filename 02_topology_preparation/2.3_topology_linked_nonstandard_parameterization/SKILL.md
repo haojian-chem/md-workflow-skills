@@ -1,6 +1,6 @@
 ---
 name: topology_linked_nonstandard_parameterization
-description: 拓扑准备 2.3。对 2.1 已拆分确定需要共同处理的 topology-linked 非标准残基组合建立参数化模型，完成量化计算、电荷拟合与 Sobtop 参数化，并生成正式参数化结果。
+description: 拓扑准备 2.3。对 2.1 已拆分确定需要共同处理的 topology-linked 非标准残基组合建立当前 2.3 local target，完成参数化模型、量化计算、电荷拟合与 Sobtop 参数化，并记录实际 source target 合流关系。
 ---
 
 # 2.3 Topology-linked nonstandard parameterization
@@ -17,9 +17,23 @@ description: 拓扑准备 2.3。对 2.1 已拆分确定需要共同处理的 top
 
 一个 2.3 工作项可以包含一个或多个需要共同参数化的 `TOPOLOGY_LINKED_NONSTANDARD` 残基。2.3 直接消费 2.1 已经形成的分组，不在本环节重新拆分或改变处理归属。
 
+真正执行该 processing object 时，建立当前 2.3 local target 和：
+
+```text
+targets/target_xxx.yaml
+```
+
+当前 2.3 target 的 `source_target_records` 记录**实际参与当前参数化对象形成的直接 source targets**。典型情况包括：
+
+- 提供真实 `TOPOLOGY_LINKED_NONSTANDARD` /相关标准残基重原子结构的 Stage 1 final target；
+- 当前参数化模型实际使用标准残基全原子片段时，提供该片段的 2.2 standard-topology target；
+- 如果当前 processing object 还真正消费其它 target-scoped upstream object，逐项加入。
+
+因此 2.3 target 可以是一个合流节点。不得把 lineage 简化成“2.3 只来源于前一个编号 Step”，也不得把仅用于证据/参数 reference 的文件对应对象自动加入 `source_target_records`。
+
 ## 目标
 
-对当前 topology-linked 参数化对象完成：
+对当前 topology-linked 参数化 target 完成：
 
 ```text
 建立参数化模型
@@ -34,17 +48,21 @@ description: 拓扑准备 2.3。对 2.1 已拆分确定需要共同处理的 top
 
 ## 输入与依据
 
-开始当前工作项时至少读取：
+开始当前 target 时至少读取：
 
 - 当前 Task Sheet；
+- 当前 2.3 target record；
 - 适用于当前处理对象的已完成 2.1 拆分方案；
 - 当前体系对应的正式 `classification_result.yaml`，读取与当前处理对象相关、`judgment: CONFIRMED` 且 `topology_effect_applied: true` 的 `topology_linked_checks[]`；
 - 当前处理对象对应的 `stage1_final.pdb` 与 `stage1_final_map.yaml`；
 - 当前对象需要标准残基全原子片段时，对应标准残基 topology 正式结果及其全原子结构 / map；
+- 上述 target-scoped 输入各自对应的 target record；
 - 非标准残基补氢实际使用的 CCD 文件；
 - 当前实际采用的力场及其它参数定义来源。
 
 这些正式结构 / topology 结果可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet。
+
+当前 target record 的 `source_target_records` 必须与实际 target-scoped 输入一致。例如使用某个 `standard.gro / standard.map` 时，应由其 `standard_residue_topology_result.yaml.references.target_record` / `standard.map.target_record` 定位实际 2.2 source target；不根据目录名或 `target_id` 推断。
 
 力场及其它参数定义来源以 2.1 方案记录为当前基线，并结合当前 Task Sheet、相关前序 Task Sheet、正式记录 / 日志、当前对话和用户已明确决定再次核对。当前工作需要而仍不能唯一确定时向用户确认。
 
@@ -56,7 +74,18 @@ description: 拓扑准备 2.3。对 2.1 已拆分确定需要共同处理的 top
 
 当前 2.3 不设置 reuse。
 
-在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都对当前 2.1 方案指定的 topology-linked 参数化对象重新建立参数化模型并完成本 Skill 规定的参数化流程。
+在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都对当前 2.1 方案指定的 topology-linked 参数化对象重新建立参数化模型并完成本 Skill 规定的参数化流程，同时建立当前 2.3 local target record。
+
+## Alternative parameterization branches
+
+如果当前科研设计明确要求针对同一 source object 保留多种会形成不同正式参数化结果的 strategy，例如不同且均需后续比较的 parameterization-model treatment、charge-fitting strategy 或其它实际方法分支，则：
+
+- 每种 strategy 建立独立 2.3 local target；
+- 各 current target records 可以具有相同的 `source_target_records`；
+- 每个 target 独立形成自己的参数化模型、量化任务、charge result、topology result；
+- 不把 mutually exclusive parameterization strategies 混为同一个完成 target。
+
+普通执行不为方法枚举自动生成多个 branches；是否并行保留由 2.1 / 当前 Task Sheet / 用户明确科研设计决定。
 
 ## 建立参数化模型
 
@@ -75,6 +104,8 @@ parameterization_model.map
 ```
 
 三者使用同一原子集合与原子顺序。
+
+`parameterization_model.map` 必须能够定位当前 2.3 `target_record`；具体 target-record 字段由该 local reference 定义。
 
 同时确定并保留：
 
@@ -144,8 +175,16 @@ Sobtop 生成的 `.itp` 中 residue name 或 atom name 与用于 Sobtop 的 mol2
 
 `topology_linked_parameterization_result.yaml`
 
-该 reference 统一定义正式结果记录中的上游依赖、六个核心结果、最终采纳的 OPT / FREQ / SP 任务路径、`standard_atom_deletions`、`charge_modification_scope` 及项目结果索引登记语义。
+该 reference 统一定义正式结果记录中的 current target reference、上游文件依赖、六个核心结果、最终采纳的 OPT / FREQ / SP 任务路径、`standard_atom_deletions`、`charge_modification_scope` 及项目结果索引登记语义。
+
+完成前确认：
+
+- current 2.3 target record 存在；
+- 其 `source_target_records` 与本次实际消费的 target-scoped upstream objects 一致；
+- formal result `references.target_record` 指向 current 2.3 target record；
+- `parameterization_model.map` 记录的 current target reference 与 formal result 一致；
+- 不通过任意上下游 `target_id` 编号相同推断对象 lineage。
 
 随后按仓库级 Task Execution 规则更新当前 Task Sheet 工作项状态，并记录当前正式结果路径。
 
-当前工作不直接修改标准残基 topology 生成的基线结构 / topology。
+当前工作不直接修改标准残基 topology 生成的基线结构 / topology。Target record 不因为创建而单独登记到项目结果索引。
