@@ -70,11 +70,14 @@ main `SKILL.md` 保存 Agent 执行当前职责所需的主线：
 
 ```text
 references/task_execution_rules.md
+references/target_lineage_rules.md
 references/result_generation_rules.md
 references/canonical_terminology.md
 ```
 
-`task_execution_rules.md` 保存各科研执行 Skill 共同遵守的 Task Execution 规则。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+`task_execution_rules.md` 保存各科研执行 Skill 共同遵守的 Task Execution 规则，包括 Task Sheet 执行语义、execution-scope confirmation、reuse 与通用执行顺序。它不是独立 Skill 或额外执行环节。所有正式科研执行 Skill 必须在 main `SKILL.md` 中显式引用它；具体 Stage / Step / capability 的科学规则仍由各自 Skill 拥有。
+
+`target_lineage_rules.md` 保存使用 `target` 的科研执行 Skill 共同遵守的 local target / target record / branch / merge lineage 规则。只有 current Skill 实际使用 `target` 时才按 shared Task Execution 入口读取；Stage 4 formal run unit、Stage 5 analysis plan item 等已有其它 execution identity 的对象不因此被强制 target 化。
 
 `result_generation_rules.md` 保存科研执行 Skill 共同遵守的 validation、正式结果生成、结果记录与结果接口规则。Authoring 在当前工作涉及 validation、results、`references/results.md`、结果文件 / 字段语义或 project-result registration 时读取它；具体科学 validation、正式结果集合和 Skill-specific 结果语义仍由对应科研执行 Skill 拥有。
 
@@ -146,6 +149,34 @@ Task Sheet 是一个有界执行记录，不等同于整个科研任务，也不
 - Task Sheet 拆分本身不构成 reuse、重新执行或重新生成上游结果的理由；这些行为仍由对应 Skill 的实际 reuse / prerequisite 规则决定。
 
 Authoring 过程中如果发现现有 Skill 把“同一 Task Sheet 中必须出现某 Step”与“必须先满足某个科学 prerequisite”混为一谈，应修正为实际 prerequisite contract，而不是简单删除前置关系。
+
+### 执行范围确认与 Agent 技术裁量
+
+Authoring 必须把**用户要执行什么**与**在已经确认的范围内怎样实现**分开设计。
+
+共享 authority 为：
+
+`references/task_execution_rules.md`
+
+其中 execution-scope confirmation gate 对所有科研执行 Skill 生效；局部 Skill 不得用“Agent 可判断”“通常”“默认”“根据体系决定”等措辞覆盖或弱化这一 gate。
+
+如果某个省略信息会改变以下任一内容，就属于执行范围问题：
+
+- 当前处理哪些具体对象、哪些 source targets、哪些 residue / component / trajectory；
+- 是处理一个、若干还是全部候选对象；
+- 多个对象如何组成一个或多个 local targets / execution objects；
+- 是否扩展到额外 Step、capability、分析范围或其它工作项；
+- 用户是否要求把多个 alternative treatment / strategy 保留为独立后续分支。
+
+这些内容如果结合用户当前指令、当前 Task Sheet 与明确前序决定后仍存在多个实质不同解释，当前 Skill 必须触发用户确认，不得写成 Agent 自动选择默认范围。
+
+相反，下列情况可以继续由 Agent 自主处理：
+
+- 用户已经明确执行范围，只缺少能够从正式结果唯一补足且不改变对象 membership / grouping 的 identity grounding；
+- 当前 Skill 已有明确科学 / 技术判据，现有 evidence 能在已确认范围内唯一支持一种处理方式；
+- 当前 Skill 允许根据软件、硬件或实际输入选择实现方式，且该选择不改变已确认执行范围或科学含义。
+
+因此，Skill 中写“信息能够唯一确定时直接使用”时，必须能判断这句话指的是**已确认范围内的信息恢复 / 技术判断**，而不是用户尚未明确的执行范围。User-confirmation section 只补充 Skill-specific ambiguity；shared scope gate 不应在每个 Skill 重写一套平行规则。
 
 ### Terminology and writing precision
 
@@ -239,6 +270,7 @@ heavy-atom name 是否兼容
 + references/task_execution_rules.md
 + references/canonical_terminology.md
 + 当前目标 Skill / 对应 freeze + 直接相关上下游/相邻 Skill
++ 当前工作涉及 target lineage 时读取 references/target_lineage_rules.md
 + 当前工作涉及 validation / results / 结果接口时读取 references/result_generation_rules.md
 ↓
 从 authoring discussion 开始即使用 canonical terminology；用户口语仅作为语义输入
@@ -254,6 +286,8 @@ heavy-atom name 是否兼容
 只对确有必要固定的规则执行 rule-ownership gate
 ↓
 检查当前 Skill 的 input / prerequisite contract 是否按真实上游对象或状态定义，而不是按当前 Task Sheet 中是否出现更早编号 Step 定义
+↓
+检查当前 Skill 是否把 execution scope ambiguity 与已确认范围内的 Agent scientific / technical discretion 清楚分开
 ↓
 先完成 main SKILL.md 主线，并显式引用 references/task_execution_rules.md
 ↓
@@ -370,15 +404,16 @@ MD_WORKFLOW_MASTER_PLAN.md
 
 ```text
 references/task_execution_rules.md
+references/target_lineage_rules.md
 references/result_generation_rules.md
 references/canonical_terminology.md
 ```
 
-`task_execution_rules.md` 定义科研执行 Skill 共用的 Task Execution 规则；`result_generation_rules.md` 定义科研执行 Skill 共用的 validation、正式结果生成、结果记录与结果接口规则；`canonical_terminology.md` 维护跨 Skill canonical terminology。三者都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。
+`task_execution_rules.md` 定义科研执行 Skill 共用的 Task Execution 规则，并拥有 execution-scope confirmation gate；`target_lineage_rules.md` 定义使用 `target` 的科研执行 Skill 共用的 local target / target record / branch / merge lineage；`result_generation_rules.md` 定义科研执行 Skill 共用的 validation、正式结果生成、结果记录与结果接口规则；`canonical_terminology.md` 维护跨 Skill canonical terminology。它们都不属于 `00_authoring/project_design/`，也不是独立 runtime Skill。
 
-Authoring 在 Skill 构筑、设计讨论、freeze 编写、生成、审查和重构过程中读取 `task_execution_rules.md` 与 `canonical_terminology.md`；当前工作涉及 validation / results / 结果接口时，再读取 `result_generation_rules.md`。各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并由该 shared reference 提供按需读取 `canonical_terminology.md` 与 `result_generation_rules.md` 的入口。
+Authoring 在 Skill 构筑、设计讨论、freeze 编写、生成、审查和重构过程中读取 `task_execution_rules.md` 与 `canonical_terminology.md`；当前工作涉及 target lineage 时读取 `target_lineage_rules.md`；涉及 validation / results / 结果接口时读取 `result_generation_rules.md`。各 execution Skill 通过自身 `SKILL.md` 对 `task_execution_rules.md` 的正式引用获得通用执行规则，并由该 shared reference 提供按需读取其它 shared references 的入口。
 
-不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design、shared Task Execution / result-generation reference 或 canonical terminology；这些内容继续由对应 current Skill / local reference / architecture freeze 拥有。
+不要把具体 Stage 的内部科学规则、字段、validation 或文件生命周期复制进 project-design、shared Task Execution / target-lineage / result-generation reference 或 canonical terminology；这些内容继续由对应 current Skill / local reference / architecture freeze 拥有。
 
 不再单独维护 current `SYNC_STATUS.md`。如果某项内容只是“当前 Stage 建设到哪里”，归入 Master Plan；如果是具体规则，则归入真正的规则 owner。
 
@@ -447,6 +482,7 @@ Skill 当前是什么状态
 
 - [ ] 新 main Skill / reference / freeze 已接管所有仍有效规则；
 - [ ] 科研执行 Skill 的 main `SKILL.md` 已显式引用 `references/task_execution_rules.md`；
+- [ ] 当前 authoring 涉及 target lineage 时，已读取 `references/target_lineage_rules.md`；
 - [ ] 当前 authoring 涉及 validation / results / 结果接口时，已读取 `references/result_generation_rules.md`；
 - [ ] 已读取 `references/canonical_terminology.md`；其中已有条目在 authoring discussion、freeze 和正式 Skill 中使用其 `Preferred expression`；
 - [ ] Agent 在设计讨论中没有继续沿用用户口语、简称或临时称呼作为新的项目正式术语；
@@ -457,12 +493,15 @@ Skill 当前是什么状态
 - [ ] 中文 Skill 没有无信息增益的中英文混排；机器接口名、软件语法和确有必要的固定英文术语保持原文；
 - [ ] current 文件不再引用错误旧路径；
 - [ ] 同一规则没有在新旧 active 文件各保留一份；
-- [ ] 没有把 shared Task Execution reference、result-generation reference 或 canonical terminology 误建成独立 Skill / dispatcher；
+- [ ] 没有把 shared Task Execution / target-lineage / result-generation reference 或 canonical terminology 误建成独立 Skill / dispatcher；
 - [ ] 没有把可由 Agent / 用户基于当前执行上下文可靠判断的策略，继续展开成无必要的统一决策树、状态机、fallback 链或完整工作流；
 - [ ] 没有把一张 Task Sheet 等同于整个科研任务或完整 Stage / Workflow；
 - [ ] 当前 Skill 的 prerequisite 按真实上游方案 / 结果 / 状态 / 决策定义，而不是按更早编号 Step 是否出现在当前 Task Sheet 定义；
 - [ ] 前序 Task Sheet 已满足仍适用 prerequisite 时，没有为了流程完整在当前 Task Sheet 机械复制前序 Step；
 - [ ] 当前 Task Sheet 只覆盖局部范围时，没有因此忽略真实 prerequisite，也没有补入与当前目标无关的步骤；
+- [ ] 当前 Skill 中的 Agent 自主判断只发生在已经确认的 execution scope 内，没有替用户决定尚未明确的对象集合、target grouping、Step / capability coverage 或 branch 范围；
+- [ ] 如果用户指令 + 当前 Task Sheet + 明确前序决定仍允许多个实质不同执行范围，Skill 会先触发 shared user confirmation，而不是采用默认范围；
+- [ ] identity grounding 与 scope selection 已区分：唯一身份补足可以自动完成，改变对象 membership / grouping / coverage 的选择不能自动完成；
 - [ ] 被撤回的伪 Skill 已删除，但正确的 Stage / Step 目录仍保留；
 - [ ] archive 没有被加入默认 startup/read list；
 - [ ] architecture-freeze 使用 `00_authoring/architecture_freezes/` current 路径；
@@ -480,9 +519,13 @@ Skill 当前是什么状态
 复杂且独立 → supporting Skill
 确定性机械能力 → script / Tool
 可由 Agent / 用户基于当前执行上下文可靠判断、无需跨 Task Sheet / 跨科研任务稳定的策略 → 不固化为 Skill 规则
+执行范围不明确 → 先确认用户意图；只读核对可以先做，实质执行不可先做
+执行范围已明确 → 范围内科学 / 技术细节按 current Skill 判据由 Agent 处理
+identity grounding 唯一可补足 → 可自动 grounding；改变对象 membership / grouping / coverage → 不可用 grounding 名义替用户决定
 Task Sheet → 有界执行记录，不等同于整个科研任务、完整 Stage 或完整 Workflow
 scientific prerequisite → 按真实上游方案 / 结果 / 状态 / 决策定义，不按当前 Task Sheet 中是否出现更早编号 Step 定义
 前序 Task Sheet 已满足 prerequisite → 显式消费，不机械复制前序 Step
+使用 target 的跨 Skill lineage → references/target_lineage_rules.md
 跨 Skill 正式术语 → references/canonical_terminology.md
 术语规范从 authoring discussion 开始生效；用户口语只作为输入，Agent 输出回到 canonical terminology
 同一对象 → 一个 canonical term；discussion / freeze / Skill / references 保持一致
@@ -495,6 +538,7 @@ Stage / Workflow / pre-Skill Step architecture freeze → 00_authoring/architect
 freeze 完成 ≠ Skill generation 获批
 Skill generation 改变状态 → 必须同步 MD_WORKFLOW_MASTER_PLAN.md
 科研执行 Skill 共用的 Task Execution 规则 → references/task_execution_rules.md
+科研执行 Skill 共用的 target lineage 规则 → references/target_lineage_rules.md
 科研执行 Skill 共用的 validation / result generation / result-recording 规则 → references/result_generation_rules.md
 项目级 authoring design / status → 00_authoring/project_design/
 多窗口 writer assignment → 00_authoring/coordination/
