@@ -11,33 +11,35 @@ description: 为当前处理范围内的标准残基生成 GROMACS 全原子结�
 
 ## 输入与处理范围
 
-当前环节的处理范围由 Task Sheet 中对应工作项确定。
+当前环节的处理范围由当前 Task Sheet 中对应工作项直接确定；不要求同一 Task Sheet 中必须存在 topology-preparation setup 工作项。
 
 执行时至少读取：
 
 - 当前 Task Sheet；
-- 当前体系对应的上游结果中的 `stage1_final.pdb`；
+- 当前处理对象对应的正式 `stage1_final.pdb`；
 - 与该结构对应的 `stage1_final_map.yaml`；
-- 当前体系对应的 `classification_result.yaml`；
-- 当前体系已经确定使用的力场及其它参数定义来源。
+- 当前处理对象对应的 `classification_result.yaml`；
+- 当前实际采用的力场及其它参数定义来源。
 
-`classification_result.yaml` 用于定位当前处理范围内的 `STANDARD_RESIDUE` 及其既有身份信息，不重新进行残基分类。
+这些上游正式结果可以来自当前任务，也可以来自其它已经完成的任务。`classification_result.yaml` 用于定位当前处理范围内的 `STANDARD_RESIDUE` 及其既有身份信息，不重新进行残基分类。
+
+力场及其它参数定义来源先从当前 Task Sheet、已有正式项目记录、可追溯执行记录 / 日志、当前对话上下文和用户已明确决定中确认；仍不能唯一确定而当前工作需要该信息时，向用户确认，不因为当前任务没有 topology-preparation setup 工作项而阻断执行。
 
 ## Reuse
 
-当前 2.2 不设置 reuse。
+当前标准残基拓扑生成不设置 reuse。
 
 在 Stage 2 reuse 机制后续单独完成设计与接口更新前，每次实际进入当前工作项，都基于当前 `stage1_final.pdb`、当前处理范围和当前力场 / 参数定义来源重新生成标准残基全原子结构与拓扑。
 
 ## 构造标准残基输入结构
 
-按照 Task Sheet 中对应工作项确定的处理范围，从 `stage1_final.pdb` 中取得该处理范围内的标准残基，构造 pdb2gmx 输入 PDB。
+按照当前 Task Sheet 工作项确定的处理范围，从 `stage1_final.pdb` 中取得该处理范围内的标准残基，构造 pdb2gmx 输入 PDB。
 
-构造过程中保留 `stage1_final.pdb` 中已经确定的 chain 组织和 `TER` 设置，不重新划分 chain，不删除或增加用于表示既有聚合物区段边界的 `TER`，也不跨 `TER` 恢复已经被 Stage 1 selection 截断的聚合物连续性。
+构造过程中保留 `stage1_final.pdb` 中已经确定的 chain 组织和 `TER` 设置，不重新划分 chain，不删除或增加用于表示既有聚合物区段边界的 `TER`，也不跨 `TER` 恢复已经被结构选择截断的聚合物连续性。
 
 ## 生成标准残基全原子结构与拓扑
 
-以提取的标准残基结构作为结构输入，使用当前体系已经确定使用的力场及其它参数定义来源执行 pdb2gmx。
+以提取的标准残基结构作为结构输入，使用当前实际采用的力场及其它参数定义来源执行 pdb2gmx。
 
 默认使用 `-ignh`，忽略输入 PDB 中已有的氢原子，由 pdb2gmx 根据当前采用的残基定义重新生成氢原子。
 
@@ -100,4 +102,4 @@ pdb2gmx 实际形成的各 moleculetype 对应独立 .itp
 
 `standard.top` 作为标准残基 topology 的主入口，正式结果记录同时逐项保存该 `.top` 实际引用的各 `moleculetype` `.itp`。
 
-完成后按仓库级 Task Execution 规则更新当前 2.2 工作项状态，并按 `references/results.md` 将 2.2 正式结果文件登记到项目结果索引。
+完成后按仓库级 Task Execution 规则更新当前工作项状态，并按 `references/results.md` 将正式结果文件登记到项目结果索引。
