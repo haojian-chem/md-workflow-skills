@@ -1,6 +1,6 @@
 ---
 name: reorder_and_mapping
-description: 结构准备 1.8。将当前 target 的有效重原子结构整理为 Stage 1 最终 PDB，完成最终 chain 组织、resid 调整、残基与组分排序、TER 与 serial 整理，并在前序原子映射基础上生成 stage1_final_map.yaml。
+description: 结构准备 1.8。将当前有效重原子结构整理为 Stage 1 最终 PDB，完成最终 chain 组织、resid 调整、残基与组分排序、TER 与 serial 整理；每个 1.8 local target 建立独立 target record，并在前序原子映射基础上生成 stage1_final_map.yaml。
 ---
 
 # 1.8 Reorder and mapping
@@ -19,7 +19,7 @@ Stage 1 原子映射维护规则读取：
 
 ## Purpose
 
-1.8 的职责是把当前 target 已完成前序结构准备的重原子结构整理为 Stage 1 最终 PDB，并把前序持续维护的原子映射更新为最终 `stage1_final_map.yaml`。
+1.8 的职责是把当前 local target 已完成前序结构准备的重原子结构整理为 Stage 1 最终 PDB，并把前序持续维护的原子映射更新为最终 `stage1_final_map.yaml`。
 
 1.8 负责当前 target 的：
 
@@ -28,24 +28,33 @@ Stage 1 原子映射维护规则读取：
 - 残基与组分的最终排列；
 - `TER` 整理；
 - PDB `ATOM / HETATM / TER` serial 重编号；
-- 最终原子映射文件生成。
+- 最终原子映射文件生成；
+- 当前 1.8 local target record 与直接上游 target lineage 的记录。
 
-1.3 生成的 target PDB 为 1.4–1.7 提供稳定的中间结构表示；其中的 PDB chain ID、`resid` 和排列不构成 Stage 1 最终结构组织规则。1.2 component 一级 `chain_index` 是逻辑 chain/group 编号，也不直接等同于 Stage 1 最终 PDB chain identity。
+1.3 形成的初始 selection branch 以及 1.4–1.7 后续可能形成的不同处理分支，都通过 target lineage 逐级传递。1.8 不把任何固定较早 Step 的 `target_id` 或 target record 当作唯一来源接口。
 
 1.8 不重新执行结构修复、质子化状态判断、组分与残基分类或 topology-linked 判断，也不增加力场特定的全原子排序。
 
 ## Object requirements
 
-每个 target 至少需要：
+每个 actual 1.8 local target 至少需要：
 
-- 当前 target 的有效重原子 PDB；
+- 当前实际采用的有效重原子 PDB；
 - 与该 PDB 一一对应的最近正式原子映射文件；
-- 1.3 对应 `targets/target_xxx.yaml`；
-- 与该 target 对应的 1.2 正式 `classification_result.yaml`，当前要求 `schema_version: "4.0"` 且 `result_status: COMPLETE`。
+- 实际形成当前 1.8 target 的一个或多个上游 target records；
+- 与当前结构对应 model 的 1.2 正式 `classification_result.yaml`，当前要求 `schema_version: "4.0"` 且 `result_status: COMPLETE`。
 
-这些正式输入只需要共同对应当前 target，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 selection、结构修复、质子化处理与最终重排必须写在同一 Task Sheet。
+这些正式输入只需要共同对应当前处理对象，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 selection、结构修复、质子化处理与最终重排必须写在同一 Task Sheet。
 
 当前原子映射文件是 1.8 追踪现有原子身份的直接依据。不得跳过该文件，再根据当前 PDB 的 chain、`resid`、residue name、atom name 或 atom order 重新猜测原子来源。
+
+当前 1.8 target record 按共享 target-lineage 规则建立：
+
+```text
+targets/target_xxx.yaml
+```
+
+其 `source_target_records` 指向真正用于形成当前 1.8 target 的直接上游 target records。正常一对一路径通常指向实际最新的 1.7 target；若 1.7 没有形成 execution target，则指向真正拥有当前输入对象的较早 target；不按 Step 编号或 target 编号机械推断。
 
 1.8 从 1.2 正式结果读取当前组织所需的信息，包括：
 
@@ -59,13 +68,15 @@ topology_class.value
 topology_linked_checks[]
 ```
 
-`component_id + residue_id` 共同定位 1.2 中的稳定残基身份。`chain_index` 可以用于理解 1.2 的 component 组织和 1.3 的中间表示，但不得作为最终 PDB chain identity 的替代判据。
+`component_id + residue_id` 共同定位 1.2 中的稳定残基身份。`chain_index` 可以用于理解 1.2 的 component 组织和上游中间结构表示，但不得作为最终 PDB chain identity 的替代判据。
 
-1.3 target 记录用于确认当前 target 的 selection 以及其中已经建立的中间 residue mapping；最终 chain / `resid` 由本步骤重新组织后，以 `stage1_final.pdb` 与最终原子映射共同确定。
+需要确认当前 research-object selection / selected polymer segments 时，沿当前 target record 的 `source_target_records` 按需追溯到实际保存该 membership / mapping 的上游 target record；不固定要求直接读取某个 1.3 同编号 target。
 
-进入实质重排前，上述当前 PDB、匹配原子映射、1.3 target 记录和 1.2 正式结果必须能够唯一组成同一个 target 的输入集合。若存在多个合理候选且当前 Task Sheet、明确引用的前序 Task Sheet或已有项目记录不能唯一确定，不按“最新文件”、目录顺序、文件名相似度或 Agent 经验自行选择，先向用户确认。
+进入实质重排前，当前 PDB、匹配原子映射、current target record、其实际 source target records 和 1.2 正式结果必须能够唯一组成同一个 1.8 输入对象。若存在多个合理候选且当前 Task Sheet、明确引用的前序 Task Sheet或已有项目记录不能唯一确定，不按“最新文件”、目录顺序、文件名相似度或 Agent 经验自行选择，先向用户确认。
 
-最终 chain 组织按本 Skill 的明确规则由 Agent 判断。若现有正式分类、topology-linked 关系、residue 顺序和聚合物链证据仍留下多个实质不同且都合理的最终组织方案，并且不同方案会改变 final chain、`resid`、`TER` 或 `stage1_final_map.yaml` 对应关系，则向用户说明歧义后确认；不得仅根据空间接近、当前 PDB chain ID 外观或整理便利性自行决定。已有正式信息和本 Skill 规则能够唯一闭合时直接执行，不重复询问。
+最终 chain 组织按本 Skill 的明确规则由 Agent 判断。若现有正式分类、topology-linked 关系、residue 顺序和聚合物链证据仍留下多个实质不同且都合理的最终组织方案，并且不同方案会改变 final chain、`resid`、`TER` 或 `stage1_final_map.yaml` 对应关系，则向用户说明歧义后确认；不得仅根据空间接近、当前 PDB chain ID 外观或整理便利性自行决定。
+
+如果用户明确要求将多个合理最终组织方案都保留为后续对照，而不是只选一个方案，则分别建立多个 1.8 local targets；这些 target records 可以引用相同 source target record。1.8 不为形式完整自动展开 alternative branches。
 
 上述关键输入或组织决定未闭合前，可以做只读核对，但不得开始依赖该未决事项的 chain / `resid` 改写、重排或正式结果生成。
 
@@ -73,7 +84,7 @@ topology_linked_checks[]
 
 1.8 不设置 reuse。
 
-每次实际进入 1.8，都基于当前 target 的当前结构、与其对应的当前原子映射、当前 1.3 target 记录和当前正式 1.2 结果重新生成正式结果。
+每次实际进入 1.8，都基于当前 local target 的当前结构、对应 atom map、current target lineage 和当前正式 1.2 结果重新生成正式结果。
 
 ## Work directory and multiple targets
 
@@ -83,17 +94,23 @@ topology_linked_checks[]
 <project_root>/01_structure_preparation/08_reorder_and_mapping/
 ```
 
-每个 target 独立执行：
+当前 Task Sheet 的实际目录：
 
 ```text
-<project_root>/01_structure_preparation/08_reorder_and_mapping/<task_id>/<target_id>/
-├── stage1_final.pdb
-└── stage1_final_map.yaml
+<project_root>/01_structure_preparation/08_reorder_and_mapping/<task_id>/
+├── targets/
+│   ├── target_001.yaml
+│   ├── target_002.yaml
+│   └── ...
+├── target_001/
+│   ├── stage1_final.pdb
+│   └── stage1_final_map.yaml
+└── ...
 ```
 
-这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识；`target_id` 只在当前 1.8 工作项内解释。
 
-1.8 不改变 target 数量。
+默认对每个实际输入 branch 建立相应的 current 1.8 local target；当前 Task Sheet 可以只处理上游 target 集合的一部分，也可以在明确的 alternative final-organization 需求下由一个 source target 派生多个 current targets。不得用“target 数量必须与上游相同”代替真实对象关系。
 
 ## Execution rules
 
@@ -145,7 +162,7 @@ A-Z → a-z → 0-9
 - 属于同一条聚合物链的标准残基在最终 PDB 中使用同一 chain ID；
 - 属于不同聚合物链的标准残基不合并为同一 chain；
 - 同一聚合物链内保持实际 residue sequence order；
-- 1.3 selection 造成的真实聚合物区段边界保留为结构边界，不因为最终 chain ID 相同而把不连续 selected segments 表示成连续聚合物区段。
+- 上游 selection 造成的真实聚合物区段边界保留为结构边界，不因为最终 chain ID 相同而把不连续 selected segments 表示成连续聚合物区段。
 
 最终 chain ID 应能够在 PDB 中合法且无歧义地表示这些聚合物链。现有 chain ID 能满足最终组织要求时可以保留；存在冲突、空值或不能正确表达最终 chain 组织时，按本 Skill 的 chain ID 分配规则重新分配。
 
@@ -190,7 +207,7 @@ topology_effect_applied: true
 - 使用某条聚合物链 chain ID 的 topology-linked 非标准残基，从该 chain 标准残基最后占用的 `resid + 1` 开始，按单元顺序及单元内 residue order 连续分配；
 - 多个 topology-linked 非标准单元使用同一条聚合物链 chain ID 时，后一个单元从前一个单元最后占用的 `resid + 1` 继续；
 - 使用独立 chain 的 topology-linked 非标准单元，从 `resid = 1` 开始按单元内 residue order 连续分配；
-- 不为了保留 1.3 的中间编号而制造最终 chain 内的 `resid` 冲突。
+- 不为了保留任一上游中间 `resid` 而制造最终 chain 内的 `resid` 冲突。
 
 ### 5. `INDEPENDENT_NONSTANDARD`
 
@@ -265,7 +282,7 @@ WATER      → HETATM
 
 ### 9. 生成 `stage1_final_map.yaml`
 
-`stage1_final_map.yaml` 是输入原子映射的最终复制并更新结果，数据结构由：
+`stage1_final_map.yaml` 是输入原子映射的最终 copy-and-update 结果，数据结构由：
 
 `../../references/atom_mapping_rules.md`
 
@@ -273,6 +290,8 @@ WATER      → HETATM
 
 1.8 必须：
 
+- 文件级 `target_record` 指向当前 1.8 local target record；
+- `input_map` 指向实际进入 1.8 的上游 atom map；
 - 完整保留输入原子映射中每个保留 atom 的 `original_atom_serial`、`component_id + residue_id` 和既有 `operations`；
 - 不新增或删除 atom record；
 - 按 `stage1_final.pdb` 更新每个 record 的 `current_atom_serial`；
@@ -281,15 +300,17 @@ WATER      → HETATM
 - 不重新解释或改写此前 `1.3ADD / 1.4ALTLOC / 1.6ADD / 1.6RENAME / 1.6REPLACE / 1.7RENAME` 操作历史；
 - 不为最终 chain ID 或 `resid` 另建第二套永久 atom identity 字段。
 
-最终 PDB 的 chain ID、`resid`、residue name 与 atom name 通过 `stage1_final_map.yaml.current_atom_serial` 对应到 `stage1_final.pdb` 当前原子记录；稳定残基身份继续由 map 中的 `component_id + residue_id` 表示。
+最终 PDB 的 chain ID、`resid`、residue name 与 atom name 通过 `stage1_final_map.yaml.current_atom_serial` 对应到 `stage1_final.pdb` 当前原子记录；稳定残基身份继续由 map 中的 `component_id + residue_id` 表示。当前 target 的 branch ancestry 由 `stage1_final_map.yaml.target_record` 指向的 target record 继续追溯。
 
 ## Completion requirements
 
 1.8 不承担 Stage 1 独立终检；1.9 对 `stage1_final.pdb` 与 `stage1_final_map.yaml` 进行只读终检。
 
-当前 target 标记 1.8 已完成前至少确认：
+当前 local target 标记 1.8 已完成前至少确认：
 
+- current target record 存在，`source_target_records` 与实际输入 target lineage 一致；
 - 输入 PDB 与输入原子映射一一对应；
+- `stage1_final_map.yaml.target_record` 指向当前 1.8 target record；
 - 所有最终 PDB atoms 都保持原有 `component_id + residue_id` 身份；
 - 最终 PDB 的类别顺序为 `STANDARD_RESIDUE → TOPOLOGY_LINKED_NONSTANDARD → INDEPENDENT_NONSTANDARD → SOLVENT_COMPONENT → ION_COMPONENT`；
 - 标准聚合物链、topology-linked 非标准单元和独立非标准 components 的 chain 组织符合本 Skill 规则；
@@ -306,17 +327,21 @@ WATER      → HETATM
 
 ## Official results
 
-每个 target 的正式结果只有：
+每个 current 1.8 target 的正式结果只有：
 
 ```text
 stage1_final.pdb
 stage1_final_map.yaml
 ```
 
-完成后，把这两个文件的完整绝对路径和对应 target 说明登记到：
+Target record 是当前 target lineage support record，不因为创建而增加到项目结果索引。
+
+完成后，把这两个正式结果文件的完整绝对路径和当前 local target 的简明说明登记到：
 
 ```text
 <project_root>/00_project_records/project_result_index.md
 ```
+
+`stage1_final_map.yaml.target_record` 提供当前 Stage 1 final target 的正式跨 Skill target 引用；后续需要追溯此前 selection / repair / protonation 等分支时沿 target record 的 `source_target_records` 逐级恢复。
 
 不登记内部临时文件，也不生成额外 mapping validation 文件。
