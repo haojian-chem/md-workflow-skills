@@ -83,9 +83,9 @@ Inventory 只做 capability discovery，不复制具体 capability owner 的方�
 
 ## Capability gap
 
-如果当前需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。
+如果当前分析需求没有合适的已登记 capability，这只是 capability gap，不产生虚构 inventory entry。
 
-缺失 capability 的具体方法设计、实现和 validation 不由 Stage 5 main Skill 临时伪造。相关需求可以保留在当前任务上下文中，待后续 capability authoring 完成后再登记实际 entry。
+缺失 capability 的具体方法设计、实现和 validation 不由 Stage 5 main Skill 临时伪造。相关需求可以保留在当前 Task Sheet 或更大的科研任务上下文中，待后续 capability authoring 完成后，再由实际承载该分析工作的 Task Sheet 按 current Stage 5 规则登记和调用真实 entry。
 
 从实际分析工作中发现新的稳定 capability 需求，可以作为后续 Stage 5 authoring 输入；只有在完成相应 capability authoring、形成真实可引用 entry 后，才更新正式 inventory。
 
