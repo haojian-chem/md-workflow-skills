@@ -14,22 +14,22 @@ Stage 4 main Skill 在需要生成 / 执行 `gmx_mdrun.sh` 时读取本文件。
 
 最终实际 `gmx mdrun` 命令始终以当前 run unit 中保存的 `gmx_mdrun.sh` 为准。
 
-## Applicability summary
+## 适用范围
 
 当前倾向的适用范围固定为：
 
-| 倾向 | EM | NVT | NPT | Production MD |
+| 执行倾向 | EM | NVT | NPT | Production MD |
 |---|---:|---:|---:|---:|
 | `-nt 12` | 是 | 是 | 是 | 是 |
-| foreground execution | 是 | 否 | 否 | 否 |
+| 前台运行 | 是 | 否 | 否 | 否 |
 | `-maxh 0.08` | 是 | 否 | 否 | 否 |
-| `tmux` | 否 | 是 | 是 | 是 |
+| 在 `tmux` 会话中运行 | 否 | 是 | 是 | 是 |
 | `-update gpu` | 默认不加 | 是，环境适合时 | 是，环境适合时 | 是，环境适合时 |
 | `-pin on` | 默认不加 | 是，环境适合时 | 是，环境适合时 | 是，环境适合时 |
 
 这里的“是”表示当前用户倾向的适用范围，不表示当前环境必须机械使用该选项。
 
-## All Stage 4 `mdrun` classes
+## 所有 Stage 4 `mdrun` 任务
 
 以下倾向适用于当前 Stage 4 的全部 `mdrun` run classes：
 
@@ -48,14 +48,16 @@ Production MD
 
 若当前资源分配、硬件拓扑或运行环境不适合 12 threads，按实际资源调整。
 
-## Energy minimization only
+## 仅适用于 EM
 
-以下倾向**只适用于 EM**：
+以下倾向只适用于 EM：
 
 ```text
-foreground execution
+前台运行
 -maxh 0.08
 ```
+
+这里的“前台运行”指直接在当前终端执行 `gmx mdrun`；进程结束前当前终端不会返回 shell 提示符。
 
 `-maxh 0.08` 只用于限制一次本地 Agent 调用的 wall-clock 占用，不是 EM convergence criterion。若当前任务需要持续运行到收敛、采用外部作业环境，或该限制会妨碍实际完成，则不使用或调整该值。
 
@@ -68,15 +70,17 @@ EM 默认不主动加入：
 
 除非当前 GROMACS / GPU 环境实际需要且支持。
 
-## NVT / NPT / production MD only
+## 仅适用于 NVT / NPT / Production MD
 
-以下倾向适用于 NVT、NPT 和 production MD，不适用于普通 EM：
+以下倾向适用于 NVT、NPT 和 Production MD，不适用于普通 EM。
 
-较长任务倾向使用：
+较长任务倾向在：
 
 ```text
-tmux
+`tmux` 会话
 ```
+
+中运行，以便终端断开后仍可继续保持任务并重新连接查看。
 
 在当前 GPU / GROMACS build 支持且适合时倾向使用：
 
@@ -87,7 +91,7 @@ tmux
 
 这些选项是执行资源倾向，不是 scientific requirement。若当前环境不支持、CPU-only、更适合其它 offload 方式或调度系统已经管理 pinning / resources，则按实际环境调整。
 
-NVT / NPT / production MD 不继承 EM-only 的短 `-maxh 0.08` 倾向。
+NVT / NPT / Production MD 不继承 EM-only 的短 `-maxh 0.08` 倾向。
 
 ## Maintenance
 
