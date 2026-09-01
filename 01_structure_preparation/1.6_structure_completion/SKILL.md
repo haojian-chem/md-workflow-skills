@@ -31,6 +31,8 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 - 对 confirmed atom-name mismatch，1.5 报告所引用的上游正式证据中已经确认的 atom-name correspondence；
 - 对实际存在的 missing-heavy-atom / missing-residue repair item，可用于提供补全坐标的 reference structure / coordinate template。
 
+这些正式输入只需要与当前 target 实际对应，可以来自当前 Task Sheet，也可以来自同一科研任务的前序 Task Sheet或其它明确可用的正式结果；不要求 completeness check 与 structure completion 必须写在同一 Task Sheet。
+
 需要追溯上游 identity / mapping evidence 时，优先使用 `structure_completeness_report.yaml` 中 `source_reports` 字段记录的正式结果路径，并据当前 `structure` 定位实际拥有该结构的上游 Step 及其正式 atom map；不为 1.6 重新建立另一套上游 mapping 接口。
 
 当前 repair items 只有 deletion / rename 时，不要求额外提供 AF3 / CCD coordinate reference。
@@ -50,7 +52,7 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 - 不创建 1.6 task-specific execution directory；
 - 不生成空的 completion results；
 - 不复制或生成新的 atom map；当前结构继续沿用其已有正式 map；
-- 向当前任务执行上下文返回 `已终止`，并说明原因是 1.5 未发现需要 1.6 处理的 repair item。
+- 将当前 Task Sheet 的 1.6 工作项标记为 `已终止`，并说明原因是 completeness report 未发现需要 structure completion 处理的 repair item。
 
 已有 1.6 正式结果只有在以下内容均明确等价时才自动复用：
 
@@ -66,7 +68,7 @@ description: 结构准备 1.6。根据每个 target 的正式 structure_complete
 
 用户明确要求重做、重新比较 reference 或建立对照时，不自动复用。
 
-复用时直接引用既有正式结果，不复制结果，也不创建空目录；向当前任务执行上下文返回 `已终止`、复用原因以及实际复用的正式结果路径。
+复用时直接引用既有正式结果，不复制结果，也不创建空目录；将当前 Task Sheet 的 1.6 工作项标记为 `已终止`，记录复用原因以及实际复用的正式结果路径。
 
 # Execution guidance
 
@@ -292,6 +294,8 @@ Validation 不重新执行 1.5 completeness diagnosis。
 └── completion_validation.md
 ```
 
+这里的 `<task_id>` 是当前 Task Sheet 的 `Txxxx` 标识。
+
 执行失败时可以保留必要工作材料用于排查，但不得把未通过 validation 的结构或 map 登记成 1.6 正式结果。
 
 # Project result registration
@@ -334,6 +338,6 @@ scripts/README.md
 
 如果 repair scope 已明确，但当前 evidence 仍不足以唯一建立 required reference correspondence、缺少可用 coordinate reference，或多个可行方案之间存在会影响结构正确性的实质科学歧义，向用户说明当前对象、现有 evidence 和具体歧义后确认。
 
-已有正式项目信息、当前上下文以及本 Skill / method reference 的规则能够唯一闭合时，可以直接继续，不为已经明确的事项重复询问。仍存在上述实质歧义时，不得因为某个 reference 更方便、文件先出现或某种处理更常见而自行选择。
+已有正式项目信息、当前 Task Sheet / 明确引用的前序 Task Sheet、当前对话上下文以及本 Skill / method reference 的规则能够唯一闭合时，可以直接继续，不为已经明确的事项重复询问。仍存在上述实质歧义时，不得因为某个 reference 更方便、文件先出现或某种处理更常见而自行选择。
 
 确认前可以完成不依赖该未决事项的只读检查和证据整理，但不得开始依赖该决定的 rename、atom deletion、coordinate transplant、whole-residue replacement 或其它结构修改，也不得发布可误认作完成状态的正式结果。
