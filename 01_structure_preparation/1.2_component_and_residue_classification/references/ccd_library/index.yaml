@@ -276,12 +276,12 @@ components:
     path: AKG.cif
     category: METABOLITE
     source_type: RCSB_CCD_COMPONENT
-    sha256: 71c99ebd81dbbe3d0b40d6fe20f0279e93a94e7e3b00ce2b719f555537e63a1e
+    sha256: a6dd9a3047e8ed95c4ba226abfd83f0d1e92f772755e07770099c4833c43645c
   SIN:
     path: SIN.cif
     category: METABOLITE
     source_type: RCSB_CCD_COMPONENT
-    sha256: 9fe58071016ac692dc38c784340e0fee3616008c90de4c7a5c24851a01c9347c
+    sha256: bea463add1df479ca4e47b3a18d01f9a84d104dff1d713fcf328a49d4ab8ba4e
   CLA:
     path: CLA.cif
     category: TETRAPYRROLE_PIGMENT
