@@ -1,0 +1,15 @@
+data_SIN
+_chem_comp.id SIN
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+SIN "C1" C .
+SIN "C2" C .
+SIN "C3" C .
+SIN "C4" C .
+SIN "O1" O .
+SIN "O2" O .
+SIN "O3" O .
+SIN "O4" O .
