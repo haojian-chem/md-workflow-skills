@@ -1,0 +1,17 @@
+data_AKG
+_chem_comp.id AKG
+loop_
+_chem_comp_atom.comp_id
+_chem_comp_atom.atom_id
+_chem_comp_atom.type_symbol
+_chem_comp_atom.alt_atom_id
+AKG "C1" C .
+AKG "C2" C .
+AKG "C3" C .
+AKG "C4" C .
+AKG "C5" C .
+AKG "O1" O .
+AKG "O2" O .
+AKG "O3" O .
+AKG "O4" O .
+AKG "O5" O .
