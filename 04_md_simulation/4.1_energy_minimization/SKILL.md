@@ -59,14 +59,6 @@ description: Stage 4.1 Energy minimization Skill。负责 em.* run unit 的 MDP 
 em.N.mdp
 ```
 
-可参考模板：
-
-```text
-templates/em_steep.mdp
-```
-
-根据实际情况调整。
-
 原则：
 
 - 能从体系与既定 protocol 可靠推断的参数直接确定；
