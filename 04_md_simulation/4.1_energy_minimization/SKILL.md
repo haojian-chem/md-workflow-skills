@@ -59,6 +59,14 @@ description: Stage 4.1 Energy minimization Skill。负责 em.* run unit 的 MDP 
 em.N.mdp
 ```
 
+Stage 4.1 提供的默认 steepest-descent baseline 模板为：
+
+```text
+templates/em_steep.mdp
+```
+
+该模板用于常规全体系初始松弛时的起点，核心设置为 `integrator = steep`、`emtol = 100`、`emstep = 0.01`、`nsteps = 50000`。`steep` 下默认不使用 `-DFLEXIBLE`；典型刚性水可继续使用 topology 中的 SETTLE。模板中的 PME、LJ cutoff 与 dispersion-correction 设置必须与当前 force field 和后续 protocol 保持兼容，不能脱离体系机械照搬。
+
 原则：
 
 - 能从体系与既定 protocol 可靠推断的参数直接确定；
