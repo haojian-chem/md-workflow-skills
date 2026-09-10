@@ -60,8 +60,6 @@ formal run-unit identity、binding/reuse、`run_unit.yaml`、共同脚本格式�
 
 根据 planned requirement、当前体系/状态以及已有模板或上下文生成或调整最终 `.mdp`。
 
-NVT 可参考模板：`templates/nvt.mdp`，根据实际情况调整。
-
 通用原则：
 
 - 能可靠推断的参数直接确定；
