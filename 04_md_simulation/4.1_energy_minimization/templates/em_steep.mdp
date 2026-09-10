@@ -4,7 +4,7 @@
 
 integrator = steep
 emtol = 100
-emstep = 0.01
+emstep = 0.005
 nsteps = 50000
 
 cutoff-scheme = Verlet
