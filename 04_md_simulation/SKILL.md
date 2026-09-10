@@ -33,6 +33,8 @@ Stage 4 的三个执行层为：
 
 该 reference 记录用户长期执行偏好，不是模拟科学参数规范；当前 Task Sheet / 当前运行环境的实际要求可以覆盖其中的资源倾向。
 
+可参考 MDP 模板：`4.1_energy_minimization/templates/em_steep.mdp`、`4.2_equilibration/templates/nvt.mdp`，根据实际情况调整。
+
 ## Object requirements
 
 开始处理当前 planned run entry 前，至少需要：
