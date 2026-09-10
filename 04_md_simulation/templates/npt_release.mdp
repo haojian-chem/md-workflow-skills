@@ -2,7 +2,7 @@
 
 integrator              = md
 cutoff-scheme           = Verlet
-nstlist                 = 20
+nstlist                 = 10
 pbc                     = xyz
 
 coulombtype             = PME
@@ -22,9 +22,9 @@ lincs-order             = 4
 lincs-iter              = 1
 
 tcoupl                  = V-rescale
-tc-grps                 = System
-tau-t                   = 1.0
-ref-t                   = 298.15
+tc-grps                 = Enzyme Water_and_ions
+tau-t                   = 0.2 0.2
+ref-t                   = 298.15 298.15
 
 comm-mode               = Linear
 comm-grps               = System
@@ -44,7 +44,7 @@ gen-vel                 = no
 
 pcoupl                  = Parrinello-Rahman
 pcoupltype              = isotropic
-tau-p                   = 5.0
+tau-p                   = 1.0
 ref-p                   = 1.0
 compressibility         = 4.5e-5
 
