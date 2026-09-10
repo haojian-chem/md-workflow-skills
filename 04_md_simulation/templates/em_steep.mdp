@@ -1,0 +1,28 @@
+; Stage 4.1 baseline steepest-descent energy minimization template
+; Use as a starting template, then adapt to the actual force field and protocol.
+; With integrator = steep, rigid-water SETTLE can remain active; -DFLEXIBLE is not required.
+
+integrator = steep
+emtol = 100
+emstep = 0.005
+nsteps = 50000
+
+cutoff-scheme = Verlet
+nstlist = 20
+pbc = xyz
+
+coulombtype = PME
+rcoulomb = 1.0
+fourierspacing = 0.12
+pme-order = 4
+ewald-rtol = 1e-5
+
+vdwtype = Cut-off
+vdw-modifier = Potential-shift
+rvdw = 1.0
+DispCorr = EnerPres
+
+constraints = none
+
+nstenergy = 100
+nstlog = 100
