@@ -1,0 +1,54 @@
+; NVT equilibration template
+
+integrator              = md
+cutoff-scheme           = Verlet
+nstlist                 = 20
+pbc                     = xyz
+
+coulombtype             = PME
+rcoulomb                = 1.0
+fourierspacing          = 0.12
+pme-order               = 4
+ewald-rtol              = 1e-5
+
+vdwtype                 = Cut-off
+vdw-modifier            = Potential-shift
+rvdw                    = 1.0
+DispCorr                = EnerPres
+
+constraints             = h-bonds
+constraint-algorithm    = lincs
+lincs-order             = 4
+lincs-iter              = 1
+
+tcoupl                  = V-rescale
+tc-grps                 = System
+tau-t                   = 1.0
+ref-t                   = 298.15
+
+comm-mode               = Linear
+comm-grps               = System
+nstcomm                 = 100
+
+nstxout                 = 0
+nstvout                 = 0
+nstfout                 = 0
+compressed-x-grps       = System
+compressed-x-precision  = 1000
+
+define                  = -DPOSRES
+dt                      = 0.001
+nsteps                  = 100000
+tinit                   = 0
+init-step               = 0
+continuation            = no
+gen-vel                 = yes
+gen-temp                = 298.15
+gen-seed                = -1
+
+pcoupl                  = no
+
+nstcalcenergy           = 100
+nstenergy               = 1000
+nstlog                  = 1000
+nstxout-compressed      = 1000
