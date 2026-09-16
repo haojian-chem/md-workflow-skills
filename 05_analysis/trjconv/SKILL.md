@@ -41,6 +41,20 @@ PBC、centering、fit 等组合较复杂时，可以拆成多次 `gmx trjconv`�
 
 多步处理产生的临时 trajectory 可以保留在当前 item `path` 下用于恢复或排查；不需要因为产生过就进入集中 trajectory 索引。
 
+## Fit 与周期盒子的后续使用风险
+
+使用包含旋转的 fit，例如 `-fit rot+trans` 或 `-fit rotxy+transxy` 时，`gmx trjconv` 将拟合变换应用于轨迹坐标，但不会对 trajectory 中保存的周期盒矢量同步施加对应旋转。因此输出轨迹可能出现“坐标已经旋转，而周期盒仍保持原方向”的状态。
+
+这类轨迹可以继续用于只依赖已对齐坐标、且不再依赖周期盒关系的分析；但不得默认认为它仍适合作为后续 PBC 处理或 PBC-dependent analysis 的等价输入。尤其当输出轨迹仍保留水、离子或其它溶剂组分时，后续再次依据未同步旋转的周期盒执行 wrapping、centering、分子重组或其它 PBC 相关处理，可能造成溶剂 / 离子位置异常，并进一步影响依赖其空间位置的分析结果。
+
+因此，当当前 item 产生了经过旋转 fit 的轨迹且该轨迹可能被继续用于 PBC 处理或涉及溶剂 / 离子空间关系的分析时：
+
+- 在向用户说明当前结果和后续用途时明确提示上述限制；
+- 后续 capability 不得仅因该 trajectory 已通过当前 `trjconv` 检查，就把它视为与未 fit 原始轨迹等价的 PBC input；
+- 如后续分析确实依赖正确的周期盒关系，优先从 fit 之前、仍保持坐标与周期盒一致的 trajectory 重新执行所需 PBC 处理，再按具体分析目的决定是否另行对齐。
+
+纯平移本身不改变周期晶格方向；这里的主要风险来自含旋转的 fit。
+
 # Execution record
 
 建议在当前 item `path` 下使用固定文件名：
@@ -76,6 +90,8 @@ gmx trjconv -s md.tpr -f md.xtc -o traj.xtc -center
 # Output check
 
 执行后检查输出 trajectory 是否与当前 item 要求一致。尤其当本次实际涉及时间范围/采样、output selection、PBC、centering 或 fit 时，应查看相应处理效果，而不是仅依据命令退出状态判断结果可用。
+
+如果实际使用了包含旋转的 fit，并且输出保留周期盒及溶剂 / 离子，应同时把“坐标已旋转而周期盒未同步旋转”视为该 trajectory 的后续使用限制；当前 item 的 fit 结果本身符合要求，不等于该 trajectory 对后续 PBC 处理仍保持语义兼容。
 
 检查只围绕当前 item 的实际处理要求，不建立独立 Validator、固定检查表或额外 validation metadata。
 
@@ -176,5 +192,7 @@ multi.traj.N
 # Result update
 
 完成当前 item 后，按 Stage 5 main Skill 的 plan-item 规则更新当前 Task Sheet。需要供后续 item 直接消费的有效 trajectory 可写入当前 item 的 `results`；若输出已集中登记，`results` 应定位实际 reusable trajectory，而不是复制一份文件。
+
+如果当前结果 trajectory 使用了包含旋转的 fit，在向用户汇报该结果或说明后续复用方式时，明确提示：fit 只改变了坐标方向，周期盒没有同步旋转；后续若还要执行 PBC 处理或分析溶剂 / 离子空间关系，应从 fit 前 trajectory 重新确认或构造合适输入，避免直接把当前 fitted trajectory 当作普通 PBC trajectory 使用。
 
 本 Skill 不为结果增加独立 handoff 文件。
